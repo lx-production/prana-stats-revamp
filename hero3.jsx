@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+const COIN_MODEL_URL = new URL("./prana_mock_coin2.glb", import.meta.url).href;
+
 /**
  * On-Chain Mandala — PRANA hero section
  * React + Tailwind, dark-first, mobile-native.
@@ -136,17 +138,53 @@ export default function OnChainMandalaHero() {
       const scale = 0.8 + 0.2 * progress; // 0.8→1.0
       const rot = (pointerRef.current.x * 0.07) + (reduced ? 0 : t * 0.02);
 
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, "#05011a");
+      bgGrad.addColorStop(0.4, "#0b0933");
+      bgGrad.addColorStop(1, "#020108");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      const aurora = ctx.createRadialGradient(cx, cy * 0.65, Math.max(w, h) * 0.05, cx, cy, Math.max(w, h) * 0.72);
+      aurora.addColorStop(0, "rgba(104,64,240,0.28)");
+      aurora.addColorStop(0.55, "rgba(36,20,94,0.42)");
+      aurora.addColorStop(1, "rgba(6,4,18,0.9)");
+      ctx.fillStyle = aurora;
+      ctx.fillRect(0, 0, w, h);
+
       // Subtle vignette background layer
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7);
-      grad.addColorStop(0, "rgba(3,3,10,0)");
-      grad.addColorStop(1, "rgba(3,3,10,0.6)");
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.78);
+      grad.addColorStop(0, "rgba(10,6,30,0)");
+      grad.addColorStop(1, "rgba(4,3,15,0.82)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      const arcBase = BASE * 1.28 * scale;
+      for (let i = 0; i < 3; i++) {
+        const radius = arcBase + i * 34;
+        const sway = Math.sin(t * 0.5 + i) * 0.2 + pointerRef.current.y * 0.04;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(sway + i * 0.58);
+        ctx.beginPath();
+        ctx.strokeStyle = i % 2 === 0 ? "rgba(124,146,255,0.32)" : "rgba(245,210,122,0.28)";
+        ctx.lineWidth = 2.2 + i;
+        ctx.shadowBlur = 26;
+        ctx.shadowColor = "rgba(124,146,255,0.5)";
+        ctx.arc(0, 0, radius, -Math.PI * 0.35, Math.PI * 0.35);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+
       // Gold/white halo ring behind coin
       ctx.beginPath();
-      ctx.arc(cx, cy, BASE * 1.15 * scale, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(245,210,122,0.27)"; // ion-gold glow
+      ctx.arc(cx, cy, BASE * 1.18 * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(245,210,122,0.34)"; // ion-gold glow
       ctx.lineWidth = 2;
       ctx.stroke();
 
@@ -160,7 +198,12 @@ export default function OnChainMandalaHero() {
           const y = cy + Math.sin(a) * radius;
           const jitter = twinkle ? (Math.sin(t * 3 + r * 1.3 + i) * 0.02) : 0;
           const alpha = 0.06 + (jitter * 0.04);
-          ctx.fillStyle = `rgba(255,255,255,${Math.max(0.02, alpha)})`;
+          const isInner = r < 2;
+          const hue = isInner ? 44 : 228 - r * 3;
+          const sat = isInner ? 94 : 72;
+          const light = isInner ? 66 : 58 - r * 2;
+          const dotAlpha = Math.max(0.05, alpha * (isInner ? 1.4 : 1));
+          ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${dotAlpha})`;
           ctx.beginPath();
           ctx.arc(x, y, r === 0 ? 1.6 : 1.2, 0, Math.PI * 2);
           ctx.fill();
@@ -244,7 +287,7 @@ export default function OnChainMandalaHero() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-[92vh] overflow-hidden bg-black text-white pb-[env(safe-area-inset-bottom)]"
+      className="relative min-h-[92vh] overflow-hidden bg-gradient-to-b from-[#050116] via-[#060323] to-[#02010b] text-white pb-[env(safe-area-inset-bottom)]"
       aria-label="PRANA hero section with interactive coin and reactive mandala background"
     >
       {/* Background mandala (canvas) */}
@@ -258,7 +301,7 @@ export default function OnChainMandalaHero() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(1200px 1200px at 50% 50%, rgba(3,3,10,0) 30%, rgba(3,3,10,0.6) 100%)",
+            "radial-gradient(1200px 1200px at 50% 50%, rgba(34,18,88,0.2) 25%, rgba(6,3,22,0.78) 100%)",
         }}
       />
 
@@ -286,7 +329,7 @@ export default function OnChainMandalaHero() {
           {mvReady ? (
             <model-viewer
               ref={mvRef}
-              src="/prana-coin.glb"
+              src={COIN_MODEL_URL}
               poster="/prana-coin-fallback.png"
               camera-controls
               disable-zoom
