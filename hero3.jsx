@@ -357,10 +357,10 @@ export default function OnChainMandalaHero() {
       {/* Copy & CTAs */}
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-8">
         <h1 className="text-4xl sm:text-5xl font-bold tracking-wide">
-          Turn Value into Vibration
+          Định Giá Bằng Bitcoin - Vận Hành Bằng Trí Tuệ
         </h1>
         <p className="mt-4 text-[15px] sm:text-base text-white/70">
-          Stake, bond, and trade within a Bitcoin-priced flow.
+          PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm.
         </p>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-4 sm:justify-center">
