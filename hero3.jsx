@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const COIN_MODEL_URL = new URL("./prana_mock_coin2.glb", import.meta.url).href;
+const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
 
 /**
  * On-Chain Mandala — PRANA hero section
