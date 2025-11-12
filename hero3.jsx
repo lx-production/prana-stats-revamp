@@ -31,7 +31,7 @@ function useModelViewer() {
   return ready;
 }
 
-export default function OnChainMandalaHero() {
+export default function PranaHero() {
   const mvReady = useModelViewer();
 
   const heroRef = useRef(null);
@@ -39,17 +39,7 @@ export default function OnChainMandalaHero() {
   const canvasRef = useRef(null);
   const haloRef = useRef(null);
 
-  const [reduced, setReduced] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(true);
-
-  // Respect prefers-reduced-motion
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => setReduced(mq.matches);
-    apply();
-    mq.addEventListener?.("change", apply);
-    return () => mq.removeEventListener?.("change", apply);
-  }, []);
 
   // Auto-hide tooltip after 3s or on first interaction
   useEffect(() => {
@@ -117,7 +107,7 @@ export default function OnChainMandalaHero() {
     const DOTS = 56;           // dots per ring base
     const BASE = 110;          // base radius px
     const GAP = 18;            // gap per ring px
-    const twinkle = !reduced;
+    const twinkle = true;
 
     const onVis = () => { /* pause when tab hidden for battery */ };
 
@@ -136,7 +126,7 @@ export default function OnChainMandalaHero() {
 
       const progress = scrollProgressRef.current;
       const scale = 0.8 + 0.2 * progress; // 0.8→1.0
-      const rot = (pointerRef.current.x * 0.07) + (reduced ? 0 : t * 0.02);
+      const rot = (pointerRef.current.x * 0.07) + (t * 0.02);
 
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
       bgGrad.addColorStop(0, "#05011a");
@@ -218,7 +208,7 @@ export default function OnChainMandalaHero() {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [reduced]);
+  }, []);
 
   // Breath pulse on click/tap
   const pulse = () => {
@@ -336,7 +326,7 @@ export default function OnChainMandalaHero() {
               interaction-prompt="none"
               exposure="1"
               shadow-intensity="0"
-              auto-rotate={!reduced}
+              auto-rotate
               auto-rotate-delay="6000"
               rotation-per-second="1.2deg" /* ~0.2 rpm */
               style={coinStyle}
