@@ -33,182 +33,9 @@ function useModelViewer() {
 
 export default function PranaHero() {
   const mvReady = useModelViewer();
-
   const heroRef = useRef(null);
   const mvRef = useRef(null);
-  const canvasRef = useRef(null);
   const haloRef = useRef(null);
-
-  const [tooltipVisible, setTooltipVisible] = useState(true);
-
-  // Auto-hide tooltip after 3s or on first interaction
-  useEffect(() => {
-    if (!tooltipVisible) return;
-    const tid = setTimeout(() => setTooltipVisible(false), 3000);
-    const kill = () => setTooltipVisible(false);
-    window.addEventListener("pointerdown", kill, { once: true });
-    return () => {
-      clearTimeout(tid);
-      window.removeEventListener("pointerdown", kill);
-    };
-  }, [tooltipVisible]);
-
-  // Scroll progress → mandala scale (0.8 → 1.0)
-  const scrollProgressRef = useRef(0);
-  useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const r = el.getBoundingClientRect();
-      const vpH = window.innerHeight || 1;
-      const heroCenter = r.top + r.height * 0.5;
-      const vpCenter = vpH * 0.5;
-      const d = Math.min(1, Math.max(0, 1 - Math.abs(heroCenter - vpCenter) / (vpH * 0.6)));
-      scrollProgressRef.current = d;
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  // Pointer influence → mandala rotation
-  const pointerRef = useRef({ x: 0, y: 0 });
-  useEffect(() => {
-    const onMove = (e) => {
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      const dx = (e.clientX - cx) / Math.max(1, cx);
-      const dy = (e.clientY - cy) / Math.max(1, cy);
-      pointerRef.current = { x: dx, y: dy };
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, []);
-
-  // Mandala canvas renderer (2D for perf)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let raf, running = true;
-
-    const resize = () => {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.floor(canvas.clientWidth * dpr);
-      canvas.height = Math.floor(canvas.clientHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    const RINGS = 8;           // concentric rings
-    const DOTS = 56;           // dots per ring base
-    const BASE = 110;          // base radius px
-    const GAP = 18;            // gap per ring px
-    const twinkle = true;
-
-    const onVis = () => { /* pause when tab hidden for battery */ };
-
-    resize();
-    window.addEventListener("resize", resize);
-    document.addEventListener("visibilitychange", onVis);
-
-    let t = 0;
-    (function loop() {
-      if (!running) return;
-      t += 0.016;
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      const cx = w / 2, cy = h / 2;
-
-      const progress = scrollProgressRef.current;
-      const scale = 0.8 + 0.2 * progress; // 0.8→1.0
-      const rot = (pointerRef.current.x * 0.07) + (t * 0.02);
-
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      bgGrad.addColorStop(0, "#05011a");
-      bgGrad.addColorStop(0.4, "#0b0933");
-      bgGrad.addColorStop(1, "#020108");
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, w, h);
-
-      const aurora = ctx.createRadialGradient(cx, cy * 0.65, Math.max(w, h) * 0.05, cx, cy, Math.max(w, h) * 0.72);
-      aurora.addColorStop(0, "rgba(104,64,240,0.28)");
-      aurora.addColorStop(0.55, "rgba(36,20,94,0.42)");
-      aurora.addColorStop(1, "rgba(6,4,18,0.9)");
-      ctx.fillStyle = aurora;
-      ctx.fillRect(0, 0, w, h);
-
-      // Subtle vignette background layer
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.78);
-      grad.addColorStop(0, "rgba(10,6,30,0)");
-      grad.addColorStop(1, "rgba(4,3,15,0.82)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.save();
-      ctx.globalAlpha = 0.65;
-      const arcBase = BASE * 1.28 * scale;
-      for (let i = 0; i < 3; i++) {
-        const radius = arcBase + i * 34;
-        const sway = Math.sin(t * 0.5 + i) * 0.2 + pointerRef.current.y * 0.04;
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(sway + i * 0.58);
-        ctx.beginPath();
-        ctx.strokeStyle = i % 2 === 0 ? "rgba(124,146,255,0.32)" : "rgba(245,210,122,0.28)";
-        ctx.lineWidth = 2.2 + i;
-        ctx.shadowBlur = 26;
-        ctx.shadowColor = "rgba(124,146,255,0.5)";
-        ctx.arc(0, 0, radius, -Math.PI * 0.35, Math.PI * 0.35);
-        ctx.stroke();
-        ctx.restore();
-      }
-      ctx.restore();
-      ctx.shadowBlur = 0;
-      ctx.shadowColor = "transparent";
-
-      // Gold/white halo ring behind coin
-      ctx.beginPath();
-      ctx.arc(cx, cy, BASE * 1.18 * scale, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(245,210,122,0.34)"; // ion-gold glow
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Dots
-      for (let r = 0; r < RINGS; r++) {
-        const radius = (BASE + r * GAP) * scale;
-        const count = Math.max(20, Math.floor(DOTS - r * 2));
-        for (let i = 0; i < count; i++) {
-          const a = (i / count) * Math.PI * 2 + rot * (1 + r * 0.03);
-          const x = cx + Math.cos(a) * radius;
-          const y = cy + Math.sin(a) * radius;
-          const jitter = twinkle ? (Math.sin(t * 3 + r * 1.3 + i) * 0.02) : 0;
-          const alpha = 0.06 + (jitter * 0.04);
-          const isInner = r < 2;
-          const hue = isInner ? 44 : 228 - r * 3;
-          const sat = isInner ? 94 : 72;
-          const light = isInner ? 66 : 58 - r * 2;
-          const dotAlpha = Math.max(0.05, alpha * (isInner ? 1.4 : 1));
-          ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${dotAlpha})`;
-          ctx.beginPath();
-          ctx.arc(x, y, r === 0 ? 1.6 : 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      raf = requestAnimationFrame(loop);
-    })();
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, []);
 
   // Breath pulse on click/tap
   const pulse = () => {
@@ -278,12 +105,8 @@ export default function PranaHero() {
     <section
       ref={heroRef}
       className="relative min-h-[92vh] overflow-hidden bg-gradient-to-b from-[#050116] via-[#060323] to-[#02010b] text-white pb-[env(safe-area-inset-bottom)]"
-      aria-label="PRANA hero section with interactive coin and reactive mandala background"
+      aria-label="PRANA hero section with interactive coin"
     >
-      {/* Background mandala (canvas) */}
-      <div className="absolute inset-0 -z-10">
-        <canvas ref={canvasRef} className="w-full h-full block" />
-      </div>
 
       {/* Vignette overlay for edges */}
       <div
@@ -367,13 +190,6 @@ export default function PranaHero() {
             Stake PRANA
           </a>
         </div>
-
-        {/* Tooltip (aria-live polite, hidden after first interaction or 3s) */}
-        {tooltipVisible && (
-          <div className="mt-3 text-xs text-white/50" aria-live="polite">
-            Tip: Try a slow spin
-          </div>
-        )}
 
         {/* Optional stat chips (non-interactive placeholders / wire-ready) */}
         <div className="mt-6 flex flex-wrap justify-center gap-2 opacity-80 select-none">
