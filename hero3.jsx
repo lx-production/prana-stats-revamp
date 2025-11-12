@@ -35,21 +35,6 @@ export default function PranaHero() {
   const mvReady = useModelViewer();
   const heroRef = useRef(null);
   const mvRef = useRef(null);
-  const haloRef = useRef(null);
-
-  // Breath pulse on click/tap
-  const pulse = () => {
-    const halo = haloRef.current;
-    if (!halo) return;
-    halo.animate(
-      [
-        { transform: "scale(1)", opacity: 0.28 },
-        { transform: "scale(1.08)", opacity: 0.45 },
-        { transform: "scale(1)", opacity: 0.28 },
-      ],
-      { duration: 320, easing: "cubic-bezier(.2,.8,.2,1)" }
-    );
-  };
 
   // Idle orientation snap after 6s of no interaction
   useEffect(() => {
@@ -73,12 +58,9 @@ export default function PranaHero() {
     };
   }, [mvReady]);
 
-  // Keyboard access: ←/→ rotate, Enter pulses
+  // Keyboard access: ←/→ rotate
   const onKeyDown = (e) => {
     if (!mvRef.current) return;
-    if (e.key === "Enter") {
-      pulse();
-    }
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
       try {
@@ -118,23 +100,11 @@ export default function PranaHero() {
         }}
       />
 
-      {/* Soft halo bloom behind coin */}
-      <div
-        ref={haloRef}
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-30"
-        style={{
-          width: 680,
-          height: 680,
-          background:
-            "radial-gradient(closest-side, rgba(245,210,122,0.35), rgba(245,210,122,0) 65%)",
-        }}
-      />
-
       {/* Coin block */}
       <div className="relative pt-16 sm:pt-24 flex items-center justify-center">
         <div
           role="img"
-          aria-label="Interactive PRANA coin. Drag, use arrow keys, or press Enter to pulse."
+          aria-label="Interactive PRANA coin. Drag or use arrow keys to control."
           tabIndex={0}
           onKeyDown={onKeyDown}
           className="outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60 rounded-2xl"
@@ -153,7 +123,6 @@ export default function PranaHero() {
               auto-rotate-delay="6000"
               rotation-per-second="1.2deg" /* ~0.2 rpm */
               style={coinStyle}
-              onClick={pulse}
             />
           ) : (
             <img
@@ -161,7 +130,6 @@ export default function PranaHero() {
               alt="PRANA coin (static fallback)"
               style={coinStyle}
               className="select-none"
-              onClick={pulse}
             />
           )}
         </div>
