@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
+const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "130%" };
+const CAMERA_ORBIT_ATTR = `${CAMERA_ORBIT_BASE.theta}deg ${CAMERA_ORBIT_BASE.phi}deg ${CAMERA_ORBIT_BASE.radius}`;
+const CAMERA_RADIUS_CLAMP = `auto auto ${CAMERA_ORBIT_BASE.radius}`;
 
 /**
  * On-Chain Mandala — PRANA hero section
@@ -22,7 +25,7 @@ function useModelViewer() {
     }
     const s = document.createElement("script");
     s.type = "module";
-    s.src = "https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js";
+    s.src = "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
     s.setAttribute("data-prana-mv", "");
     s.addEventListener("load", () => setReady(true), { once: true });
     s.addEventListener("error", () => setReady(false), { once: true });
@@ -36,25 +39,36 @@ export default function PranaHero() {
   const heroRef = useRef(null);
   const mvRef = useRef(null);
 
-  // Idle orientation snap after 6s of no interaction
+  // Ensure default orbit after model load
   useEffect(() => {
     const mv = mvRef.current;
     if (!mv) return;
-    let idleTimer;
-    const snap = () => (mv.cameraOrbit = "20deg 70deg 110%");
-    const reset = () => {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(snap, 6000);
+    let cancelled = false;
+    const setOrbit = () => {
+      const apply = () => {
+        if (cancelled) return;
+        try {
+          mv.setAttribute("camera-orbit", CAMERA_ORBIT_ATTR);
+          mv.setAttribute("min-camera-orbit", CAMERA_RADIUS_CLAMP);
+          mv.setAttribute("max-camera-orbit", CAMERA_RADIUS_CLAMP);
+          mv.cameraOrbit = CAMERA_ORBIT_ATTR;
+          mv.jumpCameraToGoal?.();
+        } catch {
+          /* noop */
+        }
+      };
+      if (mv.updateComplete) {
+        mv.updateComplete.then(apply).catch(() => {});
+      } else {
+        requestAnimationFrame(apply);
+      }
     };
-    mv.addEventListener("pointerdown", reset);
-    mv.addEventListener("pointerup", reset);
-    mv.addEventListener("camera-change", reset);
-    reset();
+
+    mv.addEventListener("load", setOrbit);
+    if (mv.modelIsVisible) setOrbit();
     return () => {
-      clearTimeout(idleTimer);
-      mv.removeEventListener("pointerdown", reset);
-      mv.removeEventListener("pointerup", reset);
-      mv.removeEventListener("camera-change", reset);
+      cancelled = true;
+      mv.removeEventListener("load", setOrbit);
     };
   }, [mvReady]);
 
@@ -67,11 +81,12 @@ export default function PranaHero() {
         const mv = mvRef.current;
         const orbit = mv.getCameraOrbit ? mv.getCameraOrbit() : null;
         if (orbit) {
-          const delta = e.key === "ArrowLeft" ? -5 : 5; // deg
+          const delta = e.key === "ArrowLeft" ? -10 : 10; // deg
           const thetaDeg = orbit.theta * (180 / Math.PI) + delta;
           const phiDeg = orbit.phi * (180 / Math.PI);
-          const radiusPct = Math.round(orbit.radius * 100);
-          mv.cameraOrbit = `${thetaDeg.toFixed(1)}deg ${phiDeg.toFixed(1)}deg ${radiusPct}%`;
+          const orbitString = `${thetaDeg.toFixed(1)}deg ${phiDeg.toFixed(1)}deg ${orbit.radius.toFixed(2)}m`;
+          mv.cameraOrbit = orbitString;
+          mv.jumpCameraToGoal?.();
         }
       } catch {}
     }
@@ -101,7 +116,7 @@ export default function PranaHero() {
       />
 
       {/* Coin block */}
-      <div className="relative pt-16 sm:pt-24 flex items-center justify-center">
+      <div className="relative pt-8 flex items-center justify-center">
         <div
           role="img"
           aria-label="Interactive PRANA coin. Drag or use arrow keys to control."
@@ -114,14 +129,16 @@ export default function PranaHero() {
               ref={mvRef}
               src={COIN_MODEL_URL}
               poster="/prana-coin-fallback.png"
+              camera-orbit={CAMERA_ORBIT_ATTR}
+              min-camera-orbit={CAMERA_RADIUS_CLAMP}
+              max-camera-orbit={CAMERA_RADIUS_CLAMP}
               camera-controls
-              disable-zoom
               interaction-prompt="none"
               exposure="1"
               shadow-intensity="0"
               auto-rotate
-              auto-rotate-delay="6000"
-              rotation-per-second="1.2deg" /* ~0.2 rpm */
+              auto-rotate-delay="0"
+              rotation-per-second="10deg"
               style={coinStyle}
             />
           ) : (
