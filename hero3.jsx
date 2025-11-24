@@ -143,7 +143,7 @@ export default function PranaHero() {
   // Sizes
   const coinStyle = useMemo(() => ({
     width: "min(92vw, 880px)",
-    height: "56vh",
+    height: "55vh",
   }), []);
 
   return (
@@ -164,7 +164,7 @@ export default function PranaHero() {
       />
 
       {/* Coin block */}
-      <div className="relative pt-8 flex items-center justify-center">
+      <div className="relative flex items-center justify-center">
         <div
           role="img"
           aria-label="Interactive PRANA coin. Drag or use arrow keys to control."
@@ -203,11 +203,14 @@ export default function PranaHero() {
 
       {/* Copy & CTAs */}
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-8">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-wide">
-          Định Giá Bằng Bitcoin - Vận Hành Bằng Trí Tuệ
-        </h1>
-        <p className="mt-4 text-[15px] sm:text-base text-white/70">
-          PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm.
+        <h1 className="text-4xl font-medium tracking-wide">
+          Định Giá Bằng Bitcoin
+        </h1><br />
+        <h2 className="text-4xl font-medium tracking-wide">
+          Vận Hành Bằng Trí Tuệ
+        </h2>
+        <p className="mt-6 text-[15px] text-white/70">
+          PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm
         </p>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-4 sm:justify-center">
@@ -215,7 +218,7 @@ export default function PranaHero() {
             href="#trade"
             className="inline-flex justify-center rounded-2xl px-6 py-3 bg-[#F5D27A] text-black font-semibold shadow-[0_0_28px_rgba(245,210,122,.28)] hover:shadow-[0_0_40px_rgba(245,210,122,.38)] active:scale-[0.99] transition"
           >
-            Trade WBTC ↔ PRANA
+            Trade PRANA
           </a>
           <a
             href="#stake"
@@ -228,8 +231,6 @@ export default function PranaHero() {
         {/* Optional stat chips (non-interactive placeholders / wire-ready) */}
         <div className="mt-6 flex flex-wrap justify-center gap-2 opacity-80 select-none">
           <span className="rounded-full border border-white/10 px-3 py-1 text-[12px] text-white/70">Price (sats): —</span>
-          <span className="rounded-full border border-white/10 px-3 py-1 text-[12px] text-white/70">Liquidity ratio: —</span>
-          <span className="rounded-full border border-white/10 px-3 py-1 text-[12px] text-white/70">24h volume: —</span>
         </div>
       </div>
 
