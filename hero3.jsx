@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
-const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "130%" };
+const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };
 const CAMERA_ORBIT_ATTR = `${CAMERA_ORBIT_BASE.theta}deg ${CAMERA_ORBIT_BASE.phi}deg ${CAMERA_ORBIT_BASE.radius}`;
 const CAMERA_RADIUS_CLAMP = `auto auto ${CAMERA_ORBIT_BASE.radius}`;
 
-/**
- * On-Chain Mandala — PRANA hero section
- * React + Tailwind, dark-first, mobile-native.
- *
- * This component auto-loads <model-viewer> from a CDN so you can preview
- * without editing <head>. Replace href/src URLs and CTA links as needed.
- */
+// Parse "xdeg ydeg zdeg" orientation into degrees
+const parseOrientationDeg = (orientation) => {
+  const matches = Array.from(String(orientation || "").matchAll(/(-?\d+(?:\.\d+)?)deg/gi));
+  if (matches.length >= 3) return matches.slice(0, 3).map((m) => parseFloat(m[1]));
+  return [0, 0, 0];
+};
+
+const formatOrientationDeg = (x, y, z) => `${x}deg ${y}deg ${z}deg`;
 
 // Hook: load the <model-viewer> web component
 function useModelViewer() {
@@ -38,6 +39,8 @@ export default function PranaHero() {
   const mvReady = useModelViewer();
   const heroRef = useRef(null);
   const mvRef = useRef(null);
+  const spinFrameRef = useRef(null);
+  const [spinning, setSpinning] = useState(false);
 
   // Ensure default orbit after model load
   useEffect(() => {
@@ -92,6 +95,51 @@ export default function PranaHero() {
     }
   };
 
+  // Click-to-spin: rotate the coin 360° at 30°/s
+  const spinCoin = () => {
+    const mv = mvRef.current;
+    if (!mv || spinning) return;
+
+    const SPIN_SPEED_DEG_PER_S = 180;
+    const durationMs = (360 / SPIN_SPEED_DEG_PER_S) * 1000; // 12s
+    const [xDeg, yDeg, zDeg] = parseOrientationDeg(mv.getAttribute("orientation") || mv.orientation || "0deg 0deg 0deg");
+    const targetYDeg = yDeg + 360;
+    const autoWasOn = mv.autoRotate;
+    const hadCameraControls = mv.hasAttribute("camera-controls");
+
+    mv.autoRotate = false;
+    if (hadCameraControls) mv.removeAttribute("camera-controls");
+    setSpinning(true);
+
+    const start = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - start) / durationMs, 1);
+      const currentY = yDeg + (targetYDeg - yDeg) * progress;
+      mv.orientation = formatOrientationDeg(xDeg, currentY, zDeg);
+      if (progress < 1) {
+        spinFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        mv.orientation = formatOrientationDeg(xDeg, targetYDeg, zDeg);
+        if (autoWasOn) mv.autoRotate = true;
+        if (hadCameraControls) mv.setAttribute("camera-controls", "");
+        spinFrameRef.current = null;
+        setSpinning(false);
+      }
+    };
+
+    spinFrameRef.current = requestAnimationFrame(animate);
+  };
+
+  // Cleanup pending animation if unmounted
+  useEffect(() => () => {
+    if (spinFrameRef.current) cancelAnimationFrame(spinFrameRef.current);
+    const mv = mvRef.current;
+    if (mv) {
+      mv.autoRotate = true;
+      mv.setAttribute("camera-controls", "");
+    }
+  }, []);
+
   // Sizes
   const coinStyle = useMemo(() => ({
     width: "min(92vw, 880px)",
@@ -122,6 +170,7 @@ export default function PranaHero() {
           aria-label="Interactive PRANA coin. Drag or use arrow keys to control."
           tabIndex={0}
           onKeyDown={onKeyDown}
+          onClick={spinCoin}
           className="outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60 rounded-2xl"
         >
           {mvReady ? (
