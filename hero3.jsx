@@ -95,7 +95,7 @@ export default function PranaHero() {
     }
   };
 
-  // Click-to-spin: rotate the coin 360° at 30°/s
+  // Click-to-spin
   const spinCoin = () => {
     const mv = mvRef.current;
     if (!mv || spinning) return;
