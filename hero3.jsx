@@ -100,7 +100,7 @@ export default function PranaHero() {
     const mv = mvRef.current;
     if (!mv || spinning) return;
 
-    const SPIN_SPEED_DEG_PER_S = 180;
+    const SPIN_SPEED_DEG_PER_S = 360;
     const durationMs = (360 / SPIN_SPEED_DEG_PER_S) * 1000; // 12s
     const [xDeg, yDeg, zDeg] = parseOrientationDeg(mv.getAttribute("orientation") || mv.orientation || "0deg 0deg 0deg");
     const targetYDeg = yDeg + 360;
@@ -149,7 +149,7 @@ export default function PranaHero() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-[92vh] overflow-hidden bg-gradient-to-b from-[#050116] via-[#060323] to-[#02010b] text-white pb-[env(safe-area-inset-bottom)]"
+      className="relative min-h-[92vh] overflow-hidden text-white pb-[env(safe-area-inset-bottom)]"
       aria-label="PRANA hero section with interactive coin"
     >
 
@@ -226,11 +226,6 @@ export default function PranaHero() {
           >
             Stake PRANA
           </a>
-        </div>
-
-        {/* Optional stat chips (non-interactive placeholders / wire-ready) */}
-        <div className="mt-6 flex flex-wrap justify-center gap-2 opacity-80 select-none">
-          <span className="rounded-full border border-white/10 px-3 py-1 text-[12px] text-white/70">Price (sats): —</span>
         </div>
       </div>
 

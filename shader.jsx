@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from "react";
 
-function NeuralShaderBackground({
+export function NeuralShaderBackground({
   className = "",
   opacity = 1,       // CSS layer opacity; keep at 1 for solid dark BG
   speed = 0.15,      // 1.0 = original; 0.5 = half speed vibration
@@ -18,6 +18,8 @@ function NeuralShaderBackground({
   brightness = 0.6,  // overall multiplier (0.6 ≈ fairly dark)
   gamma = 1.0,       // tone curve (>1 darkens mids, <1 brightens)
   spin = 0.2,        // radians/second; positive = CCW rotation of the whole field
+  iterations = 70,   // fragment loop count; lower = faster
+  maxDpr = 1.25,     // clamp device pixel ratio; lower = faster
 }) {
   const canvasRef = useRef(null);
   const rafRef = useRef(0);
@@ -48,6 +50,8 @@ function NeuralShaderBackground({
     void main(){ gl_Position = vec4(verts[gl_VertexID], 0.0, 1.0); }
     `;
 
+    const iterCount = Math.max(20, Math.min(180, iterations)); // safety clamp
+
     // Fragment shader: XorDev "Neural" (182b) adapted with uniforms for tunability + spin.
     // We expose: speed (s), flow (kFlow), brightness (kBright), gamma (kGamma), spin (kSpin).
     const frag = `#version 300 es
@@ -71,8 +75,8 @@ function NeuralShaderBackground({
 
       vec3 p, v; vec4 o = vec4(0.0);
       float z = 0.0, d = 0.0, l = 0.0;
-      // ITERATIONS: increase for finer detail (GPU cost). 100 is a good balance.
-      for(float i=0.0; i<100.0; i++){
+      // ITERATIONS: increase for finer detail (GPU cost). Kept lean for perf.
+      for(float i=0.0; i<${iterCount.toFixed(1)}; i++){
         // Use rotated base to step through the field
         p = z * base;
         p.z += 1.0;
@@ -127,7 +131,7 @@ function NeuralShaderBackground({
 
     // Handle device pixel ratio + viewport
     const resize = () => {
-      const dpr = Math.min(2, window.devicePixelRatio || 1); // cap DPR to keep GPU happy
+      const dpr = Math.max(1, Math.min(maxDpr, window.devicePixelRatio || 1)); // cap DPR to keep GPU happy
       const w = canvas.clientWidth, h = canvas.clientHeight;
       canvas.width = Math.max(1, Math.floor(w * dpr));
       canvas.height = Math.max(1, Math.floor(h * dpr));
@@ -160,21 +164,14 @@ function NeuralShaderBackground({
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
     };
-  }, [speed, flow, brightness, gamma, spin]);
+  }, [speed, flow, brightness, gamma, spin, iterations, maxDpr]);
 
   return (
-    <div className={`absolute inset-0 pointer-events-none z-0 ${className}`} style={{ opacity }}>
-      {/* The canvas fills its parent; parent is absolutely positioned to cover the page */}
+    <div className={`fixed inset-0 pointer-events-none z-0 ${className}`} style={{ opacity }}>
+      {/* The canvas fills its parent; parent is positioned to cover the page */}
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );
 }
 
-export default function NeuralShader() {
-  return (
-    <main className="relative min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-slate-100">
-      {/* Opaque shader layer, dark & rotating. Adjust spin for global rotation. */}
-      <NeuralShaderBackground opacity={1} brightness={0.4} gamma={1.0} speed={0.1} flow={5.0} spin={0.05} />
-    </main>
-  );
-}
+export default NeuralShaderBackground;
