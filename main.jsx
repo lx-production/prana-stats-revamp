@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import PranaHero from "./hero3.jsx";
+import PranaStats from "./components/PranaStats";
 import NeuralShaderBackground from "./shader.jsx";
 
 function App() {
@@ -28,8 +29,9 @@ function App() {
         }}
       />
 
-      <main className="relative z-10 flex flex-col gap-24">
+      <main className="relative z-10 flex flex-col gap-12 pb-24">
         <PranaHero />
+        <PranaStats />
       </main>
     </div>
   );

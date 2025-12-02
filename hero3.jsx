@@ -94,16 +94,6 @@ export default function PranaHero() {
       aria-label="PRANA hero section with interactive coin"
     >
 
-      {/* Vignette overlay for edges */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px 1200px at 50% 50%, rgba(34,18,88,0.2) 25%, rgba(6,3,22,0.78) 100%)",
-        }}
-      />
-
       {/* Coin block */}
       <div className="relative flex items-center justify-center">
         <div
