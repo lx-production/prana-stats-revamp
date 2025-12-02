@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRANA Stats</title>
+
+    <!-- Metadata for SEO and Indexing -->
+    <meta name="description" content="Theo dõi dữ liệu PRANA trực tiếp trên blockchain. Cập nhật xu hướng, giao dịch gần đây và chiến lược phát triển dài hạn của PRANA – loại tiền mã hóa đầu tiên tại Việt Nam được định giá 100% bằng Bitcoin.">
+    <meta name="keywords" content="PRANA, PRANA Token, PRANA Việt Nam, Tiền mã hóa, Blockchain, Giá PRANA, Phân tích dữ liệu, PRANA Staking, PRANA Bonding, Bitcoin, Crypto Việt, Crypto tâm linh">
+    <meta name="author" content="Triết Học Đường Phố">
+    
+    <!-- Open Graph metadata for Facebook -->
+    <meta property="og:title" content="PRANA – Crypto định giá 100% bằng Bitcoin đầu tiên và duy nhất">
+    <meta property="og:description" content="Truy cập PRANA dashboard để xem dữ liệu mới nhất, giá cả, giao dịch, và chiến lược phát triển dài hạn. Hệ sinh thái PRANA hướng đến tương lai tài chính tâm linh.">
+    <meta property="og:image" content="https://prana.triethocduongpho.net/THDP.jpeg">
+    <meta property="og:url" content="https://prana.triethocduongpho.net">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PRANA – Theo dõi giá & dữ liệu mới nhất">
+    <meta name="twitter:description" content="Khám phá PRANA – token được định giá 100% bằng Bitcoin. Cập nhật dữ liệu blockchain, giao dịch, staking, bonding và các cơ chế tài chính độc đáo.">
+    <meta name="twitter:image" content="https://prana.triethocduongpho.net/THDP.jpeg">
+
+    <link rel="icon" href="favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="favicon-48x48.png" sizes="48x48" type="image/png">
+    <link rel="icon" href="favicon-64x64.png" sizes="64x64" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js" type="text/javascript"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/lightweight-charts.standalone.production.js"></script>
+    
+</head>
+<body>
+    <nav class="top-menu">
+        <div class="menu-container">
+            <div class="menu-item">
+                <a href="https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED" target="_blank">
+                    Mua bán PRANA
+                </a>
+                <small>
+                    <a href="https://www.youtube.com/watch?v=t84-6v5eSCQ&t=1s&pp=ygUJbXVhIHByYW5h" 
+                       target="_blank" 
+                       class="tutorial-link">
+                        (Hướng dẫn)
+                    </a>
+                </small>
+            </div>
+            <div class="menu-item">
+                <a href="https://prana.triethocduongpho.net/stake/" target="_blank">
+                    PRANA Staking
+                </a>
+                <small>Heo Đất PRANA 3.0</small>
+            </div>
+            <div class="menu-item">
+                <a href="https://prana.triethocduongpho.net/bond/" target="_blank">
+                    PRANA Bonding
+                </a>
+                <small>OTC Trading</small>
+            </div>
+        </div>
+    </nav>
+    <h1>PRANA Stats</h1>
+    <h3>The First and Only "100% priced in Bitcoin" crypto.</h3>
+    <h3 id="h3-2">The most OG coin from Vietnam.</h3>
+    <div id="protocol-staked-display" class="prana-card" style="margin-bottom: 20px; padding: 15px;">
+        <div class="flex" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <!-- First half - Total Value Staked -->
+            <div style="flex: 1; text-align: center;">
+                <h3 style="font-size: 16px; font-weight: bold;">Total Value Staked</h3>
+                <p id="totalStakedValue" style="margin-top: 0; font-size: 16px; font-weight: bold; color: rgb(4, 29, 248);">Loading...</p>
+                <p id="totalStakedValueVND" style="margin-top: 0; font-size: 14px; color: rgb(4, 29, 248);"></p>
+            </div>
+            <!-- Second half - Total Interest Needed -->
+            <div style="flex: 1; text-align: center;">
+                <h3 style="font-size: 16px; font-weight: bold;">Total Interest Committed</h3>
+                <p id="totalInterestNeeded" style="margin-top: 0; font-size: 16px; font-weight: bold; color: rgb(4, 29, 248);">Loading...</p>
+                <p id="totalInterestNeededVND" style="margin-top: 0; font-size: 14px; color: rgb(4, 29, 248);"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="bond-volume-display" class="prana-card" style="margin-bottom: 20px; padding: 15px;">
+        <div class="flex" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="flex: 1; text-align: center;">
+                <h3 style="font-size: 16px; font-weight: bold;">Total Buy Bond Volume</h3>
+                <p id="totalBuyBondPrana" style="margin-top: 0; font-size: 16px; font-weight: bold; color: rgb(4, 29, 248);">Loading...</p>
+                <p id="totalBuyBondVnd" style="margin-top: 0; font-size: 14px; color: rgb(4, 29, 248);">Loading...</p>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <h3 style="font-size: 16px; font-weight: bold;">Total Sell Bond Volume</h3>
+                <p id="totalSellBondPrana" style="margin-top: 0; font-size: 16px; font-weight: bold; color: rgb(4, 29, 248);">Loading...</p>
+                <p id="totalSellBondVnd" style="margin-top: 0; font-size: 14px; color: rgb(4, 29, 248);">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="prana-card">
+        <table style="margin-top: 10px; font-size: medium;">
+            <tr>
+                <td style="font-weight: bold;">Market Cap:</td>
+                <td id="marketCapDisplay">
+                    Calculating...
+                </td>
+            </tr>
+        </table>
+
+        <table id="percentage" style="font-size: 11px;">
+            <thead>
+                <tr>
+                    <th>1M</th>
+                    <th>3M</th>
+                    <th>6M</th>
+                    <th>1Y</th>
+                    <th>ATL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="change1m">...</td>
+                    <td id="change3m">...</td>
+                    <td id="change6m">...</td>
+                    <td id="change1y">...</td>
+                    <td id="changeATL">...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="converter-container">
+            <div class="converter-section">
+                <input type="text" id="pranaInput" min="0">
+                <span style="color: rgb(63, 63, 63);">PRANA</span>
+            </div>
+            <span class="converter-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="24" viewBox="0 0 28 24" fill="none" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="25" y2="12"/><polyline points="8 7 3 12 8 17"/><polyline points="20 7 25 12 20 17"/></svg></span>
+            <div class="converter-section">
+                <input type="text" id="otherInput" min="0">
+                <select id="currencySelect" style="color: rgb(63, 63, 63);">
+                    <option value="USD">USD</option>
+                    <option value="VND">VNĐ</option>
+                    <option value="SATs">SATs</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="prana-card">
+        <h2 id="PRANA-SAT">PRANA/SAT</h2>
+        <h6 id="btc-sat">(1 Bitcoin = 100.000.000 SAT)</h6>
+        <div id="chart-sats"></div>
+    </div>  
+    
+    <div class="prana-card">
+        <h2 id="PRANA-VND">PRANA/VNĐ</h2>
+        <div id="chart-fiat"></div>
+        <div class="button-container">
+            <button class="range-button" id="3M" onclick="loadFiatData('90_days', this)">3M</button>
+            <button class="range-button" id="6M" onclick="loadFiatData('180_days', this)">6M</button>
+            <button class="range-button" id="1Y" onclick="loadFiatData('365_days', this)">1Y</button>
+            <button class="range-button" onclick="loadFiatData('max', this)">ALL</button>
+        </div>
+        <div id="history">
+            <h3 id="in-his">Lịch sử</h3>
+            <p>1. <a href="https://drive.google.com/file/d/1DfMpOknKZRXlITFG0L9RFjHstDzyFNtS/view?usp=sharing" target="_blank">PRANA 1.0 launched</a>. Vốn hoá 1 tỷ VNĐ (cộng đồng bình chọn). THĐP cung cấp 100% thanh khoản (17.000 USDC + 3.900.000 PRANA), 39% vốn hóa.</p>
+            <p>2. Ngân quỹ bị hack. Hacker đã bán tổng cộng 3.324.010 PRANA lấy 15.923 USDC.</p>
+            <p>3. THĐP mua lại hết số PRANA này bằng tiền riêng, sau đó chuyển hết vào ví cứng bảo đảm không lặp lại.</p>
+            <p>4. PRANA nâng cấp lên 1.9, chuyển 100% thanh khoản USDC sang WBTC (Wrapped Bitcoin) vào ngày 20/4/24 (ngày Bitcoin halving). Giá 1 PRANA khoảng 22 SATs.</p>
+            <p>5. PRANA nâng cấp lên <a href="https://drive.google.com/file/d/1Ob0SDFTHoeiUrKrsrBugi7j34yOYA17j/view?usp=sharing" target="_blank">PRANA_v2</a>.</p>
+            <p>6. Ra mắt PRANA Staking - Heo Đất PRANA 3.0</p>
+            <p>7. Ra mắt PRANA Bonding - OTC Trading với giá ưu đãi.</p>
+        </div>
+    </div>
+
+    <div class="prana-card">
+        <div>
+            <h2 id="faqs">FAQ</h2>
+            <p>1. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">Tại sao chỉ mua bán PRANA được trên DEX? When CEX?</a></p>
+            <p>2. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">PRANA dành cho những ai, không dành cho những ai?</a></p>
+            <p>3. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">Như thế nào là "coin rác"? Tại sao PRANA không phải là "coin rác"?</a></p>
+            <p>4. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">Mua PRANA có phải là "cống hiến" cho THĐP founder?</a></p>
+            <p>5. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">Tại sao PRANA 2.0 được định giá exclusively với Bitcoin thay vì USD?</a></p>
+            <p>6. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">Tại sao việc PRANA 2.0 được định giá theo Bitcoin khiến giá có thể tăng MÃI MÃI?</a></p>
+            <p>7. <a href="https://content.triethocduongpho.net/prana-faqs-nhung-cau-hoi-pho-bien/" target="_blank">THĐP không kinh doanh buôn bán gì lấy đâu lợi nhuận để trả cho các nhà đầu tư?</a></p>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
