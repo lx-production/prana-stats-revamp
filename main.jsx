@@ -20,15 +20,6 @@ function App() {
         maxDpr={1.15}
       />
 
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(1000px 1000px at 50% 50%, rgba(19,10,48,0.35), transparent 65%)",
-        }}
-      />
-
       <main className="relative z-10 flex flex-col gap-12 pb-24">
         <PranaHero />
         <PranaStats />

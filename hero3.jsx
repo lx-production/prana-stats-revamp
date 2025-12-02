@@ -84,13 +84,13 @@ export default function PranaHero() {
   // Sizes
   const coinStyle = useMemo(() => ({
     width: "min(92vw, 880px)",
-    height: "55vh",
+    height: "60vh",
   }), []);
 
   return (
     <section
       ref={heroRef}
-      className="relative min-h-[92vh] overflow-hidden text-white pb-[env(safe-area-inset-bottom)]"
+      className="relative overflow-hidden text-white pb-[env(safe-area-inset-bottom)]"
       aria-label="PRANA hero section with interactive coin"
     >
 
@@ -144,7 +144,7 @@ export default function PranaHero() {
           PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm
         </p>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-4 sm:justify-center">
+        <div className="mt-12 flex flex-col sm:flex-row gap-4 sm:justify-center">
           <a
             href="https://prana.triethocduongpho.net/bond/" target="_blank"
             className="inline-flex justify-center rounded-2xl px-6 py-3 border border-white/12 text-white hover:border-white/24 transition"
@@ -165,9 +165,6 @@ export default function PranaHero() {
           </a>
         </div>
       </div>
-
-      {/* Safe-area friendly bottom spacer on tiny viewports */}
-      <div className="h-8 sm:h-12" />
     </section>
   );
 }
