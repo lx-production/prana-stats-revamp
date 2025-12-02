@@ -2,13 +2,30 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 
 // Configuration & Constants
-const POLYGON_RPC_URL = (window as any).CONFIG?.POLYGON_RPC_URL || 'https://polygon-rpc.com'; // Fallback
+const viteEnvPolygonRpcUrl =
+  typeof import.meta !== 'undefined'
+    ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_ALCHEMY_POLYGON_MAIN
+    : undefined;
+
+const envPolygonRpcUrl =
+  viteEnvPolygonRpcUrl ||
+  (typeof process !== 'undefined' ? process.env?.VITE_ALCHEMY_POLYGON_MAIN : undefined) ||
+  null;
+
+const POLYGON_RPC_URL =
+  envPolygonRpcUrl ||
+  (typeof window !== 'undefined' ? (window as any).CONFIG?.POLYGON_RPC_URL : null) ||
+  'https://polygon-rpc.com'; // Fallback
 const PRANA_TOKEN_ADDRESS = '0x928277e774F34272717EADFafC3fd802dAfBD0F5';
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const BUY_BOND_CONTRACT_ADDRESS = '0xA3adf8952982Eac60C0E43d6F93C66E7363c6Fe2';
 const SELL_BOND_CONTRACT_ADDRESS = '0x2A48215e134a9382e1eBAf96F2Fa47Ca1c2fa092';
 const PRANA_DECIMALS = 9;
 const ATL_PRICE = 0.0017; // From scripts.js
+const BOND_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_BOND_SCAN = 250;
+const BOND_REQUEST_DELAY_MS = 150;
+const RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 
 // ABIs
 const STAKING_CONTRACT_ABI = [
@@ -24,6 +41,70 @@ const BUY_BOND_CONTRACT_ABI = [
 const SELL_BOND_CONTRACT_ABI = [
   "function bonds(uint256) view returns (uint256 id, address owner, uint256 pranaAmount, uint256 wbtcAmount, uint256 maturityTime, uint256 creationTime, uint256 lastClaimTime, uint256 claimedWbtc, bool claimed)"
 ];
+
+type BondTotalsCacheEntry = {
+  total: bigint;
+  timestamp: number;
+};
+
+const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
+let bondRateLimitUntil = 0;
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const getErrorMessage = (error: unknown) => {
+  if (!error) return '';
+  if (typeof error === 'string') return error.toLowerCase();
+  if (typeof error === 'object') {
+    const errObj = error as Record<string, any>;
+    const nestedMessage = errObj?.error?.message;
+    const infoMessage = errObj?.info?.error?.message;
+    const message =
+      errObj.shortMessage ||
+      errObj.message ||
+      errObj.reason ||
+      nestedMessage ||
+      infoMessage ||
+      '';
+    if (typeof message === 'string') {
+      return message.toLowerCase();
+    }
+  }
+  return String(error).toLowerCase();
+};
+
+const isOutOfRangeError = (error: unknown) => {
+  const message = getErrorMessage(error);
+  const errObj = error as Record<string, any>;
+  const isCallException = errObj?.code === 'CALL_EXCEPTION';
+  const emptyData =
+    errObj?.data === '0x' ||
+    errObj?.info?.error?.data === '0x' ||
+    errObj?.error?.data === '0x';
+
+  return (
+    message.includes('out of bounds') ||
+    message.includes('out-of-bounds') ||
+    message.includes('index out of range') ||
+    message.includes('missing revert data') ||
+    message.includes('invalid array length') ||
+    message.includes('panic code 0x32') ||
+    message.includes('panic: 0x32') ||
+    message.includes('require(false)') ||
+    message.includes('no data present') ||
+    message.includes('execution reverted') && emptyData ||
+    isCallException && emptyData
+  );
+};
+
+const isRateLimitError = (error: unknown) => {
+  const message = getErrorMessage(error);
+  return (
+    message.includes('too many requests') ||
+    message.includes('rate limit') ||
+    message.includes('retry in')
+  );
+};
 
 export interface PranaStatsData {
   marketCapVnd: number | null;
@@ -69,35 +150,63 @@ export function usePranaStats() {
   }, []);
 
   // Helper to fetch total bond volume
-  const fetchTotalPranaViaContract = async (contract: ethers.Contract, pranaFieldName: string) => {
+  const fetchTotalPranaViaContract = async (
+    contract: ethers.Contract,
+    pranaFieldName: string,
+    cacheKey: string
+  ) => {
+    const now = Date.now();
+    const cached = bondTotalsCache.get(cacheKey);
+
+    if (cached && now - cached.timestamp < BOND_CACHE_TTL_MS) {
+      return cached.total;
+    }
+
+    if (now < bondRateLimitUntil) {
+      console.warn(`Skipping ${cacheKey} bond fetch, still in cooldown window.`);
+      return cached?.total ?? 0n;
+    }
+
     let total = 0n;
     let index = 1;
-    // Limit iterations to prevent infinite loops/timeouts in case of issues, 
-    // though script.js uses while(true). We'll use a safe upper bound or rely on error.
-    // Script.js relies on "out of bounds" error to stop.
-    while (true) {
+    let scanned = 0;
+
+    while (scanned < MAX_BOND_SCAN) {
       try {
         const bond = await contract.bonds(index);
-        // ethers v6 returns Result object which can be accessed by name if ABI defines it, 
-        // but our ABI string is simple. 
-        // Check if pranaFieldName exists in the result
-        const amount = bond[pranaFieldName]; // Access by name from the named return ABI
-        
-        if (amount !== undefined) {
-            total += BigInt(amount);
+        const amount = bond?.[pranaFieldName];
+
+        if (amount === undefined) {
+          break;
         }
-        index++;
+
+        const normalizedAmount =
+          typeof amount === 'bigint' ? amount : BigInt(amount.toString());
+
+        total += normalizedAmount;
+        index += 1;
+        scanned += 1;
+
+        if (BOND_REQUEST_DELAY_MS > 0) {
+          await delay(BOND_REQUEST_DELAY_MS);
+        }
       } catch (error: any) {
-        // Check for out of range error
-        const msg = error?.message?.toLowerCase() || '';
-        if (msg.includes('out of bounds') || msg.includes('invalid arrayify value') || msg.includes('revert') || msg.includes('panic')) {
-           break;
+        if (isOutOfRangeError(error)) {
+          break;
         }
-        // If it's another error, we might want to stop or retry, but for now break to be safe
-        console.warn("Error fetching bond at index " + index, error);
-        break; 
+
+        if (isRateLimitError(error)) {
+          console.warn(`RPC rate limit hit while reading ${cacheKey} bonds. Cooling down.`, error);
+          bondRateLimitUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+          return cached?.total ?? total;
+        }
+
+        console.warn(`Error fetching bond at index ${index}`, error);
+        return cached?.total ?? total;
       }
     }
+
+    bondTotalsCache.set(cacheKey, { total, timestamp: Date.now() });
     return total;
   };
 
@@ -164,8 +273,8 @@ export function usePranaStats() {
       const [stakedBalance, interestNeeded, buyBondTotal, sellBondTotal] = await Promise.all([
         safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
         safeContractCall(stakingContract.totalInterestNeeded(), 0n),
-        safeContractCall(fetchTotalPranaViaContract(buyBondContract, 'pranaAmount'), 0n),
-        safeContractCall(fetchTotalPranaViaContract(sellBondContract, 'pranaAmount'), 0n) 
+        safeContractCall(fetchTotalPranaViaContract(buyBondContract, 'pranaAmount', 'buy'), 0n),
+        safeContractCall(fetchTotalPranaViaContract(sellBondContract, 'pranaAmount', 'sell'), 0n) 
       ]);
 
       const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
@@ -233,4 +342,3 @@ export function usePranaStats() {
 
   return stats;
 }
-
