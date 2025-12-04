@@ -1,0 +1,9 @@
+import { BUY_BOND_ADDRESS as BUY_BOND_ADDRESS_V1, BUY_BOND_ABI as BUY_BOND_ABI_V1 } from './buyBondContractV1';
+import { BUY_BOND_ADDRESS as BUY_BOND_ADDRESS_V2, BUY_BOND_ABI as BUY_BOND_ABI_V2 } from './buyBondContractV2';
+
+export { BUY_BOND_ADDRESS_V1, BUY_BOND_ABI_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V2 };
+
+// set the default exports to use V2 contracts
+export const BUY_BOND_ADDRESS = BUY_BOND_ADDRESS_V2;
+export const BUY_BOND_ABI = BUY_BOND_ABI_V2;
+

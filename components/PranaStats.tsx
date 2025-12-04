@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
-import { usePranaStats, PranaStatsData } from '../hooks/usePranaStats';
+import { usePranaStats } from '../hooks/usePranaStats';
 
 // --- Helper Types & Utilities ---
 

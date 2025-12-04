@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
+import { BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContract';
+import { SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContract';
+import { BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bondVolumeFragments';
+import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 
 // Configuration & Constants
 const viteEnvPolygonRpcUrl =
@@ -16,16 +20,15 @@ const POLYGON_RPC_URL =
   envPolygonRpcUrl ||
   (typeof window !== 'undefined' ? (window as any).CONFIG?.POLYGON_RPC_URL : null) ||
   'https://polygon-rpc.com'; // Fallback
-const PRANA_TOKEN_ADDRESS = '0x928277e774F34272717EADFafC3fd802dAfBD0F5';
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
-const BUY_BOND_CONTRACT_ADDRESS = '0xA3adf8952982Eac60C0E43d6F93C66E7363c6Fe2';
-const SELL_BOND_CONTRACT_ADDRESS = '0x2A48215e134a9382e1eBAf96F2Fa47Ca1c2fa092';
-const PRANA_DECIMALS = 9;
 const ATL_PRICE = 0.0017; // From scripts.js
 const BOND_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_BOND_SCAN = 250;
 const BOND_REQUEST_DELAY_MS = 150;
 const RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
+
+const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
+const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
 // ABIs
 const STAKING_CONTRACT_ABI = [
@@ -34,14 +37,6 @@ const STAKING_CONTRACT_ABI = [
 const PRANA_TOKEN_ABI = [
   "function balanceOf(address owner) view returns (uint256)"
 ];
-const BUY_BOND_CONTRACT_ABI = [
-  "function bonds(uint256) view returns (uint256 id, address owner, uint256 wbtcAmount, uint256 pranaAmount, uint256 maturityTime, uint256 creationTime, uint256 lastClaimTime, uint256 claimedPrana, bool claimed)"
-];
-
-const SELL_BOND_CONTRACT_ABI = [
-  "function bonds(uint256) view returns (uint256 id, address owner, uint256 pranaAmount, uint256 wbtcAmount, uint256 maturityTime, uint256 creationTime, uint256 lastClaimTime, uint256 claimedWbtc, bool claimed)"
-];
-
 type BondTotalsCacheEntry = {
   total: bigint;
   timestamp: number;
@@ -260,24 +255,27 @@ export function usePranaStats() {
       const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply approx
 
       // 2. Blockchain Data
-      const tokenContract = new ethers.Contract(PRANA_TOKEN_ADDRESS, PRANA_TOKEN_ABI, provider);
+      const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
       const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
-      const buyBondContract = new ethers.Contract(BUY_BOND_CONTRACT_ADDRESS, BUY_BOND_CONTRACT_ABI, provider);
-      const sellBondContract = new ethers.Contract(SELL_BOND_CONTRACT_ADDRESS, SELL_BOND_CONTRACT_ABI, provider);
+      const buyBondContractV2 = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, provider);
+      const sellBondContractV2 = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_BONDS_ABI, provider);
 
       // Use try-catch for contract calls to avoid full failure if RPC is down
       const safeContractCall = async (call: Promise<any>, fallback: any) => {
           try { return await call; } catch (e) { console.warn("Contract call failed", e); return fallback; }
       };
 
-      const [stakedBalance, interestNeeded, buyBondTotal, sellBondTotal] = await Promise.all([
+      const [stakedBalance, interestNeeded, buyBondTotalRawV2, sellBondTotalRawV2] = await Promise.all([
         safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
         safeContractCall(stakingContract.totalInterestNeeded(), 0n),
-        safeContractCall(fetchTotalPranaViaContract(buyBondContract, 'pranaAmount', 'buy'), 0n),
-        safeContractCall(fetchTotalPranaViaContract(sellBondContract, 'pranaAmount', 'sell'), 0n) 
+        safeContractCall(fetchTotalPranaViaContract(buyBondContractV2, 'pranaAmount', 'buy-v2'), 0n),
+        safeContractCall(fetchTotalPranaViaContract(sellBondContractV2, 'pranaAmount', 'sell-v2'), 0n) 
       ]);
 
       const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
+
+      const totalBuyBondRaw = buyBondTotalRawV2 + BUY_BOND_V1_TOTAL_VOLUME_RAW;
+      const totalSellBondRaw = sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
 
       // Use mock values if contract calls failed (0n) to show something interesting for demo, 
       // OR keep 0 if we want to be strict. 
@@ -288,8 +286,8 @@ export function usePranaStats() {
       
       const stakedPrana = formatEther(stakedBalance) || 3500000; // Mock ~3.5M staked if 0/failed
       const interestPrana = formatEther(interestNeeded) || 500000; // Mock ~500k interest if 0/failed
-      const buyBondPranaVal = formatEther(buyBondTotal) || 120000; // Mock volume
-      const sellBondPranaVal = formatEther(sellBondTotal) || 80000; // Mock volume
+      const buyBondPranaVal = formatEther(totalBuyBondRaw) || 120000; // Mock volume
+      const sellBondPranaVal = formatEther(totalSellBondRaw) || 80000; // Mock volume
 
       // Calculate Changes
       // Script uses: ((newValue - oldValue) / oldValue) * 100
