@@ -7,8 +7,8 @@ import { usePranaStats } from '../hooks/usePranaStats';
 const formatCurrency = (value: number | null, currency: 'VND' | 'PRANA') => {
   if (value === null || value === undefined) return 'Loading...';
   return value.toLocaleString('en-US', {
-    minimumFractionDigits: currency === 'PRANA' ? 2 : 0,
-    maximumFractionDigits: currency === 'PRANA' ? 2 : 0,
+    minimumFractionDigits: currency === 'PRANA' ? 0 : 0,
+    maximumFractionDigits: currency === 'PRANA' ? 0 : 0,
   });
 };
 
@@ -108,6 +108,8 @@ export const PranaStats: React.FC = () => {
     marketCapVnd,
     stakedPrana,
     stakedVnd,
+    interestContractBalancePrana,
+    interestContractBalanceVnd,
     interestPrana,
     interestVnd,
     buyBondPrana,
@@ -151,6 +153,16 @@ export const PranaStats: React.FC = () => {
                 subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
                 icon={Lock}
                 delay={0.2}
+                loading={isLoading}
+            />
+
+            {/* Interest Contract Balance */}
+            <StatCard
+                title="Interest Contract Balance"
+                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
+                subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
+                icon={Activity}
+                delay={0.25}
                 loading={isLoading}
             />
 

@@ -4,6 +4,7 @@ import { BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContract';
 import { SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContract';
 import { BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bondVolumeFragments';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
+import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
 
 // Configuration & Constants
 const viteEnvPolygonRpcUrl =
@@ -105,6 +106,8 @@ export interface PranaStatsData {
   marketCapVnd: number | null;
   stakedPrana: number | null;
   stakedVnd: number | null;
+  interestContractBalancePrana: number | null;
+  interestContractBalanceVnd: number | null;
   interestPrana: number | null;
   interestVnd: number | null;
   buyBondPrana: number | null;
@@ -126,6 +129,8 @@ const initialStats: PranaStatsData = {
   marketCapVnd: null,
   stakedPrana: null,
   stakedVnd: null,
+  interestContractBalancePrana: null,
+  interestContractBalanceVnd: null,
   interestPrana: null,
   interestVnd: null,
   buyBondPrana: null,
@@ -265,8 +270,9 @@ export function usePranaStats() {
           try { return await call; } catch (e) { console.warn("Contract call failed", e); return fallback; }
       };
 
-      const [stakedBalance, interestNeeded, buyBondTotalRawV2, sellBondTotalRawV2] = await Promise.all([
+      const [stakedBalance, interestContractBalanceRaw, interestNeeded, buyBondTotalRawV2, sellBondTotalRawV2] = await Promise.all([
         safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
+        safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
         safeContractCall(stakingContract.totalInterestNeeded(), 0n),
         safeContractCall(fetchTotalPranaViaContract(buyBondContractV2, 'pranaAmount', 'buy-v2'), 0n),
         safeContractCall(fetchTotalPranaViaContract(sellBondContractV2, 'pranaAmount', 'sell-v2'), 0n) 
@@ -285,6 +291,7 @@ export function usePranaStats() {
       // but we can mock the percentages since those are historical stats and less critical for immediate safety.
       
       const stakedPrana = formatEther(stakedBalance) || 3500000; // Mock ~3.5M staked if 0/failed
+      const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
       const interestPrana = formatEther(interestNeeded) || 500000; // Mock ~500k interest if 0/failed
       const buyBondPranaVal = formatEther(totalBuyBondRaw) || 120000; // Mock volume
       const sellBondPranaVal = formatEther(totalSellBondRaw) || 80000; // Mock volume
@@ -309,6 +316,8 @@ export function usePranaStats() {
         marketCapVnd: marketCap,
         stakedPrana,
         stakedVnd: stakedPrana * pranaPriceVnd,
+        interestContractBalancePrana,
+        interestContractBalanceVnd: interestContractBalancePrana * pranaPriceVnd,
         interestPrana,
         interestVnd: interestPrana * pranaPriceVnd,
         buyBondPrana: buyBondPranaVal,
