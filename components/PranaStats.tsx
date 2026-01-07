@@ -117,7 +117,8 @@ export const PranaStats: React.FC = () => {
     sellBondPrana,
     sellBondVnd,
     priceChange,
-    isLoading
+    isLoading,
+    error
   } = usePranaStats();
 
   const performanceMetrics = useMemo(
@@ -133,6 +134,11 @@ export const PranaStats: React.FC = () => {
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        {error && (
+          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-950/20 px-4 py-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
         {/* Main Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
             {/* Market Cap - Highlighted */}
@@ -168,7 +174,7 @@ export const PranaStats: React.FC = () => {
 
             {/* Interest Committed */}
             <StatCard
-                title="Interest Committed"
+                title="Staking Interest Committed"
                 mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
                 subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
                 icon={Activity}
@@ -208,7 +214,6 @@ export const PranaStats: React.FC = () => {
                         <Activity className="w-4 h-4 text-cyan-400" />
                         Performance
                     </h3>
-                    <span className="text-xs text-gray-500 uppercase tracking-widest">Summary Strip</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

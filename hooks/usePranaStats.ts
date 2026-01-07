@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContract';
 import { SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContract';
-import { BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bondVolumeFragments';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
+import { fetchJsonDedupe } from '../utils/fetchJsonDedupe';
 
 // Configuration & Constants
 const viteEnvPolygonRpcUrl =
@@ -24,8 +24,6 @@ const POLYGON_RPC_URL =
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const ATL_PRICE = 0.0017; // From scripts.js
 const BOND_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const MAX_BOND_SCAN = 250;
-const BOND_REQUEST_DELAY_MS = 150;
 const RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
@@ -45,8 +43,6 @@ type BondTotalsCacheEntry = {
 
 const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
 let bondRateLimitUntil = 0;
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const getErrorMessage = (error: unknown) => {
   if (!error) return '';
@@ -102,6 +98,30 @@ const isRateLimitError = (error: unknown) => {
   );
 };
 
+type BondsV2Json = {
+  buy?: {
+    address?: string;
+    totals?: { pranaAmount?: string };
+  };
+  sell?: {
+    address?: string;
+    totals?: { pranaAmount?: string };
+  };
+};
+
+const getTotalsFromBondsV2Json = (data: unknown) => {
+  const parsed = data as BondsV2Json | null | undefined;
+  const buyPranaAmountStr = parsed?.buy?.totals?.pranaAmount;
+  const sellPranaAmountStr = parsed?.sell?.totals?.pranaAmount;
+
+  const buyBondTotalRawV2 =
+    typeof buyPranaAmountStr === 'string' ? BigInt(buyPranaAmountStr) : 0n;
+  const sellBondTotalRawV2 =
+    typeof sellPranaAmountStr === 'string' ? BigInt(sellPranaAmountStr) : 0n;
+
+  return { buyBondTotalRawV2, sellBondTotalRawV2 };
+};
+
 export interface PranaStatsData {
   marketCapVnd: number | null;
   stakedPrana: number | null;
@@ -125,6 +145,8 @@ export interface PranaStatsData {
   error: string | null;
 }
 
+type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
+
 const initialStats: PranaStatsData = {
   marketCapVnd: null,
   stakedPrana: null,
@@ -142,6 +164,145 @@ const initialStats: PranaStatsData = {
   error: null
 };
 
+let pranaStatsInflight: Promise<PranaStatsComputed> | null = null;
+
+const fetchPranaStatsComputed = async (
+  getProvider: () => ethers.JsonRpcProvider
+): Promise<PranaStatsComputed> => {
+  const provider = getProvider();
+
+  // Helper for safe JSON fetching
+  const fetchJsonSafe = async <T,>(url: string, fallback: T): Promise<T> => {
+    try {
+      return await fetchJsonDedupe<T>(url);
+    } catch (e) {
+      console.warn(`Failed to fetch ${url}`, e);
+      return fallback;
+    }
+  };
+
+  // 1. Fetch Prices & Rates (External APIs & Local JSON)
+  const fetchBtcPrices = async () => {
+    const json = await fetchJsonDedupe<any>(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd"
+    );
+    const usd = json?.bitcoin?.usd;
+    const vnd = json?.bitcoin?.vnd;
+    if (typeof usd !== 'number' || !Number.isFinite(usd)) {
+      throw new Error('Failed to fetch BTC price USD (CoinGecko): invalid response');
+    }
+    if (typeof vnd !== 'number' || !Number.isFinite(vnd)) {
+      throw new Error('Failed to fetch BTC price VND (CoinGecko): invalid response');
+    }
+    return { usd, vnd };
+  };
+
+  const [btcPrices, satsDataRes, d30, d90, d180, d365, bondsV2Json] = await Promise.all([
+    fetchBtcPrices(),
+    fetchJsonSafe<any[]>('/data_sats.json', []),
+    fetchJsonSafe<any[]>('/data_30_days.json', []),
+    fetchJsonSafe<any[]>('/data_90_days.json', []),
+    fetchJsonSafe<any[]>('/data_180_days.json', []),
+    fetchJsonSafe<any[]>('/data_365_days.json', []),
+    fetchJsonSafe<unknown>('/bonds_v2.json', null),
+  ]);
+
+  const btcPriceUsd = btcPrices.usd;
+  const btcPriceVnd = btcPrices.vnd;
+
+  // Fallback for sats data if missing (mock current price ~22 sats)
+  const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 22;
+
+  // Calculate PRANA Price in VND
+  // Formula: (SAT_PRICE / 1e8) * BTC_VND
+  const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
+
+  // Calculate Market Cap
+  const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply approx
+
+  // 2. Blockchain Data
+  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
+  const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
+
+  // Use try-catch for contract calls to avoid full failure if RPC is down
+  const safeContractCall = async (call: Promise<any>, fallback: any) => {
+    try {
+      return await call;
+    } catch (e) {
+      console.warn("Contract call failed", e);
+      return fallback;
+    }
+  };
+
+  const { buyBondTotalRawV2, sellBondTotalRawV2 } = getTotalsFromBondsV2Json(bondsV2Json);
+
+  // Cache the JSON totals so we don't re-parse / re-fetch repeatedly if this hook is re-mounted.
+  bondTotalsCache.set('buy-v2', { total: buyBondTotalRawV2, timestamp: Date.now() });
+  bondTotalsCache.set('sell-v2', { total: sellBondTotalRawV2, timestamp: Date.now() });
+
+  const [stakedBalance, interestContractBalanceRaw, interestNeeded] = await Promise.all([
+    safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
+    safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
+    safeContractCall(stakingContract.totalInterestNeeded(), 0n),
+  ]);
+
+  const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
+
+  const totalBuyBondRaw = buyBondTotalRawV2 + BUY_BOND_V1_TOTAL_VOLUME_RAW;
+  const totalSellBondRaw = sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
+
+  const stakedPrana = formatEther(stakedBalance) || 3500000; // Mock ~3.5M staked if 0/failed
+  const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
+  const interestPrana = formatEther(interestNeeded) || 500000; // Mock ~500k interest if 0/failed
+  const buyBondPranaVal = formatEther(totalBuyBondRaw) || 120000; // Mock volume
+  const sellBondPranaVal = formatEther(totalSellBondRaw) || 80000; // Mock volume
+
+  // Calculate Changes
+  // Script uses: ((newValue - oldValue) / oldValue) * 100
+  const calcChange = (oldP: number, newP: number) => oldP === 0 ? 0 : ((newP - oldP) / oldP) * 100;
+
+  // Calculate current price in USD for comparison
+  const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
+
+  // Mock historical data if missing to show green/red indicators
+  const getFirstPrice = (arr: any[], fallback: number) => arr && arr.length > 0 ? arr[0].p : fallback;
+
+  // Mock historical prices relative to current to show varied percentages
+  const mockM1 = latestSatPriceUsd * 0.95; // +5%
+  const mockM3 = latestSatPriceUsd * 0.80; // +25%
+  const mockM6 = latestSatPriceUsd * 1.20; // -16%
+  const mockY1 = latestSatPriceUsd * 0.50; // +100%
+
+  return {
+    marketCapVnd: marketCap,
+    stakedPrana,
+    stakedVnd: stakedPrana * pranaPriceVnd,
+    interestContractBalancePrana,
+    interestContractBalanceVnd: interestContractBalancePrana * pranaPriceVnd,
+    interestPrana,
+    interestVnd: interestPrana * pranaPriceVnd,
+    buyBondPrana: buyBondPranaVal,
+    buyBondVnd: buyBondPranaVal * pranaPriceVnd,
+    sellBondPrana: sellBondPranaVal,
+    sellBondVnd: sellBondPranaVal * pranaPriceVnd,
+    priceChange: {
+      m1: calcChange(getFirstPrice(d30, mockM1), latestSatPriceUsd),
+      m3: calcChange(getFirstPrice(d90, mockM3), latestSatPriceUsd),
+      m6: calcChange(getFirstPrice(d180, mockM6), latestSatPriceUsd),
+      y1: calcChange(getFirstPrice(d365, mockY1), latestSatPriceUsd),
+      atl: calcChange(ATL_PRICE, latestSatPriceUsd),
+    },
+  };
+};
+
+const fetchPranaStatsComputedDedupe = (getProvider: () => ethers.JsonRpcProvider) => {
+  if (pranaStatsInflight) return pranaStatsInflight;
+  pranaStatsInflight = fetchPranaStatsComputed(getProvider).finally(() => {
+    pranaStatsInflight = null;
+  });
+  return pranaStatsInflight;
+};
+
 export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialStats);
 
@@ -149,202 +310,27 @@ export function usePranaStats() {
     return new ethers.JsonRpcProvider(POLYGON_RPC_URL);
   }, []);
 
-  // Helper to fetch total bond volume
-  const fetchTotalPranaViaContract = async (
-    contract: ethers.Contract,
-    pranaFieldName: string,
-    cacheKey: string
-  ) => {
-    const now = Date.now();
-    const cached = bondTotalsCache.get(cacheKey);
-
-    if (cached && now - cached.timestamp < BOND_CACHE_TTL_MS) {
-      return cached.total;
-    }
-
-    if (now < bondRateLimitUntil) {
-      console.warn(`Skipping ${cacheKey} bond fetch, still in cooldown window.`);
-      return cached?.total ?? 0n;
-    }
-
-    let total = 0n;
-    let index = 1;
-    let scanned = 0;
-
-    while (scanned < MAX_BOND_SCAN) {
-      try {
-        const bond = await contract.bonds(index);
-        const amount = bond?.[pranaFieldName];
-
-        if (amount === undefined) {
-          break;
-        }
-
-        const normalizedAmount =
-          typeof amount === 'bigint' ? amount : BigInt(amount.toString());
-
-        total += normalizedAmount;
-        index += 1;
-        scanned += 1;
-
-        if (BOND_REQUEST_DELAY_MS > 0) {
-          await delay(BOND_REQUEST_DELAY_MS);
-        }
-      } catch (error: any) {
-        if (isOutOfRangeError(error)) {
-          break;
-        }
-
-        if (isRateLimitError(error)) {
-          console.warn(`RPC rate limit hit while reading ${cacheKey} bonds. Cooling down.`, error);
-          bondRateLimitUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
-          return cached?.total ?? total;
-        }
-
-        console.warn(`Error fetching bond at index ${index}`, error);
-        return cached?.total ?? total;
-      }
-    }
-
-    bondTotalsCache.set(cacheKey, { total, timestamp: Date.now() });
-    return total;
-  };
-
   const fetchData = useCallback(async () => {
     try {
-      const provider = getProvider();
-
-      // Helper for safe JSON fetching
-      const fetchJsonSafe = async (url: string) => {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) return [];
-          const text = await res.text();
-          try {
-             return JSON.parse(text);
-          } catch {
-             return [];
-          }
-        } catch (e) {
-          console.warn(`Failed to fetch ${url}`, e);
-          return [];
-        }
-      };
-      
-      // 1. Fetch Prices & Rates (External APIs & Local JSON)
-      const [btcPriceRes, usdVndRateRes, satsDataRes, d30, d90, d180, d365] = await Promise.all([
-        fetch("https://api.livecoinwatch.com/coins/single", {
-            method: "POST",
-            headers: { "content-type": "application/json", "x-api-key": "b4cbac14-f3d3-4024-9921-fb4286f0fe6c" },
-            body: JSON.stringify({ currency: "USD", code: "BTC", meta: false })
-        }).then(r => r.ok ? r.json() : { rate: 95000 }), // Fallback BTC price
-        fetch("https://api.exchangerate-api.com/v4/latest/USD").then(r => r.ok ? r.json() : { rates: { VND: 25400 } }), // Fallback USD/VND
-        fetchJsonSafe('/data_sats.json'),
-        fetchJsonSafe('/data_30_days.json'),
-        fetchJsonSafe('/data_90_days.json'),
-        fetchJsonSafe('/data_180_days.json'),
-        fetchJsonSafe('/data_365_days.json'),
-      ]);
-
-      const btcPrice = btcPriceRes?.rate || 95000;
-      const usdVndRate = parseFloat(usdVndRateRes?.rates?.VND || 25400);
-      
-      // Fallback for sats data if missing (mock current price ~22 sats)
-      const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 22;
-      
-      // Calculate PRANA Price in VND
-      // Formula: (SAT_PRICE / 1e8) * BTC_USD * USD_VND
-      const pranaPriceVnd = (latestSatPrice / 1e8) * btcPrice * usdVndRate;
-      
-      // Calculate Market Cap
-      const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply approx
-
-      // 2. Blockchain Data
-      const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
-      const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
-      const buyBondContractV2 = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, provider);
-      const sellBondContractV2 = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_BONDS_ABI, provider);
-
-      // Use try-catch for contract calls to avoid full failure if RPC is down
-      const safeContractCall = async (call: Promise<any>, fallback: any) => {
-          try { return await call; } catch (e) { console.warn("Contract call failed", e); return fallback; }
-      };
-
-      const [stakedBalance, interestContractBalanceRaw, interestNeeded, buyBondTotalRawV2, sellBondTotalRawV2] = await Promise.all([
-        safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
-        safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
-        safeContractCall(stakingContract.totalInterestNeeded(), 0n),
-        safeContractCall(fetchTotalPranaViaContract(buyBondContractV2, 'pranaAmount', 'buy-v2'), 0n),
-        safeContractCall(fetchTotalPranaViaContract(sellBondContractV2, 'pranaAmount', 'sell-v2'), 0n) 
-      ]);
-
-      const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
-
-      const totalBuyBondRaw = buyBondTotalRawV2 + BUY_BOND_V1_TOTAL_VOLUME_RAW;
-      const totalSellBondRaw = sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
-
-      // Use mock values if contract calls failed (0n) to show something interesting for demo, 
-      // OR keep 0 if we want to be strict. 
-      // User asked for "sensible default / mock values ... for demonstration".
-      // Let's simulate some activity if it's 0 (implying failure or empty).
-      // Actually, let's stick to the fetched values (0 if failed) for the main numbers to avoid lying about money,
-      // but we can mock the percentages since those are historical stats and less critical for immediate safety.
-      
-      const stakedPrana = formatEther(stakedBalance) || 3500000; // Mock ~3.5M staked if 0/failed
-      const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
-      const interestPrana = formatEther(interestNeeded) || 500000; // Mock ~500k interest if 0/failed
-      const buyBondPranaVal = formatEther(totalBuyBondRaw) || 120000; // Mock volume
-      const sellBondPranaVal = formatEther(totalSellBondRaw) || 80000; // Mock volume
-
-      // Calculate Changes
-      // Script uses: ((newValue - oldValue) / oldValue) * 100
-      const calcChange = (oldP: number, newP: number) => oldP === 0 ? 0 : ((newP - oldP) / oldP) * 100;
-      
-      // Calculate current price in USD for comparison
-      const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPrice;
-      
-      // Mock historical data if missing to show green/red indicators
-      const getFirstPrice = (arr: any[], fallback: number) => arr && arr.length > 0 ? arr[0].p : fallback;
-
-      // Mock historical prices relative to current to show varied percentages
-      const mockM1 = latestSatPriceUsd * 0.95; // +5%
-      const mockM3 = latestSatPriceUsd * 0.80; // +25%
-      const mockM6 = latestSatPriceUsd * 1.20; // -16%
-      const mockY1 = latestSatPriceUsd * 0.50; // +100%
-
+      const computed = await fetchPranaStatsComputedDedupe(getProvider);
       setStats({
-        marketCapVnd: marketCap,
-        stakedPrana,
-        stakedVnd: stakedPrana * pranaPriceVnd,
-        interestContractBalancePrana,
-        interestContractBalanceVnd: interestContractBalancePrana * pranaPriceVnd,
-        interestPrana,
-        interestVnd: interestPrana * pranaPriceVnd,
-        buyBondPrana: buyBondPranaVal,
-        buyBondVnd: buyBondPranaVal * pranaPriceVnd,
-        sellBondPrana: sellBondPranaVal,
-        sellBondVnd: sellBondPranaVal * pranaPriceVnd,
-        priceChange: {
-            m1: calcChange(getFirstPrice(d30, mockM1), latestSatPriceUsd),
-            m3: calcChange(getFirstPrice(d90, mockM3), latestSatPriceUsd),
-            m6: calcChange(getFirstPrice(d180, mockM6), latestSatPriceUsd),
-            y1: calcChange(getFirstPrice(d365, mockY1), latestSatPriceUsd),
-            atl: calcChange(ATL_PRICE, latestSatPriceUsd),
-        },
+        ...computed,
         isLoading: false,
-        error: null
+        error: null,
       });
 
     } catch (err: any) {
       console.error("Failed to fetch Prana stats:", err);
-      setStats(prev => ({ ...prev, isLoading: false, error: err.message }));
+      const message =
+        typeof err?.message === 'string' && err.message.trim().length > 0
+          ? err.message
+          : 'Failed to fetch Prana stats';
+      setStats(prev => ({ ...prev, isLoading: false, error: message }));
     }
   }, [getProvider]);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Update every 30s
-    return () => clearInterval(interval);
   }, [fetchData]);
 
   return stats;
