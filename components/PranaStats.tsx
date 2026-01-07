@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
+import { useBuyBondBalanceData } from '../hooks/useBuyBondBalanceData';
+import { useSellBondBalanceData } from '../hooks/useSellBondBalanceData';
 
 // --- Helper Types & Utilities ---
 
@@ -30,6 +32,7 @@ interface StatCardProps {
   className?: string;
   loading?: boolean;
   highlight?: boolean;
+  footer?: React.ReactNode;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -43,6 +46,7 @@ const StatCard: React.FC<StatCardProps> = ({
   loading = false,
   highlight = false,
   className = '',
+  footer,
 }) => {
   return (
     <div
@@ -98,6 +102,12 @@ const StatCard: React.FC<StatCardProps> = ({
             </div>
           )}
         </div>
+
+        {footer && (
+          <div className="mt-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -121,6 +131,9 @@ export const PranaStats: React.FC = () => {
     error
   } = usePranaStats();
 
+  const buyBondBalanceData = useBuyBondBalanceData();
+  const sellBondBalanceData = useSellBondBalanceData();
+
   const performanceMetrics = useMemo(
     () => [
       { label: '1 Month', value: priceChange.m1 },
@@ -131,6 +144,59 @@ export const PranaStats: React.FC = () => {
     ],
     [priceChange]
   );
+
+  const getMetric = (
+    metrics: Array<{ key: string; formattedValue: string }> | undefined,
+    key: string
+  ) => metrics?.find(metric => metric.key === key);
+
+  const buyBondBalanceMetric = getMetric(buyBondBalanceData.metrics, 'balance');
+  const buyBondCommittedMetric = getMetric(buyBondBalanceData.metrics, 'committed');
+  const sellBondBalanceMetric = getMetric(sellBondBalanceData.metrics, 'balance');
+  const sellBondCommittedMetric = getMetric(sellBondBalanceData.metrics, 'committed');
+
+  const BondBreakdown: React.FC<{
+    loading: boolean;
+    balanceValue?: string;
+    committedValue?: string;
+    unit: string;
+  }> = ({ loading, balanceValue, committedValue, unit }) => {
+    return (
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="flex items-start gap-2">
+          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
+          <div className="leading-tight">
+            <div className="text-gray-300 font-medium">Balance</div>
+            <div className="text-gray-400 font-mono">
+              {loading ? (
+                <div className="h-4 w-24 bg-white/10 animate-pulse rounded mt-1" />
+              ) : (
+                <>
+                  {balanceValue ?? '—'} {unit}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
+          <div className="leading-tight">
+            <div className="text-gray-300 font-medium">Committed</div>
+            <div className="text-gray-400 font-mono">
+              {loading ? (
+                <div className="h-4 w-24 bg-white/10 animate-pulse rounded mt-1" />
+              ) : (
+                <>
+                  {committedValue ?? '—'} {unit}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
@@ -191,6 +257,14 @@ export const PranaStats: React.FC = () => {
                 delay={0.4}
                 loading={isLoading}
                 className="col-span-1"
+                footer={
+                  <BondBreakdown
+                    loading={buyBondBalanceData.isLoading}
+                    balanceValue={buyBondBalanceMetric?.formattedValue}
+                    committedValue={buyBondCommittedMetric?.formattedValue}
+                    unit="PRANA"
+                  />
+                }
             />
 
              {/* Sell Bond Volume */}
@@ -202,6 +276,14 @@ export const PranaStats: React.FC = () => {
                 delay={0.5}
                 loading={isLoading}
                 className="col-span-1"
+                footer={
+                  <BondBreakdown
+                    loading={sellBondBalanceData.isLoading}
+                    balanceValue={sellBondBalanceMetric?.formattedValue}
+                    committedValue={sellBondCommittedMetric?.formattedValue}
+                    unit="SAT"
+                  />
+                }
             />
 
             {/* Performance Card (Consolidated Percentage Changes) */}
