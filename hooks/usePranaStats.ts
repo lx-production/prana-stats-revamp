@@ -4,7 +4,8 @@ import { BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContract';
 import { SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContract';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
-import { fetchJsonDedupe } from '../utils/fetchJsonDedupe';
+import { fetchJsonTtl } from '../utils/fetchJsonTtl';
+import { fetchJson } from '../utils/fetchJson';
 
 // Configuration & Constants
 const viteEnvPolygonRpcUrl =
@@ -101,18 +102,18 @@ const isRateLimitError = (error: unknown) => {
 type BondsV2Json = {
   buy?: {
     address?: string;
-    totals?: { pranaAmount?: string };
+    pranaAmount?: string;
   };
   sell?: {
     address?: string;
-    totals?: { pranaAmount?: string };
+    pranaAmount?: string;
   };
 };
 
 const getTotalsFromBondsV2Json = (data: unknown) => {
   const parsed = data as BondsV2Json | null | undefined;
-  const buyPranaAmountStr = parsed?.buy?.totals?.pranaAmount;
-  const sellPranaAmountStr = parsed?.sell?.totals?.pranaAmount;
+  const buyPranaAmountStr = parsed?.buy?.pranaAmount;
+  const sellPranaAmountStr = parsed?.sell?.pranaAmount;
 
   const buyBondTotalRawV2 =
     typeof buyPranaAmountStr === 'string' ? BigInt(buyPranaAmountStr) : 0n;
@@ -164,9 +165,7 @@ const initialStats: PranaStatsData = {
   error: null
 };
 
-let pranaStatsInflight: Promise<PranaStatsComputed> | null = null;
-
-const fetchPranaStatsComputed = async (
+const fetchPranaStats = async (
   getProvider: () => ethers.JsonRpcProvider
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
@@ -174,7 +173,7 @@ const fetchPranaStatsComputed = async (
   // Helper for safe JSON fetching
   const fetchJsonSafe = async <T,>(url: string, fallback: T): Promise<T> => {
     try {
-      return await fetchJsonDedupe<T>(url);
+      return await fetchJson<T>(url);
     } catch (e) {
       console.warn(`Failed to fetch ${url}`, e);
       return fallback;
@@ -183,8 +182,12 @@ const fetchPranaStatsComputed = async (
 
   // 1. Fetch Prices & Rates (External APIs & Local JSON)
   const fetchBtcPrices = async () => {
-    const json = await fetchJsonDedupe<any>(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd"
+    // Use the Vite dev proxy to avoid browser CORS:
+    // - dev: /api/coingecko/* is forwarded to https://api.coingecko.com/*
+    // - prod: you'll need a server/proxy (Vite proxy is dev-only)
+    const json = await fetchJsonTtl<any>(
+      "/api/coingecko/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd",
+      { ttlMs: 60_000 },
     );
     const usd = json?.bitcoin?.usd;
     const vnd = json?.bitcoin?.vnd;
@@ -295,14 +298,6 @@ const fetchPranaStatsComputed = async (
   };
 };
 
-const fetchPranaStatsComputedDedupe = (getProvider: () => ethers.JsonRpcProvider) => {
-  if (pranaStatsInflight) return pranaStatsInflight;
-  pranaStatsInflight = fetchPranaStatsComputed(getProvider).finally(() => {
-    pranaStatsInflight = null;
-  });
-  return pranaStatsInflight;
-};
-
 export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialStats);
 
@@ -312,7 +307,7 @@ export function usePranaStats() {
 
   const fetchData = useCallback(async () => {
     try {
-      const computed = await fetchPranaStatsComputedDedupe(getProvider);
+      const computed = await fetchPranaStats(getProvider);
       setStats({
         ...computed,
         isLoading: false,

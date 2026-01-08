@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 const DEFAULT_RPC_FALLBACK = 'https://polygon-rpc.com';
-const DEFAULT_MAX_BOND_SCAN = 10_000;
+const DEFAULT_MAX_BOND_SCAN = 20;
 const REQUEST_DELAY_MS = 0;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -144,58 +144,34 @@ function isRateLimitError(error) {
   );
 }
 
-function bigintToString(v) {
-  if (typeof v === 'bigint') return v.toString();
-  if (v === null || v === undefined) return null;
-  return v.toString?.() ?? String(v);
-}
-
-function normalizeBuyBond(bond) {
-  return {
-    id: bigintToString(bond.id),
-    owner: bond.owner,
-    wbtcAmount: bigintToString(bond.wbtcAmount),
-    pranaAmount: bigintToString(bond.pranaAmount),
-    maturityTime: bigintToString(bond.maturityTime),
-    creationTime: bigintToString(bond.creationTime),
-    lastClaimTime: bigintToString(bond.lastClaimTime),
-    claimedPrana: bigintToString(bond.claimedPrana),
-    claimed: Boolean(bond.claimed),
-  };
-}
-
-function normalizeSellBond(bond) {
-  return {
-    id: bigintToString(bond.id),
-    owner: bond.owner,
-    pranaAmount: bigintToString(bond.pranaAmount),
-    wbtcAmount: bigintToString(bond.wbtcAmount),
-    maturityTime: bigintToString(bond.maturityTime),
-    creationTime: bigintToString(bond.creationTime),
-    lastClaimTime: bigintToString(bond.lastClaimTime),
-    claimedWbtc: bigintToString(bond.claimedWbtc),
-    claimed: Boolean(bond.claimed),
-  };
-}
-
-function sumBigIntStrings(items, key) {
-  let total = 0n;
-  for (const item of items) {
-    const v = item?.[key];
-    if (typeof v === 'string' && v.length > 0) total += BigInt(v);
+function toBigInt(value) {
+  try {
+    if (typeof value === 'bigint') return value;
+    if (typeof value === 'number') return BigInt(value);
+    if (typeof value === 'string' && value.length > 0) return BigInt(value);
+    if (value && typeof value.toString === 'function') return BigInt(value.toString());
+  } catch {
+    // ignore parse failures and treat as 0
   }
-  return total.toString();
+  return 0n;
 }
 
-async function fetchAllBonds({ contract, normalize, label, maxScan }) {
-  const bonds = [];
+async function scanBondTotals({ contract, label, maxScan }) {
   let index = 1;
+  let count = 0;
+  let pranaTotal = 0n;
+  let wbtcTotal = 0n;
 
   while (index <= maxScan) {
     try {
       const bond = await contract.bonds(index);
       if (!bond) break;
-      bonds.push(normalize(bond));
+
+      // Ethers v6 returns BigInt for uint256; keep it generic just in case.
+      pranaTotal += toBigInt(bond?.pranaAmount);
+      wbtcTotal += toBigInt(bond?.wbtcAmount);
+
+      count += 1;
       index += 1;
       if (REQUEST_DELAY_MS > 0) await sleep(REQUEST_DELAY_MS);
     } catch (error) {
@@ -212,7 +188,11 @@ async function fetchAllBonds({ contract, normalize, label, maxScan }) {
     }
   }
 
-  return bonds;
+  return {
+    count,
+    pranaAmount: pranaTotal.toString(),
+    wbtcAmount: wbtcTotal.toString(),
+  };
 }
 
 async function main() {
@@ -228,16 +208,14 @@ async function main() {
   console.log('BUY_BOND_ADDRESS_V2:', BUY_BOND_ADDRESS_V2);
   console.log('SELL_BOND_ADDRESS_V2:', SELL_BOND_ADDRESS_V2);
 
-  const [buyBonds, sellBonds] = await Promise.all([
-    fetchAllBonds({
+  const [buyTotals, sellTotals] = await Promise.all([
+    scanBondTotals({
       contract: buyBondContract,
-      normalize: normalizeBuyBond,
       label: 'buy',
       maxScan: DEFAULT_MAX_BOND_SCAN,
     }),
-    fetchAllBonds({
+    scanBondTotals({
       contract: sellBondContract,
-      normalize: normalizeSellBond,
       label: 'sell',
       maxScan: DEFAULT_MAX_BOND_SCAN,
     }),
@@ -248,28 +226,22 @@ async function main() {
     rpcUrl: redactUrl(rpcUrl),
     buy: {
       address: BUY_BOND_ADDRESS_V2,
-      count: buyBonds.length,
-      totals: {
-        pranaAmount: sumBigIntStrings(buyBonds, 'pranaAmount'),
-        wbtcAmount: sumBigIntStrings(buyBonds, 'wbtcAmount'),
-      },
-      bonds: buyBonds,
+      pranaAmount: buyTotals.pranaAmount,
+      wbtcAmount: buyTotals.wbtcAmount,
     },
     sell: {
       address: SELL_BOND_ADDRESS_V2,
-      count: sellBonds.length,
-      totals: {
-        pranaAmount: sumBigIntStrings(sellBonds, 'pranaAmount'),
-        wbtcAmount: sumBigIntStrings(sellBonds, 'wbtcAmount'),
-      },
-      bonds: sellBonds,
+      pranaAmount: sellTotals.pranaAmount,
+      wbtcAmount: sellTotals.wbtcAmount,
     },
   };
 
-  const outPath = path.join(PROJECT_ROOT, 'public', 'bonds_v2.json');
+  const outPath = path.join(PROJECT_ROOT, 'bonds_v2.json');
   await fs.writeFile(outPath, JSON.stringify(out, null, 2), 'utf8');
 
-  console.log(`Wrote ${buyBonds.length} buy bonds and ${sellBonds.length} sell bonds to: ${outPath}`);
+  console.log(
+    `Wrote totals for ${buyTotals.count} buy bonds and ${sellTotals.count} sell bonds to: ${outPath}`,
+  );
 }
 
 main().catch((err) => {

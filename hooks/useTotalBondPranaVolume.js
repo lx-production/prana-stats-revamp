@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchJsonDedupe } from '../utils/fetchJsonDedupe';
+import { fetchJson } from '../utils/fetchJson';
 
 const safeLower = (value) => (typeof value === 'string' ? value.toLowerCase() : '');
 
@@ -27,11 +27,11 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
       setError(null);
 
       try {
-        const data = await fetchJsonDedupe('/bonds_v2.json');
+        const data = await fetchJson('/bonds_v2.json');
         const buyAddress = safeLower(data?.buy?.address);
         const sellAddress = safeLower(data?.sell?.address);
-        const buyTotalStr = data?.buy?.totals?.[fieldName];
-        const sellTotalStr = data?.sell?.totals?.[fieldName];
+        const buyTotalStr = data?.buy?.[fieldName];
+        const sellTotalStr = data?.sell?.[fieldName];
 
         const buyTotalRaw = typeof buyTotalStr === 'string' ? BigInt(buyTotalStr) : 0n;
         const sellTotalRaw = typeof sellTotalStr === 'string' ? BigInt(sellTotalStr) : 0n;

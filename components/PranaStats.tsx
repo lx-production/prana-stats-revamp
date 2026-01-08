@@ -207,17 +207,6 @@ export const PranaStats: React.FC = () => {
         )}
         {/* Main Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
-            {/* Market Cap - Highlighted */}
-            <StatCard
-                title="Market Cap"
-                mainValue={isLoading ? "Loading..." : `≈ ${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
-                subValue="Fully Diluted Valuation"
-                icon={DollarSign}
-                highlight={true}
-                delay={0.1}
-                loading={isLoading}
-            />
-
             {/* Staked Value */}
             <StatCard
                 title="Total Value Staked"
@@ -245,6 +234,17 @@ export const PranaStats: React.FC = () => {
                 subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
                 icon={Activity}
                 delay={0.3}
+                loading={isLoading}
+            />
+
+            {/* Market Cap - Highlighted */}
+            <StatCard
+                title="Market Cap"
+                mainValue={isLoading ? "Loading..." : `${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
+                subValue="Fully Diluted Valuation"
+                icon={DollarSign}
+                highlight={true}
+                delay={0.1}
                 loading={isLoading}
             />
 
