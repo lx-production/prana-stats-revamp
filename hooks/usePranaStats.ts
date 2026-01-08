@@ -1,32 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContract';
-import { SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContract';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
-import { fetchJsonTtl } from '../utils/fetchJsonTtl';
 import { fetchJson } from '../utils/fetchJson';
 
 // Configuration & Constants
-const viteEnvPolygonRpcUrl =
-  typeof import.meta !== 'undefined'
-    ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_ALCHEMY_POLYGON_MAIN
-    : undefined;
-
-const envPolygonRpcUrl =
-  viteEnvPolygonRpcUrl ||
-  (typeof process !== 'undefined' ? process.env?.VITE_ALCHEMY_POLYGON_MAIN : undefined) ||
-  null;
-
 const POLYGON_RPC_URL =
-  envPolygonRpcUrl ||
-  (typeof window !== 'undefined' ? (window as any).CONFIG?.POLYGON_RPC_URL : null) ||
+  (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_ALCHEMY_POLYGON_MAIN ??
+  (typeof process !== 'undefined' ? process.env?.VITE_ALCHEMY_POLYGON_MAIN : undefined) ??
+  (typeof window !== 'undefined' ? (window as any).CONFIG?.POLYGON_RPC_URL : undefined) ??
   'https://polygon-rpc.com'; // Fallback
+
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const ATL_PRICE = 0.0017; // From scripts.js
-const BOND_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
-
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
@@ -185,9 +171,8 @@ const fetchPranaStats = async (
     // Use the Vite dev proxy to avoid browser CORS:
     // - dev: /api/coingecko/* is forwarded to https://api.coingecko.com/*
     // - prod: you'll need a server/proxy (Vite proxy is dev-only)
-    const json = await fetchJsonTtl<any>(
+    const json = await fetchJson<any>(
       "/api/coingecko/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd",
-      { ttlMs: 60_000 },
     );
     const usd = json?.bitcoin?.usd;
     const vnd = json?.bitcoin?.vnd;
