@@ -66,8 +66,8 @@ const StatCard: React.FC<StatCardProps> = ({
       {/* Glow Effect */}
       <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
       
-      <div className="p-5 flex flex-col h-full justify-between relative z-10">
-        <div className="flex justify-between items-start mb-3">
+      <div className="p-5 flex flex-col h-full relative z-10">
+        <div className="flex justify-between items-start mb-4">
           <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
             {Icon && <Icon className="w-4 h-4 text-cyan-400" />}
             {title}
@@ -104,7 +104,7 @@ const StatCard: React.FC<StatCardProps> = ({
         </div>
 
         {footer && (
-          <div className="mt-4">
+          <div className="mt-auto pt-4">
             {footer}
           </div>
         )}
