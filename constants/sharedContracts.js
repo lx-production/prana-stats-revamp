@@ -9,38 +9,6 @@ export const WBTC_DECIMALS = 8;
 
 export const WBTC_PRANA_V3_POOL = '0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED';
 
-// Standard Uniswap V3 Pool slot0 function ABI
-export const V3_POOL_SLOT0_ABI = [
-  {
-    "inputs": [],
-    "name": "slot0",
-    "outputs": [
-      { "internalType": "uint160", "name": "sqrtPriceX96", "type": "uint160" },
-      { "internalType": "int24", "name": "tick", "type": "int24" },
-      { "internalType": "uint16", "name": "observationIndex", "type": "uint16" },
-      { "internalType": "uint16", "name": "observationCardinality", "type": "uint16" },
-      { "internalType": "uint16", "name": "observationCardinalityNext", "type": "uint16" },
-      { "internalType": "uint8", "name": "feeProtocol", "type": "uint8" },
-      { "internalType": "bool", "name": "unlocked", "type": "bool" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
-
-// Uniswap V3 Pool liquidity function ABI
-export const V3_POOL_LIQUIDITY_ABI = [
-  {
-    "inputs": [],
-    "name": "liquidity",
-    "outputs": [
-      { "internalType": "uint128", "name": "", "type": "uint128" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
-
 // Contract ABIs - Using standard JSON format instead of human-readable format
 export const PRANA_ABI = [
   // ERC20 standard functions
