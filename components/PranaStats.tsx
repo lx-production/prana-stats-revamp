@@ -3,37 +3,10 @@ import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3 }
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useBuyBondBalanceData } from '../hooks/useBuyBondBalanceData';
 import { useSellBondBalanceData } from '../hooks/useSellBondBalanceData';
-
-// --- Helper Types & Utilities ---
-
-const formatCurrency = (value: number | null, currency: 'VND' | 'PRANA') => {
-  if (value === null || value === undefined) return 'Loading...';
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: currency === 'PRANA' ? 0 : 0,
-    maximumFractionDigits: currency === 'PRANA' ? 0 : 0,
-  });
-};
-
-const formatPercent = (value: number) => {
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(0)}%`;
-};
+import { StatCardProps } from '../types';
+import { formatCurrency, formatPercent } from '../utils/formatters';
 
 // --- Components ---
-
-interface StatCardProps {
-  title: string;
-  mainValue: string | number;
-  subValue?: string;
-  icon?: React.ElementType;
-  trend?: number; // Percentage change for trend indicator
-  trendLabel?: string;
-  delay?: number;
-  className?: string;
-  loading?: boolean;
-  highlight?: boolean;
-  footer?: React.ReactNode;
-}
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
@@ -207,38 +180,8 @@ export const PranaStats: React.FC = () => {
         )}
         {/* Main Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
-            {/* Staked Value */}
-            <StatCard
-                title="Total Value Staked"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(stakedPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
-                icon={Lock}
-                delay={0.2}
-                loading={isLoading}
-            />
-
-            {/* Interest Contract Balance */}
-            <StatCard
-                title="Interest Contract Balance"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
-                icon={Activity}
-                delay={0.25}
-                loading={isLoading}
-            />
-
-            {/* Interest Committed */}
-            <StatCard
-                title="Staking Interest Committed"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
-                icon={Activity}
-                delay={0.3}
-                loading={isLoading}
-            />
-
-            {/* Market Cap - Highlighted */}
-            <StatCard
+          {/* Market Cap - Highlighted */}
+          <StatCard
                 title="Market Cap"
                 mainValue={isLoading ? "Loading..." : `${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
                 subValue="Fully Diluted Valuation"
@@ -284,6 +227,36 @@ export const PranaStats: React.FC = () => {
                     unit="SAT"
                   />
                 }
+            />
+
+            {/* Staked Value */}
+            <StatCard
+                title="Total Value Staked"
+                mainValue={isLoading ? "Loading..." : `${formatCurrency(stakedPrana, 'PRANA')} PRANA`}
+                subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
+                icon={Lock}
+                delay={0.2}
+                loading={isLoading}
+            />
+
+            {/* Interest Contract Balance */}
+            <StatCard
+                title="Interest Contract Balance"
+                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
+                subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
+                icon={Activity}
+                delay={0.25}
+                loading={isLoading}
+            />
+
+            {/* Interest Committed */}
+            <StatCard
+                title="Staking Interest Committed"
+                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
+                subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
+                icon={Activity}
+                delay={0.3}
+                loading={isLoading}
             />
 
             {/* Performance Card (Consolidated Percentage Changes) */}

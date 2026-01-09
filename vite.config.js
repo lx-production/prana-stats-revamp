@@ -69,16 +69,5 @@ function serveRootJsonFiles() {
 
 export default defineConfig({
   plugins: [react(), serveRootJsonFiles()],
-  server: {
-    proxy: {
-      // Dev-only proxy to avoid browser CORS when calling CoinGecko.
-      // Example: fetch('/api/coingecko/api/v3/simple/price?...')
-      '/api/coingecko': {
-        target: 'https://api.coingecko.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/coingecko/, ''),
-      },
-    },
-  },
 })
 

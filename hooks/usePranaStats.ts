@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
 import { fetchJson } from '../utils/fetchJson';
+import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
+import { BondTotalsCacheEntry, BondsV2Json, PranaStatsData, PranaStatsComputed } from '../types';
 
 // Configuration & Constants
 const POLYGON_RPC_URL =
@@ -16,123 +18,9 @@ const ATL_PRICE = 0.0017; // From scripts.js
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
-// ABIs
-const STAKING_CONTRACT_ABI = [
-  "function totalInterestNeeded() view returns (uint256)"
-];
-const PRANA_TOKEN_ABI = [
-  "function balanceOf(address owner) view returns (uint256)"
-];
-type BondTotalsCacheEntry = {
-  total: bigint;
-  timestamp: number;
-};
-
+const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
+const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
-let bondRateLimitUntil = 0;
-
-const getErrorMessage = (error: unknown) => {
-  if (!error) return '';
-  if (typeof error === 'string') return error.toLowerCase();
-  if (typeof error === 'object') {
-    const errObj = error as Record<string, any>;
-    const nestedMessage = errObj?.error?.message;
-    const infoMessage = errObj?.info?.error?.message;
-    const message =
-      errObj.shortMessage ||
-      errObj.message ||
-      errObj.reason ||
-      nestedMessage ||
-      infoMessage ||
-      '';
-    if (typeof message === 'string') {
-      return message.toLowerCase();
-    }
-  }
-  return String(error).toLowerCase();
-};
-
-const isOutOfRangeError = (error: unknown) => {
-  const message = getErrorMessage(error);
-  const errObj = error as Record<string, any>;
-  const isCallException = errObj?.code === 'CALL_EXCEPTION';
-  const emptyData =
-    errObj?.data === '0x' ||
-    errObj?.info?.error?.data === '0x' ||
-    errObj?.error?.data === '0x';
-
-  return (
-    message.includes('out of bounds') ||
-    message.includes('out-of-bounds') ||
-    message.includes('index out of range') ||
-    message.includes('missing revert data') ||
-    message.includes('invalid array length') ||
-    message.includes('panic code 0x32') ||
-    message.includes('panic: 0x32') ||
-    message.includes('require(false)') ||
-    message.includes('no data present') ||
-    message.includes('execution reverted') && emptyData ||
-    isCallException && emptyData
-  );
-};
-
-const isRateLimitError = (error: unknown) => {
-  const message = getErrorMessage(error);
-  return (
-    message.includes('too many requests') ||
-    message.includes('rate limit') ||
-    message.includes('retry in')
-  );
-};
-
-type BondsV2Json = {
-  buy?: {
-    address?: string;
-    pranaAmount?: string;
-  };
-  sell?: {
-    address?: string;
-    pranaAmount?: string;
-  };
-};
-
-const getTotalsFromBondsV2Json = (data: unknown) => {
-  const parsed = data as BondsV2Json | null | undefined;
-  const buyPranaAmountStr = parsed?.buy?.pranaAmount;
-  const sellPranaAmountStr = parsed?.sell?.pranaAmount;
-
-  const buyBondTotalRawV2 =
-    typeof buyPranaAmountStr === 'string' ? BigInt(buyPranaAmountStr) : 0n;
-  const sellBondTotalRawV2 =
-    typeof sellPranaAmountStr === 'string' ? BigInt(sellPranaAmountStr) : 0n;
-
-  return { buyBondTotalRawV2, sellBondTotalRawV2 };
-};
-
-export interface PranaStatsData {
-  marketCapVnd: number | null;
-  stakedPrana: number | null;
-  stakedVnd: number | null;
-  interestContractBalancePrana: number | null;
-  interestContractBalanceVnd: number | null;
-  interestPrana: number | null;
-  interestVnd: number | null;
-  buyBondPrana: number | null;
-  buyBondVnd: number | null;
-  sellBondPrana: number | null;
-  sellBondVnd: number | null;
-  priceChange: {
-    m1: number;
-    m3: number;
-    m6: number;
-    y1: number;
-    atl: number;
-  };
-  isLoading: boolean;
-  error: string | null;
-}
-
-type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
 
 const initialStats: PranaStatsData = {
   marketCapVnd: null,
@@ -168,11 +56,8 @@ const fetchPranaStats = async (
 
   // 1. Fetch Prices & Rates (External APIs & Local JSON)
   const fetchBtcPrices = async () => {
-    // Use the Vite dev proxy to avoid browser CORS:
-    // - dev: /api/coingecko/* is forwarded to https://api.coingecko.com/*
-    // - prod: you'll need a server/proxy (Vite proxy is dev-only)
     const json = await fetchJson<any>(
-      "/api/coingecko/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd",
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd",
     );
     const usd = json?.bitcoin?.usd;
     const vnd = json?.bitcoin?.vnd;
@@ -198,17 +83,10 @@ const fetchPranaStats = async (
   const btcPriceUsd = btcPrices.usd;
   const btcPriceVnd = btcPrices.vnd;
 
-  // Fallback for sats data if missing (mock current price ~22 sats)
-  const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 22;
-
-  // Calculate PRANA Price in VND
-  // Formula: (SAT_PRICE / 1e8) * BTC_VND
+  // Fallback for sats data if missing (mock current price ~60 sats)
+  const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 60;
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
-
-  // Calculate Market Cap
-  const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply approx
-
-  // 2. Blockchain Data
+  const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
 
@@ -239,11 +117,11 @@ const fetchPranaStats = async (
   const totalBuyBondRaw = buyBondTotalRawV2 + BUY_BOND_V1_TOTAL_VOLUME_RAW;
   const totalSellBondRaw = sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
 
-  const stakedPrana = formatEther(stakedBalance) || 3500000; // Mock ~3.5M staked if 0/failed
+  const stakedPrana = formatEther(stakedBalance) || 1000000; // Mock ~1M staked if 0/failed
   const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
-  const interestPrana = formatEther(interestNeeded) || 500000; // Mock ~500k interest if 0/failed
-  const buyBondPranaVal = formatEther(totalBuyBondRaw) || 120000; // Mock volume
-  const sellBondPranaVal = formatEther(totalSellBondRaw) || 80000; // Mock volume
+  const interestPrana = formatEther(interestNeeded) || 80000; // Mock ~80k interest if 0/failed
+  const buyBondPranaVal = formatEther(totalBuyBondRaw) || 150000; // Mock volume
+  const sellBondPranaVal = formatEther(totalSellBondRaw) || 335000; // Mock volume
 
   // Calculate Changes
   // Script uses: ((newValue - oldValue) / oldValue) * 100
@@ -252,7 +130,6 @@ const fetchPranaStats = async (
   // Calculate current price in USD for comparison
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
 
-  // Mock historical data if missing to show green/red indicators
   const getFirstPrice = (arr: any[], fallback: number) => arr && arr.length > 0 ? arr[0].p : fallback;
 
   // Mock historical prices relative to current to show varied percentages
