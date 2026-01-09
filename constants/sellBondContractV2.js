@@ -1,2 +1,0 @@
-export const SELL_BOND_ADDRESS = '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71';
-

@@ -4,9 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { BUY_BOND_ADDRESS as BUY_BOND_ADDRESS_V2 } from '../constants/buyBondContractV2.js';
-import { SELL_BOND_ADDRESS as SELL_BOND_ADDRESS_V2 } from '../constants/sellBondContractV2.js';
-import { BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bondVolumeFragments.js';
+import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

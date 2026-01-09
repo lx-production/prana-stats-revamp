@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { BUY_BOND_ADDRESS, BUY_BOND_ABI } from '../constants/buyBondContract';
+import { BUY_BOND_ADDRESS, BUY_BOND_ABI } from '../constants/bonds';
 import { PRANA_DECIMALS } from '../constants/sharedContracts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 

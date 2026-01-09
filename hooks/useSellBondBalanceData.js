@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V1, SELL_BOND_ABI_V2 } from '../constants/sellBondContract';
-import { SELL_BOND_BONDS_ABI } from '../constants/bondVolumeFragments';
+import { SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V1, SELL_BOND_ABI_V2, SELL_BOND_BONDS_ABI } from '../constants/bonds';
 import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedWbtc } from './useCommittedWbtc';
 import { useTotalBondPranaVolume } from './useTotalBondPranaVolume';

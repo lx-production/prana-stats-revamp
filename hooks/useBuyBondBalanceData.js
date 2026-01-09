@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V1, BUY_BOND_ABI_V2 } from '../constants/buyBondContract';
-import { BUY_BOND_BONDS_ABI } from '../constants/bondVolumeFragments';
+import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V1, BUY_BOND_ABI_V2, BUY_BOND_BONDS_ABI } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedPrana } from './useCommittedPrana';
 import { useTotalBondPranaVolume } from './useTotalBondPranaVolume';
