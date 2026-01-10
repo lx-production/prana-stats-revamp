@@ -47,6 +47,27 @@ export interface PranaStatsData {
 
 export type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
 
+export interface PranaPricesData {
+  btcPriceUsd: number | null;
+  btcPriceVnd: number | null;
+  usdToVndRate: number | null;
+  latestSatPrice: number | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export type PranaPricesBundle = {
+  btcPriceUsd: number;
+  btcPriceVnd: number;
+  usdToVndRate: number;
+  latestSatPrice: number;
+  d30: any[];
+  d90: any[];
+  d180: any[];
+  d365: any[];
+  bondsV2Json: unknown;
+};
+
 export interface StatCardProps {
   title: string;
   mainValue: string | number;

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, ChevronDown } from 'lucide-react';
-import { usePranaStats } from '../hooks/usePranaStats';
+import { usePranaPrices } from '../hooks/usePranaPrices';
 import { usePranaConverter, type ConverterCurrency } from '../hooks/usePranaConverter';
-import { formatInteger } from '../utils/formatters';
+import { formatDecimal, formatInteger } from '../utils/formatters';
 
 const currencies: Array<{ value: ConverterCurrency; label: string }> = [
   { value: 'USD', label: 'USD' },
@@ -11,7 +11,7 @@ const currencies: Array<{ value: ConverterCurrency; label: string }> = [
 ];
 
 export const PranaConverter: React.FC = () => {
-  const { latestSatPrice, btcPriceUsd, usdToVndRate, isLoading, error } = usePranaStats();
+  const { latestSatPrice, btcPriceUsd, usdToVndRate, isLoading, error } = usePranaPrices();
 
   const {
     currency,
@@ -81,7 +81,7 @@ export const PranaConverter: React.FC = () => {
                   'Prices unavailable'
                 ) : preview ? (
                   <>
-                    1 PRANA ≈ {formatInteger(preview.satsPerPrana)} SATs · ${preview.usdPerPrana.toFixed(6)} ·{' '}
+                    1 PRANA ≈ {formatDecimal(preview.satsPerPrana, 2)} SAT ≈ {preview.usdPerPrana.toFixed(4)} USD ≈{' '}
                     {formatInteger(Math.round(preview.vndPerPrana))} VNĐ
                   </>
                 ) : (

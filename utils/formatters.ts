@@ -19,3 +19,10 @@ export const formatInteger = (value: number) => {
     maximumFractionDigits: 0,
   }).format(value);
 };
+
+export const formatDecimal = (value: number, decimals = 2) => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+};

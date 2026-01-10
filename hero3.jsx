@@ -149,19 +149,19 @@ export default function PranaHero() {
             href="https://prana.triethocduongpho.net/bond/" target="_blank"
             className="inline-flex justify-center rounded-2xl px-6 py-3 border border-white/12 text-white hover:border-white/24 transition"
           >
-            Bond PRANA
+            Bond
           </a>
           <a
             href="https://prana.triethocduongpho.net/stake/" target="_blank"
             className="inline-flex justify-center rounded-2xl px-6 py-3 bg-[#F5D27A] text-black font-semibold shadow-[0_0_28px_rgba(245,210,122,.28)] hover:shadow-[0_0_40px_rgba(245,210,122,.38)] active:scale-[0.99] transition"
           >
-            Stake PRANA
+            Stake
           </a>
           <a
             href="https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED" target="_blank"
             className="inline-flex justify-center rounded-2xl px-6 py-3 border border-white/12 text-white hover:border-white/24 transition"
           >
-            Trade PRANA
+            Trade
           </a>
         </div>
       </div>

@@ -2,16 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
-import { fetchJson } from '../utils/fetchJson';
 import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
-import { BondTotalsCacheEntry, BondsV2Json, PranaStatsData, PranaStatsComputed } from '../types';
-
-// Configuration & Constants
-const POLYGON_RPC_URL =
-  (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_ALCHEMY_POLYGON_MAIN ??
-  (typeof process !== 'undefined' ? process.env?.VITE_ALCHEMY_POLYGON_MAIN : undefined) ??
-  (typeof window !== 'undefined' ? (window as any).CONFIG?.POLYGON_RPC_URL : undefined) ??
-  'https://polygon-rpc.com'; // Fallback
+import { fetchPranaPricesBundle } from '../utils/pranaPrices';
+import { getPolygonProvider } from '../utils/polygonProvider';
+import { BondTotalsCacheEntry, PranaStatsData, PranaStatsComputed } from '../types';
 
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const ATL_PRICE = 0.0017; // From scripts.js
@@ -49,48 +43,8 @@ const fetchPranaStats = async (
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
 
-  // Helper for safe JSON fetching
-  const fetchJsonSafe = async <T,>(url: string, fallback: T): Promise<T> => {
-    try {
-      return await fetchJson<T>(url);
-    } catch (e) {
-      console.warn(`Failed to fetch ${url}`, e);
-      return fallback;
-    }
-  };
-
-  // 1. Fetch Prices & Rates (External APIs & Local JSON)
-  const fetchBtcPrices = async () => {
-    const json = await fetchJson<any>(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd",
-    );
-    const usd = json?.bitcoin?.usd;
-    const vnd = json?.bitcoin?.vnd;
-    if (typeof usd !== 'number' || !Number.isFinite(usd)) {
-      throw new Error('Failed to fetch BTC price USD (CoinGecko): invalid response');
-    }
-    if (typeof vnd !== 'number' || !Number.isFinite(vnd)) {
-      throw new Error('Failed to fetch BTC price VND (CoinGecko): invalid response');
-    }
-    return { usd, vnd };
-  };
-
-  const [btcPrices, satsDataRes, d30, d90, d180, d365, bondsV2Json] = await Promise.all([
-    fetchBtcPrices(),
-    fetchJsonSafe<any[]>('/data_sats.json', []),
-    fetchJsonSafe<any[]>('/data_30_days.json', []),
-    fetchJsonSafe<any[]>('/data_90_days.json', []),
-    fetchJsonSafe<any[]>('/data_180_days.json', []),
-    fetchJsonSafe<any[]>('/data_365_days.json', []),
-    fetchJsonSafe<unknown>('/bonds_v2.json', null),
-  ]);
-
-  const btcPriceUsd = btcPrices.usd;
-  const btcPriceVnd = btcPrices.vnd;
-  const usdToVndRate = btcPriceUsd === 0 ? 0 : btcPriceVnd / btcPriceUsd;
-
-  // Fallback for sats data if missing (mock current price ~60 sats)
-  const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 60;
+  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json } =
+    await fetchPranaPricesBundle();
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
@@ -175,17 +129,19 @@ export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialStats);
 
   const getProvider = useCallback(() => {
-    return new ethers.JsonRpcProvider(POLYGON_RPC_URL);
+    return getPolygonProvider();
   }, []);
 
   const fetchData = useCallback(async () => {
     try {
       const computed = await fetchPranaStats(getProvider);
-      setStats({
+
+      setStats(prev => ({
+        ...prev,
         ...computed,
         isLoading: false,
         error: null,
-      });
+      }));
 
     } catch (err: any) {
       console.error("Failed to fetch Prana stats:", err);
