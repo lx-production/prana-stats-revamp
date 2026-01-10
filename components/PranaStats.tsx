@@ -95,11 +95,11 @@ export const PranaStats: React.FC = () => {
 
   const performanceMetrics = useMemo(
     () => [
-      { label: '1 Month', value: priceChange.m1 },
-      { label: '3 Months', value: priceChange.m3 },
-      { label: '6 Months', value: priceChange.m6 },
-      { label: '1 Year', value: priceChange.y1 },
-      { label: 'All Time', value: priceChange.atl },
+      { label: '1 Tháng', value: priceChange.m1 },
+      { label: '3 Tháng', value: priceChange.m3 },
+      { label: '6 Tháng', value: priceChange.m6 },
+      { label: '1 Năm', value: priceChange.y1 },
+      { label: 'ATL', value: priceChange.atl },
     ],
     [priceChange]
   );
@@ -227,7 +227,7 @@ export const PranaStats: React.FC = () => {
 
         {/* Interest Contract Balance */}
         <StatCard
-          title="Interest Contract Balance"
+          title="Staking Interest Balance"
           mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
           subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
           icon={Activity}
