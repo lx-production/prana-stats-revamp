@@ -17,6 +17,12 @@ export type BondsV2Json = {
 };
 
 export interface PranaStatsData {
+  // Pricing inputs (used by converter and derived stats)
+  btcPriceUsd: number | null;
+  btcPriceVnd: number | null;
+  usdToVndRate: number | null;
+  latestSatPrice: number | null;
+
   marketCapVnd: number | null;
   stakedPrana: number | null;
   stakedVnd: number | null;
@@ -46,8 +52,6 @@ export interface StatCardProps {
   mainValue: string | number;
   subValue?: string;
   icon?: React.ElementType;
-  trend?: number; // Percentage change for trend indicator
-  trendLabel?: string;
   delay?: number;
   className?: string;
   loading?: boolean;

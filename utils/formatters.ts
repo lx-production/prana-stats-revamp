@@ -12,3 +12,10 @@ export const formatPercent = (value: number) => {
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(0)}%`;
 };
+
+export const formatInteger = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};

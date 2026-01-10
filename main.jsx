@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import PranaHero from "./hero3.jsx";
 import PranaStats from "./components/PranaStats";
+import PranaConverter from "./components/PranaConverter";
 import NeuralShaderBackground from "./shader.jsx";
 
 function App() {
@@ -20,9 +21,10 @@ function App() {
         maxDpr={1.15}
       />
 
-      <main className="relative z-10 flex flex-col gap-12 pb-24">
+      <main className="relative z-10 flex flex-col gap-6 pb-24">
         <PranaHero />
         <PranaStats />
+        <PranaConverter />
       </main>
     </div>
   );

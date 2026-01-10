@@ -23,6 +23,11 @@ const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint25
 const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
 
 const initialStats: PranaStatsData = {
+  btcPriceUsd: null,
+  btcPriceVnd: null,
+  usdToVndRate: null,
+  latestSatPrice: null,
+
   marketCapVnd: null,
   stakedPrana: null,
   stakedVnd: null,
@@ -82,6 +87,7 @@ const fetchPranaStats = async (
 
   const btcPriceUsd = btcPrices.usd;
   const btcPriceVnd = btcPrices.vnd;
+  const usdToVndRate = btcPriceUsd === 0 ? 0 : btcPriceVnd / btcPriceUsd;
 
   // Fallback for sats data if missing (mock current price ~60 sats)
   const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 60;
@@ -139,6 +145,11 @@ const fetchPranaStats = async (
   const mockY1 = latestSatPriceUsd * 0.50; // +100%
 
   return {
+    btcPriceUsd,
+    btcPriceVnd,
+    usdToVndRate,
+    latestSatPrice,
+
     marketCapVnd: marketCap,
     stakedPrana,
     stakedVnd: stakedPrana * pranaPriceVnd,

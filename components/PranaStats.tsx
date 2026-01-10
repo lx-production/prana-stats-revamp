@@ -4,17 +4,13 @@ import { usePranaStats } from '../hooks/usePranaStats';
 import { useBuyBondBalanceData } from '../hooks/useBuyBondBalanceData';
 import { useSellBondBalanceData } from '../hooks/useSellBondBalanceData';
 import { StatCardProps } from '../types';
-import { formatCurrency, formatPercent } from '../utils/formatters';
-
-// --- Components ---
+import { formatCurrency } from '../utils/formatters';
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
   mainValue,
   subValue,
   icon: Icon,
-  trend,
-  trendLabel,
   delay = 0,
   loading = false,
   highlight = false,
@@ -45,16 +41,6 @@ const StatCard: React.FC<StatCardProps> = ({
             {Icon && <Icon className="w-4 h-4 text-cyan-400" />}
             {title}
           </h3>
-          {trend !== undefined && (
-            <div className={`
-              flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full
-              ${trend > 0 ? 'bg-green-500/20 text-green-400' : trend < 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}
-            `}>
-              {trend > 0 ? <ArrowUp className="w-3 h-3" /> : trend < 0 ? <ArrowDown className="w-3 h-3" /> : null}
-              {formatPercent(trend)}
-              {trendLabel && <span className="ml-1 opacity-70 font-normal">{trendLabel}</span>}
-            </div>
-          )}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -172,131 +158,131 @@ export const PranaStats: React.FC = () => {
   };
 
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-        {error && (
-          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-950/20 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-        {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
-          {/* Market Cap - Highlighted */}
-          <StatCard
-                title="Market Cap"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
-                subValue="Fully Diluted Valuation"
-                icon={DollarSign}
-                highlight={true}
-                delay={0.1}
-                loading={isLoading}
-            />
-
-            {/* Buy Bond Volume */}
-            <StatCard
-                title="Buy Bond Volume"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(buyBondPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(buyBondVnd, 'VND')} VNĐ`}
-                icon={TrendingUp}
-                delay={0.4}
-                loading={isLoading}
-                className="col-span-1"
-                footer={
-                  <BondBreakdown
-                    loading={buyBondBalanceData.isLoading}
-                    balanceValue={buyBondBalanceMetric?.formattedValue}
-                    committedValue={buyBondCommittedMetric?.formattedValue}
-                    unit="PRANA"
-                  />
-                }
-            />
-
-             {/* Sell Bond Volume */}
-             <StatCard
-                title="Sell Bond Volume"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(sellBondVnd, 'VND')} VNĐ`}
-                icon={BarChart3}
-                delay={0.5}
-                loading={isLoading}
-                className="col-span-1"
-                footer={
-                  <BondBreakdown
-                    loading={sellBondBalanceData.isLoading}
-                    balanceValue={sellBondBalanceMetric?.formattedValue}
-                    committedValue={sellBondCommittedMetric?.formattedValue}
-                    unit="SAT"
-                  />
-                }
-            />
-
-            {/* Staked Value */}
-            <StatCard
-                title="Total Value Staked"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(stakedPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
-                icon={Lock}
-                delay={0.2}
-                loading={isLoading}
-            />
-
-            {/* Interest Contract Balance */}
-            <StatCard
-                title="Interest Contract Balance"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
-                icon={Activity}
-                delay={0.25}
-                loading={isLoading}
-            />
-
-            {/* Interest Committed */}
-            <StatCard
-                title="Staking Interest Committed"
-                mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
-                subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
-                icon={Activity}
-                delay={0.3}
-                loading={isLoading}
-            />
-
-            {/* Performance Card (Consolidated Percentage Changes) */}
-            <div 
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
-                style={{ animation: `fadeInUp 0.6s ease-out 0.6s backwards` }}
-            >
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-cyan-400" />
-                        Performance
-                    </h3>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {performanceMetrics.map(metric => {
-                        const isPositive = metric.value >= 0;
-                        return (
-                            <div key={metric.label} className="flex flex-col gap-1 rounded-xl border border-white/5 bg-white/0 px-3 py-2">
-                                <span className="text-xs text-gray-500 uppercase tracking-wide">{metric.label}</span>
-                                <div className={`text-sm font-semibold flex items-center ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                    {isPositive ? <ArrowUp className="w-3 h-3 mr-1"/> : <ArrowDown className="w-3 h-3 mr-1"/>}
-                                    {Math.abs(metric.value).toFixed(0)}%
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+    <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-10">
+      {error && (
+        <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-950/20 px-4 py-3 text-sm text-red-200">
+          {error}
         </div>
+      )}
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
+        {/* Market Cap - Highlighted */}
+        <StatCard
+          title="Market Cap"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
+          subValue="Fully Diluted Valuation"
+          icon={DollarSign}
+          highlight={true}
+          delay={0.1}
+          loading={isLoading}
+        />
 
-        <style>{`
-            @keyframes fadeInUp {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes shine {
-                100% { left: 125%; }
-            }
-        `}</style>
+        {/* Buy Bond Volume */}
+        <StatCard
+          title="Buy Bond Volume"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(buyBondPrana, 'PRANA')} PRANA`}
+          subValue={`≈ ${formatCurrency(buyBondVnd, 'VND')} VNĐ`}
+          icon={TrendingUp}
+          delay={0.4}
+          loading={isLoading}
+          className="col-span-1"
+          footer={
+            <BondBreakdown
+              loading={buyBondBalanceData.isLoading}
+              balanceValue={buyBondBalanceMetric?.formattedValue}
+              committedValue={buyBondCommittedMetric?.formattedValue}
+              unit="PRANA"
+            />
+          }
+        />
+
+        {/* Sell Bond Volume */}
+        <StatCard
+          title="Sell Bond Volume"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`}
+          subValue={`≈ ${formatCurrency(sellBondVnd, 'VND')} VNĐ`}
+          icon={BarChart3}
+          delay={0.5}
+          loading={isLoading}
+          className="col-span-1"
+          footer={
+            <BondBreakdown
+              loading={sellBondBalanceData.isLoading}
+              balanceValue={sellBondBalanceMetric?.formattedValue}
+              committedValue={sellBondCommittedMetric?.formattedValue}
+              unit="SAT"
+            />
+          }
+        />
+
+        {/* Staked Value */}
+        <StatCard
+          title="Total Value Staked"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(stakedPrana, 'PRANA')} PRANA`}
+          subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
+          icon={Lock}
+          delay={0.2}
+          loading={isLoading}
+        />
+
+        {/* Interest Contract Balance */}
+        <StatCard
+          title="Interest Contract Balance"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
+          subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
+          icon={Activity}
+          delay={0.25}
+          loading={isLoading}
+        />
+
+        {/* Interest Committed */}
+        <StatCard
+          title="Staking Interest Committed"
+          mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
+          subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
+          icon={Activity}
+          delay={0.3}
+          loading={isLoading}
+        />
+
+        {/* Performance Card (Consolidated Percentage Changes) */}
+        <div
+          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
+          style={{ animation: `fadeInUp 0.6s ease-out 0.6s backwards` }}
+        >
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" />
+              Performance
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {performanceMetrics.map(metric => {
+              const isPositive = metric.value >= 0;
+              return (
+                <div key={metric.label} className="flex flex-col gap-1 rounded-xl border border-white/5 bg-white/0 px-3 py-2">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">{metric.label}</span>
+                  <div className={`text-sm font-semibold flex items-center ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                    {isPositive ? <ArrowUp className="w-3 h-3 mr-1"/> : <ArrowDown className="w-3 h-3 mr-1"/>}
+                    {Math.abs(metric.value).toFixed(0)}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shine {
+          100% { left: 125%; }
+        }
+      `}</style>
     </section>
   );
 };
