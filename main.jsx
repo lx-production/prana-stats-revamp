@@ -5,8 +5,11 @@ import PranaHero from "./hero3.jsx";
 import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
 import NeuralShaderBackground from "./shader.jsx";
+import { useSpinningFavicon } from "./hooks/useSpinningFavicon";
 
 function App() {
+  useSpinningFavicon();
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <NeuralShaderBackground
