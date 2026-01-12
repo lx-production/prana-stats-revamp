@@ -4,6 +4,7 @@ import { usePranaStats } from '../hooks/usePranaStats';
 import { useBuyBondBalanceData } from '../hooks/useBuyBondBalanceData';
 import { useSellBondBalanceData } from '../hooks/useSellBondBalanceData';
 import { useStakingRunway } from '../hooks/useStakingRunway';
+import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
 import { StatCardProps } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
@@ -99,6 +100,12 @@ export const PranaStats: React.FC = () => {
   const { runwayDays } = useStakingRunway({
     interestBalancePrana: interestContractBalancePrana,
     totalStakedPrana: stakedPrana,
+    apr: 0.12,
+  });
+
+  const { additionalStakeCapacityPrana } = useStakingAdditionalCapacity({
+    interestBalancePrana: interestContractBalancePrana,
+    interestCommittedPrana: interestPrana,
     apr: 0.12,
   });
 
@@ -240,36 +247,72 @@ export const PranaStats: React.FC = () => {
           mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
           subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
           icon={Activity}
+          className="z-30"
           delay={0.25}
           loading={isLoading}
           footer={
-            runwayDays && Number.isFinite(runwayDays) ? (
-              <div className="text-sm text-gray-400 font-mono flex items-center gap-2">
-                <span>Runway: {Math.round(runwayDays).toLocaleString()} ngày</span>
-                <details className="relative font-sans">
-                  <summary
-                    className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
-                    aria-label="Giải thích Runway"
-                    title="Giải thích Runway"
-                  >
-                    <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
-                  </summary>
-                  <div
-                    className="
-                      absolute z-50 top-full mt-2 ml-2
-                      left-1/2 -translate-x-1/2
-                      w-[calc(100vw-2rem)] max-w-sm
-                      sm:left-auto sm:right-0 sm:translate-x-0 sm:w-72
-                      rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
-                      p-3 text-xs text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
-                    "
-                  >
-                    <div className="leading-relaxed">
-                      Runway là ước tính số ngày quỹ PRANA trong hợp đồng trả lãi có thể tiếp tục trả lãi
-                      cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên.
-                    </div>
+            (runwayDays && Number.isFinite(runwayDays)) ||
+            (additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana)) ? (
+              <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
+                {runwayDays && Number.isFinite(runwayDays) ? (
+                  <div className="flex items-center gap-2">
+                    <span>Runway: {Math.round(runwayDays).toLocaleString()} ngày</span>
+                    <details className="font-sans">
+                      <summary
+                        className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
+                        aria-label="Giải thích Runway"
+                        title="Giải thích Runway"
+                      >
+                        <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
+                      </summary>
+                      <div
+                        className="
+                          absolute z-50 top-full mt-2 left-0
+                          rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
+                          w-[min(24rem,calc(100vw-2rem))]
+                          p-3 text-sm text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+                        "
+                      >
+                        <div className="leading-relaxed">
+                          Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi
+                          cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên.
+                        </div>
+                      </div>
+                    </details>
                   </div>
-                </details>
+                ) : null}
+
+                {additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana) ? (
+                  <div className="text-gray-400 flex items-center gap-2">
+                    <span>
+                      Capacity: +{formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA (APR 12%)
+                    </span>
+                    <details className="font-sans">
+                      <summary
+                        className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
+                        aria-label="Giải thích Capacity"
+                        title="Giải thích Capacity"
+                      >
+                        <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
+                      </summary>
+                      <div
+                        className="
+                          absolute z-50 top-full mt-2 left-0
+                          rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
+                          w-[min(24rem,calc(100vw-2rem))]
+                          p-3 text-sm text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+                        "
+                      >
+                        <div className="leading-relaxed">
+                          Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract
+                          vẫn đủ để trả lãi với giả định APR cố định 12%.
+                          <br />
+                          Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                ) : null}
               </div>
             ) : null
           }
@@ -328,4 +371,3 @@ export const PranaStats: React.FC = () => {
 };
 
 export default PranaStats;
-
