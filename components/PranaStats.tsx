@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
+import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3, Info } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useBuyBondBalanceData } from '../hooks/useBuyBondBalanceData';
 import { useSellBondBalanceData } from '../hooks/useSellBondBalanceData';
+import { useStakingRunway } from '../hooks/useStakingRunway';
 import { StatCardProps } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
@@ -20,7 +21,7 @@ const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={`
-        group relative overflow-hidden rounded-2xl border transition-all duration-500
+        group relative z-10 hover:z-30 focus-within:z-40 rounded-2xl border transition-all duration-500
         ${highlight 
           ? 'border-cyan-500/30 bg-cyan-950/10 shadow-[0_0_30px_rgba(8,145,178,0.1)]' 
           : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
@@ -33,7 +34,9 @@ const StatCard: React.FC<StatCardProps> = ({
       }}
     >
       {/* Glow Effect */}
-      <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+        <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
+      </div>
       
       <div className="p-5 flex flex-col h-full relative z-10">
         <div className="flex justify-between items-start mb-4">
@@ -92,6 +95,12 @@ export const PranaStats: React.FC = () => {
 
   const buyBondBalanceData = useBuyBondBalanceData();
   const sellBondBalanceData = useSellBondBalanceData();
+
+  const { runwayDays } = useStakingRunway({
+    interestBalancePrana: interestContractBalancePrana,
+    totalStakedPrana: stakedPrana,
+    apr: 0.12,
+  });
 
   const performanceMetrics = useMemo(
     () => [
@@ -233,6 +242,37 @@ export const PranaStats: React.FC = () => {
           icon={Activity}
           delay={0.25}
           loading={isLoading}
+          footer={
+            runwayDays && Number.isFinite(runwayDays) ? (
+              <div className="text-sm text-gray-400 font-mono flex items-center gap-2">
+                <span>Runway: {Math.round(runwayDays).toLocaleString()} ngày</span>
+                <details className="relative font-sans">
+                  <summary
+                    className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
+                    aria-label="Giải thích Runway"
+                    title="Giải thích Runway"
+                  >
+                    <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
+                  </summary>
+                  <div
+                    className="
+                      absolute z-50 top-full mt-2 ml-2
+                      left-1/2 -translate-x-1/2
+                      w-[calc(100vw-2rem)] max-w-sm
+                      sm:left-auto sm:right-0 sm:translate-x-0 sm:w-72
+                      rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
+                      p-3 text-xs text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+                    "
+                  >
+                    <div className="leading-relaxed">
+                      Runway là ước tính số ngày quỹ PRANA trong hợp đồng trả lãi có thể tiếp tục trả lãi
+                      cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên.
+                    </div>
+                  </div>
+                </details>
+              </div>
+            ) : null
+          }
         />
 
         {/* Interest Committed */}
@@ -247,7 +287,7 @@ export const PranaStats: React.FC = () => {
 
         {/* Performance Card (Consolidated Percentage Changes) */}
         <div
-          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
+          className="group relative z-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
           style={{ animation: `fadeInUp 0.6s ease-out 0.6s backwards` }}
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
