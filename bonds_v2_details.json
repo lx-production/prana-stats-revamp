@@ -1,0 +1,271 @@
+{
+  "generatedAt": "2026-01-13T07:40:02.859Z",
+  "rpcUrl": "https://polygon-mainnet.g.alchemy.com/v2/%3Credacted%3E",
+  "buy": {
+    "address": "0x431030E3A0703f0914bE26026ffDaD693F3a16cf",
+    "pranaAmount": "39738000000000",
+    "count": 4,
+    "bonds": [
+      {
+        "index": 1,
+        "id": "1",
+        "owner": "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+        "wbtcAmount": "6256",
+        "pranaAmount": "100000000000",
+        "maturityTime": "1762061957",
+        "creationTime": "1761457157",
+        "lastClaimTime": "1762063361",
+        "claimedPrana": "100000000000",
+        "claimed": true,
+        "raw": [
+          "1",
+          "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+          "6256",
+          "100000000000",
+          "1762061957",
+          "1761457157",
+          "1762063361",
+          "100000000000",
+          true
+        ]
+      },
+      {
+        "index": 2,
+        "id": "2",
+        "owner": "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+        "wbtcAmount": "1071757",
+        "pranaAmount": "20963000000000",
+        "maturityTime": "1794149635",
+        "creationTime": "1762613635",
+        "lastClaimTime": "1767555599",
+        "claimedPrana": "3285083438990",
+        "claimed": false,
+        "raw": [
+          "2",
+          "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+          "1071757",
+          "20963000000000",
+          "1794149635",
+          "1762613635",
+          "1767555599",
+          "3285083438990",
+          false
+        ]
+      },
+      {
+        "index": 3,
+        "id": "3",
+        "owner": "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+        "wbtcAmount": "472407",
+        "pranaAmount": "8675000000000",
+        "maturityTime": "1794170081",
+        "creationTime": "1762634081",
+        "lastClaimTime": "1767555571",
+        "claimedPrana": "1353815504502",
+        "claimed": false,
+        "raw": [
+          "3",
+          "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+          "472407",
+          "8675000000000",
+          "1794170081",
+          "1762634081",
+          "1767555571",
+          "1353815504502",
+          false
+        ]
+      },
+      {
+        "index": 4,
+        "id": "4",
+        "owner": "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+        "wbtcAmount": "567413",
+        "pranaAmount": "10000000000000",
+        "maturityTime": "1799091279",
+        "creationTime": "1767555279",
+        "lastClaimTime": "1767555279",
+        "claimedPrana": "0",
+        "claimed": false,
+        "raw": [
+          "4",
+          "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+          "567413",
+          "10000000000000",
+          "1799091279",
+          "1767555279",
+          "1767555279",
+          "0",
+          false
+        ]
+      }
+    ]
+  },
+  "sell": {
+    "address": "0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71",
+    "pranaAmount": "154805000000000",
+    "count": 7,
+    "bonds": [
+      {
+        "index": 1,
+        "id": "1",
+        "owner": "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+        "pranaAmount": "100000000000",
+        "wbtcAmount": "6117",
+        "maturityTime": "1762044989",
+        "creationTime": "1761440189",
+        "lastClaimTime": "1762051226",
+        "claimedWbtc": "6117",
+        "claimed": true,
+        "raw": [
+          "1",
+          "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+          "100000000000",
+          "6117",
+          "1762044989",
+          "1761440189",
+          "1762051226",
+          "6117",
+          true
+        ]
+      },
+      {
+        "index": 2,
+        "id": "2",
+        "owner": "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+        "pranaAmount": "1000000000000",
+        "wbtcAmount": "63031",
+        "maturityTime": "1762575672",
+        "creationTime": "1761970872",
+        "lastClaimTime": "1762606803",
+        "claimedWbtc": "63031",
+        "claimed": true,
+        "raw": [
+          "2",
+          "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+          "1000000000000",
+          "63031",
+          "1762575672",
+          "1761970872",
+          "1762606803",
+          "63031",
+          true
+        ]
+      },
+      {
+        "index": 3,
+        "id": "3",
+        "owner": "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+        "pranaAmount": "10000000000000",
+        "wbtcAmount": "616044",
+        "maturityTime": "1764569122",
+        "creationTime": "1761977122",
+        "lastClaimTime": "1765246997",
+        "claimedWbtc": "616044",
+        "claimed": true,
+        "raw": [
+          "3",
+          "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+          "10000000000000",
+          "616044",
+          "1764569122",
+          "1761977122",
+          "1765246997",
+          "616044",
+          true
+        ]
+      },
+      {
+        "index": 4,
+        "id": "4",
+        "owner": "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+        "pranaAmount": "70000000000000",
+        "wbtcAmount": "3616446",
+        "maturityTime": "1769911807",
+        "creationTime": "1762135807",
+        "lastClaimTime": "1765247095",
+        "claimedWbtc": "1446991",
+        "claimed": false,
+        "raw": [
+          "4",
+          "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+          "70000000000000",
+          "3616446",
+          "1769911807",
+          "1762135807",
+          "1765247095",
+          "1446991",
+          false
+        ]
+      },
+      {
+        "index": 5,
+        "id": "5",
+        "owner": "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+        "pranaAmount": "50000000000000",
+        "wbtcAmount": "2554417",
+        "maturityTime": "1764923103",
+        "creationTime": "1762331103",
+        "lastClaimTime": "1765247031",
+        "claimedWbtc": "2554417",
+        "claimed": true,
+        "raw": [
+          "5",
+          "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+          "50000000000000",
+          "2554417",
+          "1764923103",
+          "1762331103",
+          "1765247031",
+          "2554417",
+          true
+        ]
+      },
+      {
+        "index": 6,
+        "id": "6",
+        "owner": "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+        "pranaAmount": "15705000000000",
+        "wbtcAmount": "822658",
+        "maturityTime": "1770545566",
+        "creationTime": "1762769566",
+        "lastClaimTime": "1765247125",
+        "claimedWbtc": "262112",
+        "claimed": false,
+        "raw": [
+          "6",
+          "0x86F0b5aBF86eD80FEA28228CFC22E733e6d1774b",
+          "15705000000000",
+          "822658",
+          "1770545566",
+          "1762769566",
+          "1765247125",
+          "262112",
+          false
+        ]
+      },
+      {
+        "index": 7,
+        "id": "7",
+        "owner": "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+        "pranaAmount": "8000000000000",
+        "wbtcAmount": "419359",
+        "maturityTime": "1764760879",
+        "creationTime": "1764156079",
+        "lastClaimTime": "1764829691",
+        "claimedWbtc": "419359",
+        "claimed": true,
+        "raw": [
+          "7",
+          "0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC",
+          "8000000000000",
+          "419359",
+          "1764760879",
+          "1764156079",
+          "1764829691",
+          "419359",
+          true
+        ]
+      }
+    ]
+  }
+}

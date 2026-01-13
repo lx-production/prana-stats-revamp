@@ -16,6 +16,39 @@ const REQUEST_DELAY_MS = 0;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function isNumericKey(key) {
+  // "0", "1", ... but not "01"
+  return /^\d+$/.test(key);
+}
+
+function serializeForJson(value) {
+  if (typeof value === 'bigint') return value.toString();
+  if (Array.isArray(value)) return value.map(serializeForJson);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (k === 'length') continue;
+      if (isNumericKey(k)) continue;
+      out[k] = serializeForJson(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+function getBondTupleFieldNames(contract) {
+  try {
+    const fn = contract.interface.getFunction('bonds');
+    const tuple = fn?.outputs?.[0];
+    const components = tuple?.components;
+    if (!Array.isArray(components) || components.length === 0) return null;
+
+    return components.map((c, i) => (c?.name && c.name.trim() ? c.name.trim() : `field${i}`));
+  } catch {
+    return null;
+  }
+}
+
 function parseDotEnv(content) {
   const env = {};
   const lines = content.split(/\r?\n/);
@@ -193,6 +226,64 @@ async function scanBondTotals({ contract, label, maxScan }) {
   };
 }
 
+async function scanBondDetails({ contract, label, maxScan }) {
+  let index = 1;
+  const bonds = [];
+  const fieldNames = getBondTupleFieldNames(contract);
+  let pranaTotal = 0n;
+
+  while (index <= maxScan) {
+    try {
+      const bond = await contract.bonds(index);
+      if (!bond) break;
+
+      pranaTotal += toBigInt(bond?.pranaAmount);
+
+      const raw = [];
+      const len = typeof bond?.length === 'number' ? bond.length : 0;
+      for (let i = 0; i < len; i += 1) {
+        raw.push(serializeForJson(bond[i]));
+      }
+
+      const fields = {};
+      if (fieldNames && fieldNames.length === raw.length) {
+        for (let i = 0; i < raw.length; i += 1) {
+          fields[fieldNames[i]] = raw[i];
+        }
+      } else {
+        for (let i = 0; i < raw.length; i += 1) {
+          fields[`field${i}`] = raw[i];
+        }
+      }
+
+      bonds.push({
+        index,
+        ...fields,
+        raw,
+      });
+
+      index += 1;
+      if (REQUEST_DELAY_MS > 0) await sleep(REQUEST_DELAY_MS);
+    } catch (error) {
+      if (isOutOfRangeError(error)) break;
+
+      if (isRateLimitError(error)) {
+        await sleep(2_000);
+        continue;
+      }
+
+      console.warn(`Error fetching ${label} bond at index ${index}`, error);
+      throw error;
+    }
+  }
+
+  return {
+    count: bonds.length,
+    pranaAmount: pranaTotal.toString(),
+    bonds,
+  };
+}
+
 async function main() {
   await loadDotEnvIntoProcessEnv();
 
@@ -239,6 +330,49 @@ async function main() {
 
   console.log(
     `Wrote totals for ${buyTotals.count} buy bonds and ${sellTotals.count} sell bonds to: ${outPath}`,
+  );
+
+  const [buyDetails, sellDetails] = await Promise.all([
+    scanBondDetails({
+      contract: buyBondContract,
+      label: 'buy',
+      maxScan: DEFAULT_MAX_BOND_SCAN,
+    }),
+    scanBondDetails({
+      contract: sellBondContract,
+      label: 'sell',
+      maxScan: DEFAULT_MAX_BOND_SCAN,
+    }),
+  ]);
+
+  const detailsOut = {
+    generatedAt: new Date().toISOString(),
+    rpcUrl: redactUrl(rpcUrl),
+    buy: {
+      address: BUY_BOND_ADDRESS_V2,
+      pranaAmount: buyDetails.pranaAmount,
+      count: buyDetails.count,
+      bonds: buyDetails.bonds,
+    },
+    sell: {
+      address: SELL_BOND_ADDRESS_V2,
+      pranaAmount: sellDetails.pranaAmount,
+      count: sellDetails.count,
+      bonds: sellDetails.bonds,
+    },
+  };
+
+  if (buyDetails.pranaAmount !== buyTotals.pranaAmount || sellDetails.pranaAmount !== sellTotals.pranaAmount) {
+    throw new Error(
+      `PRANA totals mismatch: details(buy=${buyDetails.pranaAmount}, sell=${sellDetails.pranaAmount}) vs totals(buy=${buyTotals.pranaAmount}, sell=${sellTotals.pranaAmount})`,
+    );
+  }
+
+  const detailsOutPath = path.join(PROJECT_ROOT, 'bonds_v2_details.json');
+  await fs.writeFile(detailsOutPath, JSON.stringify(detailsOut, null, 2), 'utf8');
+
+  console.log(
+    `Wrote bond details for ${buyDetails.count} buy bonds and ${sellDetails.count} sell bonds to: ${detailsOutPath}`,
   );
 }
 
