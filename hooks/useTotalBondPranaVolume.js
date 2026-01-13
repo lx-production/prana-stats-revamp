@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchJson } from '../utils/fetchJson';
 
 const safeLower = (value) => (typeof value === 'string' ? value.toLowerCase() : '');
+const PAGE_LOAD_CACHE_BUST = Date.now();
 
 /**
  * Minimal helper used by the bond balance hooks to get the total PRANA volume.
@@ -31,13 +32,15 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
         // this will scan only *new* bonds and update the JSON files before we fetch totals.
         // On static hosting (no API), this will 404 and we simply fall back to the existing JSON.
         try {
-          await fetch('/api/bonds-v2/refresh');
+          // Use fetchJson so multiple hooks dedupe this GET request.
+          await fetchJson('/api/bonds-v2/refresh');
         } catch {
           // ignore
         }
 
         // Avoid stale caching if the JSON was just updated.
-        const data = await fetchJson(`/bonds_v2.json?t=${Date.now()}`);
+        // Use a stable cache-buster so multiple hook instances share one in-flight request.
+        const data = await fetchJson(`/bonds_v2.json?t=${PAGE_LOAD_CACHE_BUST}`);
         const buyAddress = safeLower(data?.buy?.address);
         const sellAddress = safeLower(data?.sell?.address);
         const buyTotalStr = data?.buy?.[fieldName];
