@@ -27,7 +27,17 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
       setError(null);
 
       try {
-        const data = await fetchJson('/bonds_v2.json');
+        // Best-effort: if the app is hosted with the optional Node server,
+        // this will scan only *new* bonds and update the JSON files before we fetch totals.
+        // On static hosting (no API), this will 404 and we simply fall back to the existing JSON.
+        try {
+          await fetch('/api/bonds-v2/refresh');
+        } catch {
+          // ignore
+        }
+
+        // Avoid stale caching if the JSON was just updated.
+        const data = await fetchJson(`/bonds_v2.json?t=${Date.now()}`);
         const buyAddress = safeLower(data?.buy?.address);
         const sellAddress = safeLower(data?.sell?.address);
         const buyTotalStr = data?.buy?.[fieldName];
