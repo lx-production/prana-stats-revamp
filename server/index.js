@@ -2,22 +2,18 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 import { updateBondsV2 } from '../scripts/update-bonds-v2.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
-
 const PORT = Number(process.env.PORT || 4173);
-
 let refreshInFlight = null;
-
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
-// Keyed by absolute file path and invalidated when file mtime changes.
+// Keyed by absolute file path and invalidated when file mtime (modified time) changes.
 const fileCache = new Map();
 
 function contentTypeFor(filePath) {
