@@ -16,6 +16,10 @@ let refreshInFlight = null;
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
 
+// Simple in-memory cache for static files (mostly for dist/assets/*).
+// Keyed by absolute file path and invalidated when file mtime changes.
+const fileCache = new Map();
+
 function contentTypeFor(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.html') return 'text/html; charset=utf-8';
@@ -38,8 +42,12 @@ function cacheControlFor(filePath) {
   // HTML should always revalidate so deploys show up immediately.
   if (ext === '.html') return 'no-cache';
 
-  // 3D model assets: cache for 1 year.
-  if (ext === '.glb' || ext === '.gltf' || ext === '.bin') {
+  // JSON files can change frequently; force revalidation.
+  if (ext === '.json') return 'no-cache';
+
+  // Vite build assets are content-hashed (dist/assets/*), so we can cache aggressively.
+  // This includes the main built JS bundle like dist/assets/index-<hash>.js.
+  if (filePath.includes(`${path.sep}assets${path.sep}`)) {
     return `public, max-age=${ONE_YEAR_SECONDS}, immutable`;
   }
 
@@ -56,12 +64,34 @@ async function fileExists(p) {
 }
 
 async function serveFile(res, filePath) {
+  const stat = await fs.stat(filePath);
+
+  const cached = fileCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', cached.contentType);
+    if (cached.cacheControl) res.setHeader('Cache-Control', cached.cacheControl);
+    res.end(cached.data);
+    return;
+  }
+
   const data = await fs.readFile(filePath);
   res.statusCode = 200;
-  res.setHeader('Content-Type', contentTypeFor(filePath));
+  const contentType = contentTypeFor(filePath);
+  res.setHeader('Content-Type', contentType);
   const cacheControl = cacheControlFor(filePath);
   if (cacheControl) res.setHeader('Cache-Control', cacheControl);
   res.end(data);
+
+  // Cache only if it has an explicit cache policy (mainly dist/assets/*).
+  if (cacheControl) {
+    fileCache.set(filePath, {
+      mtimeMs: stat.mtimeMs,
+      data,
+      contentType,
+      cacheControl,
+    });
+  }
 }
 
 function sendJson(res, statusCode, body) {
