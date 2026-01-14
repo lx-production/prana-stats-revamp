@@ -84,7 +84,7 @@ async function main() {
   ]);
 
   const out = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7'),
     rpcUrl: redactUrl(rpcUrl),
     buy: {
       address: BUY_BOND_ADDRESS_V2,
@@ -104,7 +104,7 @@ async function main() {
   );
 
   const detailsOut = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7'),
     rpcUrl: redactUrl(rpcUrl),
     buy: {
       address: BUY_BOND_ADDRESS_V2,

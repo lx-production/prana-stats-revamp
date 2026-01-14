@@ -1,9 +1,7 @@
 import { ethers } from 'ethers';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-
 import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.js';
-
 import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessEnv, getRpcUrl, redactUrl, isOutOfRangeError, isRateLimitError, toBigInt, PROJECT_ROOT } from '../utils/bondsScanUtils.js';
 
 const REQUEST_DELAY_MS = 0;
@@ -95,7 +93,6 @@ async function scanFromIndex({ contract, label, startIndex, existingBonds, exist
  */
 export async function updateBondsV2() {
   await loadDotEnvIntoProcessEnv();
-
   const rpcUrl = getRpcUrl();
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
@@ -141,7 +138,7 @@ export async function updateBondsV2() {
     return { updated: false, added: { buy: 0, sell: 0 } };
   }
 
-  const generatedAt = new Date().toISOString();
+  const generatedAt = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7');
   const redactedRpc = redactUrl(rpcUrl);
 
   const detailsOut = {

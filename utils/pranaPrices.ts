@@ -1,5 +1,6 @@
 import { fetchJson } from './fetchJson';
 import type { PranaPricesBundle } from '../types';
+import { fetchBondsV2JsonSafe } from './bondsV2Json';
 
 const PRICES_CACHE_TTL_MS = 15_000;
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
@@ -42,7 +43,7 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
         fetchJsonSafe<any[]>('/data_90_days.json', []),
         fetchJsonSafe<any[]>('/data_180_days.json', []),
         fetchJsonSafe<any[]>('/data_365_days.json', []),
-        fetchJsonSafe<unknown>('/bonds_v2.json', null),
+        fetchBondsV2JsonSafe<unknown>(null),
       ]);
 
       const btcPriceUsd = btcPrices.usd;

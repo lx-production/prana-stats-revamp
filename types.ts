@@ -34,6 +34,11 @@ export interface PranaStatsData {
   buyBondVnd: number | null;
   sellBondPrana: number | null;
   sellBondVnd: number | null;
+  // Bond contract breakdown (display strings shown in the PRANA stats cards)
+  buyBondBalanceDisplay: string | null;
+  buyBondCommittedDisplay: string | null;
+  sellBondBalanceDisplay: string | null;
+  sellBondCommittedDisplay: string | null;
   priceChange: {
     m1: number;
     m3: number;

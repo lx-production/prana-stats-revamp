@@ -18,11 +18,8 @@ const pranaFormatter = new Intl.NumberFormat(undefined, {
 });
 
 export const useSellBondBalanceData = () => {
-  const [balanceV1, setBalanceV1] = useState(0n);
   const [balanceV2, setBalanceV2] = useState(0n);
-  const [isLoadingBalanceV1, setIsLoadingBalanceV1] = useState(true);
   const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState(true);
-  const [balanceErrorV1, setBalanceErrorV1] = useState(null);
   const [balanceErrorV2, setBalanceErrorV2] = useState(null);
 
   const {
@@ -48,22 +45,6 @@ export const useSellBondBalanceData = () => {
     const provider = getPolygonProvider();
     const token = new ethers.Contract(WBTC_ADDRESS, WBTC_ABI, provider);
 
-    const fetchBalanceV1 = async () => {
-      setIsLoadingBalanceV1(true);
-      setBalanceErrorV1(null);
-      try {
-        const res = await token.balanceOf(SELL_BOND_ADDRESS_V1);
-        if (!cancelled) setBalanceV1(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
-      } catch (e) {
-        if (!cancelled) {
-          setBalanceErrorV1(e);
-          setBalanceV1(0n);
-        }
-      } finally {
-        if (!cancelled) setIsLoadingBalanceV1(false);
-      }
-    };
-
     const fetchBalanceV2 = async () => {
       setIsLoadingBalanceV2(true);
       setBalanceErrorV2(null);
@@ -80,7 +61,6 @@ export const useSellBondBalanceData = () => {
       }
     };
 
-    fetchBalanceV1();
     fetchBalanceV2();
 
     return () => {
@@ -106,9 +86,6 @@ export const useSellBondBalanceData = () => {
   });
 
   useEffect(() => {
-    if (balanceErrorV1) {
-      console.error('Sell bond balance V1 error:', balanceErrorV1);
-    }
     if (balanceErrorV2) {
       console.error('Sell bond balance V2 error:', balanceErrorV2);
     }
@@ -121,19 +98,20 @@ export const useSellBondBalanceData = () => {
     if (bondVolumeError) {
       console.error('Sell bond volume error:', bondVolumeError);
     }
-  }, [balanceErrorV1, balanceErrorV2, committedErrorV1, committedErrorV2, bondVolumeError]);
+  }, [balanceErrorV2, committedErrorV1, committedErrorV2, bondVolumeError]);
 
   const isLoading =
-    isLoadingBalanceV1 ||
     isLoadingBalanceV2 ||
     isLoadingCommittedV1 ||
     isLoadingCommittedV2 ||
     isLoadingVolume;
 
   const error =
-    balanceErrorV1 || balanceErrorV2 || committedErrorV1 || committedErrorV2 || bondVolumeError;
+    balanceErrorV2 || committedErrorV1 || committedErrorV2 || bondVolumeError;
 
-  const totalBalanceRaw = (balanceV1 || 0n) + (balanceV2 || 0n);
+  // SellBond V1 holds only committed WBTC; non-committed WBTC is in SellBond V2.
+  // So "Balance" = WBTC in V2 contract + committed WBTC recorded in V1.
+  const totalBalanceRaw = (balanceV2 || 0n) + (committedWbtcRawV1 || 0n);
   const totalCommittedRaw = (committedWbtcRawV1 || 0n) + (committedWbtcRawV2 || 0n);
   const totalBondVolumeRaw = (totalBondVolumeRawV2 || 0n) + SELL_BOND_V1_TOTAL_VOLUME_RAW;
 

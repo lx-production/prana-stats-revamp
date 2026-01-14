@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts';
+import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_ABI } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
+import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V1, BUY_BOND_ABI_V2, SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V1, SELL_BOND_ABI_V2 } from '../constants/bonds';
 import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { getPolygonProvider } from '../utils/polygonProvider';
@@ -15,6 +16,11 @@ const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS
 const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
 const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
+
+const formatBigIntValue = (value: bigint) => {
+  const stringValue = value.toString();
+  return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
 const initialStats: PranaStatsData = {
   btcPriceUsd: null,
@@ -33,6 +39,10 @@ const initialStats: PranaStatsData = {
   buyBondVnd: null,
   sellBondPrana: null,
   sellBondVnd: null,
+  buyBondBalanceDisplay: null,
+  buyBondCommittedDisplay: null,
+  sellBondBalanceDisplay: null,
+  sellBondCommittedDisplay: null,
   priceChange: { m1: 0, m3: 0, m6: 0, y1: 0, atl: 0 },
   isLoading: true,
   error: null
@@ -49,6 +59,11 @@ const fetchPranaStats = async (
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
+  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, WBTC_ABI, provider);
+  const buyBondV1Contract = new ethers.Contract(BUY_BOND_ADDRESS_V1, BUY_BOND_ABI_V1, provider);
+  const buyBondV2Contract = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V2, provider);
+  const sellBondV1Contract = new ethers.Contract(SELL_BOND_ADDRESS_V1, SELL_BOND_ABI_V1, provider);
+  const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V2, provider);
 
   // Use try-catch for contract calls to avoid full failure if RPC is down
   const safeContractCall = async (call: Promise<any>, fallback: any) => {
@@ -66,11 +81,54 @@ const fetchPranaStats = async (
   bondTotalsCache.set('buy-v2', { total: buyBondTotalRawV2, timestamp: Date.now() });
   bondTotalsCache.set('sell-v2', { total: sellBondTotalRawV2, timestamp: Date.now() });
 
-  const [stakedBalance, interestContractBalanceRaw, interestNeeded] = await Promise.all([
+  const [
+    stakedBalance,
+    interestContractBalanceRaw,
+    interestNeeded,
+    buyCommittedV2,
+    buyCommittedV1,
+    buyBalanceV2Raw,
+    sellCommittedV2,
+    sellCommittedV1,
+    sellBalanceV2Raw,
+  ] = await Promise.all([
     safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
     safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
     safeContractCall(stakingContract.totalInterestNeeded(), 0n),
+    safeContractCall(buyBondV2Contract.committedPrana(), 0n),
+    safeContractCall(buyBondV1Contract.committedPrana(), 0n),
+    safeContractCall(tokenContract.balanceOf(BUY_BOND_ADDRESS_V2), 0n),
+    safeContractCall(sellBondV2Contract.committedWbtc(), 0n),
+    safeContractCall(sellBondV1Contract.committedWbtc(), 0n),
+    safeContractCall(wbtcTokenContract.balanceOf(SELL_BOND_ADDRESS_V2), 0n),
   ]);
+
+  const asBigInt = (value: any) =>
+    typeof value === 'bigint' ? value : BigInt(value?.toString?.() ?? '0');
+
+  const buyCommittedRawV1 = asBigInt(buyCommittedV1);
+  const buyCommittedRawV2 = asBigInt(buyCommittedV2);
+  const buyBalanceRawV2 = asBigInt(buyBalanceV2Raw);
+  const sellCommittedRawV1 = asBigInt(sellCommittedV1);
+  const sellCommittedRawV2 = asBigInt(sellCommittedV2);
+  const sellBalanceRawV2 = asBigInt(sellBalanceV2Raw);
+
+  // Contract breakdowns shown under Buy/Sell Bond cards.
+  // Optimization note: V1 token balances equal "committed" amounts, so we only read:
+  // - V1 committed
+  // - V2 token balance (non-committed funds)
+  const buyBondBalanceRaw = buyBalanceRawV2 + buyCommittedRawV1;
+  const buyBondCommittedRaw = buyCommittedRawV1 + buyCommittedRawV2;
+  const sellBondBalanceRaw = sellBalanceRawV2 + sellCommittedRawV1;
+  const sellBondCommittedRaw = sellCommittedRawV1 + sellCommittedRawV2;
+
+  const pranaFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+  const formatPranaDisplayFromRaw = (raw: bigint) => {
+    const formatted = ethers.formatUnits(raw, PRANA_DECIMALS);
+    const numeric = Number.parseFloat(formatted);
+    const rounded = Number.isFinite(numeric) ? Math.round(numeric) : 0;
+    return pranaFormatter.format(rounded);
+  };
 
   const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
 
@@ -115,6 +173,10 @@ const fetchPranaStats = async (
     buyBondVnd: buyBondPranaVal * pranaPriceVnd,
     sellBondPrana: sellBondPranaVal,
     sellBondVnd: sellBondPranaVal * pranaPriceVnd,
+    buyBondBalanceDisplay: formatPranaDisplayFromRaw(buyBondBalanceRaw),
+    buyBondCommittedDisplay: formatPranaDisplayFromRaw(buyBondCommittedRaw),
+    sellBondBalanceDisplay: formatBigIntValue(sellBondBalanceRaw),
+    sellBondCommittedDisplay: formatBigIntValue(sellBondCommittedRaw),
     priceChange: {
       m1: calcChange(getFirstPrice(d30, mockM1), latestSatPriceUsd),
       m3: calcChange(getFirstPrice(d90, mockM3), latestSatPriceUsd),
