@@ -14,6 +14,8 @@ const PORT = Number(process.env.PORT || 4173);
 
 let refreshInFlight = null;
 
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
+
 function contentTypeFor(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.html') return 'text/html; charset=utf-8';
@@ -25,7 +27,23 @@ function contentTypeFor(filePath) {
   if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.ico') return 'image/x-icon';
+  if (ext === '.glb') return 'model/gltf-binary';
+  if (ext === '.gltf') return 'model/gltf+json; charset=utf-8';
   return 'application/octet-stream';
+}
+
+function cacheControlFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+
+  // HTML should always revalidate so deploys show up immediately.
+  if (ext === '.html') return 'no-cache';
+
+  // 3D model assets: cache for 1 year.
+  if (ext === '.glb' || ext === '.gltf' || ext === '.bin') {
+    return `public, max-age=${ONE_YEAR_SECONDS}, immutable`;
+  }
+
+  return null;
 }
 
 async function fileExists(p) {
@@ -41,6 +59,8 @@ async function serveFile(res, filePath) {
   const data = await fs.readFile(filePath);
   res.statusCode = 200;
   res.setHeader('Content-Type', contentTypeFor(filePath));
+  const cacheControl = cacheControlFor(filePath);
+  if (cacheControl) res.setHeader('Cache-Control', cacheControl);
   res.end(data);
 }
 
