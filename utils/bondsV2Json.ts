@@ -7,10 +7,35 @@ const BONDS_V2_JSON_TTL_MS = 15_000;
 
 let cached: { value: unknown; timestamp: number } | null = null;
 let inFlight: Promise<unknown> | null = null;
+let refreshAttempted = false;
+let refreshInFlight: Promise<boolean> | null = null;
 
 export function getBondsV2JsonUrl() {
   // Cache-buster prevents stale browser/proxy caching when the JSON might have been refreshed.
   return `/bonds_v2.json?t=${PAGE_LOAD_CACHE_BUST}`;
+}
+
+async function refreshBondsV2BestEffort(): Promise<boolean> {
+  // Only attempt once per page load. `fetchJson` also dedupes GETs, but this avoids
+  // refetching on later calls in the same session.
+  if (refreshAttempted) return false;
+  refreshAttempted = true;
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetchJson<any>('/api/bonds-v2/refresh');
+        return Boolean(res?.updated);
+      } catch {
+        // Static hosting (no API) will 404; ignore and fall back to existing JSON.
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+
+  return await refreshInFlight;
 }
 
 export async function fetchBondsV2Json<T = unknown>(opts: { force?: boolean } = {}): Promise<T> {
@@ -26,6 +51,8 @@ export async function fetchBondsV2Json<T = unknown>(opts: { force?: boolean } = 
   if (!force && inFlight) return (await inFlight) as T;
 
   inFlight = (async () => {
+    const refreshUpdated = await refreshBondsV2BestEffort();
+
     const value = await fetchJson<T>(getBondsV2JsonUrl());
     cached = { value, timestamp: Date.now() };
     return value;
