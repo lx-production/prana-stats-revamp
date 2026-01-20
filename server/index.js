@@ -11,6 +11,7 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 let refreshInFlight = null;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
+const BONDS_JSON_FILES = ['bonds_v2.json', 'bonds_v2_details.json'];
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
 // Keyed by absolute file path and invalidated when file mtime (modified time) changes.
@@ -90,6 +91,16 @@ async function serveFile(res, filePath) {
   }
 }
 
+async function copyFileToDistIfExists(filename) {
+  const src = path.join(PROJECT_ROOT, filename);
+  const dest = path.join(DIST_DIR, filename);
+  if (!(await fileExists(src))) return { filename, copied: false, reason: 'missing_source' };
+
+  await fs.mkdir(DIST_DIR, { recursive: true });
+  await fs.copyFile(src, dest);
+  return { filename, copied: true };
+}
+
 function sendJson(res, statusCode, body) {
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -105,7 +116,14 @@ const server = http.createServer(async (req, res) => {
       if (!refreshInFlight) {
         refreshInFlight = (async () => {
           try {
-            return await updateBondsV2();
+            const result = await updateBondsV2();
+
+            // Keep `dist/` in sync so `npm run serve` can serve everything from dist/.
+            // We copy on every refresh call (even if nothing new was found) to ensure the
+            // requested `/bonds_v2.json?t=...` always has a fresh dist counterpart.
+            const copied = await Promise.all(BONDS_JSON_FILES.map(copyFileToDistIfExists));
+
+            return { ...result, distCopy: copied };
           } finally {
             refreshInFlight = null;
           }
@@ -114,15 +132,6 @@ const server = http.createServer(async (req, res) => {
 
       const result = await refreshInFlight;
       return sendJson(res, 200, result);
-    }
-
-    // Always serve the JSON files directly from repo root (so updates are reflected immediately).
-    if (url.pathname === '/bonds_v2.json' || url.pathname === '/bonds_v2_details.json') {
-      const filePath = path.join(PROJECT_ROOT, url.pathname.slice(1));
-      if (!(await fileExists(filePath))) {
-        return sendJson(res, 404, { error: 'not_found' });
-      }
-      return await serveFile(res, filePath);
     }
 
     // Static build: serve from dist/ (with SPA fallback to index.html).
