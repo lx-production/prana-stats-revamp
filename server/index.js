@@ -11,7 +11,7 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 let refreshInFlight = null;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
-const BONDS_JSON_FILES = ['bonds_v2.json', 'bonds_v2_details.json'];
+const BONDS_JSON_FILES = ['bonds_v2.json'];
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
 // Keyed by absolute file path and invalidated when file mtime (modified time) changes.
