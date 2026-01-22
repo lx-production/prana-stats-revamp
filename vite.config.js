@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+const DATA_JSON_CACHE_SECONDS = 60 * 60 // 1 hour
+
 const ROOT_JSON_FILES = [
   'bonds_v2.json',
   'data_180_days.json',
@@ -36,6 +38,12 @@ function serveRootJsonFiles() {
           const data = await fs.readFile(fullPath)
           res.statusCode = 200
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          if (filename.startsWith('data_')) {
+            res.setHeader('Cache-Control', `public, max-age=${DATA_JSON_CACHE_SECONDS}`)
+          } else {
+            // For bonds JSON, always revalidate in dev.
+            res.setHeader('Cache-Control', 'no-cache')
+          }
           res.end(data)
         } catch (err) {
           res.statusCode = 404

@@ -7,7 +7,7 @@ import { formatDecimal, formatInteger } from '../utils/formatters';
 const currencies: Array<{ value: ConverterCurrency; label: string }> = [
   { value: 'USD', label: 'USD' },
   { value: 'VND', label: 'VNĐ' },
-  { value: 'SATs', label: 'SATs' },
+  { value: 'SATs', label: 'SAT' },
 ];
 
 export const PranaConverter: React.FC = () => {

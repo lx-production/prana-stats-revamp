@@ -11,6 +11,7 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 let refreshInFlight = null;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
+const DATA_JSON_CACHE_SECONDS = 60 * 60; // 1 hour
 const BONDS_JSON_FILES = ['bonds_v2.json'];
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
@@ -35,11 +36,21 @@ function contentTypeFor(filePath) {
 
 function cacheControlFor(filePath) {
   const ext = path.extname(filePath).toLowerCase();
+  const base = path.basename(filePath);
 
   // HTML should always revalidate so deploys show up immediately.
   if (ext === '.html') return 'no-cache';
 
-  // JSON files can change frequently; force revalidation.
+  // Data JSON is static-ish; cache it to avoid refetching on every page load.
+  // (We don't mark it immutable because filenames are not content-hashed.)
+  if (ext === '.json' && base.startsWith('data_')) {
+    return `public, max-age=${DATA_JSON_CACHE_SECONDS}`;
+  }
+
+  // Bonds JSON can be refreshed via the API; always revalidate.
+  if (ext === '.json' && base.startsWith('bonds_')) return 'no-cache';
+
+  // Other JSON: be safe and revalidate.
   if (ext === '.json') return 'no-cache';
 
   // Vite build assets are content-hashed (dist/assets/*), so we can cache aggressively.
