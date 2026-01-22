@@ -11,6 +11,9 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 let refreshInFlight = null;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
+// NOTE:
+// - data_*.json files are static-ish but should still cache in the browser to
+//   avoid refetching on every load. Keep the TTL modest and rely on ETag when stale.
 const DATA_JSON_CACHE_SECONDS = 60 * 60; // 1 hour
 const BONDS_JSON_FILES = ['bonds_v2.json'];
 
@@ -44,7 +47,7 @@ function cacheControlFor(filePath) {
   // Data JSON is static-ish; cache it to avoid refetching on every page load.
   // (We don't mark it immutable because filenames are not content-hashed.)
   if (ext === '.json' && base.startsWith('data_')) {
-    return `public, max-age=${DATA_JSON_CACHE_SECONDS}`;
+    return `public, max-age=${DATA_JSON_CACHE_SECONDS}, must-revalidate`;
   }
 
   // Bonds JSON can be refreshed via the API; always revalidate.
@@ -71,8 +74,40 @@ async function fileExists(p) {
   }
 }
 
-async function serveFile(res, filePath) {
+async function serveFile(req, res, filePath) {
   const stat = await fs.stat(filePath);
+
+  // Weak ETag based on size + mtime is enough for static dist files.
+  // This enables conditional requests (304) even when Cache-Control requires revalidation.
+  const etag = `W/"${stat.size}-${stat.mtimeMs}"`;
+  res.setHeader('ETag', etag);
+  res.setHeader('Last-Modified', stat.mtime.toUTCString());
+
+  // If the client already has this exact version, return 304 without reading the file.
+  const ifNoneMatchRaw = req?.headers?.['if-none-match'];
+  const ifNoneMatch = typeof ifNoneMatchRaw === 'string' ? ifNoneMatchRaw : '';
+  const ifNoneMatchList = ifNoneMatch
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (ifNoneMatchList.includes(etag)) {
+    res.statusCode = 304;
+    const cacheControl = cacheControlFor(filePath);
+    if (cacheControl) res.setHeader('Cache-Control', cacheControl);
+    res.end();
+    return;
+  }
+
+  const ifModifiedSinceRaw = req?.headers?.['if-modified-since'];
+  const ifModifiedSince = typeof ifModifiedSinceRaw === 'string' ? Date.parse(ifModifiedSinceRaw) : NaN;
+  if (Number.isFinite(ifModifiedSince) && stat.mtimeMs <= ifModifiedSince) {
+    res.statusCode = 304;
+    const cacheControl = cacheControlFor(filePath);
+    if (cacheControl) res.setHeader('Cache-Control', cacheControl);
+    res.end();
+    return;
+  }
 
   const cached = fileCache.get(filePath);
   if (cached && cached.mtimeMs === stat.mtimeMs) {
@@ -149,12 +184,12 @@ const server = http.createServer(async (req, res) => {
     const requested = url.pathname === '/' ? '/index.html' : url.pathname;
     const distPath = path.join(DIST_DIR, requested);
     if (await fileExists(distPath)) {
-      return await serveFile(res, distPath);
+      return await serveFile(req, res, distPath);
     }
 
     const fallback = path.join(DIST_DIR, 'index.html');
     if (await fileExists(fallback)) {
-      return await serveFile(res, fallback);
+      return await serveFile(req, res, fallback);
     }
 
     sendJson(res, 404, { error: 'not_found' });
@@ -167,4 +202,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
-
