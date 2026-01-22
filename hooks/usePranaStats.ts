@@ -41,8 +41,14 @@ const initialStats: PranaStatsData = {
   sellBondVnd: null,
   buyBondBalanceDisplay: null,
   buyBondCommittedDisplay: null,
+  buyBondCapacityDisplay: null,
+  buyBondCommittedPercent: null,
+  buyBondCapacityPercent: null,
   sellBondBalanceDisplay: null,
   sellBondCommittedDisplay: null,
+  sellBondCapacityDisplay: null,
+  sellBondCommittedPercent: null,
+  sellBondCapacityPercent: null,
   priceChange: { m1: 0, m3: 0, m6: 0, y1: 0, atl: 0 },
   isLoading: true,
   error: null
@@ -122,6 +128,20 @@ const fetchPranaStats = async (
   const sellBondBalanceRaw = sellBalanceRawV2 + sellCommittedRawV1;
   const sellBondCommittedRaw = sellCommittedRawV1 + sellCommittedRawV2;
 
+  const buyBondCapacityRaw = buyBondBalanceRaw > buyBondCommittedRaw ? buyBondBalanceRaw - buyBondCommittedRaw : 0n;
+  const buyBondCommittedPercent =
+    buyBondBalanceRaw === 0n
+      ? 0
+      : Number((buyBondCommittedRaw * 10_000n) / buyBondBalanceRaw) / 100; // 2 decimals
+  const buyBondCapacityPercent = Math.max(0, 100 - buyBondCommittedPercent);
+
+  const sellBondCapacityRaw = sellBondBalanceRaw > sellBondCommittedRaw ? sellBondBalanceRaw - sellBondCommittedRaw : 0n;
+  const sellBondCommittedPercent =
+    sellBondBalanceRaw === 0n
+      ? 0
+      : Number((sellBondCommittedRaw * 10_000n) / sellBondBalanceRaw) / 100; // 2 decimals
+  const sellBondCapacityPercent = Math.max(0, 100 - sellBondCommittedPercent);
+
   const pranaFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
   const formatPranaDisplayFromRaw = (raw: bigint) => {
     const formatted = ethers.formatUnits(raw, PRANA_DECIMALS);
@@ -175,8 +195,14 @@ const fetchPranaStats = async (
     sellBondVnd: sellBondPranaVal * pranaPriceVnd,
     buyBondBalanceDisplay: formatPranaDisplayFromRaw(buyBondBalanceRaw),
     buyBondCommittedDisplay: formatPranaDisplayFromRaw(buyBondCommittedRaw),
+    buyBondCapacityDisplay: formatPranaDisplayFromRaw(buyBondCapacityRaw),
+    buyBondCommittedPercent,
+    buyBondCapacityPercent,
     sellBondBalanceDisplay: formatBigIntValue(sellBondBalanceRaw),
     sellBondCommittedDisplay: formatBigIntValue(sellBondCommittedRaw),
+    sellBondCapacityDisplay: formatBigIntValue(sellBondCapacityRaw),
+    sellBondCommittedPercent,
+    sellBondCapacityPercent,
     priceChange: {
       m1: calcChange(getFirstPrice(d30, mockM1), latestSatPriceUsd),
       m3: calcChange(getFirstPrice(d90, mockM3), latestSatPriceUsd),

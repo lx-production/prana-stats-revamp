@@ -87,10 +87,14 @@ export const PranaStats: React.FC = () => {
     buyBondVnd,
     sellBondPrana,
     sellBondVnd,
-    buyBondBalanceDisplay,
     buyBondCommittedDisplay,
-    sellBondBalanceDisplay,
+    buyBondCapacityDisplay,
+    buyBondCommittedPercent,
+    buyBondCapacityPercent,
     sellBondCommittedDisplay,
+    sellBondCapacityDisplay,
+    sellBondCommittedPercent,
+    sellBondCapacityPercent,
     priceChange,
     isLoading,
     error
@@ -162,6 +166,89 @@ export const PranaStats: React.FC = () => {
     );
   };
 
+  const BondProgressBar: React.FC<{
+    loading: boolean;
+    committedValue?: string;
+    capacityValue?: string;
+    committedPercent?: number | null;
+    capacityPercent?: number | null;
+    unit: string;
+  }> = ({ loading, committedValue, capacityValue, committedPercent, capacityPercent, unit }) => {
+    const safeCommittedPercent =
+      typeof committedPercent === 'number' && Number.isFinite(committedPercent)
+        ? Math.min(100, Math.max(0, committedPercent))
+        : 0;
+    const safeCapacityPercent =
+      typeof capacityPercent === 'number' && Number.isFinite(capacityPercent)
+        ? Math.min(100, Math.max(0, capacityPercent))
+        : Math.max(0, 100 - safeCommittedPercent);
+
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Progress bar */}
+        <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+          {loading ? (
+            <div className="h-full w-2/3 bg-white/10 animate-pulse" />
+          ) : (
+            <div className="h-full w-full flex">
+              <div
+                className="h-full bg-emerald-400/90"
+                style={{ width: `${safeCommittedPercent}%` }}
+                aria-label="Committed"
+              />
+              <div
+                className="h-full bg-indigo-400/90"
+                style={{ width: `${safeCapacityPercent}%` }}
+                aria-label="Capacity"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-start gap-2">
+            <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
+            <div className="leading-tight">
+              <div className="text-gray-300 font-medium">Committed</div>
+              <div className="text-gray-400 font-mono">
+                {loading ? (
+                  <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
+                ) : (
+                  <>
+                    {committedValue ?? '—'} {unit}
+                    <span className="text-gray-500 ml-2">
+                      ({Math.round(safeCommittedPercent)}%)
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
+            <div className="leading-tight">
+              <div className="text-gray-300 font-medium">Capacity</div>
+              <div className="text-gray-400 font-mono">
+                {loading ? (
+                  <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
+                ) : (
+                  <>
+                    {capacityValue ?? '—'} {unit}
+                    <span className="text-gray-500 ml-2">
+                      ({Math.round(safeCapacityPercent)}%)
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-10">
       {error && (
@@ -192,10 +279,12 @@ export const PranaStats: React.FC = () => {
           loading={isLoading}
           className="col-span-1"
           footer={
-            <BondBreakdown
+            <BondProgressBar
               loading={isLoading}
-              balanceValue={buyBondBalanceDisplay ?? undefined}
               committedValue={buyBondCommittedDisplay ?? undefined}
+              capacityValue={buyBondCapacityDisplay ?? undefined}
+              committedPercent={buyBondCommittedPercent}
+              capacityPercent={buyBondCapacityPercent}
               unit="PRANA"
             />
           }
@@ -211,10 +300,12 @@ export const PranaStats: React.FC = () => {
           loading={isLoading}
           className="col-span-1"
           footer={
-            <BondBreakdown
+            <BondProgressBar
               loading={isLoading}
-              balanceValue={sellBondBalanceDisplay ?? undefined}
               committedValue={sellBondCommittedDisplay ?? undefined}
+              capacityValue={sellBondCapacityDisplay ?? undefined}
+              committedPercent={sellBondCommittedPercent}
+              capacityPercent={sellBondCapacityPercent}
               unit="SAT"
             />
           }
