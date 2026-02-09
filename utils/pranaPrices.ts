@@ -1,19 +1,10 @@
-import { fetchJson } from './fetchJson';
-import type { PranaPricesBundle } from '../types';
+import { fetchJson, fetchJsonSafe } from './fetchJson';
 import { fetchBondsV2JsonSafe } from './bondsV2Json';
+import type { PranaPricesBundle } from '../types';
 
 const PRICES_CACHE_TTL_MS = 15_000;
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;
-
-const fetchJsonSafe = async <T,>(url: string, fallback: T): Promise<T> => {
-  try {
-    return await fetchJson<T>(url);
-  } catch (e) {
-    console.warn(`Failed to fetch ${url}`, e);
-    return fallback;
-  }
-};
 
 const fetchBtcPrices = async () => {
   const json = await fetchJson<any>(

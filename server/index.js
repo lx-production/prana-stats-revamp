@@ -9,13 +9,12 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
-let refreshInFlight = null;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
-// NOTE:
-// - data_*.json files are static-ish but should still cache in the browser to
-//   avoid refetching on every load. Keep the TTL modest and rely on ETag when stale.
 const DATA_JSON_CACHE_SECONDS = 60 * 60; // 1 hour
 const BONDS_JSON_FILES = ['bonds_v2.json'];
+
+// Tracks in-flight refresh requests to avoid multiple concurrent calls.
+let refreshInFlight = null;
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
 // Keyed by absolute file path and invalidated when file mtime (modified time) changes.

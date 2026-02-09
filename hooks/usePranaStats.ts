@@ -4,6 +4,7 @@ import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_ABI } from '../consta
 import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
 import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V1, BUY_BOND_ABI_V2, SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V1, SELL_BOND_ABI_V2 } from '../constants/bonds';
 import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
+import { getBondingStats } from '../utils/bondingStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { BondTotalsCacheEntry, PranaStatsData, PranaStatsComputed } from '../types';
@@ -17,17 +18,11 @@ const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint
 const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
 
-const formatBigIntValue = (value: bigint) => {
-  const stringValue = value.toString();
-  return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
 const initialStats: PranaStatsData = {
   btcPriceUsd: null,
   btcPriceVnd: null,
   usdToVndRate: null,
   latestSatPrice: null,
-
   marketCapVnd: null,
   stakedPrana: null,
   stakedVnd: null,
@@ -61,6 +56,7 @@ const fetchPranaStats = async (
 
   const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json } =
     await fetchPranaPricesBundle();
+    
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
@@ -119,47 +115,24 @@ const fetchPranaStats = async (
   const sellCommittedRawV2 = asBigInt(sellCommittedV2);
   const sellBalanceRawV2 = asBigInt(sellBalanceV2Raw);
 
-  // Contract breakdowns shown under Buy/Sell Bond cards.
-  // Optimization note: V1 token balances equal "committed" amounts, so we only read:
-  // - V1 committed
-  // - V2 token balance (non-committed funds)
-  const buyBondBalanceRaw = buyBalanceRawV2 + buyCommittedRawV1;
-  const buyBondCommittedRaw = buyCommittedRawV1 + buyCommittedRawV2;
-  const sellBondBalanceRaw = sellBalanceRawV2 + sellCommittedRawV1;
-  const sellBondCommittedRaw = sellCommittedRawV1 + sellCommittedRawV2;
-
-  const buyBondCapacityRaw = buyBondBalanceRaw > buyBondCommittedRaw ? buyBondBalanceRaw - buyBondCommittedRaw : 0n;
-  const buyBondCommittedPercent =
-    buyBondBalanceRaw === 0n
-      ? 0
-      : Number((buyBondCommittedRaw * 10_000n) / buyBondBalanceRaw) / 100; // 2 decimals
-  const buyBondCapacityPercent = Math.max(0, 100 - buyBondCommittedPercent);
-
-  const sellBondCapacityRaw = sellBondBalanceRaw > sellBondCommittedRaw ? sellBondBalanceRaw - sellBondCommittedRaw : 0n;
-  const sellBondCommittedPercent =
-    sellBondBalanceRaw === 0n
-      ? 0
-      : Number((sellBondCommittedRaw * 10_000n) / sellBondBalanceRaw) / 100; // 2 decimals
-  const sellBondCapacityPercent = Math.max(0, 100 - sellBondCommittedPercent);
-
-  const pranaFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
-  const formatPranaDisplayFromRaw = (raw: bigint) => {
-    const formatted = ethers.formatUnits(raw, PRANA_DECIMALS);
-    const numeric = Number.parseFloat(formatted);
-    const rounded = Number.isFinite(numeric) ? Math.round(numeric) : 0;
-    return pranaFormatter.format(rounded);
-  };
-
   const formatEther = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
-
-  const totalBuyBondRaw = buyBondTotalRawV2 + BUY_BOND_V1_TOTAL_VOLUME_RAW;
-  const totalSellBondRaw = sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
 
   const stakedPrana = formatEther(stakedBalance) || 1000000; // Mock ~1M staked if 0/failed
   const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
   const interestPrana = formatEther(interestNeeded) || 80000; // Mock ~80k interest if 0/failed
-  const buyBondPranaVal = formatEther(totalBuyBondRaw) || 150000; // Mock volume
-  const sellBondPranaVal = formatEther(totalSellBondRaw) || 335000; // Mock volume
+  const bondingStats = getBondingStats({
+    buyCommittedV1: buyCommittedRawV1,
+    buyCommittedV2: buyCommittedRawV2,
+    buyBalanceV2: buyBalanceRawV2,
+    sellCommittedV1: sellCommittedRawV1,
+    sellCommittedV2: sellCommittedRawV2,
+    sellBalanceV2: sellBalanceRawV2,
+    buyBondTotalRawV2,
+    sellBondTotalRawV2,
+    buyBondV1TotalRaw: BUY_BOND_V1_TOTAL_VOLUME_RAW,
+    sellBondV1TotalRaw: SELL_BOND_V1_TOTAL_VOLUME_RAW,
+    pranaPriceVnd,
+  });
 
   // Calculate Changes
   // Script uses: ((newValue - oldValue) / oldValue) * 100
@@ -189,20 +162,20 @@ const fetchPranaStats = async (
     interestContractBalanceVnd: interestContractBalancePrana * pranaPriceVnd,
     interestPrana,
     interestVnd: interestPrana * pranaPriceVnd,
-    buyBondPrana: buyBondPranaVal,
-    buyBondVnd: buyBondPranaVal * pranaPriceVnd,
-    sellBondPrana: sellBondPranaVal,
-    sellBondVnd: sellBondPranaVal * pranaPriceVnd,
-    buyBondBalanceDisplay: formatPranaDisplayFromRaw(buyBondBalanceRaw),
-    buyBondCommittedDisplay: formatPranaDisplayFromRaw(buyBondCommittedRaw),
-    buyBondCapacityDisplay: formatPranaDisplayFromRaw(buyBondCapacityRaw),
-    buyBondCommittedPercent,
-    buyBondCapacityPercent,
-    sellBondBalanceDisplay: formatBigIntValue(sellBondBalanceRaw),
-    sellBondCommittedDisplay: formatBigIntValue(sellBondCommittedRaw),
-    sellBondCapacityDisplay: formatBigIntValue(sellBondCapacityRaw),
-    sellBondCommittedPercent,
-    sellBondCapacityPercent,
+    buyBondPrana: bondingStats.buyBondPrana,
+    buyBondVnd: bondingStats.buyBondVnd,
+    sellBondPrana: bondingStats.sellBondPrana,
+    sellBondVnd: bondingStats.sellBondVnd,
+    buyBondBalanceDisplay: bondingStats.buyBondBalanceDisplay,
+    buyBondCommittedDisplay: bondingStats.buyBondCommittedDisplay,
+    buyBondCapacityDisplay: bondingStats.buyBondCapacityDisplay,
+    buyBondCommittedPercent: bondingStats.buyBondCommittedPercent,
+    buyBondCapacityPercent: bondingStats.buyBondCapacityPercent,
+    sellBondBalanceDisplay: bondingStats.sellBondBalanceDisplay,
+    sellBondCommittedDisplay: bondingStats.sellBondCommittedDisplay,
+    sellBondCapacityDisplay: bondingStats.sellBondCapacityDisplay,
+    sellBondCommittedPercent: bondingStats.sellBondCommittedPercent,
+    sellBondCapacityPercent: bondingStats.sellBondCapacityPercent,
     priceChange: {
       m1: calcChange(getFirstPrice(d30, mockM1), latestSatPriceUsd),
       m3: calcChange(getFirstPrice(d90, mockM3), latestSatPriceUsd),

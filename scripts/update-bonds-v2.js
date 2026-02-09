@@ -38,27 +38,27 @@ async function scanFromIndex({ contract, label, startIndex, existingBonds, exist
 
       pranaTotal += toBigInt(bond?.pranaAmount);
 
-      const raw = [];
+      const values = [];
       const len = typeof bond?.length === 'number' ? bond.length : 0;
       for (let i = 0; i < len; i += 1) {
-        raw.push(serializeForJson(bond[i]));
+        values.push(serializeForJson(bond[i]));
       }
 
       const fields = {};
-      if (fieldNames && fieldNames.length === raw.length) {
-        for (let i = 0; i < raw.length; i += 1) {
-          fields[fieldNames[i]] = raw[i];
+      if (fieldNames && fieldNames.length === values.length) {
+        // Use meaningful names: pranaAmount, owner, etc
+        for (let i = 0; i < values.length; i += 1) {
+          fields[fieldNames[i]] = values[i];
         }
       } else {
-        for (let i = 0; i < raw.length; i += 1) {
-          fields[`field${i}`] = raw[i];
+        for (let i = 0; i < values.length; i += 1) {
+          fields[`field${i}`] = values[i];
         }
       }
 
       bonds.push({
         index,
         ...fields,
-        raw,
       });
 
       added += 1;

@@ -118,3 +118,34 @@ export interface BondingStatsProps {
   sellBondCommittedPercent: number | null;
   sellBondCapacityPercent: number | null;
 }
+
+export interface BondingStatsInput {
+  buyCommittedV1: bigint;
+  buyCommittedV2: bigint;
+  buyBalanceV2: bigint;
+  sellCommittedV1: bigint;
+  sellCommittedV2: bigint;
+  sellBalanceV2: bigint;
+  buyBondTotalRawV2: bigint;
+  sellBondTotalRawV2: bigint;
+  buyBondV1TotalRaw: bigint;
+  sellBondV1TotalRaw: bigint;
+  pranaPriceVnd: number;
+}
+
+export interface BondingStatsOutput {
+  buyBondPrana: number;
+  buyBondVnd: number;
+  sellBondPrana: number;
+  sellBondVnd: number;
+  buyBondBalanceDisplay: string;
+  buyBondCommittedDisplay: string;
+  buyBondCapacityDisplay: string;
+  buyBondCommittedPercent: number;
+  buyBondCapacityPercent: number;
+  sellBondBalanceDisplay: string;
+  sellBondCommittedDisplay: string;
+  sellBondCapacityDisplay: string;
+  sellBondCommittedPercent: number;
+  sellBondCapacityPercent: number;
+}

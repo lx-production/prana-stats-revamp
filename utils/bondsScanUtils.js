@@ -17,8 +17,8 @@ function isNumericKey(key) {
 }
 
 function serializeForJson(value) {
-  if (typeof value === 'bigint') return value.toString();
-  if (Array.isArray(value)) return value.map(serializeForJson);
+  if (typeof value === 'bigint') return value.toString(); // JSON doesn't support BigInt
+  if (Array.isArray(value)) return value.map(serializeForJson); // Recursively serialize arrays
   if (value && typeof value === 'object') {
     const out = {};
     for (const [k, v] of Object.entries(value)) {
@@ -31,6 +31,7 @@ function serializeForJson(value) {
   return value;
 }
 
+// Get the field names for the bonds tuple
 function getBondTupleFieldNames(contract) {
   try {
     const fn = contract.interface.getFunction('bonds');
@@ -46,28 +47,20 @@ function getBondTupleFieldNames(contract) {
 
 function parseDotEnv(content) {
   const env = {};
-  const lines = content.split(/\r?\n/);
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
+  const rawLine = content.split(/\r?\n/).find((line) => {
+    const trimmed = line.trim();
+    return trimmed && !trimmed.startsWith('#');
+  });
+  if (!rawLine) return env; // Skip if no line was found
 
-    const cleaned = line.startsWith('export ') ? line.slice('export '.length).trim() : line;
-    const eq = cleaned.indexOf('=');
-    if (eq === -1) continue;
+  const line = rawLine.trim();
+  const cleaned = line.startsWith('export ') ? line.slice('export '.length).trim() : line;
+  const eq = cleaned.indexOf('=');
+  if (eq === -1) return env;
 
-    const key = cleaned.slice(0, eq).trim();
-    let value = cleaned.slice(eq + 1).trim();
-
-    // remove surrounding quotes
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    if (key) env[key] = value;
-  }
+  const key = cleaned.slice(0, eq).trim();
+  const value = cleaned.slice(eq + 1).trim();
+  if (key) env[key] = value;
   return env;
 }
 

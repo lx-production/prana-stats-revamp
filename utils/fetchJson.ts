@@ -1,3 +1,6 @@
+// Fetches JSON from a URL with request deduplication for GET requests.
+// Multiple simultaneous requests to the same GET endpoint share a single network call.
+// Tracks in-flight requests by URL to deduplicate concurrent GET requests
 const inFlight = new Map<string, Promise<unknown>>();
 
 function getRequestKey(url: string, init?: RequestInit) {
@@ -8,11 +11,22 @@ function getRequestKey(url: string, init?: RequestInit) {
   return url;
 }
 
-export async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const key = getRequestKey(url, init);
+/**
+ * Fetch JSON from a URL, with GET request deduplication.
+ * - If a dedupeKey is provided (or automatically generated for GETs), only one in-flight fetch to that key is allowed at a time.
+ * - If a request for the same key is already in progress, return the same Promise instead of issuing a new network call.
+ * - If dedupeKey is null, deduplication is disabled and a new request is always sent.
+ */
+export async function fetchJson<T = unknown>(
+  url: string,
+  init?: RequestInit,
+  options?: { dedupeKey?: string | null },
+): Promise<T> {
+  const key = options?.dedupeKey === null ? null : (options?.dedupeKey ?? getRequestKey(url, init));
   const existing = key ? inFlight.get(key) : null;
   if (existing) return existing as Promise<T>;
 
+  // Create new fetch promise
   const promise = (async () => {
     const res = await fetch(url, init);
     if (!res.ok) {
@@ -21,11 +35,22 @@ export async function fetchJson<T = unknown>(url: string, init?: RequestInit): P
     return (await res.json()) as T;
   })();
 
+  // Store promise for GET requests to enable deduplication
   if (key) inFlight.set(key, promise as Promise<unknown>);
   try {
     return await promise;
   } finally {
+    // Clean up after request completes (success or error)
     if (key) inFlight.delete(key);
   }
 }
 
+// Fetches JSON with error handling - returns fallback value on failure instead of throwing.
+export async function fetchJsonSafe<T>(url: string, fallback: T): Promise<T> {
+  try {
+    return await fetchJson<T>(url);
+  } catch (e) {
+    console.warn(`Failed to fetch ${url}`, e);
+    return fallback;
+  }
+}
