@@ -27,7 +27,7 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
 
   if (!inFlight) {
     inFlight = (async () => {
-      const [btcPrices, satsDataRes, d30, d90, d180, d365, bondsV2Json] = await Promise.all([
+      const [btcPrices, satsData, d30, d90, d180, d365, bondsV2Json] = await Promise.all([
         fetchBtcPrices(),
         fetchJsonSafe<any[]>('/data_sats.json', []),
         fetchJsonSafe<any[]>('/data_30_days.json', []),
@@ -41,8 +41,8 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
       const btcPriceVnd = btcPrices.vnd;
       const usdToVndRate = btcPriceUsd === 0 ? 0 : btcPriceVnd / btcPriceUsd;
 
-      // Fallback for sats data if missing (mock current price ~60 sats)
-      const latestSatPrice = satsDataRes.length > 0 ? satsDataRes[satsDataRes.length - 1].p : 60;
+      // Fallback for sats data if missing (mock current price ~70 sats)
+      const latestSatPrice = satsData.length > 0 ? satsData[satsData.length - 1].p : 70;
 
       const value: PranaPricesBundle = {
         btcPriceUsd,

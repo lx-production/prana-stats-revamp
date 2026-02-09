@@ -1,0 +1,32 @@
+import { PranaStatsData } from '../types';
+
+export const initialPranaStats: PranaStatsData = {
+  btcPriceUsd: null,
+  btcPriceVnd: null,
+  usdToVndRate: null,
+  latestSatPrice: null,
+  marketCapVnd: null,
+  stakedPrana: null,
+  stakedVnd: null,
+  interestContractBalancePrana: null,
+  interestContractBalanceVnd: null,
+  interestPrana: null,
+  interestVnd: null,
+  buyBondPrana: null,
+  buyBondVnd: null,
+  sellBondPrana: null,
+  sellBondVnd: null,
+  buyBondBalanceDisplay: null,
+  buyBondCommittedDisplay: null,
+  buyBondCapacityDisplay: null,
+  buyBondCommittedPercent: null,
+  buyBondCapacityPercent: null,
+  sellBondBalanceDisplay: null,
+  sellBondCommittedDisplay: null,
+  sellBondCapacityDisplay: null,
+  sellBondCommittedPercent: null,
+  sellBondCapacityPercent: null,
+  priceChange: { m1: 0, m3: 0, m6: 0, y1: 0, atl: 0 },
+  isLoading: true,
+  error: null
+};
