@@ -16,7 +16,7 @@ export function getBondsV2JsonUrl() {
   return `/bonds_v2.json?t=${PAGE_LOAD_CACHE_BUST}`;
 }
 
-export async function fetchBondsV2Json<T = unknown>(opts: { force?: boolean } = {}): Promise<T> {
+async function fetchBondsV2JsonCached<T = unknown>(opts: { force?: boolean } = {}): Promise<T> {
   const force = opts.force === true;
   const now = Date.now();
 
@@ -32,9 +32,10 @@ export async function fetchBondsV2Json<T = unknown>(opts: { force?: boolean } = 
   return value;
 }
 
+// Safe wrapper that keeps cache-busting + TTL logic private.
 export async function fetchBondsV2JsonSafe<T>(fallback: T, opts: { force?: boolean } = {}): Promise<T> {
   try {
-    return await fetchBondsV2Json<T>(opts);
+    return await fetchBondsV2JsonCached<T>(opts);
   } catch (e) {
     console.warn('Failed to fetch bonds_v2.json', e);
     return fallback;

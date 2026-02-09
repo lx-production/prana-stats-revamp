@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchJson } from '../utils/fetchJson';
-import { fetchBondsV2Json } from '../utils/bondsV2Json';
+import { fetchBondsV2JsonSafe } from '../utils/bondsV2Json';
 
 const safeLower = (value) => (typeof value === 'string' ? value.toLowerCase() : '');
 
@@ -42,7 +42,7 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
 
         // If refresh found new bonds and updated JSON, force a refetch so we don't reuse a cached value.
         // Otherwise, reuse the shared cache to avoid duplicate requests on page load.
-        const data = await fetchBondsV2Json({ force: refreshUpdated });
+        const data = await fetchBondsV2JsonSafe({}, { force: refreshUpdated });
         const buyAddress = safeLower(data?.buy?.address);
         const sellAddress = safeLower(data?.sell?.address);
         const buyTotalStr = data?.buy?.[fieldName];
