@@ -1,78 +1,11 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, ArrowDown, Activity, Lock, TrendingUp, DollarSign, BarChart3, Info } from 'lucide-react';
+import { ArrowUp, ArrowDown, Activity, Lock, DollarSign, Info } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useStakingRunway } from '../hooks/useStakingRunway';
 import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
-import { StatCardProps } from '../types';
 import { formatCurrency } from '../utils/formatters';
-
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  mainValue,
-  subValue,
-  icon: Icon,
-  delay = 0,
-  loading = false,
-  highlight = false,
-  className = '',
-  footer,
-}) => {
-  return (
-    <div
-      className={`
-        group relative z-10 hover:z-30 focus-within:z-40 rounded-2xl border transition-all duration-500
-        ${highlight 
-          ? 'border-cyan-500/30 bg-cyan-950/10 shadow-[0_0_30px_rgba(8,145,178,0.1)]' 
-          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-        }
-        backdrop-blur-md
-        ${className}
-      `}
-      style={{
-        animation: `fadeInUp 0.6s ease-out ${delay}s backwards`
-      }}
-    >
-      {/* Glow Effect */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-        <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
-      </div>
-      
-      <div className="p-5 flex flex-col h-full relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
-            {Icon && <Icon className="w-4 h-4 text-cyan-400" />}
-            {title}
-          </h3>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          {loading ? (
-            <div className="h-8 w-32 bg-white/10 animate-pulse rounded" />
-          ) : (
-            <div className={`text-2xl sm:text-3xl font-bold tracking-tight ${highlight ? 'text-cyan-100' : 'text-white'}`}>
-              {mainValue}
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                {typeof mainValue === 'string' && mainValue.includes('VNĐ') ? '' : ''}
-              </span>
-            </div>
-          )}
-          
-          {subValue && (
-            <div className="text-sm text-gray-400 font-mono mt-0.5">
-              {loading ? <div className="h-4 w-24 bg-white/10 animate-pulse rounded" /> : subValue}
-            </div>
-          )}
-        </div>
-
-        {footer && (
-          <div className="mt-auto pt-4">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+import BondingStats from './BondingStats';
+import StatCard from './StatCard';
 
 export const PranaStats: React.FC = () => {
   const {
@@ -123,132 +56,6 @@ export const PranaStats: React.FC = () => {
     [priceChange]
   );
 
-  const BondBreakdown: React.FC<{
-    loading: boolean;
-    balanceValue?: string;
-    committedValue?: string;
-    unit: string;
-  }> = ({ loading, balanceValue, committedValue, unit }) => {
-    return (
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="flex items-start gap-2">
-          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
-          <div className="leading-tight">
-            <div className="text-gray-300 font-medium">Balance</div>
-            <div className="text-gray-400 font-mono">
-              {loading ? (
-                <div className="h-4 w-24 bg-white/10 animate-pulse rounded mt-1" />
-              ) : (
-                <>
-                  {balanceValue ?? '—'} {unit}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2">
-          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
-          <div className="leading-tight">
-            <div className="text-gray-300 font-medium">Committed</div>
-            <div className="text-gray-400 font-mono">
-              {loading ? (
-                <div className="h-4 w-24 bg-white/10 animate-pulse rounded mt-1" />
-              ) : (
-                <>
-                  {committedValue ?? '—'} {unit}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const BondProgressBar: React.FC<{
-    loading: boolean;
-    committedValue?: string;
-    capacityValue?: string;
-    committedPercent?: number | null;
-    capacityPercent?: number | null;
-    unit: string;
-  }> = ({ loading, committedValue, capacityValue, committedPercent, capacityPercent, unit }) => {
-    const safeCommittedPercent =
-      typeof committedPercent === 'number' && Number.isFinite(committedPercent)
-        ? Math.min(100, Math.max(0, committedPercent))
-        : 0;
-    const safeCapacityPercent =
-      typeof capacityPercent === 'number' && Number.isFinite(capacityPercent)
-        ? Math.min(100, Math.max(0, capacityPercent))
-        : Math.max(0, 100 - safeCommittedPercent);
-
-    return (
-      <div className="flex flex-col gap-3">
-        {/* Progress bar */}
-        <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-          {loading ? (
-            <div className="h-full w-2/3 bg-white/10 animate-pulse" />
-          ) : (
-            <div className="h-full w-full flex">
-              <div
-                className="h-full bg-emerald-400/90"
-                style={{ width: `${safeCommittedPercent}%` }}
-                aria-label="Committed"
-              />
-              <div
-                className="h-full bg-indigo-400/90"
-                style={{ width: `${safeCapacityPercent}%` }}
-                aria-label="Capacity"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Legend */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-start gap-2">
-            <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
-            <div className="leading-tight">
-              <div className="text-gray-300 font-medium">Committed</div>
-              <div className="text-gray-400 font-mono">
-                {loading ? (
-                  <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
-                ) : (
-                  <>
-                    {committedValue ?? '—'} {unit}
-                    <span className="text-gray-500 ml-2">
-                      ({Math.round(safeCommittedPercent)}%)
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2">
-            <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
-            <div className="leading-tight">
-              <div className="text-gray-300 font-medium">Capacity</div>
-              <div className="text-gray-400 font-mono">
-                {loading ? (
-                  <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
-                ) : (
-                  <>
-                    {capacityValue ?? '—'} {unit}
-                    <span className="text-gray-500 ml-2">
-                      ({Math.round(safeCapacityPercent)}%)
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-10">
       {error && (
@@ -269,46 +76,20 @@ export const PranaStats: React.FC = () => {
           loading={isLoading}
         />
 
-        {/* Buy Bond Volume */}
-        <StatCard
-          title="Buy Bond Volume"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(buyBondPrana, 'PRANA')} PRANA`}
-          subValue={`≈ ${formatCurrency(buyBondVnd, 'VND')} VNĐ`}
-          icon={TrendingUp}
-          delay={0.4}
-          loading={isLoading}
-          className="col-span-1"
-          footer={
-            <BondProgressBar
-              loading={isLoading}
-              committedValue={buyBondCommittedDisplay ?? undefined}
-              capacityValue={buyBondCapacityDisplay ?? undefined}
-              committedPercent={buyBondCommittedPercent}
-              capacityPercent={buyBondCapacityPercent}
-              unit="PRANA"
-            />
-          }
-        />
-
-        {/* Sell Bond Volume */}
-        <StatCard
-          title="Sell Bond Volume"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`}
-          subValue={`≈ ${formatCurrency(sellBondVnd, 'VND')} VNĐ`}
-          icon={BarChart3}
-          delay={0.5}
-          loading={isLoading}
-          className="col-span-1"
-          footer={
-            <BondProgressBar
-              loading={isLoading}
-              committedValue={sellBondCommittedDisplay ?? undefined}
-              capacityValue={sellBondCapacityDisplay ?? undefined}
-              committedPercent={sellBondCommittedPercent}
-              capacityPercent={sellBondCapacityPercent}
-              unit="SAT"
-            />
-          }
+        <BondingStats
+          isLoading={isLoading}
+          buyBondPrana={buyBondPrana}
+          buyBondVnd={buyBondVnd}
+          sellBondPrana={sellBondPrana}
+          sellBondVnd={sellBondVnd}
+          buyBondCommittedDisplay={buyBondCommittedDisplay}
+          buyBondCapacityDisplay={buyBondCapacityDisplay}
+          buyBondCommittedPercent={buyBondCommittedPercent}
+          buyBondCapacityPercent={buyBondCapacityPercent}
+          sellBondCommittedDisplay={sellBondCommittedDisplay}
+          sellBondCapacityDisplay={sellBondCapacityDisplay}
+          sellBondCommittedPercent={sellBondCommittedPercent}
+          sellBondCapacityPercent={sellBondCapacityPercent}
         />
 
         {/* Staked Value */}

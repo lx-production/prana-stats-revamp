@@ -90,3 +90,31 @@ export interface StatCardProps {
   highlight?: boolean;
   footer?: React.ReactNode;
 }
+
+export interface BondProgressValues {
+  committedPercent?: number | null;
+  capacityPercent?: number | null;
+}
+
+export interface BondProgressBarProps extends BondProgressValues {
+  loading: boolean;
+  committedValue?: string;
+  capacityValue?: string;
+  unit: string;
+}
+
+export interface BondingStatsProps {
+  isLoading: boolean;
+  buyBondPrana: number | null;
+  buyBondVnd: number | null;
+  sellBondPrana: number | null;
+  sellBondVnd: number | null;
+  buyBondCommittedDisplay: string | null;
+  buyBondCapacityDisplay: string | null;
+  buyBondCommittedPercent: number | null;
+  buyBondCapacityPercent: number | null;
+  sellBondCommittedDisplay: string | null;
+  sellBondCapacityDisplay: string | null;
+  sellBondCommittedPercent: number | null;
+  sellBondCapacityPercent: number | null;
+}
