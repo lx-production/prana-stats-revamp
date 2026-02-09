@@ -18,7 +18,7 @@ import { getBondingStats } from '../utils/bondingStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { asBigInt, calcChange, formatEther, getFirstPrice, safeContractCall } from '../utils/pranaStatsUtils';
-import { BondTotalsCacheEntry, PranaStatsData, PranaStatsComputed } from '../types';
+import { PranaStatsData, PranaStatsComputed } from '../types';
 
 const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const ATL_PRICE = 0.0017; // From scripts.js
@@ -27,7 +27,6 @@ const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS
 
 const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
 const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint256)"];
-const bondTotalsCache = new Map<string, BondTotalsCacheEntry>();
 
 const fetchPranaStats = async (
   getProvider: () => ethers.JsonRpcProvider
@@ -48,10 +47,6 @@ const fetchPranaStats = async (
   const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V2, provider);
 
   const { buyBondTotalRawV2, sellBondTotalRawV2 } = getTotalsFromBondsV2Json(bondsV2Json);
-
-  // Cache the JSON totals so we don't re-parse / re-fetch repeatedly if this hook is re-mounted.
-  bondTotalsCache.set('buy-v2', { total: buyBondTotalRawV2, timestamp: Date.now() });
-  bondTotalsCache.set('sell-v2', { total: sellBondTotalRawV2, timestamp: Date.now() });
 
   const [
     stakedBalance,
