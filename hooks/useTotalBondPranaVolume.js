@@ -28,9 +28,7 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
       setError(null);
 
       try {
-        // Best-effort: if the app is hosted with the optional Node server,
         // this will scan only *new* bonds and update the JSON files before we fetch totals.
-        // On static hosting (no API), this will 404 and we simply fall back to the existing JSON.
         let refreshUpdated = false;
         try {
           // Use fetchJson so multiple hooks dedupe this GET request.

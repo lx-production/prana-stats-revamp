@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_ABI } from '../constants/sharedContracts';
-import { INTEREST_CONTRACT_ADDRESS } from '../constants/stakingContracts';
+import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts';
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
@@ -20,7 +20,6 @@ import { getPolygonProvider } from '../utils/polygonProvider';
 import { asBigInt, calcChange, formatEther, getFirstPrice, safeContractCall } from '../utils/pranaStatsUtils';
 import { PranaStatsData, PranaStatsComputed } from '../types';
 
-const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 const ATL_PRICE = 0.0017; // From scripts.js
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);

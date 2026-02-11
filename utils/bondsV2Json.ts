@@ -1,19 +1,16 @@
 import { fetchJson } from './fetchJson';
 
-// Stable "page load" cache-buster shared across modules.
-// Because modules are evaluated once per page load, this value stays constant
-// for the lifetime of the app session (until full reload).
-const PAGE_LOAD_CACHE_BUST = Date.now();
-
 // Keep this small: the goal is to dedupe requests on page load,
 // not to keep the bonds data stale for long periods.
 const BONDS_V2_JSON_TTL_MS = 15_000;
 
 let cached: { value: unknown; timestamp: number } | null = null;
 
-// Cache-buster prevents stale browser/proxy caching when the JSON might have been refreshed
-export function getBondsV2JsonUrl() {  
-  return `/bonds_v2.json?t=${PAGE_LOAD_CACHE_BUST}`;
+// Default URL allows browser caching based on server cache headers.
+// When `force` is true, append a one-off cache-buster to fetch the latest file.
+export function getBondsV2JsonUrl(force = false) {
+  if (!force) return '/bonds_v2.json';
+  return `/bonds_v2.json?t=${Date.now()}`;
 }
 
 async function fetchBondsV2JsonCached<T = unknown>(opts: { force?: boolean } = {}): Promise<T> {
@@ -25,7 +22,7 @@ async function fetchBondsV2JsonCached<T = unknown>(opts: { force?: boolean } = {
     return cached.value as T;
   }
 
-  const value = await fetchJson<T>(getBondsV2JsonUrl(), undefined, {
+  const value = await fetchJson<T>(getBondsV2JsonUrl(force), undefined, {
     dedupeKey: force ? null : undefined,
   });
   cached = { value, timestamp: Date.now() };

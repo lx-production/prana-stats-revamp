@@ -12,7 +12,8 @@ function getRequestKey(url: string, init?: RequestInit) {
 }
 
 /**
- * Fetch JSON from a URL, with GET request deduplication.
+ * - Works with any URL (JSON files or API endpoints), with GET request deduplication.
+ * - Parses the response as JSON and returns the parsed object.
  * - If a dedupeKey is provided (or automatically generated for GETs), only one in-flight fetch to that key is allowed at a time.
  * - If a request for the same key is already in progress, return the same Promise instead of issuing a new network call.
  * - If dedupeKey is null, deduplication is disabled and a new request is always sent.

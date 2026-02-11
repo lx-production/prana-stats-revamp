@@ -11,7 +11,6 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
 const DATA_JSON_CACHE_SECONDS = 60 * 60; // 1 hour
-const BONDS_JSON_FILES = ['bonds_v2.json'];
 
 // Tracks in-flight refresh requests to avoid multiple concurrent calls.
 let refreshInFlight = null;
@@ -49,8 +48,11 @@ function cacheControlFor(filePath) {
     return `public, max-age=${DATA_JSON_CACHE_SECONDS}, must-revalidate`;
   }
 
-  // Bonds JSON can be refreshed via the API; always revalidate.
-  if (ext === '.json' && base.startsWith('bonds_')) return 'no-cache';
+  // Bonds JSON is refreshed by the API endpoint and served from project root.
+  // Cache for 1 hour to reduce repeat network fetches.
+  if (ext === '.json' && base === 'bonds_v2.json') {
+    return `public, max-age=${DATA_JSON_CACHE_SECONDS}, must-revalidate`;
+  }
 
   // Other JSON: be safe and revalidate.
   if (ext === '.json') return 'no-cache';
@@ -136,20 +138,22 @@ async function serveFile(req, res, filePath) {
   }
 }
 
-async function copyFileToDistIfExists(filename) {
-  const src = path.join(PROJECT_ROOT, filename);
-  const dest = path.join(DIST_DIR, filename);
-  if (!(await fileExists(src))) return { filename, copied: false, reason: 'missing_source' };
-
-  await fs.mkdir(DIST_DIR, { recursive: true });
-  await fs.copyFile(src, dest);
-  return { filename, copied: true };
-}
-
 function sendJson(res, statusCode, body) {
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
+}
+
+function rootDataJsonFilenameFromPathname(pathname) {
+  if (!pathname.startsWith('/data_') || !pathname.endsWith('.json')) return null;
+  const filename = pathname.slice(1); // remove the leading slash  
+  if (filename.includes('/')) return null; // only allow direct files in project root (no nested paths)
+  return filename;
+}
+
+function rootBondsJsonFilenameFromPathname(pathname) {
+  if (pathname !== '/bonds_v2.json') return null;
+  return 'bonds_v2.json';
 }
 
 const server = http.createServer(async (req, res) => {
@@ -161,14 +165,7 @@ const server = http.createServer(async (req, res) => {
       if (!refreshInFlight) {
         refreshInFlight = (async () => {
           try {
-            const result = await updateBondsV2();
-
-            // Keep `dist/` in sync so `npm run serve` can serve everything from dist/.
-            // We copy on every refresh call (even if nothing new was found) to ensure the
-            // requested `/bonds_v2.json?t=...` always has a fresh dist counterpart.
-            const copied = await Promise.all(BONDS_JSON_FILES.map(copyFileToDistIfExists));
-
-            return { ...result, distCopy: copied };
+            return await updateBondsV2();
           } finally {
             refreshInFlight = null;
           }
@@ -177,6 +174,26 @@ const server = http.createServer(async (req, res) => {
 
       const result = await refreshInFlight;
       return sendJson(res, 200, result);
+    }
+
+    // Serve data JSON directly from project root so live updates are visible
+    // without rebuilding dist/.
+    const rootDataFilename = rootDataJsonFilenameFromPathname(url.pathname);
+    if (rootDataFilename) {
+      const rootDataPath = path.join(PROJECT_ROOT, rootDataFilename);
+      if (await fileExists(rootDataPath)) {
+        return await serveFile(req, res, rootDataPath);
+      }
+      return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    const rootBondsFilename = rootBondsJsonFilenameFromPathname(url.pathname);
+    if (rootBondsFilename) {
+      const rootBondsPath = path.join(PROJECT_ROOT, rootBondsFilename);
+      if (await fileExists(rootBondsPath)) {
+        return await serveFile(req, res, rootBondsPath);
+      }
+      return sendJson(res, 404, { error: 'not_found' });
     }
 
     // Static build: serve from dist/ (with SPA fallback to index.html).
