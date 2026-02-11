@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V1, SELL_BOND_ABI_V2, SELL_BOND_BONDS_ABI } from '../constants/bonds';
+import {
+  SELL_BOND_ADDRESS_V1,
+  SELL_BOND_ADDRESS_V2,
+  SELL_BOND_COMMITTED_WBTC_ABI_V1,
+  SELL_BOND_COMMITTED_WBTC_ABI_V2,
+} from '../constants/bonds';
 import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedWbtc } from './useCommittedWbtc';
-import { useTotalBondPranaVolume } from './useTotalBondPranaVolume';
+import { useTotalV2BondPranaVolume } from './useTotalV2BondPranaVolume';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
@@ -28,7 +33,7 @@ export const useSellBondBalanceData = () => {
     error: committedErrorV2,
   } = useCommittedWbtc({
     contractAddress: SELL_BOND_ADDRESS_V2,
-    contractAbi: SELL_BOND_ABI_V2,
+    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI_V2,
   });
 
   const {
@@ -37,7 +42,7 @@ export const useSellBondBalanceData = () => {
     error: committedErrorV1,
   } = useCommittedWbtc({
     contractAddress: SELL_BOND_ADDRESS_V1,
-    contractAbi: SELL_BOND_ABI_V1,
+    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI_V1,
   });
 
   useEffect(() => {
@@ -70,7 +75,7 @@ export const useSellBondBalanceData = () => {
 
   const bondContracts = useMemo(
     () => [
-      { address: SELL_BOND_ADDRESS_V2, abi: SELL_BOND_ABI_V2, bondAbi: SELL_BOND_BONDS_ABI },
+      { address: SELL_BOND_ADDRESS_V2 },
     ],
     [],
   );
@@ -79,10 +84,8 @@ export const useSellBondBalanceData = () => {
     totalPranaRaw: totalBondVolumeRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useTotalBondPranaVolume({
+  } = useTotalV2BondPranaVolume({
     contracts: bondContracts,
-    fieldName: 'pranaAmount',
-    decimals: PRANA_DECIMALS,
   });
 
   useEffect(() => {

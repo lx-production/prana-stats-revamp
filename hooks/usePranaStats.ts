@@ -5,12 +5,12 @@ import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constant
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
-  BUY_BOND_ABI_V1,
-  BUY_BOND_ABI_V2,
+  BUY_BOND_COMMITTED_PRANA_ABI_V1,
+  BUY_BOND_COMMITTED_PRANA_ABI_V2,
   SELL_BOND_ADDRESS_V1,
   SELL_BOND_ADDRESS_V2,
-  SELL_BOND_ABI_V1,
-  SELL_BOND_ABI_V2,
+  SELL_BOND_COMMITTED_WBTC_ABI_V1,
+  SELL_BOND_COMMITTED_WBTC_ABI_V2,
 } from '../constants/bonds';
 import { initialPranaStats } from '../constants/pranaStats';
 import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
@@ -40,10 +40,10 @@ const fetchPranaStats = async (
   const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
   const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, WBTC_ABI, provider);
-  const buyBondV1Contract = new ethers.Contract(BUY_BOND_ADDRESS_V1, BUY_BOND_ABI_V1, provider);
-  const buyBondV2Contract = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V2, provider);
-  const sellBondV1Contract = new ethers.Contract(SELL_BOND_ADDRESS_V1, SELL_BOND_ABI_V1, provider);
-  const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_ABI_V2, provider);
+  const buyBondV1Contract = new ethers.Contract(BUY_BOND_ADDRESS_V1, BUY_BOND_COMMITTED_PRANA_ABI_V1, provider);
+  const buyBondV2Contract = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_COMMITTED_PRANA_ABI_V2, provider);
+  const sellBondV1Contract = new ethers.Contract(SELL_BOND_ADDRESS_V1, SELL_BOND_COMMITTED_WBTC_ABI_V1, provider);
+  const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI_V2, provider);
 
   const { buyBondTotalRawV2, sellBondTotalRawV2 } = getTotalsFromBondsV2Json(bondsV2Json);
 

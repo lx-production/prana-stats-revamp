@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_ABI_V1, BUY_BOND_ABI_V2, BUY_BOND_BONDS_ABI } from '../constants/bonds';
+import {
+  BUY_BOND_ADDRESS_V1,
+  BUY_BOND_ADDRESS_V2,
+  BUY_BOND_COMMITTED_PRANA_ABI_V1,
+  BUY_BOND_COMMITTED_PRANA_ABI_V2,
+} from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedPrana } from './useCommittedPrana';
-import { useTotalBondPranaVolume } from './useTotalBondPranaVolume';
+import { useTotalV2BondPranaVolume } from './useTotalV2BondPranaVolume';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
@@ -19,7 +24,7 @@ export const useBuyBondBalanceData = () => {
     error: committedErrorV2,
   } = useCommittedPrana({
     contractAddress: BUY_BOND_ADDRESS_V2,
-    contractAbi: BUY_BOND_ABI_V2,
+    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI_V2,
   });
 
   const {
@@ -28,7 +33,7 @@ export const useBuyBondBalanceData = () => {
     error: committedErrorV1,
   } = useCommittedPrana({
     contractAddress: BUY_BOND_ADDRESS_V1,
-    contractAbi: BUY_BOND_ABI_V1,
+    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI_V1,
   });
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export const useBuyBondBalanceData = () => {
     const provider = getPolygonProvider();
     const token = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
 
-    const fetchBalanceV2 = async () => {
+    const fetchBuyBondV2Balance = async () => {
       setIsLoadingBalanceV2(true);
       setBalanceErrorV2(null);
       try {
@@ -52,28 +57,19 @@ export const useBuyBondBalanceData = () => {
       }
     };
 
-    fetchBalanceV2();
+    fetchBuyBondV2Balance();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  const bondContracts = useMemo(
-    () => [
-      { address: BUY_BOND_ADDRESS_V2, abi: BUY_BOND_ABI_V2, bondAbi: BUY_BOND_BONDS_ABI },
-    ],
-    [],
-  );
+  const buyBondV2 = useMemo(() => [{ address: BUY_BOND_ADDRESS_V2 }], []);
 
   const {
     totalPranaRaw: totalBondVolumeRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useTotalBondPranaVolume({
-    contracts: bondContracts,
-    fieldName: 'pranaAmount',
-    decimals: PRANA_DECIMALS,
+  } = useTotalV2BondPranaVolume({
+    contracts: buyBondV2,
   });
 
   useEffect(() => {

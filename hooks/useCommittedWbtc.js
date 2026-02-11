@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { SELL_BOND_ADDRESS, SELL_BOND_ABI } from '../constants/bonds';
+import { SELL_BOND_ADDRESS, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bonds';
 import { WBTC_DECIMALS } from '../constants/sharedContracts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 export const useCommittedWbtc = ({
   contractAddress = SELL_BOND_ADDRESS,
-  contractAbi = SELL_BOND_ABI,
+  contractAbi = SELL_BOND_COMMITTED_WBTC_ABI,
 } = {}) => {
   const [data, setData] = useState(0n);
   const [isLoading, setIsLoading] = useState(true);

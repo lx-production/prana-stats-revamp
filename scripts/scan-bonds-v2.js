@@ -7,7 +7,7 @@ import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessE
 
 const REQUEST_DELAY_MS = 0;
 
-async function scanBonds({ contract, label }) {
+async function scanV2Bonds({ contract, label }) {
   let index = 1;
   const bonds = [];
   const fieldNames = getBondTupleFieldNames(contract);
@@ -78,8 +78,8 @@ async function main() {
   console.log('SELL_BOND_ADDRESS_V2:', SELL_BOND_ADDRESS_V2);
 
   const [buy, sell] = await Promise.all([
-    scanBonds({ contract: buyBondContract, label: 'buy' }),
-    scanBonds({ contract: sellBondContract, label: 'sell' }),
+    scanV2Bonds({ contract: buyBondContract, label: 'buy' }),
+    scanV2Bonds({ contract: sellBondContract, label: 'sell' }),
   ]);
 
   const out = {

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { BUY_BOND_ADDRESS, BUY_BOND_ABI } from '../constants/bonds';
+import { BUY_BOND_ADDRESS, BUY_BOND_COMMITTED_PRANA_ABI } from '../constants/bonds';
 import { PRANA_DECIMALS } from '../constants/sharedContracts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 export const useCommittedPrana = ({
   contractAddress = BUY_BOND_ADDRESS,
-  contractAbi = BUY_BOND_ABI,
+  contractAbi = BUY_BOND_COMMITTED_PRANA_ABI,
 } = {}) => {
   const [data, setData] = useState(0n);
   const [isLoading, setIsLoading] = useState(true);
