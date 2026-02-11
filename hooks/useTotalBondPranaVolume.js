@@ -32,10 +32,10 @@ export const useTotalBondPranaVolume = ({ contracts = [], fieldName = 'pranaAmou
         let refreshUpdated = false;
         try {
           // Use fetchJson so multiple hooks dedupe this GET request.
-          const refreshResult = await fetchJson('/api/bonds-v2/refresh');
+          const refreshResult = await fetchJson('/api/bonds-v2/refresh'); // checks if there's any new bonds
           refreshUpdated = Boolean(refreshResult?.updated);
         } catch {
-          // ignore
+          // ignore if the request fails
         }
 
         // If refresh found new bonds and updated JSON, force a refetch so we don't reuse a cached value.

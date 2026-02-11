@@ -107,7 +107,7 @@ export async function updateBondsV2() {
   // If we don't have details yet, fall back to full scan script (simple + consistent).
   if (!existingDetails?.buy?.bonds || !existingDetails?.sell?.bonds) {
     console.log('No existing bonds_v2_details.json found; run `node scripts/scan-bonds-v2.js` first.');
-    return { updated: false, reason: 'missing_details_file' };
+    return { updated: false };
   }
 
   const buyStart = lastBondIndex(existingDetails.buy);
@@ -135,7 +135,7 @@ export async function updateBondsV2() {
 
   const hasNew = buy.added > 0 || sell.added > 0;
   if (!hasNew) {
-    return { updated: false, added: { buy: 0, sell: 0 } };
+    return { updated: false };
   }
 
   const generatedAt = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7');
@@ -174,7 +174,7 @@ export async function updateBondsV2() {
   await fs.writeFile(detailsPath, JSON.stringify(detailsOut, null, 2), 'utf8');
   await fs.writeFile(summaryPath, JSON.stringify(summaryOut, null, 2), 'utf8');
 
-  return { updated: true, added: { buy: buy.added, sell: sell.added } };
+  return { updated: true };
 }
 
 async function main() {
