@@ -1,3 +1,5 @@
+import type { JsonRpcProvider } from 'ethers';
+
 // Types and interfaces for the Prana Stats application
 
 export type BondTotalsCacheEntry = {
@@ -149,3 +151,13 @@ export interface BondingStatsOutput {
   sellBondCommittedPercent: number;
   sellBondCapacityPercent: number;
 }
+
+export interface FetchBondingStatsParams {
+  provider: JsonRpcProvider;
+  bondsV2Json: unknown;
+  pranaPriceVnd: number;
+}
+
+export type FetchBondingStats = (
+  params: FetchBondingStatsParams
+) => Promise<BondingStatsOutput>;

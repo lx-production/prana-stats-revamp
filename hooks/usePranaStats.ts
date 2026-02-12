@@ -1,34 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_ABI } from '../constants/sharedContracts';
+import { PRANA_ABI, PRANA_ADDRESS } from '../constants/sharedContracts';
 import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts';
-import {
-  BUY_BOND_ADDRESS_V1,
-  BUY_BOND_ADDRESS_V2,
-  BUY_BOND_COMMITTED_PRANA_ABI_V1,
-  BUY_BOND_COMMITTED_PRANA_ABI_V2,
-  SELL_BOND_ADDRESS_V1,
-  SELL_BOND_ADDRESS_V2,
-  SELL_BOND_COMMITTED_WBTC_ABI_V1,
-  SELL_BOND_COMMITTED_WBTC_ABI_V2,
-} from '../constants/bonds';
 import { initialPranaStats } from '../constants/pranaStats';
-import { getTotalsFromBondsV2Json } from '../utils/bondsUtils';
-import { getBondingStats } from '../utils/bondingStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { getPolygonProvider } from '../utils/polygonProvider';
-import { asBigInt, calcChange, formatEther, getFirstPrice, safeContractCall } from '../utils/pranaStatsUtils';
-import { PranaStatsData, PranaStatsComputed } from '../types';
+import { calcChange, formatEther, getFirstPrice, safeContractCall } from '../utils/pranaStatsUtils';
+import { useBondingStats } from './useBondingStats';
+import { FetchBondingStats, PranaStatsData, PranaStatsComputed } from '../types';
 
 const ATL_PRICE = 0.0017; // From scripts.js
-const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
-const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
 const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
-const PRANA_TOKEN_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 
 const fetchPranaStats = async (
-  getProvider: () => ethers.JsonRpcProvider
+  getProvider: () => ethers.JsonRpcProvider,
+  fetchBondingStats: FetchBondingStats
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
 
@@ -37,62 +24,23 @@ const fetchPranaStats = async (
 
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
-  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_TOKEN_ABI, provider);
+  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
-  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, WBTC_ABI, provider);
-  const buyBondV1Contract = new ethers.Contract(BUY_BOND_ADDRESS_V1, BUY_BOND_COMMITTED_PRANA_ABI_V1, provider);
-  const buyBondV2Contract = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_COMMITTED_PRANA_ABI_V2, provider);
-  const sellBondV1Contract = new ethers.Contract(SELL_BOND_ADDRESS_V1, SELL_BOND_COMMITTED_WBTC_ABI_V1, provider);
-  const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI_V2, provider);
-
-  const { buyBondTotalRawV2, sellBondTotalRawV2 } = getTotalsFromBondsV2Json(bondsV2Json);
 
   const [
     stakedBalance,
     interestContractBalanceRaw,
     interestNeeded,
-    buyCommittedV2,
-    buyCommittedV1,
-    buyBalanceV2Raw,
-    sellCommittedV2,
-    sellCommittedV1,
-    sellBalanceV2Raw,
   ] = await Promise.all([
     safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
     safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
     safeContractCall(stakingContract.totalInterestNeeded(), 0n),
-    safeContractCall(buyBondV2Contract.committedPrana(), 0n),
-    safeContractCall(buyBondV1Contract.committedPrana(), 0n),
-    safeContractCall(tokenContract.balanceOf(BUY_BOND_ADDRESS_V2), 0n),
-    safeContractCall(sellBondV2Contract.committedWbtc(), 0n),
-    safeContractCall(sellBondV1Contract.committedWbtc(), 0n),
-    safeContractCall(wbtcTokenContract.balanceOf(SELL_BOND_ADDRESS_V2), 0n),
   ]);
-
-  const buyCommittedRawV1 = asBigInt(buyCommittedV1);
-  const buyCommittedRawV2 = asBigInt(buyCommittedV2);
-  const buyBalanceRawV2 = asBigInt(buyBalanceV2Raw);
-  const sellCommittedRawV1 = asBigInt(sellCommittedV1);
-  const sellCommittedRawV2 = asBigInt(sellCommittedV2);
-  const sellBalanceRawV2 = asBigInt(sellBalanceV2Raw);
 
   const stakedPrana = formatEther(stakedBalance) || 1000000; // Mock ~1M staked if 0/failed
   const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
   const interestPrana = formatEther(interestNeeded) || 80000; // Mock ~80k interest if 0/failed
-  const bondingStats = getBondingStats({
-    buyCommittedV1: buyCommittedRawV1,
-    buyCommittedV2: buyCommittedRawV2,
-    buyBalanceV2: buyBalanceRawV2,
-    sellCommittedV1: sellCommittedRawV1,
-    sellCommittedV2: sellCommittedRawV2,
-    sellBalanceV2: sellBalanceRawV2,
-    buyBondTotalRawV2,
-    sellBondTotalRawV2,
-    buyBondV1TotalRaw: BUY_BOND_V1_TOTAL_VOLUME_RAW,
-    sellBondV1TotalRaw: SELL_BOND_V1_TOTAL_VOLUME_RAW,
-    pranaPriceVnd,
-  });
-
+  const bondingStats = await fetchBondingStats({ provider, bondsV2Json, pranaPriceVnd });
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
 
   // Mock historical prices relative to current to show varied percentages
@@ -141,6 +89,7 @@ const fetchPranaStats = async (
 
 export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialPranaStats);
+  const { fetchBondingStats } = useBondingStats();
 
   const getProvider = useCallback(() => {
     return getPolygonProvider();
@@ -148,7 +97,7 @@ export function usePranaStats() {
 
   const fetchData = useCallback(async () => {
     try {
-      const computed = await fetchPranaStats(getProvider);
+      const computed = await fetchPranaStats(getProvider, fetchBondingStats);
 
       setStats(prev => ({
         ...prev,
@@ -165,7 +114,7 @@ export function usePranaStats() {
           : 'Failed to fetch Prana stats';
       setStats(prev => ({ ...prev, isLoading: false, error: message }));
     }
-  }, [getProvider]);
+  }, [fetchBondingStats, getProvider]);
 
   useEffect(() => {
     fetchData();

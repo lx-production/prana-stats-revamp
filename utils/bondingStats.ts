@@ -1,20 +1,5 @@
-import { ethers } from 'ethers';
-import { PRANA_DECIMALS } from '../constants/sharedContracts';
 import { BondingStatsInput, BondingStatsOutput } from '../types';
-
-const formatBigIntValue = (value: bigint) => {
-  const stringValue = value.toString();
-  return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
-const formatPranaDisplayFromRaw = (raw: bigint) => {
-  const formatted = ethers.formatUnits(raw, PRANA_DECIMALS);
-  const numeric = Number.parseFloat(formatted);
-  const rounded = Number.isFinite(numeric) ? Math.round(numeric) : 0;
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(rounded);
-};
-
-const formatPranaFloatFromRaw = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
+import { formatBigIntValue, formatPranaDisplayFromRaw, formatPranaFloatFromRaw } from './bondingStatsHelpers';
 
 export const getBondingStats = ({
   buyCommittedV1,
@@ -35,19 +20,22 @@ export const getBondingStats = ({
   const sellBondCommittedRaw = sellCommittedV1 + sellCommittedV2;
 
   const buyBondCapacityRaw = buyBondBalanceRaw > buyBondCommittedRaw ? buyBondBalanceRaw - buyBondCommittedRaw : 0n;
+  
   const buyBondCommittedPercent =
     buyBondBalanceRaw === 0n
       ? 0
       : Number((buyBondCommittedRaw * 10_000n) / buyBondBalanceRaw) / 100;
+
   const buyBondCapacityPercent = Math.max(0, 100 - buyBondCommittedPercent);
 
   const sellBondCapacityRaw = sellBondBalanceRaw > sellBondCommittedRaw ? sellBondBalanceRaw - sellBondCommittedRaw : 0n;
+  
   const sellBondCommittedPercent =
     sellBondBalanceRaw === 0n
       ? 0
       : Number((sellBondCommittedRaw * 10_000n) / sellBondBalanceRaw) / 100;
-  const sellBondCapacityPercent = Math.max(0, 100 - sellBondCommittedPercent);
 
+  const sellBondCapacityPercent = Math.max(0, 100 - sellBondCommittedPercent);
   const totalBuyBondRaw = buyBondTotalRawV2 + buyBondV1TotalRaw;
   const totalSellBondRaw = sellBondTotalRawV2 + sellBondV1TotalRaw;
 

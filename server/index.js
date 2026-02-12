@@ -36,7 +36,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const result = await refreshInFlight;
-      return sendJson(res, 200, result); // used to decide whether to force-refetch /bonds_v2.json
+      return sendJson(res, 200, result); // useTotalV2BondPranaVolume uses this to decide whether to force-refetch /bonds_v2.json
     }
 
     // Serve data JSON directly from project root so live updates are visible

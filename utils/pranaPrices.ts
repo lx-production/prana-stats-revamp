@@ -34,7 +34,7 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
         fetchJsonSafe<any[]>('/data_90_days.json', []),
         fetchJsonSafe<any[]>('/data_180_days.json', []),
         fetchJsonSafe<any[]>('/data_365_days.json', []),
-        fetchBondsV2JsonSafe<unknown>(null), // fetch `/bonds_v2.json?t=${PAGE_LOAD_CACHE_BUST}`
+        fetchBondsV2JsonSafe<unknown>(null), // fetch `/bonds_v2.json`
       ]);
 
       const btcPriceUsd = btcPrices.usd;
