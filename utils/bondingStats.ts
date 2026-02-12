@@ -19,26 +19,15 @@ export const getBondingStats = ({
   const sellBondBalanceRaw = sellBalanceV2 + sellCommittedV1;
   const sellBondCommittedRaw = sellCommittedV1 + sellCommittedV2;
 
-  const buyBondCapacityRaw = buyBondBalanceRaw > buyBondCommittedRaw ? buyBondBalanceRaw - buyBondCommittedRaw : 0n;
-  
-  const buyBondCommittedPercent =
-    buyBondBalanceRaw === 0n
-      ? 0
-      : Number((buyBondCommittedRaw * 10_000n) / buyBondBalanceRaw) / 100;
-
+  const buyBondCapacityRaw = buyBondBalanceRaw > buyBondCommittedRaw ? buyBondBalanceRaw - buyBondCommittedRaw : 0n;  
+  const buyBondCommittedPercent = buyBondBalanceRaw === 0n ? 0 : Number((buyBondCommittedRaw * 10_000n) / buyBondBalanceRaw) / 100;
   const buyBondCapacityPercent = Math.max(0, 100 - buyBondCommittedPercent);
-
-  const sellBondCapacityRaw = sellBondBalanceRaw > sellBondCommittedRaw ? sellBondBalanceRaw - sellBondCommittedRaw : 0n;
-  
-  const sellBondCommittedPercent =
-    sellBondBalanceRaw === 0n
-      ? 0
-      : Number((sellBondCommittedRaw * 10_000n) / sellBondBalanceRaw) / 100;
-
+  const sellBondCapacityRaw = sellBondBalanceRaw > sellBondCommittedRaw ? sellBondBalanceRaw - sellBondCommittedRaw : 0n;  
+  const sellBondCommittedPercent = sellBondBalanceRaw === 0n ? 0 : Number((sellBondCommittedRaw * 10_000n) / sellBondBalanceRaw) / 100;
   const sellBondCapacityPercent = Math.max(0, 100 - sellBondCommittedPercent);
+  
   const totalBuyBondRaw = buyBondTotalRawV2 + buyBondV1TotalRaw;
   const totalSellBondRaw = sellBondTotalRawV2 + sellBondV1TotalRaw;
-
   const buyBondPranaVal = formatPranaFloatFromRaw(totalBuyBondRaw) || 150000;
   const sellBondPranaVal = formatPranaFloatFromRaw(totalSellBondRaw) || 335000;
 

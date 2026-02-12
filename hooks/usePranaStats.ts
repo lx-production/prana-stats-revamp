@@ -1,46 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { PRANA_ABI, PRANA_ADDRESS } from '../constants/sharedContracts';
-import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts';
 import { initialPranaStats } from '../constants/pranaStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { getPolygonProvider } from '../utils/polygonProvider';
-import { calcChange, formatEther, getFirstPrice, safeContractCall } from '../utils/pranaStatsUtils';
+import { calcChange, getFirstPrice } from '../utils/pranaStatsUtils';
 import { useBondingStats } from './useBondingStats';
-import { FetchBondingStats, PranaStatsData, PranaStatsComputed } from '../types';
+import { useStakingStats } from './useStakingStats';
+import { FetchBondingStats, FetchStakingStats, PranaStatsData, PranaStatsComputed } from '../types';
 
 const ATL_PRICE = 0.0017; // From scripts.js
 
-const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
-
 const fetchPranaStats = async (
   getProvider: () => ethers.JsonRpcProvider,
-  fetchBondingStats: FetchBondingStats
+  fetchBondingStats: FetchBondingStats,
+  fetchStakingStats: FetchStakingStats
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
 
-  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json } =
-    await fetchPranaPricesBundle();
+  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json } = await fetchPranaPricesBundle();
 
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
-  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
-  const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
-
-  const [
-    stakedBalance,
-    interestContractBalanceRaw,
-    interestNeeded,
-  ] = await Promise.all([
-    safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
-    safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
-    safeContractCall(stakingContract.totalInterestNeeded(), 0n),
+  
+  const [stakingStats, bondingStats] = await Promise.all([
+    fetchStakingStats({ provider }),
+    fetchBondingStats({ provider, bondsV2Json, pranaPriceVnd }),
   ]);
-
-  const stakedPrana = formatEther(stakedBalance) || 1000000; // Mock ~1M staked if 0/failed
-  const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
-  const interestPrana = formatEther(interestNeeded) || 80000; // Mock ~80k interest if 0/failed
-  const bondingStats = await fetchBondingStats({ provider, bondsV2Json, pranaPriceVnd });
+  
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
 
   // Mock historical prices relative to current to show varied percentages
@@ -54,14 +40,13 @@ const fetchPranaStats = async (
     btcPriceVnd,
     usdToVndRate,
     latestSatPrice,
-
     marketCapVnd: marketCap,
-    stakedPrana,
-    stakedVnd: stakedPrana * pranaPriceVnd,
-    interestContractBalancePrana,
-    interestContractBalanceVnd: interestContractBalancePrana * pranaPriceVnd,
-    interestPrana,
-    interestVnd: interestPrana * pranaPriceVnd,
+    stakedPrana: stakingStats.stakedPrana,
+    stakedVnd: stakingStats.stakedPrana * pranaPriceVnd,
+    interestContractBalancePrana: stakingStats.interestContractBalancePrana,
+    interestContractBalanceVnd: stakingStats.interestContractBalancePrana * pranaPriceVnd,
+    interestPrana: stakingStats.interestPrana,
+    interestVnd: stakingStats.interestPrana * pranaPriceVnd,
     buyBondPrana: bondingStats.buyBondPrana,
     buyBondVnd: bondingStats.buyBondVnd,
     sellBondPrana: bondingStats.sellBondPrana,
@@ -90,6 +75,7 @@ const fetchPranaStats = async (
 export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialPranaStats);
   const { fetchBondingStats } = useBondingStats();
+  const { fetchStakingStats } = useStakingStats();
 
   const getProvider = useCallback(() => {
     return getPolygonProvider();
@@ -97,7 +83,7 @@ export function usePranaStats() {
 
   const fetchData = useCallback(async () => {
     try {
-      const computed = await fetchPranaStats(getProvider, fetchBondingStats);
+      const computed = await fetchPranaStats(getProvider, fetchBondingStats, fetchStakingStats);
 
       setStats(prev => ({
         ...prev,
@@ -114,7 +100,7 @@ export function usePranaStats() {
           : 'Failed to fetch Prana stats';
       setStats(prev => ({ ...prev, isLoading: false, error: message }));
     }
-  }, [fetchBondingStats, getProvider]);
+  }, [fetchBondingStats, fetchStakingStats, getProvider]);
 
   useEffect(() => {
     fetchData();

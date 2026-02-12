@@ -161,3 +161,17 @@ export interface FetchBondingStatsParams {
 export type FetchBondingStats = (
   params: FetchBondingStatsParams
 ) => Promise<BondingStatsOutput>;
+
+export interface StakingStatsOutput {
+  stakedPrana: number;
+  interestContractBalancePrana: number;
+  interestPrana: number;
+}
+
+export interface FetchStakingStatsParams {
+  provider: JsonRpcProvider;
+}
+
+export type FetchStakingStats = (
+  params: FetchStakingStatsParams
+) => Promise<StakingStatsOutput>;

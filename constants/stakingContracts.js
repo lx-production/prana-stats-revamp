@@ -3,3 +3,6 @@ export const STAKING_CONTRACT_ADDRESS = '0x714425A4F4d624ef83fEff810a0EEC30B0847
 
 // Interest Contract
 export const INTEREST_CONTRACT_ADDRESS = '0x1DE1E9BEF781fb3440C2c22E8ca1bF61BD26f69d'; // Replace with actual contract address
+
+// Staking Contract ABI
+export const STAKING_CONTRACT_ABI = ["function totalInterestNeeded() view returns (uint256)"];
