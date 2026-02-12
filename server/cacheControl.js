@@ -22,6 +22,12 @@ export function cacheControlFor(filePath) {
     return `public, max-age=${DATA_JSON_CACHE_SECONDS}, must-revalidate`;
   }
 
+  // Top holders JSON is refreshed by the API endpoint and served from project root.
+  // Cache for 1 hour to reduce repeat network fetches.
+  if (ext === '.json' && base === 'top_holding_addresses.json') {
+    return `public, max-age=${DATA_JSON_CACHE_SECONDS}, must-revalidate`;
+  }
+
   // Other JSON: be safe and revalidate.
   if (ext === '.json') return 'no-cache';
 

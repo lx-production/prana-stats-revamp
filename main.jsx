@@ -4,6 +4,7 @@ import "./index.css";
 import PranaHero from "./hero3.jsx";
 import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
+import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import NeuralShaderBackground from "./shader.jsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon";
 
@@ -28,6 +29,7 @@ function App() {
         <PranaHero />
         <PranaStats />
         <PranaConverter />
+        <TopHoldingAddresses />
       </main>
     </div>
   );

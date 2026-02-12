@@ -2,12 +2,14 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { updateBondsV2 } from '../scripts/update-bonds-v2.js';
+import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.js';
 import { serveFile } from './serveFile.js';
 import {
   fileExists,
   sendJson,
   rootDataJsonFilenameFromPathname,
   rootBondsJsonFilenameFromPathname,
+  rootTopHoldingAddressesFilenameFromPathname,
 } from './requestHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +20,7 @@ const PORT = Number(process.env.PORT || 4173);
 
 // Tracks in-flight refresh requests to avoid multiple concurrent calls.
 let refreshInFlight = null;
+let topHoldingRefreshInFlight = null;
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -39,6 +42,22 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, result); // useTotalV2BondPranaVolume uses this to decide whether to force-refetch /bonds_v2.json
     }
 
+    // Endpoint the frontend can call on page load.
+    if (url.pathname === '/api/top-holding-addresses/refresh') {
+      if (!topHoldingRefreshInFlight) {
+        topHoldingRefreshInFlight = (async () => {
+          try {
+            return await updateTopHoldingAddresses();
+          } finally {
+            topHoldingRefreshInFlight = null;
+          }
+        })();
+      }
+
+      const result = await topHoldingRefreshInFlight;
+      return sendJson(res, 200, result);
+    }
+
     // Serve data JSON directly from project root so live updates are visible
     // without rebuilding dist/.
     const rootDataFilename = rootDataJsonFilenameFromPathname(url.pathname);
@@ -55,6 +74,15 @@ const server = http.createServer(async (req, res) => {
       const rootBondsPath = path.join(PROJECT_ROOT, rootBondsFilename);
       if (await fileExists(rootBondsPath)) {
         return await serveFile(req, res, rootBondsPath);
+      }
+      return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    const rootTopHoldingAddressesFilename = rootTopHoldingAddressesFilenameFromPathname(url.pathname);
+    if (rootTopHoldingAddressesFilename) {
+      const rootTopHoldingAddressesPath = path.join(PROJECT_ROOT, rootTopHoldingAddressesFilename);
+      if (await fileExists(rootTopHoldingAddressesPath)) {
+        return await serveFile(req, res, rootTopHoldingAddressesPath);
       }
       return sendJson(res, 404, { error: 'not_found' });
     }

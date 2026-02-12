@@ -26,3 +26,8 @@ export function rootBondsJsonFilenameFromPathname(pathname) {
   if (pathname !== '/bonds_v2.json') return null;
   return 'bonds_v2.json';
 }
+
+export function rootTopHoldingAddressesFilenameFromPathname(pathname) {
+  if (pathname !== '/top_holding_addresses.json') return null;
+  return 'top_holding_addresses.json';
+}

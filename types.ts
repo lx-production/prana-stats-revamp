@@ -175,3 +175,32 @@ export interface FetchStakingStatsParams {
 export type FetchStakingStats = (
   params: FetchStakingStatsParams
 ) => Promise<StakingStatsOutput>;
+
+export interface TopHoldingAddressBalance {
+  address: string;
+  label: string;
+  balanceRaw: string;
+  balance: string;
+}
+
+export interface TopHoldingAddressesJson {
+  generatedAt?: string;
+  token?: {
+    address?: string;
+    symbol?: string;
+    decimals?: number;
+  };
+  holders?: TopHoldingAddressBalance[];
+}
+
+export interface TopHoldingAddressesData {
+  holders: TopHoldingAddressBalance[];
+  totalHolders: number;
+  generatedAt: string | null;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  goToPage: (page: number) => void;
+  isLoading: boolean;
+  error: string | null;
+}
