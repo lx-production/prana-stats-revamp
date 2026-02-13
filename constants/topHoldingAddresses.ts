@@ -1,4 +1,6 @@
-export const TOP_HOLDING_ADDRESSES = [
+import type { TopHoldingAddress } from './topHoldingAddresses.types';
+
+export const TOP_HOLDING_ADDRESSES: TopHoldingAddress[] = [
   { address: '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b', label: 'PRANA Protocol' },
   { address: '0x917d8fc3938FDB924332ad3B4771B234E5F468DC', label: 'Protocol Reserve' },
   { address: '0x714425A4F4d624ef83fEff810a0EEC30B0847868', label: 'PRANA Staking' },
@@ -20,4 +22,3 @@ export const TOP_HOLDING_ADDRESSES = [
   { address: '0x04cEA733C4EF7A9E762cEf278B96764dC99C0219', label: 'Inactive holder' },
   { address: '0xA3adf8952982Eac60C0E43d6F93C66E7363c6Fe2', label: 'BuyPranaBondV1 Contract' },
 ];
-

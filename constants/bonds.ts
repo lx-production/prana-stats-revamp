@@ -1,3 +1,5 @@
+import type { BondAbiFunctionFragment } from './bonds.types';
+
 // Consolidated bond contracts: addresses, ABIs, and related constants
 
 // ============================================================================
@@ -12,7 +14,7 @@ export const BUY_BOND_ADDRESS_V2 = '0x431030E3A0703f0914bE26026ffDaD693F3a16cf';
 
 // Buy Bond committedPrana ABI (shared minimal ABI for V1 + V2)
 // Keep this list minimal: only include functions the app actually calls.
-export const BUY_BOND_COMMITTED_PRANA_ABI = [
+export const BUY_BOND_COMMITTED_PRANA_ABI: BondAbiFunctionFragment[] = [
   {
     inputs: [],
     name: 'committedPrana',
@@ -46,7 +48,7 @@ export const SELL_BOND_ADDRESS_V2 = '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71'
 
 // Sell Bond committedWbtc ABI (shared minimal ABI for V1 + V2)
 // Keep this list minimal: only include functions the app actually calls.
-export const SELL_BOND_COMMITTED_WBTC_ABI = [
+export const SELL_BOND_COMMITTED_WBTC_ABI: BondAbiFunctionFragment[] = [
   {
     inputs: [],
     name: 'committedWbtc',
@@ -72,7 +74,7 @@ export const SELL_BOND_ADDRESS = SELL_BOND_ADDRESS_V2;
 // BOND VOLUME FRAGMENTS (for scanning bonds)
 // ============================================================================
 
-export const BUY_BOND_BONDS_ABI = [
+export const BUY_BOND_BONDS_ABI: BondAbiFunctionFragment[] = [
   {
     inputs: [
       {
@@ -141,7 +143,7 @@ export const BUY_BOND_BONDS_ABI = [
   },
 ];
 
-export const SELL_BOND_BONDS_ABI = [
+export const SELL_BOND_BONDS_ABI: BondAbiFunctionFragment[] = [
   {
     inputs: [
       {

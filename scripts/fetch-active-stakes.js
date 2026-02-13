@@ -3,9 +3,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-
-import { STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.js';
-import { PRANA_DECIMALS } from '../constants/sharedContracts.js';
+import { STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.ts';
+import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

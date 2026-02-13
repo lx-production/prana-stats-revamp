@@ -1,6 +1,6 @@
 import { ethers, type Provider } from 'ethers';
-import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.js';
-import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.js';
+import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.ts';
+import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.ts';
 import { redactUrl } from './bondsScanUtils.ts';
 import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
 

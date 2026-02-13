@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { ethers } from 'ethers';
-import { PRANA_ABI, PRANA_ADDRESS } from '../constants/sharedContracts';
-import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI } from '../constants/stakingContracts';
+import { PRANA_ABI, PRANA_ADDRESS } from '../constants/sharedContracts.ts';
+import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI } from '../constants/stakingContracts.ts';
 import { formatEther, safeContractCall } from '../utils/pranaStatsUtils';
 import type { FetchStakingStats } from '../types';
 

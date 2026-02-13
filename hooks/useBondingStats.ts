@@ -14,7 +14,7 @@ import {
   SELL_BOND_ADDRESS_V2,
   SELL_BOND_COMMITTED_WBTC_ABI_V1,
   SELL_BOND_COMMITTED_WBTC_ABI_V2,
-} from '../constants/bonds';
+} from '../constants/bonds.ts';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
