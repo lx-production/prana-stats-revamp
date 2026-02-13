@@ -1,13 +1,47 @@
 import { ethers } from 'ethers';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.ts';
-import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessEnv, getRpcUrl, redactUrl, isOutOfRangeError, isRateLimitError, toBigInt, PROJECT_ROOT } from '../utils/bondsScanUtils.ts';
+
+import {
+  BUY_BOND_ADDRESS_V2,
+  SELL_BOND_ADDRESS_V2,
+  BUY_BOND_BONDS_ABI,
+  SELL_BOND_BONDS_ABI,
+} from '../constants/bonds.ts';
+import {
+  sleep,
+  serializeForJson,
+  getBondTupleFieldNames,
+  loadDotEnvIntoProcessEnv,
+  getRpcUrl,
+  redactUrl,
+  isOutOfRangeError,
+  isRateLimitError,
+  toBigInt,
+  PROJECT_ROOT,
+} from '../utils/bondsScanUtils.ts';
 import { readJsonIfExists } from '../utils/jsonHelper.ts';
+import type {
+  BondsDetailsOutput,
+  BondDetails,
+  BondsSummaryOutput,
+  ScanResult,
+} from './types/scanBondsV2Types.ts';
+import type { UpdateBondsV2Result } from './types/updateBondsV2Types.ts';
 
 const REQUEST_DELAY_MS = 0;
 
-function lastBondIndex(detailsSide) {
+type ScanFromIndexArgs = {
+  contract: ethers.Contract;
+  label: string;
+  startIndex: number;
+  existingBonds?: ScanResult['bonds'];
+  existingPranaTotal?: bigint;
+};
+
+type ScanFromIndexResult = ScanResult & { added: number };
+
+function lastBondIndex(detailsSide?: BondDetails): number {
   const bonds = detailsSide?.bonds;
   if (!Array.isArray(bonds) || bonds.length === 0) return 0;
   const last = bonds[bonds.length - 1];
@@ -15,30 +49,35 @@ function lastBondIndex(detailsSide) {
   return Number.isFinite(idx) && idx > 0 ? idx : 0;
 }
 
-async function scanFromIndex({ contract, label, startIndex, existingBonds, existingPranaTotal }) {
+async function scanFromIndex({
+  contract,
+  label,
+  startIndex,
+  existingBonds,
+  existingPranaTotal,
+}: ScanFromIndexArgs): Promise<ScanFromIndexResult> {
   let index = startIndex + 1;
   const fieldNames = getBondTupleFieldNames(contract);
 
-  const bonds = Array.isArray(existingBonds) ? [...existingBonds] : [];
+  const bonds: ScanResult['bonds'] = Array.isArray(existingBonds) ? [...existingBonds] : [];
   let pranaTotal = typeof existingPranaTotal === 'bigint' ? existingPranaTotal : 0n;
   let added = 0;
 
   while (true) {
     try {
-      const bond = await contract.bonds(index);
+      const bond: Record<string, unknown> | null | undefined = await contract.bonds(index);
       if (!bond) break;
 
       pranaTotal += toBigInt(bond?.pranaAmount);
 
-      const values = [];
+      const values: unknown[] = [];
       const len = typeof bond?.length === 'number' ? bond.length : 0;
       for (let i = 0; i < len; i += 1) {
         values.push(serializeForJson(bond[i]));
       }
 
-      const fields = {};
+      const fields: Record<string, unknown> = {};
       if (fieldNames && fieldNames.length === values.length) {
-        // Use meaningful names: pranaAmount, owner, etc
         for (let i = 0; i < values.length; i += 1) {
           fields[fieldNames[i]] = values[i];
         }
@@ -83,7 +122,7 @@ async function scanFromIndex({ contract, label, startIndex, existingBonds, exist
  * - Scans only the *next* bond ids until out-of-range
  * - Writes `bonds_v2.json` + `bonds_v2_details.json` only when new bonds were found
  */
-export async function updateBondsV2() {
+export async function updateBondsV2(): Promise<UpdateBondsV2Result> {
   await loadDotEnvIntoProcessEnv();
   const rpcUrl = getRpcUrl();
   const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -94,19 +133,22 @@ export async function updateBondsV2() {
   const detailsPath = path.join(PROJECT_ROOT, 'bonds_v2_details.json');
   const summaryPath = path.join(PROJECT_ROOT, 'bonds_v2.json');
 
-  const existingDetails = await readJsonIfExists(detailsPath);
+  const existingDetails = await readJsonIfExists<BondsDetailsOutput>(detailsPath);
 
-  // If we don't have details yet, fall back to full scan script (simple + consistent).
-  if (!existingDetails?.buy?.bonds || !existingDetails?.sell?.bonds) {
-    console.log('No existing bonds_v2_details.json found; run `node scripts/scan-bonds-v2.js` first.');
+  if (!existingDetails || !existingDetails.buy?.bonds || !existingDetails.sell?.bonds) {
+    console.log(
+      'No existing bonds_v2_details.json found; run `node --experimental-strip-types scripts/scan-bonds-v2.ts` first.',
+    );
     return { updated: false };
   }
 
   const buyStart = lastBondIndex(existingDetails.buy);
   const sellStart = lastBondIndex(existingDetails.sell);
 
-  const buyExistingTotal = typeof existingDetails?.buy?.pranaAmount === 'string' ? BigInt(existingDetails.buy.pranaAmount) : 0n;
-  const sellExistingTotal = typeof existingDetails?.sell?.pranaAmount === 'string' ? BigInt(existingDetails.sell.pranaAmount) : 0n;
+  const buyExistingTotal =
+    typeof existingDetails.buy.pranaAmount === 'string' ? BigInt(existingDetails.buy.pranaAmount) : 0n;
+  const sellExistingTotal =
+    typeof existingDetails.sell.pranaAmount === 'string' ? BigInt(existingDetails.sell.pranaAmount) : 0n;
 
   const [buy, sell] = await Promise.all([
     scanFromIndex({
@@ -133,7 +175,7 @@ export async function updateBondsV2() {
   const generatedAt = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7');
   const redactedRpc = redactUrl(rpcUrl);
 
-  const detailsOut = {
+  const detailsOut: BondsDetailsOutput = {
     generatedAt,
     rpcUrl: redactedRpc,
     buy: {
@@ -150,7 +192,7 @@ export async function updateBondsV2() {
     },
   };
 
-  const summaryOut = {
+  const summaryOut: BondsSummaryOutput = {
     generatedAt,
     rpcUrl: redactedRpc,
     buy: {
@@ -169,9 +211,9 @@ export async function updateBondsV2() {
   return { updated: true };
 }
 
-async function main() {
+async function main(): Promise<void> {
   const result = await updateBondsV2();
-  if (result?.updated) {
+  if (result.updated) {
     console.log('Updated V2 bonds JSON:', result);
   } else {
     console.log('No update needed:', result);
@@ -184,4 +226,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exitCode = 1;
   });
 }
-

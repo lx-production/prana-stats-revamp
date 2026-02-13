@@ -1,7 +1,7 @@
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { updateBondsV2 } from '../scripts/update-bonds-v2.js';
+import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { serveFile } from './serveFile.ts';
 import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.ts';

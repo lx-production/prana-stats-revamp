@@ -1,3 +1,1 @@
-export interface UpdateBondsV2Result {
-  updated: boolean;
-}
+export type { UpdateBondsV2Result } from '../../scripts/types/updateBondsV2Types.ts';

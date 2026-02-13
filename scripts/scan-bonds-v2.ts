@@ -2,31 +2,53 @@ import { ethers } from 'ethers';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.ts';
-import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessEnv, getRpcUrl, redactUrl, isOutOfRangeError, isRateLimitError, toBigInt, PROJECT_ROOT } from '../utils/bondsScanUtils.ts';
+import {
+  BUY_BOND_ADDRESS_V2,
+  SELL_BOND_ADDRESS_V2,
+  BUY_BOND_BONDS_ABI,
+  SELL_BOND_BONDS_ABI,
+} from '../constants/bonds.ts';
+import {
+  sleep,
+  serializeForJson,
+  getBondTupleFieldNames,
+  loadDotEnvIntoProcessEnv,
+  getRpcUrl,
+  redactUrl,
+  isOutOfRangeError,
+  isRateLimitError,
+  toBigInt,
+  PROJECT_ROOT,
+} from '../utils/bondsScanUtils.ts';
+import type { BondsDetailsOutput, BondsSummaryOutput, ScanResult } from './types/scanBondsV2Types.ts';
 
 const REQUEST_DELAY_MS = 0;
 
-async function scanV2Bonds({ contract, label }) {
+type ScanV2BondsArgs = {
+  contract: ethers.Contract;
+  label: string;
+};
+
+async function scanV2Bonds({ contract, label }: ScanV2BondsArgs): Promise<ScanResult> {
   let index = 1;
-  const bonds = [];
+  const bonds: ScanResult['bonds'] = [];
   const fieldNames = getBondTupleFieldNames(contract);
   let pranaTotal = 0n;
 
   while (true) {
     try {
-      const bond = await contract.bonds(index);
+      const bond: Record<string, unknown> | null | undefined = await contract.bonds(index);
       if (!bond) break;
 
       pranaTotal += toBigInt(bond?.pranaAmount);
 
-      const values = [];
+      const values: unknown[] = [];
       const len = typeof bond?.length === 'number' ? bond.length : 0;
       for (let i = 0; i < len; i += 1) {
         values.push(serializeForJson(bond[i]));
       }
 
-      const fields = {};
+      const fields: Record<string, unknown> = {};
       if (fieldNames && fieldNames.length === values.length) {
         for (let i = 0; i < values.length; i += 1) {
           fields[fieldNames[i]] = values[i];
@@ -64,7 +86,7 @@ async function scanV2Bonds({ contract, label }) {
   };
 }
 
-async function main() {
+async function main(): Promise<void> {
   await loadDotEnvIntoProcessEnv();
 
   const rpcUrl = getRpcUrl();
@@ -77,13 +99,15 @@ async function main() {
   console.log('BUY_BOND_ADDRESS_V2:', BUY_BOND_ADDRESS_V2);
   console.log('SELL_BOND_ADDRESS_V2:', SELL_BOND_ADDRESS_V2);
 
-  const [buy, sell] = await Promise.all([
+  const [buy, sell]: [ScanResult, ScanResult] = await Promise.all([
     scanV2Bonds({ contract: buyBondContract, label: 'buy' }),
     scanV2Bonds({ contract: sellBondContract, label: 'sell' }),
   ]);
 
-  const out = {
-    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7'),
+  const out: BondsSummaryOutput = {
+    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('Z', ' UTC+7'),
     rpcUrl: redactUrl(rpcUrl),
     buy: {
       address: BUY_BOND_ADDRESS_V2,
@@ -102,8 +126,10 @@ async function main() {
     `Wrote totals for ${buy.count} buy bonds and ${sell.count} sell bonds to: ${outPath}`,
   );
 
-  const detailsOut = {
-    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', ' UTC+7'),
+  const detailsOut: BondsDetailsOutput = {
+    generatedAt: new Date(Date.now() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('Z', ' UTC+7'),
     rpcUrl: redactUrl(rpcUrl),
     buy: {
       address: BUY_BOND_ADDRESS_V2,
@@ -127,9 +153,7 @@ async function main() {
   );
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('Failed to scan V2 bonds:', err);
   process.exitCode = 1;
 });
-
-

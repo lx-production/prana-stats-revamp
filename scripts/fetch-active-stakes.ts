@@ -3,6 +3,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import type {
+  ActiveStake,
+  ActiveStakesResult,
+  StakeData,
+  StakerEntry,
+} from './types/fetchActiveStakesTypes.ts';
 import { STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.ts';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 
@@ -13,15 +19,15 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_RPC_FALLBACK = 'https://polygon-rpc.com';
 const LAST_STAKE_ID = 30;
 
-const STAKING_CONTRACT_ABI = [
+const STAKING_CONTRACT_ABI: readonly string[] = [
   'function getStakers() view returns (address[])',
   'function getStakerStakes(address staker) view returns (tuple(uint32 id,uint256 amount,uint256 startTime,uint256 duration,uint8 apr,uint256 lastClaimTime)[])',
 ];
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function parseDotEnv(content) {
-  const env = {};
+function parseDotEnv(content: string): Record<string, string> {
+  const env: Record<string, string> = {};
   const lines = content.split(/\r?\n/);
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -34,7 +40,6 @@ function parseDotEnv(content) {
     const key = cleaned.slice(0, eq).trim();
     let value = cleaned.slice(eq + 1).trim();
 
-    // remove surrounding quotes
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
       (value.startsWith("'") && value.endsWith("'"))
@@ -47,7 +52,7 @@ function parseDotEnv(content) {
   return env;
 }
 
-async function loadDotEnvIntoProcessEnv() {
+async function loadDotEnvIntoProcessEnv(): Promise<void> {
   const candidates = [
     '.env',
     '.env.local',
@@ -71,7 +76,7 @@ async function loadDotEnvIntoProcessEnv() {
   }
 }
 
-function getRpcUrl() {
+function getRpcUrl(): string {
   return (
     process.env.VITE_ALCHEMY_POLYGON_MAIN ||
     process.env.POLYGON_RPC_URL ||
@@ -79,7 +84,7 @@ function getRpcUrl() {
   );
 }
 
-function redactUrl(url) {
+function redactUrl(url: string): string {
   try {
     const u = new URL(url);
     const parts = u.pathname.split('/').filter(Boolean);
@@ -93,13 +98,16 @@ function redactUrl(url) {
   }
 }
 
-function getErrorMessage(error) {
+function getErrorMessage(error: unknown): string {
   if (!error) return '';
   if (typeof error === 'string') return error.toLowerCase();
   if (typeof error === 'object') {
-    const errObj = error;
-    const nestedMessage = errObj?.error?.message;
-    const infoMessage = errObj?.info?.error?.message;
+    const errObj = error as Record<string, unknown>;
+    const nestedError = errObj?.error as Record<string, unknown> | undefined;
+    const nestedMessage = nestedError?.message as string | undefined;
+    const infoPayload = errObj?.info as Record<string, unknown> | undefined;
+    const infoError = infoPayload?.error as Record<string, unknown> | undefined;
+    const infoMessage = infoError?.message as string | undefined;
     const message =
       errObj?.shortMessage ||
       errObj?.message ||
@@ -112,7 +120,7 @@ function getErrorMessage(error) {
   return String(error).toLowerCase();
 }
 
-function isRateLimitError(error) {
+function isRateLimitError(error: unknown): boolean {
   const message = getErrorMessage(error);
   return (
     message.includes('too many requests') ||
@@ -121,25 +129,27 @@ function isRateLimitError(error) {
   );
 }
 
-function toBigInt(value) {
+function toBigInt(value: unknown): bigint {
   try {
     if (typeof value === 'bigint') return value;
     if (typeof value === 'number') return BigInt(value);
     if (typeof value === 'string' && value.length > 0) return BigInt(value);
-    if (value && typeof value.toString === 'function') return BigInt(value.toString());
+    if (value && typeof (value as { toString: () => string }).toString === 'function') {
+      return BigInt((value as { toString: () => string }).toString());
+    }
   } catch {
     // ignore parse failures and treat as 0
   }
   return 0n;
 }
 
-function toNumberSafe(value) {
+function toNumberSafe(value: unknown): number {
   const b = toBigInt(value);
   if (b > BigInt(Number.MAX_SAFE_INTEGER)) return Number.MAX_SAFE_INTEGER;
   return Number(b);
 }
 
-function formatUnixSecondsToHuman(unixSeconds) {
+function formatUnixSecondsToHuman(unixSeconds: bigint): { iso: string; local: string } {
   const ms = toNumberSafe(unixSeconds) * 1000;
   const d = new Date(ms);
   return {
@@ -148,12 +158,16 @@ function formatUnixSecondsToHuman(unixSeconds) {
   };
 }
 
-async function main() {
+async function main(): Promise<void> {
   await loadDotEnvIntoProcessEnv();
 
   const rpcUrl = getRpcUrl();
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
+  const stakingContract = new ethers.Contract(
+    STAKING_CONTRACT_ADDRESS,
+    STAKING_CONTRACT_ABI,
+    provider,
+  );
 
   const block = await provider.getBlock('latest');
   const blockTimestamp = block?.timestamp ?? 0;
@@ -164,18 +178,16 @@ async function main() {
   console.log('STAKING_CONTRACT_ADDRESS:', STAKING_CONTRACT_ADDRESS);
   console.log('Latest block:', blockNumber, 'timestamp:', blockTimestamp);
 
-  const stakers = await stakingContract.getStakers();
+  const stakers: string[] = await stakingContract.getStakers();
 
-  // Build a global stakeId -> stake details map (stake ids are globally unique).
-  const stakeById = new Map();
+  const stakeById = new Map<number, StakerEntry>();
   let totalStakesSeen = 0;
 
   for (const staker of stakers) {
-    let stakes;
-    // small retry for rate limits
+    let stakes: StakeData[] = [];
     for (;;) {
       try {
-        stakes = await stakingContract.getStakerStakes(staker);
+        stakes = (await stakingContract.getStakerStakes(staker)) as StakeData[];
         break;
       } catch (err) {
         if (isRateLimitError(err)) {
@@ -189,23 +201,21 @@ async function main() {
     for (const s of stakes) {
       totalStakesSeen += 1;
       const stakeId = toNumberSafe(s?.id);
-      // in case of duplicates (shouldn't happen), keep the first and skip the rest
       if (!stakeById.has(stakeId)) {
         stakeById.set(stakeId, { staker, stake: s });
       }
     }
   }
 
-  const activeStakes = [];
+  const activeStakes: ActiveStake[] = [];
 
-  // "Looping technique": iterate stakeId 1..LAST_STAKE_ID
   for (let stakeId = 1; stakeId <= LAST_STAKE_ID; stakeId += 1) {
     const entry = stakeById.get(stakeId);
     if (!entry) continue;
 
     const { staker, stake } = entry;
-    const startTime = toBigInt(stake?.startTime);
-    const duration = toBigInt(stake?.duration);
+    const startTime = toBigInt(stake.startTime);
+    const duration = toBigInt(stake.duration);
     const endTime = startTime + duration;
     const isActive = now < endTime;
     if (!isActive) continue;
@@ -217,15 +227,15 @@ async function main() {
     activeStakes.push({
       stakeId,
       staker,
-      amountRaw: toBigInt(stake?.amount).toString(),
-      amountPrana: ethers.formatUnits(toBigInt(stake?.amount), PRANA_DECIMALS),
+      amountRaw: toBigInt(stake.amount).toString(),
+      amountPrana: ethers.formatUnits(toBigInt(stake.amount), PRANA_DECIMALS),
       startTime: startTime.toString(),
       startTimeIso: startHuman.iso,
       startTimeLocal: startHuman.local,
       durationSeconds: duration.toString(),
       durationDays: Number(duration) / 86400,
-      apr: toNumberSafe(stake?.apr),
-      lastClaimTime: toBigInt(stake?.lastClaimTime).toString(),
+      apr: toNumberSafe(stake.apr),
+      lastClaimTime: toBigInt(stake.lastClaimTime).toString(),
       matureTime: endTime.toString(),
       matureTimeIso: matureHuman.iso,
       matureTimeLocal: matureHuman.local,
@@ -235,7 +245,7 @@ async function main() {
 
   activeStakes.sort((a, b) => a.stakeId - b.stakeId);
 
-  const out = {
+  const out: ActiveStakesResult = {
     generatedAt: new Date().toISOString(),
     rpcUrl: redactUrl(rpcUrl),
     contract: {
