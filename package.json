@@ -6,9 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "scan:bonds:v2": "node scripts/scan-bonds-v2.js",
-    "update:bonds:v2": "node scripts/update-bonds-v2.js",
-    "update:top:holders": "node scripts/update-top-holding-addresses.js",
+    "scan:bonds:v2": "node --experimental-strip-types scripts/scan-bonds-v2.js",
+    "update:bonds:v2": "node --experimental-strip-types scripts/update-bonds-v2.js",
+    "update:top:holders": "node --experimental-strip-types scripts/update-top-holding-addresses.js",
     "serve": "node server/index.js"
   },
   "dependencies": {

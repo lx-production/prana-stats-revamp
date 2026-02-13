@@ -229,6 +229,22 @@ export interface TopHoldingAddressBalance {
   balance: string;
 }
 
+export interface TopHoldingAddressesBuildOutputParams {
+  balancesRaw: bigint[];
+  rpcUrl: string;
+}
+
+export interface TopHoldingAddressesBuildOutput {
+  generatedAt: string;
+  rpcUrl: string;
+  token: {
+    address: string;
+    symbol: string;
+    decimals: number;
+  };
+  holders: TopHoldingAddressBalance[];
+}
+
 export interface TopHoldingAddressesJson {
   generatedAt?: string;
   token?: {

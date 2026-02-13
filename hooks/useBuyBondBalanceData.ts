@@ -7,10 +7,10 @@ import {
   BUY_BOND_COMMITTED_PRANA_ABI_V2,
 } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
-import type { BuyBondMetric, UseBuyBondBalanceDataResult } from '../types';
 import { useCommittedPrana } from './useCommittedPrana.ts';
 import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
 import { getPolygonProvider } from '../utils/polygonProvider';
+import type { BuyBondMetric, UseBuyBondBalanceDataResult } from '../types';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 

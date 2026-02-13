@@ -8,19 +8,19 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_RPC_FALLBACK = 'https://polygon-rpc.com';
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-function isNumericKey(key) {
+function isNumericKey(key: string): boolean {
   // "0", "1", ... but not "01"
   return /^\d+$/.test(key);
 }
 
-function serializeForJson(value) {
+function serializeForJson(value: unknown): unknown {
   if (typeof value === 'bigint') return value.toString(); // JSON doesn't support BigInt
   if (Array.isArray(value)) return value.map(serializeForJson); // Recursively serialize arrays
   if (value && typeof value === 'object') {
-    const out = {};
-    for (const [k, v] of Object.entries(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (k === 'length') continue;
       if (isNumericKey(k)) continue;
       out[k] = serializeForJson(v);
@@ -31,21 +31,21 @@ function serializeForJson(value) {
 }
 
 // Get the field names for the bonds tuple
-function getBondTupleFieldNames(contract) {
+function getBondTupleFieldNames(contract: any): string[] | null {
   try {
     const fn = contract.interface.getFunction('bonds');
     const tuple = fn?.outputs?.[0];
     const components = tuple?.components;
     if (!Array.isArray(components) || components.length === 0) return null;
 
-    return components.map((c, i) => (c?.name && c.name.trim() ? c.name.trim() : `field${i}`));
+    return components.map((c: any, i: number) => (c?.name && c.name.trim() ? c.name.trim() : `field${i}`));
   } catch {
     return null;
   }
 }
 
-function parseDotEnv(content) {
-  const env = {};
+function parseDotEnv(content: string): Record<string, string> {
+  const env: Record<string, string> = {};
   const rawLine = content.split(/\r?\n/).find((line) => {
     const trimmed = line.trim();
     return trimmed && !trimmed.startsWith('#');
@@ -63,7 +63,7 @@ function parseDotEnv(content) {
   return env;
 }
 
-async function loadDotEnvIntoProcessEnv() {
+async function loadDotEnvIntoProcessEnv(): Promise<void> {
   const candidates = [
     '.env',
     '.env.local',
@@ -87,7 +87,7 @@ async function loadDotEnvIntoProcessEnv() {
   }
 }
 
-function getRpcUrl() {
+function getRpcUrl(): string {
   return (
     process.env.VITE_ALCHEMY_POLYGON_MAIN ||
     process.env.POLYGON_RPC_URL ||
@@ -95,7 +95,7 @@ function getRpcUrl() {
   );
 }
 
-function redactUrl(url) {
+function redactUrl(url: string): string {
   try {
     const u = new URL(url);
     // Alchemy URLs typically embed the key in pathname; mask the last segment.
@@ -110,11 +110,30 @@ function redactUrl(url) {
   }
 }
 
-function getErrorMessage(error) {
+type ErrorLike = {
+  shortMessage?: unknown;
+  message?: unknown;
+  reason?: unknown;
+  code?: unknown;
+  data?: unknown;
+  error?: {
+    message?: unknown;
+    reason?: unknown;
+    data?: unknown;
+  };
+  info?: {
+    error?: {
+      message?: unknown;
+      data?: unknown;
+    };
+  };
+};
+
+function getErrorMessage(error: unknown): string {
   if (!error) return '';
   if (typeof error === 'string') return error.toLowerCase();
   if (typeof error === 'object') {
-    const errObj = error;
+    const errObj = error as ErrorLike;
     const nestedMessage = errObj?.error?.message;
     const infoMessage = errObj?.info?.error?.message;
     const message =
@@ -129,11 +148,11 @@ function getErrorMessage(error) {
   return String(error).toLowerCase();
 }
 
-function getErrorMessageRaw(error) {
+function getErrorMessageRaw(error: unknown): string {
   if (!error) return '';
   if (typeof error === 'string') return error;
   if (typeof error === 'object') {
-    const errObj = error;
+    const errObj = error as ErrorLike;
     const nestedMessage = errObj?.error?.message;
     const infoMessage = errObj?.info?.error?.message;
     const message =
@@ -150,14 +169,14 @@ function getErrorMessageRaw(error) {
 
 let didLogOutOfRange = false;
 
-function getRevertDataHex(error) {
+function getRevertDataHex(error: unknown): string | null {
   if (!error || typeof error !== 'object') return null;
-  const errObj = error;
+  const errObj = error as ErrorLike;
   const candidates = [
     errObj?.data,
     errObj?.error?.data,
     errObj?.info?.error?.data,
-    errObj?.info?.error?.data?.data,
+    (errObj?.info?.error?.data as { data?: unknown } | undefined)?.data,
   ];
   for (const c of candidates) {
     if (typeof c === 'string' && c.startsWith('0x')) return c;
@@ -165,26 +184,26 @@ function getRevertDataHex(error) {
   return null;
 }
 
-function getSolidityPanicCode(error) {
+function getSolidityPanicCode(error: unknown): bigint | null {
   // Solidity panics encode as: 0x4e487b71 (Panic(uint256)) + 32-byte code
   // Out-of-bounds array access is panic code 0x32.
   const data = getRevertDataHex(error);
   if (!data || !data.startsWith('0x4e487b71')) return null;
   if (data.length < 10 + 64) return null;
   try {
-    const codeHex = '0x' + data.slice(10, 10 + 64);
+    const codeHex = `0x${data.slice(10, 10 + 64)}`;
     return BigInt(codeHex);
   } catch {
     return null;
   }
 }
 
-function isOutOfRangeError(error) {
-  const errObj = error;
+function isOutOfRangeError(error: unknown): boolean {
+  const errObj = error as ErrorLike;
   const isCallException = errObj?.code === 'CALL_EXCEPTION';
   const revertData = getRevertDataHex(error);
   const noRevertData = revertData === '0x';
-  const reason = errObj?.reason || errObj?.error?.reason || '';
+  const reason = (errObj?.reason || errObj?.error?.reason || '') as string;
 
   const panicCode = getSolidityPanicCode(error);
   const isArrayOutOfBounds = panicCode === 0x32n;
@@ -208,7 +227,7 @@ function isOutOfRangeError(error) {
   return isOutOfRange;
 }
 
-function isRateLimitError(error) {
+function isRateLimitError(error: unknown): boolean {
   const message = getErrorMessage(error);
   return (
     message.includes('too many requests') ||
@@ -217,12 +236,14 @@ function isRateLimitError(error) {
   );
 }
 
-function toBigInt(value) {
+function toBigInt(value: unknown): bigint {
   try {
     if (typeof value === 'bigint') return value;
     if (typeof value === 'number') return BigInt(value);
     if (typeof value === 'string' && value.length > 0) return BigInt(value);
-    if (value && typeof value.toString === 'function') return BigInt(value.toString());
+    if (value && typeof (value as { toString?: unknown }).toString === 'function') {
+      return BigInt((value as { toString(): string }).toString());
+    }
   } catch {
     // ignore parse failures and treat as 0
   }

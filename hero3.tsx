@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers.js";
+import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
 const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };

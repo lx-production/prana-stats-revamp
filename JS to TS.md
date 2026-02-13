@@ -75,3 +75,14 @@ For your repo, the immediate next hooks are:
 - `hooks/useTotalBondPranaVolume.js`
 
 So yes — for `@JS to TS.md:3-5`, choose **hooks before components**.
+
+---
+
+These are the `utils/` files you should convert to TypeScript (they are currently `.js`):
+
+- `utils/topHoldingAddressesUpdater.js`
+- `utils/jsonHelper.js`
+- `utils/bondsScanUtils.js`
+- `utils/modelViewerHelpers.js`
+
+Everything else in `utils/` is already `.ts`.

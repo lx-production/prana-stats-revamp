@@ -1,9 +1,15 @@
-import { ethers } from 'ethers';
+import { ethers, type Provider } from 'ethers';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.js';
 import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.js';
-import { redactUrl } from './bondsScanUtils.js';
+import { redactUrl } from './bondsScanUtils.ts';
+import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
 
-async function fetchBalancesViaMulticall(provider) {
+type MulticallBalanceResult = {
+  success?: boolean;
+  returnData?: string;
+};
+
+export async function fetchBalancesViaMulticall(provider: Provider): Promise<bigint[]> {
   const iface = new ethers.Interface(PRANA_ABI);
   const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
 
@@ -13,8 +19,8 @@ async function fetchBalancesViaMulticall(provider) {
     callData: iface.encodeFunctionData('balanceOf', [holder.address]),
   }));
 
-  const results = await multicall.aggregate3.staticCall(calls);
-  
+  const results = (await multicall.aggregate3.staticCall(calls)) as MulticallBalanceResult[];
+
   return results.map((result) => {
     if (!result?.success || typeof result.returnData !== 'string') return 0n;
     try {
@@ -26,7 +32,7 @@ async function fetchBalancesViaMulticall(provider) {
   });
 }
 
-async function fetchBalancesViaFallback(provider) {
+export async function fetchBalancesViaFallback(provider: Provider): Promise<bigint[]> {
   const token = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
   const raw = await Promise.all(
     TOP_HOLDING_ADDRESSES.map(async (holder) => {
@@ -41,7 +47,10 @@ async function fetchBalancesViaFallback(provider) {
   return raw;
 }
 
-function buildOutput({ balancesRaw, rpcUrl }) {
+export function buildOutput({
+  balancesRaw,
+  rpcUrl,
+}: TopHoldingAddressesBuildOutputParams): TopHoldingAddressesBuildOutput {
   const holders = TOP_HOLDING_ADDRESSES.map((holder, index) => {
     const balanceRaw = balancesRaw[index] ?? 0n;
     return {
@@ -68,5 +77,3 @@ function buildOutput({ balancesRaw, rpcUrl }) {
     holders,
   };
 }
-
-export { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput };

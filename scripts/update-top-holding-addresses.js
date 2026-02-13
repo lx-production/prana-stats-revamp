@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { readJsonIfExists } from '../utils/jsonHelper.js';
-import { loadDotEnvIntoProcessEnv, getRpcUrl, PROJECT_ROOT } from '../utils/bondsScanUtils.js';
-import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.js';
+import { ethers } from 'ethers';
+import { readJsonIfExists } from '../utils/jsonHelper.ts';
+import { loadDotEnvIntoProcessEnv, getRpcUrl, PROJECT_ROOT } from '../utils/bondsScanUtils.ts';
+import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.ts';
 
 export async function updateTopHoldingAddresses() {
   await loadDotEnvIntoProcessEnv();

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { PranaPricesData } from '../types';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
+import type { PranaPricesData } from '../types';
 
 const initialPrices: PranaPricesData = {
   btcPriceUsd: null,
