@@ -7,16 +7,17 @@ import {
   BUY_BOND_COMMITTED_PRANA_ABI_V2,
 } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
-import { useCommittedPrana } from './useCommittedPrana';
-import { useTotalV2BondPranaVolume } from './useTotalV2BondPranaVolume';
+import { useCommittedPrana } from './useCommittedPrana.ts';
+import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
+import type { BuyBondMetric, UseBuyBondBalanceDataResult } from './useBuyBondBalanceData.types';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 
-export const useBuyBondBalanceData = () => {
-  const [balanceV2, setBalanceV2] = useState(0n);
-  const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState(true);
-  const [balanceErrorV2, setBalanceErrorV2] = useState(null);
+export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
+  const [balanceV2, setBalanceV2] = useState<bigint>(0n);
+  const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState<boolean>(true);
+  const [balanceErrorV2, setBalanceErrorV2] = useState<unknown | null>(null);
 
   const {
     committedPranaRaw: committedPranaRawV2,
@@ -47,7 +48,7 @@ export const useBuyBondBalanceData = () => {
       try {
         const res = await token.balanceOf(BUY_BOND_ADDRESS_V2);
         if (!cancelled) setBalanceV2(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
-      } catch (e) {
+      } catch (e: unknown) {
         if (!cancelled) {
           setBalanceErrorV2(e);
           setBalanceV2(0n);
@@ -59,7 +60,9 @@ export const useBuyBondBalanceData = () => {
 
     fetchBuyBondV2Balance();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const buyBondV2 = useMemo(() => [{ address: BUY_BOND_ADDRESS_V2 }], []);
@@ -114,9 +117,9 @@ export const useBuyBondBalanceData = () => {
     [],
   );
 
-  const metrics = useMemo(
+  const metrics = useMemo<BuyBondMetric[]>(
     () => {
-      const parseAndRound = (value) => {
+      const parseAndRound = (value: string): { numericValue: number; formattedValue: string } => {
         const numeric = Number.parseFloat(value);
         if (!Number.isFinite(numeric)) {
           return {

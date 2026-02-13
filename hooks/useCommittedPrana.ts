@@ -4,13 +4,26 @@ import { BUY_BOND_ADDRESS, BUY_BOND_COMMITTED_PRANA_ABI } from '../constants/bon
 import { PRANA_DECIMALS } from '../constants/sharedContracts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
+interface UseCommittedPranaParams {
+  contractAddress?: string;
+  contractAbi?: ethers.InterfaceAbi;
+}
+
+interface UseCommittedPranaResult {
+  committedPrana: string;
+  committedPranaRaw: bigint;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
 export const useCommittedPrana = ({
   contractAddress = BUY_BOND_ADDRESS,
   contractAbi = BUY_BOND_COMMITTED_PRANA_ABI,
-} = {}) => {
-  const [data, setData] = useState(0n);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+}: UseCommittedPranaParams = {}): UseCommittedPranaResult => {
+  const [data, setData] = useState<bigint>(0n);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const contract = useMemo(() => {
     const provider = getPolygonProvider();
@@ -24,7 +37,7 @@ export const useCommittedPrana = ({
       const res = await contract.committedPrana();
       setData(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
     } catch (e) {
-      setError(e);
+      setError(e instanceof Error ? e : new Error(String(e)));
       setData(0n);
     } finally {
       setIsLoading(false);

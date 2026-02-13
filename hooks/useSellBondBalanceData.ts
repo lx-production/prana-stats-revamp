@@ -7,13 +7,14 @@ import {
   SELL_BOND_COMMITTED_WBTC_ABI_V2,
 } from '../constants/bonds';
 import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
-import { useCommittedWbtc } from './useCommittedWbtc';
-import { useTotalV2BondPranaVolume } from './useTotalV2BondPranaVolume';
+import { useCommittedWbtc } from './useCommittedWbtc.ts';
+import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
+import type { SellBondMetric, UseSellBondBalanceDataResult } from './useSellBondBalanceData.types';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
-const formatBigIntValue = (value) => {
+const formatBigIntValue = (value: bigint): string => {
   const stringValue = value.toString();
   return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
@@ -22,10 +23,10 @@ const pranaFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
-export const useSellBondBalanceData = () => {
-  const [balanceV2, setBalanceV2] = useState(0n);
-  const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState(true);
-  const [balanceErrorV2, setBalanceErrorV2] = useState(null);
+export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
+  const [balanceV2, setBalanceV2] = useState<bigint>(0n);
+  const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState<boolean>(true);
+  const [balanceErrorV2, setBalanceErrorV2] = useState<unknown | null>(null);
 
   const {
     committedWbtcRaw: committedWbtcRawV2,
@@ -56,7 +57,7 @@ export const useSellBondBalanceData = () => {
       try {
         const res = await token.balanceOf(SELL_BOND_ADDRESS_V2);
         if (!cancelled) setBalanceV2(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
-      } catch (e) {
+      } catch (e: unknown) {
         if (!cancelled) {
           setBalanceErrorV2(e);
           setBalanceV2(0n);
@@ -122,9 +123,9 @@ export const useSellBondBalanceData = () => {
   const formattedCommittedSat = formatBigIntValue(totalCommittedRaw);
   const formattedBondVolume = ethers.formatUnits(totalBondVolumeRaw, PRANA_DECIMALS);
 
-  const metrics = useMemo(
+  const metrics = useMemo<SellBondMetric[]>(
     () => {
-      const parseAndRound = (value) => {
+      const parseAndRound = (value: string): { numericValue: number; formattedValue: string } => {
         const numeric = Number.parseFloat(value);
         if (!Number.isFinite(numeric)) {
           return {

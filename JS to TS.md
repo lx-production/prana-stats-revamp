@@ -54,3 +54,24 @@ Why these first:
 - They’re relatively isolated compared with bond/stats data hooks, so lower migration risk early.
 
 After these 5, next best batch is JS hooks in `hooks/` that are imported by TS components.
+
+Hooks first.
+
+Reason (based on your current repo state):
+- `components/` is already fully TSX (all 5 files are `.tsx`).
+- `hooks/` is still mixed, with 5 remaining `.js` hooks.
+- Your components depend on hooks heavily, so typing hooks first gives better type safety upstream and keeps components “display-focused” as you prefer.
+
+So the practical order is:
+1. Finish remaining JS hooks in `hooks/`
+2. Then move to `utils/*.js` used by those hooks
+3. Then `constants/*.js` used by runtime app code
+
+For your repo, the immediate next hooks are:
+- `hooks/useCommittedPrana.js`
+- `hooks/useCommittedWbtc.js`
+- `hooks/useBuyBondBalanceData.js`
+- `hooks/useSellBondBalanceData.js`
+- `hooks/useTotalBondPranaVolume.js`
+
+So yes — for `@JS to TS.md:3-5`, choose **hooks before components**.

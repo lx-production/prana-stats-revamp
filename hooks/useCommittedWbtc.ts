@@ -4,13 +4,26 @@ import { SELL_BOND_ADDRESS, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bo
 import { WBTC_DECIMALS } from '../constants/sharedContracts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
+interface UseCommittedWbtcParams {
+  contractAddress?: string;
+  contractAbi?: ethers.InterfaceAbi;
+}
+
+interface UseCommittedWbtcResult {
+  committedWbtc: string;
+  committedWbtcRaw: bigint;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
 export const useCommittedWbtc = ({
   contractAddress = SELL_BOND_ADDRESS,
   contractAbi = SELL_BOND_COMMITTED_WBTC_ABI,
-} = {}) => {
-  const [data, setData] = useState(0n);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+}: UseCommittedWbtcParams = {}): UseCommittedWbtcResult => {
+  const [data, setData] = useState<bigint>(0n);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const contract = useMemo(() => {
     const provider = getPolygonProvider();
@@ -24,7 +37,7 @@ export const useCommittedWbtc = ({
       const res = await contract.committedWbtc();
       setData(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
     } catch (e) {
-      setError(e);
+      setError(e instanceof Error ? e : new Error(String(e)));
       setData(0n);
     } finally {
       setIsLoading(false);

@@ -8,7 +8,19 @@
 //    spin={0.2}         // radians/sec (positive = CCW). 0 disables rotation
 // />
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
+
+export interface NeuralShaderBackgroundProps {
+  className?: string;
+  opacity?: number;       // CSS layer opacity; keep at 1 for solid dark BG
+  speed?: number;         // 1.0 = original; 0.5 = half speed vibration
+  flow?: number;          // base field frequency (affects shapes)
+  brightness?: number;    // overall multiplier (0.6 ≈ fairly dark)
+  gamma?: number;         // tone curve (>1 darkens mids, <1 brightens)
+  spin?: number;          // radians/second; positive = CCW rotation of the whole field
+  iterations?: number;    // fragment loop count; lower = faster
+  maxDpr?: number;        // clamp device pixel ratio; lower = faster
+}
 
 export function NeuralShaderBackground({
   className = "",
@@ -20,21 +32,23 @@ export function NeuralShaderBackground({
   spin = 0.2,        // radians/second; positive = CCW rotation of the whole field
   iterations = 70,   // fragment loop count; lower = faster
   maxDpr = 1.25,     // clamp device pixel ratio; lower = faster
-}) {
-  const canvasRef = useRef(null);
-  const rafRef = useRef(0);
-  const glRef = useRef(null);
-  const programRef = useRef(null);
-  const locTimeRef = useRef(null);
-  const locResRef = useRef(null);
-  const locSpeedRef = useRef(null);
-  const locFlowRef = useRef(null);
-  const locBrightRef = useRef(null);
-  const locGammaRef = useRef(null);
-  const locSpinRef = useRef(null);
+}: NeuralShaderBackgroundProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+  const glRef = useRef<WebGL2RenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const locTimeRef = useRef<WebGLUniformLocation | null>(null);
+  const locResRef = useRef<WebGLUniformLocation | null>(null);
+  const locSpeedRef = useRef<WebGLUniformLocation | null>(null);
+  const locFlowRef = useRef<WebGLUniformLocation | null>(null);
+  const locBrightRef = useRef<WebGLUniformLocation | null>(null);
+  const locGammaRef = useRef<WebGLUniformLocation | null>(null);
+  const locSpinRef = useRef<WebGLUniformLocation | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     // WebGL2 gives us #version 300 es and gl_VertexID. If missing on device, consider a webgl fallback.
     const gl = canvas.getContext("webgl2", { premultipliedAlpha: true, antialias: true });
     if (!gl) return;
@@ -96,8 +110,9 @@ export function NeuralShaderBackground({
     }
     `;
 
-    const compile = (type, src) => {
+    const compile = (type: number, src: string): WebGLShader | null => {
       const s = gl.createShader(type);
+      if (!s) return null;
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
@@ -110,7 +125,11 @@ export function NeuralShaderBackground({
 
     const vs = compile(gl.VERTEX_SHADER, vert);
     const fs = compile(gl.FRAGMENT_SHADER, frag);
+    if (!vs || !fs) return;
+
     const prog = gl.createProgram();
+    if (!prog) return;
+    
     gl.attachShader(prog, vs);
     gl.attachShader(prog, fs);
     gl.linkProgram(prog);
@@ -136,22 +155,24 @@ export function NeuralShaderBackground({
       canvas.width = Math.max(1, Math.floor(w * dpr));
       canvas.height = Math.max(1, Math.floor(h * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(locResRef.current, canvas.width, canvas.height);
+      if (locResRef.current) {
+        gl.uniform2f(locResRef.current, canvas.width, canvas.height);
+      }
     };
 
     const onResize = () => { resize(); };
     const start = performance.now();
 
-    const frame = (now) => {
+    const frame = (now: number) => {
       rafRef.current = requestAnimationFrame(frame);
       const secs = (now - start) * 0.001; // time in seconds
       // Push uniforms every frame so props can animate if you wish
-      gl.uniform1f(locTimeRef.current, secs);
-      gl.uniform1f(locSpeedRef.current, speed);
-      gl.uniform1f(locFlowRef.current, flow);
-      gl.uniform1f(locBrightRef.current, brightness);
-      gl.uniform1f(locGammaRef.current, gamma);
-      gl.uniform1f(locSpinRef.current, spin);
+      if (locTimeRef.current) gl.uniform1f(locTimeRef.current, secs);
+      if (locSpeedRef.current) gl.uniform1f(locSpeedRef.current, speed);
+      if (locFlowRef.current) gl.uniform1f(locFlowRef.current, flow);
+      if (locBrightRef.current) gl.uniform1f(locBrightRef.current, brightness);
+      if (locGammaRef.current) gl.uniform1f(locGammaRef.current, gamma);
+      if (locSpinRef.current) gl.uniform1f(locSpinRef.current, spin);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 

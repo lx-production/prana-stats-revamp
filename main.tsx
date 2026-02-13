@@ -5,7 +5,7 @@ import PranaHero from "./hero3.tsx";
 import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
-import NeuralShaderBackground from "./shader.jsx";
+import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 
 function App() {
