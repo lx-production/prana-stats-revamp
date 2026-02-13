@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+
+- Use TS as default for frontend app code (components, hooks, utils that drive UI/data).
+- Keep JS for tooling/config/scripts for now (vite.config.js, scripts/*.js, server scripts).
