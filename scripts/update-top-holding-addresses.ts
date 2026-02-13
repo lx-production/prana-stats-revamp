@@ -5,10 +5,7 @@ import { readJsonIfExists } from '../utils/jsonHelper.ts';
 import { loadDotEnvIntoProcessEnv, getRpcUrl, PROJECT_ROOT } from '../utils/bondsScanUtils.ts';
 import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.ts';
 import type { TopHoldingAddressesBuildOutput } from '../types.ts';
-import type {
-  TopHoldingAddressesUpdateStrategy,
-  UpdateTopHoldingAddressesResult,
-} from './types/updateTopHoldingAddressesTypes.ts';
+import type { TopHoldingAddressesUpdateStrategy, UpdateTopHoldingAddressesResult } from './types/updateTopHoldingAddressesTypes.ts';
 
 export async function updateTopHoldingAddresses(): Promise<UpdateTopHoldingAddressesResult> {
   await loadDotEnvIntoProcessEnv();

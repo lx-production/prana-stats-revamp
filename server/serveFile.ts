@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { cacheControlFor } from './cacheControl.ts';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CachedStaticFile, StaticFileCache } from './types/serveFileTypes.ts';
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).

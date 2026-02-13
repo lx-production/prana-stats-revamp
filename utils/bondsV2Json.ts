@@ -2,7 +2,7 @@ import { fetchJson } from './fetchJson';
 
 // Keep this small: the goal is to dedupe requests on page load,
 // not to keep the bonds data stale for long periods.
-const BONDS_V2_JSON_TTL_MS = 15_000;
+const BONDS_V2_JSON_TTL_MS = 60_000; // 1 minute
 
 let cached: { value: unknown; timestamp: number } | null = null;
 
@@ -17,7 +17,7 @@ async function fetchBondsV2JsonCached<T = unknown>(opts: { force?: boolean } = {
   const force = opts.force === true;
   const now = Date.now();
 
-  // If cached data exists and is less than 15 seconds old, return it
+  // If cached data exists and is less than 1 minute old, return it
   if (!force && cached && now - cached.timestamp < BONDS_V2_JSON_TTL_MS) {
     return cached.value as T;
   }

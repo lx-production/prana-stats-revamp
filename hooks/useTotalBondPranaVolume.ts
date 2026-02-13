@@ -39,6 +39,7 @@ export const useTotalV2BondPranaVolume = ({
         let refreshUpdated = false;
         try {
           // Use fetchJson so multiple hooks dedupe this GET request.
+          // ensures new bonds are scanned before the cached JSON is reloaded
           const refreshResult = await fetchJson<{ updated?: boolean }>('/api/bonds-v2/refresh'); // checks if there's any new bonds
           refreshUpdated = Boolean(refreshResult?.updated);
         } catch {

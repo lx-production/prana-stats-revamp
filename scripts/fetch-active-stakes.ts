@@ -3,14 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import type {
-  ActiveStake,
-  ActiveStakesResult,
-  StakeData,
-  StakerEntry,
-} from './types/fetchActiveStakesTypes.ts';
 import { STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.ts';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
+import type { ActiveStake, ActiveStakesResult, StakeData, StakerEntry } from './types/fetchActiveStakesTypes.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
