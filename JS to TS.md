@@ -86,3 +86,24 @@ These are the `utils/` files you should convert to TypeScript (they are currentl
 - `utils/modelViewerHelpers.js`
 
 Everything else in `utils/` is already `.ts`.
+
+Great point. Based on current **risk + usage**, these are the safest first 3:
+
+- `server/requestHelpers.js`
+  - Small, pure helper functions, almost no side effects.
+  - Used by `server/index.js` for core request flow, so typing it gives quick safety.
+- `server/cacheControl.js`
+  - Small deterministic logic (string/path checks only).
+  - High usage because every static/data response can pass through cache policy.
+- `server/serveFile.js`
+  - Medium size, but still contained and already structured.
+  - Central to serving files (ETag, 304, content-type), so strong impact after typing.
+
+Why not first:
+- `server/index.js` is more coupled (routes + refresh orchestration + script calls), so slightly higher migration risk.
+- `scripts/fetch-active-stakes.js` and `scripts/scan-bonds-v2.js` are larger and blockchain-heavy.
+- `scripts/update-bonds-v2.js` is critical and longer.
+- `scripts/update-top-holding-addresses.js` is a good early script candidate, but still lower “safety” than the 3 server utility files above.
+
+If you want, next safest after these 3 is:
+- `scripts/update-top-holding-addresses.js` (best first script to convert).

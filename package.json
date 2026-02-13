@@ -6,10 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "scan:bonds:v2": "node --experimental-strip-types scripts/scan-bonds-v2.js",
     "update:bonds:v2": "node --experimental-strip-types scripts/update-bonds-v2.js",
     "update:top:holders": "node --experimental-strip-types scripts/update-top-holding-addresses.js",
-    "serve": "node server/index.js"
+    "serve": "node --experimental-strip-types server/index.js"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
@@ -22,10 +23,14 @@
     "three": "^0.160.0"
   },
   "devDependencies": {
+    "@types/node": "^25.2.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.13",
+    "typescript": "^5.9.3",
     "vite": "^5.0.8"
   }
 }
