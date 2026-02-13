@@ -1,12 +1,11 @@
 import React from 'react';
 import { Lock, Wallet } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
-import { formatPranaBalance } from '../utils/topHoldingAddresses';
+import { formatInteger } from '../utils/formatters';
 
 export const TopHoldingAddresses: React.FC = () => {
   const nonCirculatingRanks = new Set([1, 2, 3, 5]);
-  const { holders, totalHolders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } =
-    useTopHoldingAddresses();
+  const { holders, totalHolders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
@@ -51,6 +50,8 @@ export const TopHoldingAddresses: React.FC = () => {
               holders.map((holder, index) => {
                 const rank = startIndex + index + 1;
                 const isNonCirculating = nonCirculatingRanks.has(rank);
+                const balanceValue = Number(holder.balance);
+                const formattedBalance = Number.isFinite(balanceValue) ? formatInteger(Math.round(balanceValue)) : '0';
 
                 return (
                   <div
@@ -71,7 +72,7 @@ export const TopHoldingAddresses: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-sm text-cyan-200 font-semibold whitespace-nowrap">
-                      {formatPranaBalance(holder.balance)} PRANA
+                      {formattedBalance} PRANA
                     </div>
                   </div>
                 );

@@ -1,27 +1,13 @@
 import { ethers } from 'ethers';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts.js';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.js';
 import { loadDotEnvIntoProcessEnv, getRpcUrl, redactUrl, PROJECT_ROOT } from '../utils/bondsScanUtils.js';
-
-const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
-const PRANA_BALANCE_OF_ABI = ['function balanceOf(address owner) view returns (uint256)'];
-const MULTICALL3_ABI = [
-  'function aggregate3(tuple(address target,bool allowFailure,bytes callData)[] calls) payable returns (tuple(bool success,bytes returnData)[] returnData)',
-];
-
-async function readJsonIfExists(filePath) {
-  try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+import { readJsonIfExists } from '../utils/jsonHelper.js';
+import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.js';
 
 async function fetchBalancesViaMulticall(provider) {
-  const iface = new ethers.Interface(PRANA_BALANCE_OF_ABI);
+  const iface = new ethers.Interface(PRANA_ABI);
   const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
 
   const calls = TOP_HOLDING_ADDRESSES.map((holder) => ({
@@ -43,7 +29,7 @@ async function fetchBalancesViaMulticall(provider) {
 }
 
 async function fetchBalancesViaFallback(provider) {
-  const token = new ethers.Contract(PRANA_ADDRESS, PRANA_BALANCE_OF_ABI, provider);
+  const token = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
   const raw = await Promise.all(
     TOP_HOLDING_ADDRESSES.map(async (holder) => {
       try {

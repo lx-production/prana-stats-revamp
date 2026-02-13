@@ -3,17 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.js';
 import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessEnv, getRpcUrl, redactUrl, isOutOfRangeError, isRateLimitError, toBigInt, PROJECT_ROOT } from '../utils/bondsScanUtils.js';
+import { readJsonIfExists } from '../utils/jsonHelper.js';
 
 const REQUEST_DELAY_MS = 0;
-
-async function readJsonIfExists(filePath) {
-  try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
 
 function lastBondIndex(detailsSide) {
   const bonds = detailsSide?.bonds;

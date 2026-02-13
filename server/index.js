@@ -49,7 +49,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const result = await topHoldingRefreshInFlight;
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result); // useTopHoldingAddresses uses this to decide whether to force-refetch /top_holding_addresses.json
     }
 
     // Serve data JSON directly from project root so live updates are visible
