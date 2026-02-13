@@ -10,7 +10,7 @@
     "scan:bonds:v2": "node --experimental-strip-types scripts/scan-bonds-v2.js",
     "update:bonds:v2": "node --experimental-strip-types scripts/update-bonds-v2.js",
     "update:top:holders": "node --experimental-strip-types scripts/update-top-holding-addresses.js",
-    "serve": "node --experimental-strip-types server/index.js"
+    "serve": "node --experimental-strip-types server/index.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

@@ -2,9 +2,11 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { updateBondsV2 } from '../scripts/update-bonds-v2.js';
-import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.js';
-import { serveFile } from './serveFile.js';
+import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
+import { serveFile } from './serveFile.ts';
 import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.ts';
+import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
+import type { UpdateBondsV2Result } from './types/indexTypes.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,8 +15,8 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PORT = Number(process.env.PORT || 4173);
 
 // Tracks in-flight refresh requests to avoid multiple concurrent calls.
-let refreshInFlight = null;
-let topHoldingRefreshInFlight = null;
+let refreshInFlight: Promise<UpdateBondsV2Result> | null = null;
+let topHoldingRefreshInFlight: Promise<UpdateTopHoldingAddressesResult> | null = null;
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -32,7 +34,7 @@ const server = http.createServer(async (req, res) => {
         })();
       }
 
-      const result = await refreshInFlight;
+      const result = await refreshInFlight!;
       return sendJson(res, 200, result); // useTotalV2BondPranaVolume uses this to decide whether to force-refetch /bonds_v2.json
     }
 
@@ -48,7 +50,7 @@ const server = http.createServer(async (req, res) => {
         })();
       }
 
-      const result = await topHoldingRefreshInFlight;
+      const result = await topHoldingRefreshInFlight!;
       return sendJson(res, 200, result); // useTopHoldingAddresses uses this to decide whether to force-refetch /top_holding_addresses.json
     }
 

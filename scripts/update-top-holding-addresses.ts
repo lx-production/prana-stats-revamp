@@ -4,14 +4,19 @@ import { ethers } from 'ethers';
 import { readJsonIfExists } from '../utils/jsonHelper.ts';
 import { loadDotEnvIntoProcessEnv, getRpcUrl, PROJECT_ROOT } from '../utils/bondsScanUtils.ts';
 import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.ts';
+import type { TopHoldingAddressesBuildOutput } from '../types.ts';
+import type {
+  TopHoldingAddressesUpdateStrategy,
+  UpdateTopHoldingAddressesResult,
+} from './types/updateTopHoldingAddressesTypes.ts';
 
-export async function updateTopHoldingAddresses() {
+export async function updateTopHoldingAddresses(): Promise<UpdateTopHoldingAddressesResult> {
   await loadDotEnvIntoProcessEnv();
   const rpcUrl = getRpcUrl();
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-  let balancesRaw;
-  let strategy = 'multicall';
+  let balancesRaw: bigint[];
+  let strategy: TopHoldingAddressesUpdateStrategy = 'multicall';
   try {
     balancesRaw = await fetchBalancesViaMulticall(provider);
   } catch (error) {
@@ -22,7 +27,7 @@ export async function updateTopHoldingAddresses() {
 
   const outputPath = path.join(PROJECT_ROOT, 'top_holding_addresses.json');
   const next = buildOutput({ balancesRaw, rpcUrl });
-  const prev = await readJsonIfExists(outputPath);
+  const prev = await readJsonIfExists<TopHoldingAddressesBuildOutput>(outputPath);
 
   const previousHolders = JSON.stringify(prev?.holders ?? null);
   const nextHolders = JSON.stringify(next.holders);
@@ -34,9 +39,9 @@ export async function updateTopHoldingAddresses() {
   return { updated: true, strategy };
 }
 
-async function main() {
+async function main(): Promise<void> {
   const result = await updateTopHoldingAddresses();
-  if (result?.updated) {
+  if (result.updated) {
     console.log('Updated top_holding_addresses.json:', result);
   } else {
     console.log('No update needed:', result);

@@ -1,12 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { cacheControlFor } from './cacheControl.ts';
+import type { CachedStaticFile, StaticFileCache } from './types/serveFileTypes.ts';
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
 // Keyed by absolute file path and invalidated when file mtime (modified time) changes.
-const fileCache = new Map();
+const fileCache: StaticFileCache = new Map();
 
-function contentTypeFor(filePath) {
+function contentTypeFor(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.html') return 'text/html; charset=utf-8';
   if (ext === '.js') return 'text/javascript; charset=utf-8';
@@ -22,21 +24,22 @@ function contentTypeFor(filePath) {
   return 'application/octet-stream';
 }
 
-export async function serveFile(req, res, filePath) {
+export async function serveFile(
+  req: IncomingMessage,
+  res: ServerResponse,
+  filePath: string,
+): Promise<void> {
   const stat = await fs.stat(filePath);
 
-  // Weak ETag based on size + mtime is enough for static dist files.
-  // This enables conditional requests (304) even when Cache-Control requires revalidation.
   const etag = `W/"${stat.size}-${stat.mtimeMs}"`;
   res.setHeader('ETag', etag);
   res.setHeader('Last-Modified', stat.mtime.toUTCString());
 
-  // If the client already has this exact version, return 304 without reading the file.
-  const ifNoneMatchRaw = req?.headers?.['if-none-match'];
+  const ifNoneMatchRaw = req.headers['if-none-match'];
   const ifNoneMatch = typeof ifNoneMatchRaw === 'string' ? ifNoneMatchRaw : '';
   const ifNoneMatchList = ifNoneMatch
     .split(',')
-    .map((s) => s.trim())
+    .map((value) => value.trim())
     .filter(Boolean);
 
   if (ifNoneMatchList.includes(etag)) {
@@ -47,8 +50,9 @@ export async function serveFile(req, res, filePath) {
     return;
   }
 
-  const ifModifiedSinceRaw = req?.headers?.['if-modified-since'];
-  const ifModifiedSince = typeof ifModifiedSinceRaw === 'string' ? Date.parse(ifModifiedSinceRaw) : NaN;
+  const ifModifiedSinceRaw = req.headers['if-modified-since'];
+  const ifModifiedSince =
+    typeof ifModifiedSinceRaw === 'string' ? Date.parse(ifModifiedSinceRaw) : NaN;
   if (Number.isFinite(ifModifiedSince) && stat.mtimeMs <= ifModifiedSince) {
     res.statusCode = 304;
     const cacheControl = cacheControlFor(filePath);
@@ -57,7 +61,7 @@ export async function serveFile(req, res, filePath) {
     return;
   }
 
-  const cached = fileCache.get(filePath);
+  const cached: CachedStaticFile | undefined = fileCache.get(filePath);
   if (cached && cached.mtimeMs === stat.mtimeMs) {
     res.statusCode = 200;
     res.setHeader('Content-Type', cached.contentType);
@@ -74,13 +78,14 @@ export async function serveFile(req, res, filePath) {
   if (cacheControl) res.setHeader('Cache-Control', cacheControl);
   res.end(data);
 
-  // Cache only if it has an explicit cache policy (mainly dist/assets/*).
   if (cacheControl) {
-    fileCache.set(filePath, {
+    const cacheEntry: CachedStaticFile = {
       mtimeMs: stat.mtimeMs,
       data,
       contentType,
       cacheControl,
-    });
+    };
+
+    fileCache.set(filePath, cacheEntry);
   }
 }
