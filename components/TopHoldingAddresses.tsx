@@ -1,9 +1,10 @@
 import React from 'react';
-import { Wallet } from 'lucide-react';
+import { Lock, Wallet } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { formatPranaBalance } from '../utils/topHoldingAddresses';
 
 export const TopHoldingAddresses: React.FC = () => {
+  const nonCirculatingRanks = new Set([1, 2, 3, 5]);
   const { holders, totalHolders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } =
     useTopHoldingAddresses();
 
@@ -47,23 +48,34 @@ export const TopHoldingAddresses: React.FC = () => {
                 />
               ))
             ) : (
-              holders.map((holder, index) => (
-                <div
-                  key={holder.address}
-                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="text-xs text-gray-500 w-7">{startIndex + index + 1}.</div>
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-100 truncate">{holder.label}</div>
-                      <div className="text-xs text-gray-500 font-mono break-all">{holder.address}</div>
+              holders.map((holder, index) => {
+                const rank = startIndex + index + 1;
+                const isNonCirculating = nonCirculatingRanks.has(rank);
+
+                return (
+                  <div
+                    key={holder.address}
+                    className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="text-xs text-gray-500 w-7">{rank}.</div>
+                      <div className="min-w-0">
+                        <div className="text-sm text-gray-100 truncate">{holder.label}</div>
+                        <div className="text-xs text-gray-500 font-mono break-all">{holder.address}</div>
+                        {isNonCirculating ? (
+                          <div className="mt-2 inline-flex items-end gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
+                            <Lock className="w-3 h-3 shrink-0 self-end" />
+                            <span className="leading-none">HODL - Non-Circulating</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="text-sm text-cyan-200 font-semibold whitespace-nowrap">
+                      {formatPranaBalance(holder.balance)} PRANA
                     </div>
                   </div>
-                  <div className="text-sm text-cyan-200 font-semibold whitespace-nowrap">
-                    {formatPranaBalance(holder.balance)} PRANA
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -95,4 +107,3 @@ export const TopHoldingAddresses: React.FC = () => {
 };
 
 export default TopHoldingAddresses;
-

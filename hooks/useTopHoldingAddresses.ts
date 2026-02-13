@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
 import { fetchJson } from '../utils/fetchJson';
 import { fetchTopHoldingAddressesJsonSafe } from '../utils/topHoldingAddressesJson';
+import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
 
 const PAGE_SIZE = 10;
 const TOTAL_PAGES = 2;

@@ -4,13 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { updateBondsV2 } from '../scripts/update-bonds-v2.js';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.js';
 import { serveFile } from './serveFile.js';
-import {
-  fileExists,
-  sendJson,
-  rootDataJsonFilenameFromPathname,
-  rootBondsJsonFilenameFromPathname,
-  rootTopHoldingAddressesFilenameFromPathname,
-} from './requestHelpers.js';
+import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
