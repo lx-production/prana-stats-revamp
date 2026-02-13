@@ -1,7 +1,15 @@
 // This module starts a spinning favicon animation by updating the favicon via a canvas.
 // It returns a cleanup function you can call to stop the animation.
 
-export function startSpinningFavicon(options = {}) {
+export interface SpinningFaviconOptions {
+  iconUrl?: string;
+  size?: number;
+  imageScale?: number;
+  stepDegrees?: number;
+  fps?: number;
+}
+
+export function startSpinningFavicon(options: SpinningFaviconOptions = {}): () => void {
   const {
     iconUrl = "/assets/icons/prana.svg",
     size = 96,
@@ -17,7 +25,7 @@ export function startSpinningFavicon(options = {}) {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Get (or create) the favicon link element.
-  let favicon = document.querySelector("link[rel~='icon'], link[rel*='icon']");
+  let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon'], link[rel*='icon']");
   if (!favicon) {
     favicon = document.createElement("link");
     favicon.rel = "icon";
@@ -40,14 +48,14 @@ export function startSpinningFavicon(options = {}) {
   img.crossOrigin = "anonymous";
   img.src = iconUrl;
 
-  let rafId = null;
+  let rafId: number | null = null;
   let lastTs = 0;
   let angle = 0;
   let stopped = false;
 
   const frameIntervalMs = Math.max(1, Math.round(1000 / Math.max(1, fps)));
 
-  const tick = (ts) => {
+  const tick = (ts: number) => {
     if (stopped) return;
 
     // Don't animate while tab is hidden (saves CPU).

@@ -1,12 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import PranaHero from "./hero3.jsx";
+import PranaHero from "./hero3.tsx";
 import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import NeuralShaderBackground from "./shader.jsx";
-import { useSpinningFavicon } from "./hooks/useSpinningFavicon";
+import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 
 function App() {
   useSpinningFavicon();

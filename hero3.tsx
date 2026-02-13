@@ -1,10 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers.js";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
 const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };
 const CAMERA_ORBIT_ATTR = `${CAMERA_ORBIT_BASE.theta}deg ${CAMERA_ORBIT_BASE.phi}deg ${CAMERA_ORBIT_BASE.radius}`;
 const CAMERA_RADIUS_CLAMP = `auto auto ${CAMERA_ORBIT_BASE.radius}`;
+
+type ModelViewerLike = HTMLElement & {
+  cameraOrbit?: string;
+  autoRotate?: boolean;
+  orientation?: string;
+  modelIsVisible?: boolean;
+  updateComplete?: Promise<unknown>;
+  jumpCameraToGoal?: () => void;
+};
 
 // Hook: load the <model-viewer> web component
 function useModelViewer() {
@@ -29,9 +38,9 @@ function useModelViewer() {
 
 export default function PranaHero() {
   const mvReady = useModelViewer();
-  const heroRef = useRef(null);
-  const mvRef = useRef(null);
-  const spinFrameRef = useRef(null);
+  const heroRef = useRef<HTMLElement | null>(null);
+  const mvRef = useRef<ModelViewerLike | null>(null);
+  const spinFrameRef = useRef<number | null>(null);
   const [spinning, setSpinning] = useState(false);
 
   // Ensure default orbit after model load
@@ -105,22 +114,22 @@ export default function PranaHero() {
           className="outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60 rounded-2xl"
         >
           {mvReady ? (
-            <model-viewer
-              ref={mvRef}
-              src={COIN_MODEL_URL}
-              poster="/prana-coin-fallback.png"
-              camera-orbit={CAMERA_ORBIT_ATTR}
-              min-camera-orbit={CAMERA_RADIUS_CLAMP}
-              max-camera-orbit={CAMERA_RADIUS_CLAMP}
-              camera-controls
-              interaction-prompt="none"
-              exposure="1"
-              shadow-intensity="0"
-              auto-rotate
-              auto-rotate-delay="0"
-              rotation-per-second="10deg"
-              style={coinStyle}
-            />
+            React.createElement("model-viewer", {
+              ref: mvRef,
+              src: COIN_MODEL_URL,
+              poster: "/prana-coin-fallback.png",
+              "camera-orbit": CAMERA_ORBIT_ATTR,
+              "min-camera-orbit": CAMERA_RADIUS_CLAMP,
+              "max-camera-orbit": CAMERA_RADIUS_CLAMP,
+              "camera-controls": true,
+              "interaction-prompt": "none",
+              exposure: "1",
+              "shadow-intensity": "0",
+              "auto-rotate": true,
+              "auto-rotate-delay": "0",
+              "rotation-per-second": "10deg",
+              style: coinStyle,
+            })
           ) : (
             <img
               src="/prana-coin-fallback.png"

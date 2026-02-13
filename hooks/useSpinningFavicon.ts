@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { startSpinningFavicon } from "../spinningFavicon.js";
+import { startSpinningFavicon, type SpinningFaviconOptions } from "../spinningFavicon.ts";
 
-export function useSpinningFavicon(options) {
+export function useSpinningFavicon(options?: SpinningFaviconOptions) {
   useEffect(() => {
     const stop = startSpinningFavicon(options);
     return () => stop?.();
@@ -13,4 +13,3 @@ export function useSpinningFavicon(options) {
     options?.fps,
   ]);
 }
-
