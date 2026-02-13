@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { cacheControlFor } from './cacheControl.js';
+import { cacheControlFor } from './cacheControl.ts';
 
 // Simple in-memory cache for static files (mostly for dist/assets/*).
 // Keyed by absolute file path and invalidated when file mtime (modified time) changes.
