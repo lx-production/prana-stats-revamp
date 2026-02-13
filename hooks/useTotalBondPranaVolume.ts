@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchJson } from '../utils/fetchJson';
 import { fetchBondsV2JsonSafe } from '../utils/bondsV2Json';
-import type { BondsV2Json } from '../types';
 import type {
+  BondsV2Json,
   UseTotalV2BondPranaVolumeParams,
   UseTotalV2BondPranaVolumeResult,
-} from './useTotalBondPranaVolume.types';
+} from '../types';
 
 const safeLower = (value: unknown): string => (typeof value === 'string' ? value.toLowerCase() : '');
 

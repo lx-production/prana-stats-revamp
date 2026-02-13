@@ -121,6 +121,52 @@ export interface BondingStatsProps {
   sellBondCapacityPercent: number | null;
 }
 
+export type BuyBondMetricKey = 'balance' | 'committed' | 'totalVolume';
+
+export interface BuyBondMetric {
+  key: BuyBondMetricKey;
+  label: string;
+  formattedValue: string;
+  numericValue: number;
+  rawValue: bigint;
+}
+
+export interface UseBuyBondBalanceDataResult {
+  isLoading: boolean;
+  error: unknown | null;
+  metrics: BuyBondMetric[];
+}
+
+export type SellBondMetricKey = 'balance' | 'committed' | 'totalVolume';
+
+export interface SellBondMetric {
+  key: SellBondMetricKey;
+  label: string;
+  formattedValue: string;
+  numericValue: number;
+  rawValue: bigint;
+}
+
+export interface UseSellBondBalanceDataResult {
+  isLoading: boolean;
+  error: unknown | null;
+  metrics: SellBondMetric[];
+}
+
+export interface BondContractRef {
+  address?: string;
+}
+
+export interface UseTotalV2BondPranaVolumeParams {
+  contracts?: BondContractRef[];
+}
+
+export interface UseTotalV2BondPranaVolumeResult {
+  totalPranaRaw: bigint;
+  isLoading: boolean;
+  error: unknown | null;
+}
+
 export interface BondingStatsInput {
   buyCommittedV1: bigint;
   buyCommittedV2: bigint;

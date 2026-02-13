@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
@@ -7,9 +7,9 @@ import {
   BUY_BOND_COMMITTED_PRANA_ABI_V2,
 } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
+import type { BuyBondMetric, UseBuyBondBalanceDataResult } from '../types';
 import { useCommittedPrana } from './useCommittedPrana.ts';
 import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
-import type { BuyBondMetric, UseBuyBondBalanceDataResult } from './useBuyBondBalanceData.types';
 import { getPolygonProvider } from '../utils/polygonProvider';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);

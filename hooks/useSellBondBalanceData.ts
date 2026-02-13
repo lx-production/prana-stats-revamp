@@ -1,27 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
+import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
+import { useCommittedWbtc } from './useCommittedWbtc.ts';
+import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
+import { getPolygonProvider } from '../utils/polygonProvider';
+import { formatBigIntValue } from '../utils/bondingStatsHelpers';
+import { formatInteger } from '../utils/formatters';
 import {
   SELL_BOND_ADDRESS_V1,
   SELL_BOND_ADDRESS_V2,
   SELL_BOND_COMMITTED_WBTC_ABI_V1,
   SELL_BOND_COMMITTED_WBTC_ABI_V2,
 } from '../constants/bonds';
-import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
-import { useCommittedWbtc } from './useCommittedWbtc.ts';
-import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
-import type { SellBondMetric, UseSellBondBalanceDataResult } from './useSellBondBalanceData.types';
-import { getPolygonProvider } from '../utils/polygonProvider';
+import type { SellBondMetric, UseSellBondBalanceDataResult } from '../types';
 
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
-
-const formatBigIntValue = (value: bigint): string => {
-  const stringValue = value.toString();
-  return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
-const pranaFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 0,
-});
 
 export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
   const [balanceV2, setBalanceV2] = useState<bigint>(0n);
@@ -130,14 +123,14 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
         if (!Number.isFinite(numeric)) {
           return {
             numericValue: 0,
-            formattedValue: pranaFormatter.format(0),
+            formattedValue: formatInteger(0),
           };
         }
 
         const rounded = Math.round(numeric);
         return {
           numericValue: rounded,
-          formattedValue: pranaFormatter.format(rounded),
+          formattedValue: formatInteger(rounded),
         };
       };
 
@@ -171,7 +164,6 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
       formattedBalanceSat,
       formattedCommittedSat,
       formattedBondVolume,
-      pranaFormatter,
       totalBalanceRaw,
       totalCommittedRaw,
       totalBondVolumeRaw,
