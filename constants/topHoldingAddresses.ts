@@ -1,4 +1,7 @@
-import type { TopHoldingAddress } from './topHoldingAddresses.types';
+interface TopHoldingAddress {
+  address: string;
+  label: string;
+}
 
 export const TOP_HOLDING_ADDRESSES: TopHoldingAddress[] = [
   { address: '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b', label: 'PRANA Protocol' },

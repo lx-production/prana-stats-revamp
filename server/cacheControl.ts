@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365; // 31536000
-const DATA_JSON_CACHE_SECONDS = 60 * 60; // 1 hour
+const ONE_YEAR_SECONDS = 31536000; // 60 * 60 * 24 * 365
+const DATA_JSON_CACHE_SECONDS = 3600; // 60 * 60
 
 export function cacheControlFor(filePath: string): string | null {
   const ext = path.extname(filePath).toLowerCase();
