@@ -1,5 +1,5 @@
 import { fetchJson } from './fetchJson';
-import { getTotalsFromBondsV2Json } from './bondsUtils';
+import type { BondsV2Json } from '../types';
 
 // Keep this small: the goal is to dedupe requests on page load,
 // not to keep the bonds data stale for long periods.
@@ -39,6 +39,19 @@ export async function fetchBondsV2JsonSafe<T>(fallback: T, opts: { force?: boole
     return fallback;
   }
 }
+
+export const getTotalsFromBondsV2Json = (data: unknown) => {
+  const parsed = data as BondsV2Json | null | undefined;
+  const buyPranaAmountStr = parsed?.buy?.pranaAmount;
+  const sellPranaAmountStr = parsed?.sell?.pranaAmount;
+
+  const buyBondTotalRawV2 =
+    typeof buyPranaAmountStr === 'string' ? BigInt(buyPranaAmountStr) : 0n;
+  const sellBondTotalRawV2 =
+    typeof sellPranaAmountStr === 'string' ? BigInt(sellPranaAmountStr) : 0n;
+
+  return { buyBondTotalRawV2, sellBondTotalRawV2 };
+};
 
 // Wrapper that uses fetchBondsV2JsonSafe + getTotalsFromBondsV2Json to return only the buy and sell bond totals
 export async function fetchBondsV2TotalsSafe(
