@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
-  BUY_BOND_COMMITTED_PRANA_ABI_V1,
-  BUY_BOND_COMMITTED_PRANA_ABI_V2,
+  BUY_BOND_COMMITTED_PRANA_ABI,
 } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedPrana } from './useCommittedPrana.ts';
@@ -25,7 +24,7 @@ export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
     error: committedErrorV2,
   } = useCommittedPrana({
     contractAddress: BUY_BOND_ADDRESS_V2,
-    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI_V2,
+    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI,
   });
 
   const {
@@ -34,7 +33,7 @@ export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
     error: committedErrorV1,
   } = useCommittedPrana({
     contractAddress: BUY_BOND_ADDRESS_V1,
-    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI_V1,
+    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI,
   });
 
   useEffect(() => {

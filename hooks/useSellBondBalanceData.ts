@@ -9,8 +9,7 @@ import { formatInteger } from '../utils/formatters';
 import {
   SELL_BOND_ADDRESS_V1,
   SELL_BOND_ADDRESS_V2,
-  SELL_BOND_COMMITTED_WBTC_ABI_V1,
-  SELL_BOND_COMMITTED_WBTC_ABI_V2,
+  SELL_BOND_COMMITTED_WBTC_ABI,
 } from '../constants/bonds';
 import type { SellBondMetric, UseSellBondBalanceDataResult } from '../types';
 
@@ -27,7 +26,7 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
     error: committedErrorV2,
   } = useCommittedWbtc({
     contractAddress: SELL_BOND_ADDRESS_V2,
-    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI_V2,
+    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI,
   });
 
   const {
@@ -36,7 +35,7 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
     error: committedErrorV1,
   } = useCommittedWbtc({
     contractAddress: SELL_BOND_ADDRESS_V1,
-    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI_V1,
+    contractAbi: SELL_BOND_COMMITTED_WBTC_ABI,
   });
 
   useEffect(() => {

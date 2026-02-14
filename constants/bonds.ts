@@ -30,9 +30,6 @@ export const BUY_BOND_COMMITTED_PRANA_ABI: BondAbiFunctionFragment[] = [
   },
 ];
 
-export const BUY_BOND_COMMITTED_PRANA_ABI_V1 = BUY_BOND_COMMITTED_PRANA_ABI;
-export const BUY_BOND_COMMITTED_PRANA_ABI_V2 = BUY_BOND_COMMITTED_PRANA_ABI;
-
 // Default exports use V2 contracts
 export const BUY_BOND_ADDRESS = BUY_BOND_ADDRESS_V2;
 
@@ -63,9 +60,6 @@ export const SELL_BOND_COMMITTED_WBTC_ABI: BondAbiFunctionFragment[] = [
     type: 'function',
   },
 ];
-
-export const SELL_BOND_COMMITTED_WBTC_ABI_V1 = SELL_BOND_COMMITTED_WBTC_ABI;
-export const SELL_BOND_COMMITTED_WBTC_ABI_V2 = SELL_BOND_COMMITTED_WBTC_ABI;
 
 // Default exports use V2 contracts
 export const SELL_BOND_ADDRESS = SELL_BOND_ADDRESS_V2;
