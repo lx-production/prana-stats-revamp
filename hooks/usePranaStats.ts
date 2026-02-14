@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { initialPranaStats } from '../constants/pranaStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
+import { fetchBondsV2TotalsSafe } from '../utils/bondsV2Json';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { calcChange, getFirstPrice } from '../utils/pranaStatsUtils';
-import { useBondingStats } from './useBondingStats';
+import { useBondsOnchain } from './useBondsOnchain';
 import { useStakingStats } from './useStakingStats';
 import { FetchBondingStats, FetchStakingStats, PranaStatsData, PranaStatsComputed } from '../types';
 
@@ -17,15 +18,23 @@ const fetchPranaStats = async (
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
 
-  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json } = await fetchPranaPricesBundle();
+  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365 } =
+    await fetchPranaPricesBundle();
 
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   
-  const [stakingStats, bondingStats] = await Promise.all([
+  const [stakingStats, bondsV2Totals] = await Promise.all([
     fetchStakingStats({ provider }),
-    fetchBondingStats({ provider, bondsV2Json, pranaPriceVnd }),
+    fetchBondsV2TotalsSafe(),
   ]);
+
+  const bondingStats = await fetchBondingStats({
+    provider,
+    buyBondTotalRawV2: bondsV2Totals.buyBondTotalRawV2,
+    sellBondTotalRawV2: bondsV2Totals.sellBondTotalRawV2,
+    pranaPriceVnd,
+  });
   
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
 
@@ -74,7 +83,7 @@ const fetchPranaStats = async (
 
 export function usePranaStats() {
   const [stats, setStats] = useState<PranaStatsData>(initialPranaStats);
-  const { fetchBondingStats } = useBondingStats();
+  const { fetchBondingStats } = useBondsOnchain();
   const { fetchStakingStats } = useStakingStats();
 
   const getProvider = useCallback(() => {

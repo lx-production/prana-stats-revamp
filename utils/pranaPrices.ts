@@ -1,8 +1,7 @@
 import { fetchJson, fetchJsonSafe } from './fetchJson';
-import { fetchBondsV2JsonSafe } from './bondsV2Json';
 import type { PranaPricesBundle } from '../types';
 
-const PRICES_CACHE_TTL_MS = 15_000; // 15 seconds
+const PRICES_CACHE_TTL_MS = 60_000; // 60 seconds
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;
 
@@ -28,14 +27,13 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
 
   if (!inFlight) {
     inFlight = (async () => {
-      const [btcPrices, satsData, d30, d90, d180, d365, bondsV2Json] = await Promise.all([
+      const [btcPrices, satsData, d30, d90, d180, d365] = await Promise.all([
         fetchBtcPrices(),
         fetchJsonSafe<any[]>('/data_sats.json', []),
         fetchJsonSafe<any[]>('/data_30_days.json', []),
         fetchJsonSafe<any[]>('/data_90_days.json', []),
         fetchJsonSafe<any[]>('/data_180_days.json', []),
         fetchJsonSafe<any[]>('/data_365_days.json', []),
-        fetchBondsV2JsonSafe<unknown>(null), // fetch `/bonds_v2.json`
       ]);
 
       const btcPriceUsd = btcPrices.usd;
@@ -45,7 +43,16 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
       // Fallback for sats data if missing (mock current price ~70 sats)
       const latestSatPrice = satsData.length > 0 ? satsData[satsData.length - 1].p : 70;
 
-      const value: PranaPricesBundle = { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365, bondsV2Json };
+      const value: PranaPricesBundle = {
+        btcPriceUsd,
+        btcPriceVnd,
+        usdToVndRate,
+        latestSatPrice,
+        d30,
+        d90,
+        d180,
+        d365,
+      };
 
       cached = { value, timestamp: Date.now() };
       return value;
@@ -56,4 +63,3 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
 
   return await inFlight;
 }
-

@@ -78,7 +78,6 @@ export type PranaPricesBundle = {
   d90: any[];
   d180: any[];
   d365: any[];
-  bondsV2Json: unknown;
 };
 
 export interface StatCardProps {
@@ -153,16 +152,9 @@ export interface UseSellBondBalanceDataResult {
   metrics: SellBondMetric[];
 }
 
-export interface BondContractRef {
-  address?: string;
-}
-
-export interface UseTotalV2BondPranaVolumeParams {
-  contracts?: BondContractRef[];
-}
-
-export interface UseTotalV2BondPranaVolumeResult {
-  totalPranaRaw: bigint;
+export interface UseBondsTotalsResult {
+  buyBondTotalRawV2: bigint;
+  sellBondTotalRawV2: bigint;
   isLoading: boolean;
   error: unknown | null;
 }
@@ -200,7 +192,8 @@ export interface BondingStatsOutput {
 
 export interface FetchBondingStatsParams {
   provider: JsonRpcProvider;
-  bondsV2Json: unknown;
+  buyBondTotalRawV2: bigint;
+  sellBondTotalRawV2: bigint;
   pranaPriceVnd: number;
 }
 

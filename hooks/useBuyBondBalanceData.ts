@@ -7,7 +7,7 @@ import {
 } from '../constants/bonds';
 import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedPrana } from './useCommittedPrana.ts';
-import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
+import { useBondsTotals } from './useBondsTotals.ts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import type { BuyBondMetric, UseBuyBondBalanceDataResult } from '../types';
 
@@ -64,15 +64,11 @@ export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
     };
   }, []);
 
-  const buyBondV2 = useMemo(() => [{ address: BUY_BOND_ADDRESS_V2 }], []);
-
   const {
-    totalPranaRaw: totalBondVolumeRawV2,
+    buyBondTotalRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useTotalV2BondPranaVolume({
-    contracts: buyBondV2,
-  });
+  } = useBondsTotals();
 
   useEffect(() => {
     if (balanceErrorV2) {
@@ -102,7 +98,7 @@ export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
   // So "Balance" = PRANA in V2 contract + committed PRANA recorded in V1.
   const totalBalanceRaw = (balanceV2 || 0n) + (committedPranaRawV1 || 0n);
   const totalCommittedRaw = (committedPranaRawV1 || 0n) + (committedPranaRawV2 || 0n);
-  const totalBondVolumeRaw = (totalBondVolumeRawV2 || 0n) + BUY_BOND_V1_TOTAL_VOLUME_RAW;
+  const totalBondVolumeRaw = (buyBondTotalRawV2 || 0n) + BUY_BOND_V1_TOTAL_VOLUME_RAW;
 
   const formattedBalance = ethers.formatUnits(totalBalanceRaw, PRANA_DECIMALS);
   const formattedCommitted = ethers.formatUnits(totalCommittedRaw, PRANA_DECIMALS);

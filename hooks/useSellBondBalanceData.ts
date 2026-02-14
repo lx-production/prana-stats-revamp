@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
 import { useCommittedWbtc } from './useCommittedWbtc.ts';
-import { useTotalV2BondPranaVolume } from './useTotalBondPranaVolume.ts';
+import { useBondsTotals } from './useBondsTotals.ts';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { formatBigIntValue } from '../utils/bondingStatsHelpers';
 import { formatInteger } from '../utils/formatters';
@@ -66,20 +66,11 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
     };
   }, []);
 
-  const bondContracts = useMemo(
-    () => [
-      { address: SELL_BOND_ADDRESS_V2 },
-    ],
-    [],
-  );
-
   const {
-    totalPranaRaw: totalBondVolumeRawV2,
+    sellBondTotalRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useTotalV2BondPranaVolume({
-    contracts: bondContracts,
-  });
+  } = useBondsTotals();
 
   useEffect(() => {
     if (balanceErrorV2) {
@@ -109,7 +100,7 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
   // So "Balance" = WBTC in V2 contract + committed WBTC recorded in V1.
   const totalBalanceRaw = (balanceV2 || 0n) + (committedWbtcRawV1 || 0n);
   const totalCommittedRaw = (committedWbtcRawV1 || 0n) + (committedWbtcRawV2 || 0n);
-  const totalBondVolumeRaw = (totalBondVolumeRawV2 || 0n) + SELL_BOND_V1_TOTAL_VOLUME_RAW;
+  const totalBondVolumeRaw = (sellBondTotalRawV2 || 0n) + SELL_BOND_V1_TOTAL_VOLUME_RAW;
 
   const formattedBalanceSat = formatBigIntValue(totalBalanceRaw);
   const formattedCommittedSat = formatBigIntValue(totalCommittedRaw);
