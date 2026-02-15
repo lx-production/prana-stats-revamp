@@ -16,7 +16,14 @@ const PORT = Number(process.env.PORT || 4173);
 
 // Tracks in-flight refresh requests to avoid multiple concurrent calls.
 let refreshInFlight: Promise<UpdateBondsV2Result> | null = null;
+let bondsLastRefreshAt = 0;
+let bondsLastResult: UpdateBondsV2Result | null = null;
+const BONDS_REFRESH_TTL_MS = 30_000; // 30 seconds
+
 let topHoldingRefreshInFlight: Promise<UpdateTopHoldingAddressesResult> | null = null;
+let topHoldingLastRefreshAt = 0;
+let topHoldingLastResult: UpdateTopHoldingAddressesResult | null = null;
+const TOP_HOLDING_REFRESH_TTL_MS = 30_000;
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -24,10 +31,18 @@ const server = http.createServer(async (req, res) => {
 
     // Endpoint the frontend can call on page load/reload
     if (url.pathname === '/api/refresh-bonds') {
+      const now = Date.now();
+      if (bondsLastResult && now - bondsLastRefreshAt < BONDS_REFRESH_TTL_MS) { // if last refresh < 30s, return cache
+        return sendJson(res, 200, bondsLastResult);
+      }
+
       if (!refreshInFlight) {
         refreshInFlight = (async () => {
           try {
-            return await updateBondsV2();
+            const result = await updateBondsV2();
+            bondsLastResult = result;
+            bondsLastRefreshAt = Date.now();
+            return result;
           } finally {
             refreshInFlight = null;
           }
@@ -35,15 +50,25 @@ const server = http.createServer(async (req, res) => {
       }
 
       const result = await refreshInFlight!;
+      bondsLastResult = result;
+      bondsLastRefreshAt = Date.now();
       return sendJson(res, 200, result); // useBondsTotals uses this to decide whether to force-refetch /bonds_v2.json
     }
 
     // Endpoint the frontend can call on page load.
     if (url.pathname === '/api/refresh-holdings') {
+      const now = Date.now();
+      if (topHoldingLastResult && now - topHoldingLastRefreshAt < TOP_HOLDING_REFRESH_TTL_MS) {
+        return sendJson(res, 200, topHoldingLastResult);
+      }
+
       if (!topHoldingRefreshInFlight) {
         topHoldingRefreshInFlight = (async () => {
           try {
-            return await updateTopHoldingAddresses();
+            const result = await updateTopHoldingAddresses();
+            topHoldingLastResult = result;
+            topHoldingLastRefreshAt = Date.now();
+            return result;
           } finally {
             topHoldingRefreshInFlight = null;
           }
@@ -51,6 +76,8 @@ const server = http.createServer(async (req, res) => {
       }
 
       const result = await topHoldingRefreshInFlight!;
+      topHoldingLastResult = result;
+      topHoldingLastRefreshAt = Date.now();
       return sendJson(res, 200, result); // useTopHoldingAddresses uses this to decide whether to force-refetch /top_holding_addresses.json
     }
 
