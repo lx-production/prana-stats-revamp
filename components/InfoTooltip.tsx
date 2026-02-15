@@ -21,7 +21,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ text, ariaLabel, title, width
       className={[
         "absolute z-50 top-full mt-2 left-0 rounded-xl border border-white/10 bg-black/80 backdrop-blur-md",
         widthClassName ?? "w-[min(20rem,calc(100vw-2rem))]",
-        "p-3 text-sm text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]",
+        "p-3 text-sm text-gray-200 normal-case shadow-[0_10px_30px_rgba(0,0,0,0.35)]",
       ].join(' ')}
     >
       <div className="leading-relaxed">{text}</div>
