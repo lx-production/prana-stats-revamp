@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fetchJson } from '../utils/fetchJson';
 import { fetchTopHoldingAddressesJsonSafe } from '../utils/topHoldingAddressesJson';
 import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
@@ -22,7 +22,7 @@ const fallbackTopHoldingAddressesJson: TopHoldingAddressesJson = {
   holders: [],
 };
 
-export function useTopHoldingAddresses() {
+function useTopHoldingAddressesInternal() {
   const [data, setData] = useState<TopHoldingAddressesData>(initialTopHoldingAddresses);
   const [allHolders, setAllHolders] = useState(initialTopHoldingAddresses.holders);
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,10 +84,23 @@ export function useTopHoldingAddresses() {
   return {
     ...data,
     holders: paged.holders,
+    allHolders,
     totalHolders: allHolders.length,
     currentPage,
     totalPages: TOTAL_PAGES,
     startIndex: paged.startIndex,
     goToPage,
   };
+}
+
+const TopHoldingAddressesContext = createContext<TopHoldingAddressesData | null>(null);
+
+export function TopHoldingAddressesProvider({ children }: { children: ReactNode }) {
+  const value = useTopHoldingAddressesInternal();
+  return createElement(TopHoldingAddressesContext.Provider, { value }, children);
+}
+
+export function useTopHoldingAddresses() {
+  const context = useContext(TopHoldingAddressesContext);
+  return context ?? useTopHoldingAddressesInternal();
 }

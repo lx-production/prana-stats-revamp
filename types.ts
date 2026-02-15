@@ -250,6 +250,7 @@ export interface TopHoldingAddressesJson {
 
 export interface TopHoldingAddressesData {
   holders: TopHoldingAddressBalance[];
+  allHolders?: TopHoldingAddressBalance[];
   totalHolders: number;
   generatedAt: string | null;
   currentPage: number;
