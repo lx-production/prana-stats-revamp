@@ -6,7 +6,6 @@ import path from 'node:path'
 const DATA_JSON_CACHE_SECONDS = 60 * 60 // 1 hour
 
 const ROOT_JSON_FILES = [
-  'bonds_v2.json',
   'data_180_days.json',
   'data_30_days.json',
   'data_365_days.json',
@@ -52,30 +51,17 @@ function serveRootJsonFiles() {
         }
       })
     },
-    async closeBundle() {
-      // Ensure the same JSON files exist in the production build output so
-      // existing `fetch('/data_*.json')` calls keep working.
-      if (!outDir) return
-
-      await fs.mkdir(outDir, { recursive: true })
-
-      await Promise.all(
-        ROOT_JSON_FILES.map(async (filename) => {
-          const src = path.join(rootDir, filename)
-          const dest = path.join(outDir, filename)
-          try {
-            await fs.copyFile(src, dest)
-          } catch (err) {
-            // Don't fail the entire build if a file is missing.
-            console.warn(`[serve-root-json-files] Failed to copy ${filename}`)
-          }
-        }),
-      )
-    },
   }
 }
 
 export default defineConfig({
   plugins: [react(), serveRootJsonFiles()],
+  server: {
+    // Proxy API + backend-served JSON to the Node server (localhost:4173).
+    proxy: {
+      '/api': 'http://localhost:4173',
+      '/top_holding_addresses.json': 'http://localhost:4173',
+      '/bonds_v2.json': 'http://localhost:4173',
+    },
+  },
 })
-

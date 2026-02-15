@@ -59,7 +59,7 @@ export const PranaConverter: React.FC = () => {
   }, [isReady]);
 
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
+    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div
         className="
           group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5

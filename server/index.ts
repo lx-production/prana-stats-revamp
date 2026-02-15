@@ -1,12 +1,12 @@
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { serveFile } from './serveFile.ts';
 import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
-import { serveFile } from './serveFile.ts';
-import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.ts';
-import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
 import type { UpdateBondsV2Result } from './types/indexTypes.ts';
+import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
+import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,7 +52,7 @@ const server = http.createServer(async (req, res) => {
       const result = await refreshInFlight!;
       bondsLastResult = result;
       bondsLastRefreshAt = Date.now();
-      return sendJson(res, 200, result); // useBondsTotals uses this to decide whether to force-refetch /bonds_v2.json
+      return sendJson(res, 200, result); // usePranaStats uses this to decide whether to force-refetch /bonds_v2.json
     }
 
     // Endpoint the frontend can call on page load.

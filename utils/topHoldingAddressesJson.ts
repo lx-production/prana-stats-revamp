@@ -1,6 +1,6 @@
 import { fetchJson } from './fetchJson';
 
-const TOP_HOLDING_ADDRESSES_JSON_TTL_MS = 60_000;
+const TOP_HOLDING_ADDRESSES_JSON_TTL_MS = 0;
 
 let cached: { value: unknown; timestamp: number } | null = null;
 

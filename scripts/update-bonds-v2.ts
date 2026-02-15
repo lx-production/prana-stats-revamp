@@ -5,12 +5,7 @@ import { sleep, serializeForJson, getBondTupleFieldNames, loadDotEnvIntoProcessE
 import { readJsonIfExists } from '../utils/jsonHelper.ts';
 import type { BondsDetailsOutput, BondDetails, BondsSummaryOutput, ScanResult } from './types/scanBondsV2Types.ts';
 import type { UpdateBondsV2Result } from './types/updateBondsV2Types.ts';
-import {
-  BUY_BOND_ADDRESS_V2,
-  SELL_BOND_ADDRESS_V2,
-  BUY_BOND_BONDS_ABI,
-  SELL_BOND_BONDS_ABI,
-} from '../constants/bonds.ts';
+import { BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2, BUY_BOND_BONDS_ABI, SELL_BOND_BONDS_ABI } from '../constants/bonds.ts';
 
 const REQUEST_DELAY_MS = 0;
 
