@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, ArrowDown, Activity, Lock, DollarSign, Info } from 'lucide-react';
+import { ArrowUp, ArrowDown, Activity, Lock, DollarSign } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useStakingRunway } from '../hooks/useStakingRunway';
 import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
 import { formatCurrency } from '../utils/formatters';
 import BondingStats from './BondingStats';
 import StatCard from './StatCard';
+import InfoTooltip from './InfoTooltip';
 
 export const PranaStats: React.FC = () => {
   const {
@@ -118,28 +119,11 @@ export const PranaStats: React.FC = () => {
                 {runwayDays && Number.isFinite(runwayDays) ? (
                   <div className="flex items-center gap-2">
                     <span>Runway: {Math.round(runwayDays).toLocaleString()} ngày</span>
-                    <details className="font-sans">
-                      <summary
-                        className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
-                        aria-label="Giải thích Runway"
-                        title="Giải thích Runway"
-                      >
-                        <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
-                      </summary>
-                      <div
-                        className="
-                          absolute z-50 top-full mt-2 left-0
-                          rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
-                          w-[min(24rem,calc(100vw-2rem))]
-                          p-3 text-sm text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
-                        "
-                      >
-                        <div className="leading-relaxed">
-                          Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi
-                          cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên.
-                        </div>
-                      </div>
-                    </details>
+                    <InfoTooltip
+                      ariaLabel="Giải thích Runway"
+                      text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên."
+                      widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+                    />
                   </div>
                 ) : null}
 
@@ -148,30 +132,11 @@ export const PranaStats: React.FC = () => {
                     <span>
                       Capacity: +{formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA (APR 12%)
                     </span>
-                    <details className="font-sans">
-                      <summary
-                        className="cursor-pointer inline-flex items-center [&::-webkit-details-marker]:hidden"
-                        aria-label="Giải thích Capacity"
-                        title="Giải thích Capacity"
-                      >
-                        <Info className="w-4 h-4 text-cyan-400/80 hover:text-cyan-300 transition-colors" />
-                      </summary>
-                      <div
-                        className="
-                          absolute z-50 top-full mt-2 left-0
-                          rounded-xl border border-white/10 bg-black/80 backdrop-blur-md
-                          w-[min(24rem,calc(100vw-2rem))]
-                          p-3 text-sm text-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
-                        "
-                      >
-                        <div className="leading-relaxed">
-                          Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract
-                          vẫn đủ để trả lãi với giả định APR cố định 12%.
-                          <br />
-                          Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12
-                        </div>
-                      </div>
-                    </details>
+                    <InfoTooltip
+                      ariaLabel="Giải thích Capacity"
+                      widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+                      text="Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
+                    />
                   </div>
                 ) : null}
               </div>

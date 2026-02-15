@@ -2,10 +2,32 @@ import React from 'react';
 import { Lock, Wallet } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { formatInteger } from '../utils/formatters';
+import InfoTooltip from './InfoTooltip';
 
 export const TopHoldingAddresses: React.FC = () => {
   const nonCirculatingRanks = new Set([1, 2, 3, 5]);
-  const { holders, totalHolders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
+  const labelTooltips: Record<
+    string,
+    { text: string; ariaLabel: string; widthClassName?: string }
+  > = {
+    'PRANA Protocol': {
+      text: 'Founders original allocation, "Buy The Dips" program',
+      ariaLabel: 'PRANA Protocol info',
+    },
+    'Protocol Reserve': {
+      text: 'Contribute to earn, các tiềm năng đầu tư',
+      ariaLabel: 'Protocol Reserve info',
+    },
+    'DEX Pool & Bonds Reserve': {
+      text: 'Quỹ dự trữ cho WBTC/PRANA pool và hợp đồng Bonding OTC',
+      ariaLabel: 'DEX Pool & Bonds Reserve info',
+    },
+    'PRANA Staking': {
+      text: 'Lãi suất cố định 12% APR',
+      ariaLabel: 'PRANA Staking info',
+    },
+  };
+  const { holders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -65,7 +87,16 @@ export const TopHoldingAddresses: React.FC = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="text-xs text-gray-500 w-7">{rank}.</div>
                       <div className="min-w-0">
-                        <div className="text-sm text-gray-100 truncate">{holder.label}</div>
+                        <div className="text-sm text-gray-100 flex items-center gap-2 relative min-w-0">
+                          <span className="truncate">{holder.label}</span>
+                          {labelTooltips[holder.label] ? (
+                            <InfoTooltip
+                              ariaLabel={labelTooltips[holder.label].ariaLabel}
+                              text={labelTooltips[holder.label].text}
+                              widthClassName={labelTooltips[holder.label].widthClassName}
+                            />
+                          ) : null}
+                        </div>
                         <div className="text-xs text-gray-500 font-mono break-all">{holder.address}</div>
                         {isNonCirculating ? (
                           <div className="mt-2 inline-flex items-end gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
