@@ -18,15 +18,16 @@ async function fetchBondsV2JsonCached<T = unknown>(opts: { force?: boolean } = {
   const force = opts.force === true;
   const now = Date.now();
 
-  // If cached data exists and is less than 1 minute old, return it
+  // If force is false and cached data exists and is less than 1 minute old, return it
   if (!force && cached && now - cached.timestamp < BONDS_V2_JSON_TTL_MS) {
     return cached.value as T;
   }
 
+  // If force is true or cached data is older than 1 minute, fetch the latest data
   const value = await fetchJson<T>(getBondsV2JsonUrl(force), undefined, {
-    dedupeKey: force ? null : undefined,
+    dedupeKey: force ? null : undefined, // If force is true, disable deduplication
   });
-  cached = { value, timestamp: Date.now() };
+  cached = { value, timestamp: Date.now() }; // Update the cache with the new data
   return value;
 }
 

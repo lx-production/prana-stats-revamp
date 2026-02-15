@@ -31,7 +31,7 @@ export function useTopHoldingAddresses() {
     try {
       let refreshUpdated = false;
       try {
-        const refreshResult = await fetchJson<{ updated?: boolean }>('/api/top-holding-addresses/refresh');
+        const refreshResult = await fetchJson<{ updated?: boolean }>('/api/refresh-holdings');
         refreshUpdated = Boolean(refreshResult?.updated);
       } catch {
         // Ignore refresh errors and use existing JSON.
@@ -91,4 +91,3 @@ export function useTopHoldingAddresses() {
     goToPage,
   };
 }
-

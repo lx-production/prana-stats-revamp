@@ -130,7 +130,7 @@ export interface BuyBondMetric {
   rawValue: bigint;
 }
 
-export interface UseBuyBondBalanceDataResult {
+export interface UseBuyBondStatsResult {
   isLoading: boolean;
   error: unknown | null;
   metrics: BuyBondMetric[];
@@ -146,13 +146,13 @@ export interface SellBondMetric {
   rawValue: bigint;
 }
 
-export interface UseSellBondBalanceDataResult {
+export interface UseSellBondStatsResult {
   isLoading: boolean;
   error: unknown | null;
   metrics: SellBondMetric[];
 }
 
-export interface UseBondsTotalsResult {
+export interface UseBondsV2VolumeResult {
   buyBondTotalRawV2: bigint;
   sellBondTotalRawV2: bigint;
   isLoading: boolean;

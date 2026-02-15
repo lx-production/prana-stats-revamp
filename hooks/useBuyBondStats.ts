@@ -1,19 +1,15 @@
 import { ethers } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  BUY_BOND_ADDRESS_V1,
-  BUY_BOND_ADDRESS_V2,
-  BUY_BOND_COMMITTED_PRANA_ABI,
-} from '../constants/bonds';
-import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
+import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_COMMITTED_PRANA_ABI } from '../constants/bonds.ts';
+import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 import { useCommittedPrana } from './useCommittedPrana.ts';
-import { useBondsTotals } from './useBondsTotals.ts';
-import { getPolygonProvider } from '../utils/polygonProvider';
-import type { BuyBondMetric, UseBuyBondBalanceDataResult } from '../types';
+import { useBondsV2Volume } from './useBondsV2Volume.ts';
+import { getPolygonProvider } from '../utils/polygonProvider.ts';
+import type { BuyBondMetric, UseBuyBondStatsResult } from '../types.ts';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 
-export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
+export const useBuyBondStats = (): UseBuyBondStatsResult => {
   const [balanceV2, setBalanceV2] = useState<bigint>(0n);
   const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState<boolean>(true);
   const [balanceErrorV2, setBalanceErrorV2] = useState<unknown | null>(null);
@@ -68,7 +64,7 @@ export const useBuyBondBalanceData = (): UseBuyBondBalanceDataResult => {
     buyBondTotalRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useBondsTotals();
+  } = useBondsV2Volume();
 
   useEffect(() => {
     if (balanceErrorV2) {

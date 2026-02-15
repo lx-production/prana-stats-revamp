@@ -22,8 +22,8 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
-    // Endpoint the frontend can call on page load.
-    if (url.pathname === '/api/bonds-v2/refresh') {
+    // Endpoint the frontend can call on page load/reload
+    if (url.pathname === '/api/refresh-bonds') {
       if (!refreshInFlight) {
         refreshInFlight = (async () => {
           try {
@@ -35,11 +35,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       const result = await refreshInFlight!;
-      return sendJson(res, 200, result); // useTotalV2BondPranaVolume uses this to decide whether to force-refetch /bonds_v2.json
+      return sendJson(res, 200, result); // useBondsTotals uses this to decide whether to force-refetch /bonds_v2.json
     }
 
     // Endpoint the frontend can call on page load.
-    if (url.pathname === '/api/top-holding-addresses/refresh') {
+    if (url.pathname === '/api/refresh-holdings') {
       if (!topHoldingRefreshInFlight) {
         topHoldingRefreshInFlight = (async () => {
           try {

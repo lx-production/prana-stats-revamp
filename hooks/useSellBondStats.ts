@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts';
+import { WBTC_ADDRESS, WBTC_ABI, PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 import { useCommittedWbtc } from './useCommittedWbtc.ts';
-import { useBondsTotals } from './useBondsTotals.ts';
-import { getPolygonProvider } from '../utils/polygonProvider';
-import { formatBigIntValue } from '../utils/bondingStatsHelpers';
-import { formatInteger } from '../utils/formatters';
-import {
-  SELL_BOND_ADDRESS_V1,
-  SELL_BOND_ADDRESS_V2,
-  SELL_BOND_COMMITTED_WBTC_ABI,
-} from '../constants/bonds';
-import type { SellBondMetric, UseSellBondBalanceDataResult } from '../types';
+import { useBondsV2Volume } from './useBondsV2Volume.ts';
+import { getPolygonProvider } from '../utils/polygonProvider.ts';
+import { formatBigIntValue } from '../utils/bondingStatsHelpers.ts';
+import { formatInteger } from '../utils/formatters.ts';
+import { SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bonds.ts';
+import type { SellBondMetric, UseSellBondStatsResult } from '../types.ts';
 
 const SELL_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('194235', PRANA_DECIMALS);
 
-export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
+export const useSellBondStats = (): UseSellBondStatsResult => {
   const [balanceV2, setBalanceV2] = useState<bigint>(0n);
   const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState<boolean>(true);
   const [balanceErrorV2, setBalanceErrorV2] = useState<unknown | null>(null);
@@ -70,7 +66,7 @@ export const useSellBondBalanceData = (): UseSellBondBalanceDataResult => {
     sellBondTotalRawV2,
     isLoading: isLoadingVolume,
     error: bondVolumeError,
-  } = useBondsTotals();
+  } = useBondsV2Volume();
 
   useEffect(() => {
     if (balanceErrorV2) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { initialPranaStats } from '../constants/pranaStats';
 import { fetchPranaPricesBundle } from '../utils/pranaPrices';
+import { fetchJson } from '../utils/fetchJson';
 import { fetchBondsV2TotalsSafe } from '../utils/bondsV2Json';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { calcChange, getFirstPrice } from '../utils/pranaStatsUtils';
@@ -24,9 +25,17 @@ const fetchPranaStats = async (
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7); // 10M Total Supply
   
+  let refreshUpdated = false;
+  try {
+    const refreshResult = await fetchJson<{ updated?: boolean }>('/api/refresh-bonds');
+    refreshUpdated = Boolean(refreshResult?.updated);
+  } catch {
+    // Ignore refresh errors and use existing JSON.
+  }
+
   const [stakingStats, bondsV2Totals] = await Promise.all([
     fetchStakingStats({ provider }),
-    fetchBondsV2TotalsSafe(),
+    fetchBondsV2TotalsSafe({ force: refreshUpdated }),
   ]);
 
   const bondingStats = await fetchBondingStats({
