@@ -21,14 +21,18 @@ export const TopHoldingAddresses: React.FC = () => {
             <div className="flex flex-col gap-1">
               <div className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-cyan-400" />
-                Top Holding Addresses
+                <a
+                  href="https://polygonscan.com/token/0x928277e774f34272717eadfafc3fd802dafbd0f5#balances"
+                  className="no-underline"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Top Holding Addresses
+                </a>
               </div>
               <div className="text-xs text-gray-400">
                 {generatedAt ? `Updated: ${new Date(generatedAt).toLocaleString()}` : 'Showing latest cached snapshot'}
               </div>
-            </div>
-            <div className="text-xs text-gray-500">
-              {isLoading ? 'Loading balances...' : `${totalHolders} addresses`}
             </div>
           </div>
 
@@ -71,7 +75,7 @@ export const TopHoldingAddresses: React.FC = () => {
                         ) : null}
                       </div>
                     </div>
-                    <div className="text-sm text-cyan-200 font-semibold whitespace-nowrap">
+                    <div className="text-sm text-emerald-200 font-semibold whitespace-nowrap">
                       {formattedBalance} PRANA
                     </div>
                   </div>

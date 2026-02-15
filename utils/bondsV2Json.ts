@@ -3,7 +3,7 @@ import type { BondsV2Json } from '../types';
 
 // Keep this small: the goal is to dedupe requests on page load,
 // not to keep the bonds data stale for long periods.
-const BONDS_V2_JSON_TTL_MS = 60_000; // 1 minute
+const BONDS_V2_JSON_TTL_MS = 30_000; // 30 seconds
 
 let cached: { value: unknown; timestamp: number } | null = null;
 

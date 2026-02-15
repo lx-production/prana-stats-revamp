@@ -1,7 +1,7 @@
 import { fetchJson, fetchJsonSafe } from './fetchJson';
 import type { PranaPricesBundle } from '../types';
 
-const PRICES_CACHE_TTL_MS = 60_000; // 60 seconds
+const PRICES_CACHE_TTL_MS = 30_000; // 30 seconds
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;
 

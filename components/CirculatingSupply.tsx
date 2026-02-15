@@ -47,7 +47,7 @@ export const CirculatingSupply: React.FC = () => {
                 {generatedAt ? `Updated: ${new Date(generatedAt).toLocaleString()}` : 'Showing latest cached snapshot'}
               </div>
             </div>
-            <div className="text-xs text-gray-500">Total Supply: {formatInteger(TOTAL_SUPPLY)} PRANA</div>
+            <div className="text-xs text-gray-500">Total Max Supply: {formatInteger(TOTAL_SUPPLY)} PRANA</div>
           </div>
 
           {error ? (
