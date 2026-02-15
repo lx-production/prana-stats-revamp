@@ -106,7 +106,7 @@ export const TopHoldingAddresses: React.FC = () => {
                         ) : null}
                       </div>
                     </div>
-                    <div className="text-sm text-emerald-200 font-semibold whitespace-nowrap">
+                    <div className="text-sm text-white-200 font-semibold whitespace-nowrap">
                       {formattedBalance} PRANA
                     </div>
                   </div>
