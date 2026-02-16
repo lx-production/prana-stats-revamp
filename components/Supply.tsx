@@ -82,29 +82,29 @@ export const Supply: React.FC = () => {
             </div>
           ) : null}
 
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
-              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center gap-2">
+              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2">
                 <Coins className="w-3.5 h-3.5 text-emerald-300" />
                 Circulating Supply
               </div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-200">
+              <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
                 {isLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
               </div>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
-              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center gap-2">
+              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-amber-300" />
                 Non-Circulating Supply
               </div>
-              <div className="mt-2 text-2xl font-semibold text-amber-200">
+              <div className="mt-2 text-2xl font-semibold text-amber-200 text-center">
                 {isLoading ? 'Loading...' : `${formattedNonCirculating} PRANA`}
               </div>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
-              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center gap-2 relative">
+              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2 relative">
                 <ShoppingCart className="w-3.5 h-3.5 text-cyan-300" />
                 Buyable Supply
                 <InfoTooltip
@@ -112,7 +112,7 @@ export const Supply: React.FC = () => {
                   text="Tổng PRANA trong WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, và BuyBond capacity."
                 />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-cyan-200">
+              <div className="mt-2 text-2xl font-semibold text-cyan-200 text-center">
                 {isLoading || isStatsLoading ? 'Loading...' : `${formattedBuyable} PRANA`}
               </div>
             </div>

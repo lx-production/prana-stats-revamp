@@ -11,11 +11,11 @@ export const TopHoldingAddresses: React.FC = () => {
     { text: string; ariaLabel: string; widthClassName?: string }
   > = {
     'PRANA Protocol': {
-      text: 'Founders original allocation, "Buy The Dips" program',
+      text: 'Original Founders allocation, "Buy The Dips" program',
       ariaLabel: 'PRANA Protocol info',
     },
     'Protocol Reserve': {
-      text: 'Contribute to earn, các tiềm năng đầu tư',
+      text: 'Original Contribute to Earn program',
       ariaLabel: 'Protocol Reserve info',
     },
     'DEX Pool & Bonds Reserve': {
@@ -96,14 +96,14 @@ export const TopHoldingAddresses: React.FC = () => {
                               widthClassName={labelTooltips[holder.label].widthClassName}
                             />
                           ) : null}
-                        </div>
-                        <div className="text-xs text-gray-500 font-mono break-all">{holder.address}</div>
-                        {isNonCirculating ? (
-                          <div className="mt-2 inline-flex items-end gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
-                            <Lock className="w-3 h-3 shrink-0 self-end" />
-                            <span className="leading-none">HODL - Non-Circulating</span>
-                          </div>
-                        ) : null}
+                          {isNonCirculating ? (
+                            <div className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
+                              <Lock className="w-3 h-3 shrink-0" />
+                              <span className="leading-none">HODL</span>
+                            </div>
+                          ) : null}
+                        </div>                        
+                        <div className="text-xs text-gray-500 font-mono mt-1 break-all">{holder.address}</div>                        
                       </div>
                     </div>
                     <div className="text-sm text-white-200 font-semibold whitespace-nowrap">
