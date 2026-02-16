@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, Activity, Lock, DollarSign } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useStakingRunway } from '../hooks/useStakingRunway';
 import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDecimal } from '../utils/formatters';
 import BondingStats from './BondingStats';
 import StatCard from './StatCard';
 import InfoTooltip from './InfoTooltip';
@@ -11,6 +11,7 @@ import InfoTooltip from './InfoTooltip';
 export const PranaStats: React.FC = () => {
   const {
     marketCapVnd,
+    latestSatPrice,
     stakedPrana,
     stakedVnd,
     interestContractBalancePrana,
@@ -69,12 +70,27 @@ export const PranaStats: React.FC = () => {
         {/* Market Cap - Highlighted */}
         <StatCard
           title="Market Cap"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(marketCapVnd, 'VND')} VNĐ`}
-          subValue="Fully Diluted Valuation"
+          mainValue={
+            isLoading ? (
+              "Loading..."
+            ) : (
+              <div className="flex flex-col gap-1">
+                <span>{`${formatCurrency(marketCapVnd, 'VND')} VNĐ`}</span>
+                <span className="text-base sm:text-base font-medium text-white mt-4">
+                  {`1 PRANA = ${formatDecimal(latestSatPrice ?? 0, 2)} SAT`}
+                </span>
+              </div>
+            )
+          }
           icon={DollarSign}
           highlight={true}
           delay={0.1}
           loading={isLoading}
+          footer={
+            <div className="text-xs text-gray-500 uppercase tracking-wider">
+              Fully Diluted Valuation
+            </div>
+          }
         />
 
         <BondingStats

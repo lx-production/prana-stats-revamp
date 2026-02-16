@@ -10,7 +10,8 @@ export const formatPranaDisplayFromRaw = (raw: bigint) => {
   const formatted = ethers.formatUnits(raw, PRANA_DECIMALS);
   const numeric = Number.parseFloat(formatted);
   const rounded = Number.isFinite(numeric) ? Math.round(numeric) : 0;
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(rounded);
+  // Keep grouping format consistent with other stats cards (e.g. 58,485).
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(rounded);
 };
 
 export const formatPranaFloatFromRaw = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));

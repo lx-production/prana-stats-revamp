@@ -42,11 +42,11 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
 
       {/* Legend */}
       <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="flex items-start gap-2">
+        <div className="flex min-w-0 items-start gap-2">
           <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
-          <div className="leading-tight">
+          <div className="min-w-0 leading-tight">
             <div className="text-gray-300 font-medium">Committed</div>
-            <div className="text-gray-400 font-mono">
+            <div className="text-gray-400 font-mono whitespace-nowrap">
               {loading ? (
                 <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
               ) : (
@@ -61,11 +61,11 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-start gap-2">
+        <div className="flex min-w-0 items-start gap-2">
           <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
-          <div className="leading-tight">
+          <div className="min-w-0 leading-tight">
             <div className="text-gray-300 font-medium">Capacity</div>
-            <div className="text-gray-400 font-mono">
+            <div className="text-gray-400 font-mono whitespace-nowrap">
               {loading ? (
                 <div className="h-4 w-28 bg-white/10 animate-pulse rounded mt-1" />
               ) : (

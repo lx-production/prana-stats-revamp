@@ -46,9 +46,6 @@ const StatCard: React.FC<StatCardProps> = ({
           ) : (
             <div className={`text-2xl sm:text-3xl font-bold tracking-tight ${highlight ? 'text-cyan-100' : 'text-white'}`}>
               {mainValue}
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                {typeof mainValue === 'string' && mainValue.includes('VNĐ') ? '' : ''}
-              </span>
             </div>
           )}
           

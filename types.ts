@@ -82,7 +82,7 @@ export type PranaPricesBundle = {
 
 export interface StatCardProps {
   title: string;
-  mainValue: string | number;
+  mainValue: React.ReactNode;
   subValue?: string;
   icon?: React.ElementType;
   delay?: number;
