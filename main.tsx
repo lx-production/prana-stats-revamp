@@ -6,6 +6,7 @@ import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import Supply from "./components/Supply.tsx";
+import SatsPriceChart from "./components/SatsPriceChart";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -35,6 +36,7 @@ function App() {
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
+        <SatsPriceChart />
       </main>
     </div>
   );
