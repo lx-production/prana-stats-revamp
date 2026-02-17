@@ -12,6 +12,7 @@ export const PranaStats: React.FC = () => {
   const {
     marketCapVnd,
     latestSatPrice,
+    btcPriceUsd,
     stakedPrana,
     stakedVnd,
     interestContractBalancePrana,
@@ -58,6 +59,8 @@ export const PranaStats: React.FC = () => {
     [priceChange]
   );
 
+  const pranaPriceUsd = (latestSatPrice ?? 0) / 1e8 * (btcPriceUsd ?? 0);
+
   return (
     <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-20">
       {error && (
@@ -77,7 +80,7 @@ export const PranaStats: React.FC = () => {
               <div className="flex flex-col gap-1">
                 <span>{`${formatCurrency(marketCapVnd, 'VND')} VNĐ`}</span>
                 <span className="text-base sm:text-base font-medium text-white mt-4">
-                  {`1 PRANA = ${formatNumber(latestSatPrice ?? 0, 2)} SAT`}
+                  {`1 PRANA ≈ ${formatNumber(latestSatPrice ?? 0, 2)} SAT ≈ ${formatNumber(pranaPriceUsd ?? 0, 4)} USD`}
                 </span>
               </div>
             )
@@ -134,7 +137,7 @@ export const PranaStats: React.FC = () => {
               <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
                 {runwayDays && Number.isFinite(runwayDays) ? (
                   <div className="flex items-center gap-2">
-                    <span>Runway: {Math.round(runwayDays).toLocaleString()} ngày</span>
+                    <span>Runway: {Math.round(runwayDays).toLocaleString()} days</span>
                     <InfoTooltip
                       ariaLabel="Giải thích Runway"
                       text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên."
@@ -146,7 +149,7 @@ export const PranaStats: React.FC = () => {
                 {additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana) ? (
                   <div className="text-gray-400 flex items-center gap-2">
                     <span>
-                      Capacity: +{formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA (APR 12%)
+                      Capacity: {formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA
                     </span>
                     <InfoTooltip
                       ariaLabel="Giải thích Capacity"
