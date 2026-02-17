@@ -20,6 +20,19 @@ export const formatInteger = (value: number) => {
   }).format(value);
 };
 
+export const formatNumber = (value: number, fractionDigits = 0) => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+};
+
+export const formatStatValue = (value: unknown) => {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) return '--';
+  return formatNumber(Math.round(numeric));
+};
+
 export const formatDecimal = (value: number, decimals = 2) => {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,

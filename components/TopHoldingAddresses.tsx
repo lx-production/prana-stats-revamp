@@ -3,6 +3,7 @@ import { Lock, Wallet } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { formatInteger } from '../utils/formatters';
 import InfoTooltip from './InfoTooltip';
+import BuyDips from './BuyDips';
 
 export const TopHoldingAddresses: React.FC = () => {
   const nonCirculatingRanks = new Set([1, 2, 3, 5]);
@@ -103,7 +104,10 @@ export const TopHoldingAddresses: React.FC = () => {
                             </div>
                           ) : null}
                         </div>                        
-                        <div className="text-xs text-gray-500 font-mono mt-1 break-all">{holder.address}</div>                        
+                        <div className="text-xs text-gray-500 font-mono mt-1 break-all">{holder.address}</div>
+                        {holder.label === 'PRANA Protocol' ? (
+                          <BuyDips className="mt-2" />
+                        ) : null}
                       </div>
                     </div>
                     <div className="text-sm text-white-200 font-semibold whitespace-nowrap">
