@@ -59,7 +59,7 @@ export const PranaStats: React.FC = () => {
   );
 
   return (
-    <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-20">
       {error && (
         <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-950/20 px-4 py-3 text-sm text-red-200">
           {error}
@@ -172,13 +172,14 @@ export const PranaStats: React.FC = () => {
 
         {/* Performance Card (Consolidated Percentage Changes) */}
         <div
-          className="group relative z-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
+          className="group relative z-0 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
           style={{ animation: `fadeInUp 0.6s ease-out 0.6s backwards` }}
         >
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center flex-wrap gap-2 relative w-full">
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4 text-cyan-400" />
-              Performance
+              <span>Performance</span>
+              <InfoTooltip ariaLabel="Performance vs fiat" text="vs fiat" />
             </h3>
           </div>
 
