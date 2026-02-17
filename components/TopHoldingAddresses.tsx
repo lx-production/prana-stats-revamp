@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock, Wallet } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
-import { formatInteger } from '../utils/formatters';
+import { formatNumber } from '../utils/formatters';
 import InfoTooltip from './InfoTooltip';
 import BuyDips from './BuyDips';
 
@@ -78,7 +78,7 @@ export const TopHoldingAddresses: React.FC = () => {
                 const rank = startIndex + index + 1;
                 const isNonCirculating = nonCirculatingRanks.has(rank);
                 const balanceValue = Number(holder.balance);
-                const formattedBalance = Number.isFinite(balanceValue) ? formatInteger(Math.round(balanceValue)) : '0';
+                const formattedBalance = Number.isFinite(balanceValue) ? formatNumber(Math.round(balanceValue)) : '0';
 
                 return (
                   <div

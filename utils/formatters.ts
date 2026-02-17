@@ -13,13 +13,6 @@ export const formatPercent = (value: number) => {
   return `${sign}${value.toFixed(0)}%`;
 };
 
-export const formatInteger = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
 export const formatNumber = (value: number, fractionDigits = 0) => {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: fractionDigits,
@@ -31,11 +24,4 @@ export const formatStatValue = (value: unknown) => {
   const numeric = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(numeric)) return '--';
   return formatNumber(Math.round(numeric));
-};
-
-export const formatDecimal = (value: number, decimals = 2) => {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
 };

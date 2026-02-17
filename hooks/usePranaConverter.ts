@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatInteger } from '../utils/formatters';
+import { formatNumber } from '../utils/formatters';
 
 export type ConverterCurrency = 'USD' | 'VND' | 'SATs';
 
@@ -36,7 +36,7 @@ export function usePranaConverter({
       if (!Number.isFinite(value)) return '';
       if (currency === 'SATs') return value.toFixed(2);
       if (currency === 'USD') return value.toFixed(5);
-      return formatInteger(Math.round(value));
+      return formatNumber(Math.round(value));
     },
     [currency],
   );
@@ -46,7 +46,7 @@ export function usePranaConverter({
       if (!Number.isFinite(value)) return '';
       if (currency === 'SATs') return value.toFixed(2);
       if (currency === 'USD') return value.toFixed(5);
-      return formatInteger(Math.round(value));
+      return formatNumber(Math.round(value));
     },
     [currency],
   );
@@ -141,4 +141,3 @@ export function usePranaConverter({
     onCurrencyChange,
   };
 }
-

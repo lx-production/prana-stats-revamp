@@ -3,7 +3,7 @@ import { Coins, Lock, ShoppingCart } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { usePranaStats } from '../hooks/usePranaStats';
 import InfoTooltip from './InfoTooltip';
-import { formatInteger } from '../utils/formatters';
+import { formatNumber } from '../utils/formatters';
 
 const TOTAL_SUPPLY = 10_000_000;
 const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
@@ -49,9 +49,9 @@ export const Supply: React.FC = () => {
     return Number.isFinite(total) ? total : 0;
   }, [allHolders, buyBondCapacityDisplay]);
 
-  const formattedCirculating = formatInteger(Math.round(circulatingSupply));
-  const formattedNonCirculating = formatInteger(Math.round(nonCirculatingTotal));
-  const formattedBuyable = formatInteger(Math.round(buyableSupply));
+  const formattedCirculating = formatNumber(Math.round(circulatingSupply));
+  const formattedNonCirculating = formatNumber(Math.round(nonCirculatingTotal));
+  const formattedBuyable = formatNumber(Math.round(buyableSupply));
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -73,7 +73,7 @@ export const Supply: React.FC = () => {
                 {generatedAt ? `Updated: ${new Date(generatedAt).toLocaleString()}` : 'Showing latest cached snapshot'}
               </div>
             </div>
-            <div className="text-xs text-gray-500">Total Max Supply: {formatInteger(TOTAL_SUPPLY)} PRANA</div>
+            <div className="text-xs text-gray-500">Total Max Supply: {formatNumber(TOTAL_SUPPLY)} PRANA</div>
           </div>
 
           {error ? (

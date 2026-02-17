@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, Activity, Lock, DollarSign } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { useStakingRunway } from '../hooks/useStakingRunway';
 import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
-import { formatCurrency, formatDecimal } from '../utils/formatters';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 import BondingStats from './BondingStats';
 import StatCard from './StatCard';
 import InfoTooltip from './InfoTooltip';
@@ -77,7 +77,7 @@ export const PranaStats: React.FC = () => {
               <div className="flex flex-col gap-1">
                 <span>{`${formatCurrency(marketCapVnd, 'VND')} VNĐ`}</span>
                 <span className="text-base sm:text-base font-medium text-white mt-4">
-                  {`1 PRANA = ${formatDecimal(latestSatPrice ?? 0, 2)} SAT`}
+                  {`1 PRANA = ${formatNumber(latestSatPrice ?? 0, 2)} SAT`}
                 </span>
               </div>
             )

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { usePranaPrices } from '../hooks/usePranaPrices';
 import { usePranaConverter, type ConverterCurrency } from '../hooks/usePranaConverter';
-import { formatDecimal, formatInteger } from '../utils/formatters';
+import { formatNumber } from '../utils/formatters';
 
 const currencies: Array<{ value: ConverterCurrency; label: string }> = [
   { value: 'USD', label: 'USD' },
@@ -81,8 +81,8 @@ export const PranaConverter: React.FC = () => {
                   'Prices unavailable'
                 ) : preview ? (
                   <>
-                    1 PRANA ≈ {formatDecimal(preview.satsPerPrana, 2)} SAT ≈ {preview.usdPerPrana.toFixed(4)} USD ≈{' '}
-                    {formatInteger(Math.round(preview.vndPerPrana))} VNĐ
+                    1 PRANA ≈ {formatNumber(preview.satsPerPrana, 2)} SAT ≈ {preview.usdPerPrana.toFixed(4)} USD ≈{' '}
+                    {formatNumber(Math.round(preview.vndPerPrana))} VNĐ
                   </>
                 ) : (
                   'Prices unavailable'

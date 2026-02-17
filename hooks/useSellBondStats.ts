@@ -5,7 +5,7 @@ import { useCommittedWbtc } from './useCommittedWbtc.ts';
 import { useBondsV2Volume } from './useBondsV2Volume.ts';
 import { getPolygonProvider } from '../utils/polygonProvider.ts';
 import { formatBigIntValue } from '../utils/bondingStatsHelpers.ts';
-import { formatInteger } from '../utils/formatters.ts';
+import { formatNumber } from '../utils/formatters.ts';
 import { SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bonds.ts';
 import type { SellBondMetric, UseSellBondStatsResult } from '../types.ts';
 
@@ -109,14 +109,14 @@ export const useSellBondStats = (): UseSellBondStatsResult => {
         if (!Number.isFinite(numeric)) {
           return {
             numericValue: 0,
-            formattedValue: formatInteger(0),
+            formattedValue: formatNumber(0),
           };
         }
 
         const rounded = Math.round(numeric);
         return {
           numericValue: rounded,
-          formattedValue: formatInteger(rounded),
+          formattedValue: formatNumber(rounded),
         };
       };
 
