@@ -132,32 +132,16 @@ export const PranaStats: React.FC = () => {
           delay={0.25}
           loading={isLoading}
           footer={
-            (runwayDays && Number.isFinite(runwayDays)) ||
-            (additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana)) ? (
+            runwayDays && Number.isFinite(runwayDays) ? (
               <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
-                {runwayDays && Number.isFinite(runwayDays) ? (
-                  <div className="flex items-center gap-2">
-                    <span>Runway: {Math.round(runwayDays).toLocaleString()} days</span>
-                    <InfoTooltip
-                      ariaLabel="Giải thích Runway"
-                      text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên."
-                      widthClassName="w-[min(24rem,calc(100vw-2rem))]"
-                    />
-                  </div>
-                ) : null}
-
-                {additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana) ? (
-                  <div className="text-gray-400 flex items-center gap-2">
-                    <span>
-                      Capacity: {formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA
-                    </span>
-                    <InfoTooltip
-                      ariaLabel="Giải thích Capacity"
-                      widthClassName="w-[min(24rem,calc(100vw-2rem))]"
-                      text="Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
-                    />
-                  </div>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  <span>Runway: {Math.round(runwayDays).toLocaleString()} days</span>
+                  <InfoTooltip
+                    ariaLabel="Giải thích Runway"
+                    text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên. Công thức: Runway = Interest Balance / (Total Staked * 0.12 / 365)"
+                    widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+                  />
+                </div>
               </div>
             ) : null
           }
@@ -171,6 +155,22 @@ export const PranaStats: React.FC = () => {
           icon={Activity}
           delay={0.3}
           loading={isLoading}
+          footer={
+            additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana) ? (
+              <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
+                <div className="text-gray-400 flex items-center gap-2">
+                  <span>
+                    Capacity: {formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA
+                  </span>
+                  <InfoTooltip
+                    ariaLabel="Giải thích Capacity"
+                    widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+                    text="Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
+                  />
+                </div>
+              </div>
+            ) : null
+          }
         />
 
         {/* Performance Card (Consolidated Percentage Changes) */}
