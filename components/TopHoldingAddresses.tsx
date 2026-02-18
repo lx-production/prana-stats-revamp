@@ -12,7 +12,7 @@ export const TopHoldingAddresses: React.FC = () => {
     { text: string; ariaLabel: string; widthClassName?: string }
   > = {
     'PRANA Protocol': {
-      text: 'Original Founders allocation, "Buy The Dips" program',
+      text: 'Original Founders allocation and active Buy The Dips operations (no sell policy)',
       ariaLabel: 'PRANA Protocol info',
     },
     'Protocol Reserve': {

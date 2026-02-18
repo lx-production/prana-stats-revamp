@@ -7,6 +7,7 @@ import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import Supply from "./components/Supply.tsx";
 import SatsPriceChart from "./components/SatsPriceChart";
+import PranaVndPriceChart from "./components/PranaVndPriceChart";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -36,7 +37,12 @@ function App() {
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
-        <SatsPriceChart />
+        <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+            <SatsPriceChart />
+            <PranaVndPriceChart />
+          </div>
+        </section>
       </main>
     </div>
   );

@@ -1,7 +1,8 @@
 import { fetchJson } from "../utils/fetchJson";
 import React, { useEffect, useMemo, useState } from "react";
 import { Activity } from "lucide-react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
+import { useElementSize } from "../hooks/useElementSize";
 
 type SatsPoint = {
   t: number;
@@ -13,7 +14,7 @@ type ChartPoint = {
   price: number;
 };
 
-const MAX_POINTS = 260;
+const MAX_POINTS = 150;
 
 const formatDate = (value: number) =>
   new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -31,6 +32,7 @@ const SatsPriceChart: React.FC = () => {
   const [data, setData] = useState<SatsPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { ref: chartContainerRef, size: chartSize } = useElementSize<HTMLDivElement>();
 
   useEffect(() => {
     let isActive = true;
@@ -93,11 +95,10 @@ const SatsPriceChart: React.FC = () => {
   }, [data]);
 
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4">
+    <div className="h-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 flex flex-col">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-cyan-300" />
+            <Activity className="h-4 w-4 text-amber-300" />
             <div className="text-sm font-medium text-gray-400 uppercase tracking-wider">PRANA/SAT</div>
           </div>
         </div>
@@ -105,9 +106,9 @@ const SatsPriceChart: React.FC = () => {
         {error ? (
           <div className="mt-4 text-sm text-red-200">{error}</div>
         ) : (
-          <div className="mt-6 h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <div ref={chartContainerRef} className="mt-6 h-80 w-full flex-1 min-h-[320px]">
+            {chartSize.width > 0 && chartSize.height > 0 ? (
+              <LineChart width={chartSize.width} height={chartSize.height} data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3 3" />
                 <XAxis
                   dataKey="time"
@@ -140,17 +141,16 @@ const SatsPriceChart: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="price"
-                  stroke="#38bdf8"
+                  stroke="#f59e0b"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
                 />
               </LineChart>
-            </ResponsiveContainer>
+            ) : null}
           </div>
         )}
       </div>
-    </section>
   );
 };
 
