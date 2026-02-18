@@ -106,7 +106,7 @@ const SatsPriceChart: React.FC = () => {
         {error ? (
           <div className="mt-4 text-sm text-red-200">{error}</div>
         ) : (
-          <div ref={chartContainerRef} className="mt-6 h-80 w-full flex-1 min-h-[320px]">
+          <div ref={chartContainerRef} className="mt-6 h-72 w-full">
             {chartSize.width > 0 && chartSize.height > 0 ? (
               <LineChart width={chartSize.width} height={chartSize.height} data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3 3" />

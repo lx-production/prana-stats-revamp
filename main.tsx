@@ -27,6 +27,8 @@ function App() {
         spin={0.04}
         iterations={64}
         maxDpr={1.15}
+        targetFps={60}
+        renderScale={0.9}
       />
 
       <main className="relative z-10 flex flex-col gap-6 pb-24">
@@ -38,7 +40,7 @@ function App() {
           <Supply />
         </TopHoldingAddressesProvider>
         <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <SatsPriceChart />
             <PranaVndPriceChart />
           </div>

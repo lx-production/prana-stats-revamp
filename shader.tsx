@@ -20,6 +20,8 @@ export interface NeuralShaderBackgroundProps {
   spin?: number;          // radians/second; positive = CCW rotation of the whole field
   iterations?: number;    // fragment loop count; lower = faster
   maxDpr?: number;        // clamp device pixel ratio; lower = faster
+  targetFps?: number;     // draw-rate cap (useful on 120Hz+ displays)
+  renderScale?: number;   // additional internal resolution scale (0.5..1.0)
 }
 
 export function NeuralShaderBackground({
@@ -32,6 +34,8 @@ export function NeuralShaderBackground({
   spin = 0.2,        // radians/second; positive = CCW rotation of the whole field
   iterations = 70,   // fragment loop count; lower = faster
   maxDpr = 1.25,     // clamp device pixel ratio; lower = faster
+  targetFps = 60,    // cap background draw rate to avoid over-rendering on ProMotion
+  renderScale = 1,   // lower to ~0.85 for extra headroom with small visual impact
 }: NeuralShaderBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -50,7 +54,13 @@ export function NeuralShaderBackground({
     if (!canvas) return;
     
     // WebGL2 gives us #version 300 es and gl_VertexID. If missing on device, consider a webgl fallback.
-    const gl = canvas.getContext("webgl2", { premultipliedAlpha: true, antialias: true });
+    const gl = canvas.getContext("webgl2", {
+      premultipliedAlpha: true,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: "high-performance",
+    });
     if (!gl) return;
     glRef.current = gl;
 
@@ -151,9 +161,11 @@ export function NeuralShaderBackground({
     // Handle device pixel ratio + viewport
     const resize = () => {
       const dpr = Math.max(1, Math.min(maxDpr, window.devicePixelRatio || 1)); // cap DPR to keep GPU happy
+      const scale = Math.max(0.5, Math.min(1, renderScale));
+      const effectiveDpr = dpr * scale;
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      canvas.width = Math.max(1, Math.floor(w * dpr));
-      canvas.height = Math.max(1, Math.floor(h * dpr));
+      canvas.width = Math.max(1, Math.floor(w * effectiveDpr));
+      canvas.height = Math.max(1, Math.floor(h * effectiveDpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
       if (locResRef.current) {
         gl.uniform2f(locResRef.current, canvas.width, canvas.height);
@@ -162,9 +174,14 @@ export function NeuralShaderBackground({
 
     const onResize = () => { resize(); };
     const start = performance.now();
+    let lastDraw = start;
+    const minFrameMs = targetFps > 0 ? 1000 / Math.max(1, targetFps) : 0;
 
     const frame = (now: number) => {
       rafRef.current = requestAnimationFrame(frame);
+      if (document.hidden) return;
+      if (minFrameMs > 0 && now - lastDraw < minFrameMs) return;
+      lastDraw = now;
       const secs = (now - start) * 0.001; // time in seconds
       // Push uniforms every frame so props can animate if you wish
       if (locTimeRef.current) gl.uniform1f(locTimeRef.current, secs);
@@ -185,7 +202,7 @@ export function NeuralShaderBackground({
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
     };
-  }, [speed, flow, brightness, gamma, spin, iterations, maxDpr]);
+  }, [speed, flow, brightness, gamma, spin, iterations, maxDpr, targetFps, renderScale]);
 
   return (
     <div className={`fixed inset-0 pointer-events-none z-0 ${className}`} style={{ opacity }}>
