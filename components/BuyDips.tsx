@@ -75,9 +75,16 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
 
   return (
     <div className={className}>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-300">
-          "Buy The Dips"
-        </div>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+        <a
+          href="https://polygonscan.com/token/0x928277e774f34272717eadfafc3fd802dafbd0f5?a=0x1d791aca381c844c4e497fca9429dbe5d36ff1bc"
+          target="_blank"
+          rel="noreferrer"
+          className="text-cyan-300 no-underline hover:text-cyan-200"
+        >
+          Buy The Dips
+        </a>
+      </div>
         {error ? (
           <div className="mt-2 text-xs text-red-200">{error}</div>
         ) : (
