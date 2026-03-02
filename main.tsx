@@ -8,6 +8,7 @@ import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import Supply from "./components/Supply.tsx";
 import SatsPriceChart from "./components/SatsPriceChart";
 import PranaVndPriceChart from "./components/PranaVndPriceChart";
+import FaqSection from "./components/FaqSection";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -45,6 +46,7 @@ function App() {
             <PranaVndPriceChart />
           </div>
         </section>
+        <FaqSection />
       </main>
     </div>
   );
