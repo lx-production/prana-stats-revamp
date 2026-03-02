@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Coins, Lock, ShoppingCart } from 'lucide-react';
+import { Coins, ShoppingCart } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { usePranaStats } from '../hooks/usePranaStats';
 import InfoTooltip from './InfoTooltip';
@@ -16,20 +16,18 @@ export const Supply: React.FC = () => {
     isLoading: isStatsLoading,
   } = usePranaStats();
 
-  const nonCirculatingTotal = useMemo(() => {
-    return allHolders.reduce((sum, holder, index) => {
+  const circulatingSupply = useMemo(() => {
+    const nonCirculating = allHolders.reduce((sum, holder, index) => {
       const rank = index + 1;
       if (!NON_CIRCULATING_RANKS.has(rank)) return sum;
       const balanceValue = Number(holder.balance);
       if (!Number.isFinite(balanceValue)) return sum;
       return sum + balanceValue;
     }, 0);
-  }, [allHolders]);
 
-  const circulatingSupply = useMemo(() => {
-    const remaining = TOTAL_SUPPLY - nonCirculatingTotal;
+    const remaining = TOTAL_SUPPLY - nonCirculating;
     return Number.isFinite(remaining) ? Math.max(0, remaining) : 0;
-  }, [nonCirculatingTotal]);
+  }, [allHolders]);
 
   const buyableSupply = useMemo(() => {
     const poolTotal = allHolders.reduce((sum, holder) => {
@@ -50,7 +48,6 @@ export const Supply: React.FC = () => {
   }, [allHolders, buyBondCapacityDisplay]);
 
   const formattedCirculating = formatNumber(Math.round(circulatingSupply));
-  const formattedNonCirculating = formatNumber(Math.round(nonCirculatingTotal));
   const formattedBuyable = formatNumber(Math.round(buyableSupply));
 
   return (
@@ -82,7 +79,7 @@ export const Supply: React.FC = () => {
             </div>
           ) : null}
 
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
               <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2">
                 <Coins className="w-3.5 h-3.5 text-emerald-300" />
@@ -90,16 +87,6 @@ export const Supply: React.FC = () => {
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
                 {isLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
-              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-amber-300" />
-                Non-Circulating Supply
-              </div>
-              <div className="mt-2 text-2xl font-semibold text-amber-200 text-center">
-                {isLoading ? 'Loading...' : `${formattedNonCirculating} PRANA`}
               </div>
             </div>
 
