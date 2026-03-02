@@ -16,7 +16,7 @@ export const TopHoldingAddresses: React.FC = () => {
       ariaLabel: 'PRANA Protocol info',
     },
     'Protocol Reserve': {
-      text: 'Original Contribute to Earn program, Staking Interest reserve',
+      text: 'Original Contribute to Earn, Engage to Earn program, Staking Interest reserve',
       ariaLabel: 'Protocol Reserve info',
     },
     'DEX Pool & Bonds Reserve': {

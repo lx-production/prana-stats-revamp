@@ -147,27 +147,6 @@ const PranaVndPriceChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {RANGE_OPTIONS.map((option) => {
-          const isSelected = option.key === selectedRange;
-          return (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setSelectedRange(option.key)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                isSelected
-                  ? "bg-emerald-400/20 text-emerald-200 border border-emerald-300/40"
-                  : "bg-white/5 text-gray-300 border border-white/15 hover:bg-white/10"
-              }`}
-              aria-pressed={isSelected}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-
       {error ? (
         <div className="mt-4 text-sm text-red-200">{error}</div>
       ) : (
@@ -217,6 +196,27 @@ const PranaVndPriceChart: React.FC = () => {
           ) : null}
         </div>
       )}
+      
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {RANGE_OPTIONS.map((option) => {
+          const isSelected = option.key === selectedRange;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setSelectedRange(option.key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                isSelected
+                  ? "bg-emerald-400/20 text-emerald-200 border border-emerald-300/40"
+                  : "bg-white/5 text-gray-300 border border-white/15 hover:bg-white/10"
+              }`}
+              aria-pressed={isSelected}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
