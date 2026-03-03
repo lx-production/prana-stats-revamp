@@ -5,7 +5,7 @@ import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import { fetchJson } from '../utils/fetchJson';
 import { fetchBondsV2TotalsSafe } from '../utils/bondsV2Json';
 import { getPolygonProvider } from '../utils/polygonProvider';
-import { calcChange, getFirstPrice } from '../utils/pranaStatsUtils';
+import { calcChange, getFirstPrice, getPriceAtOrAfter, getSatsPerformanceInputs } from '../utils/pranaStatsUtils';
 import { useBondsOnchain } from './useBondsOnchain';
 import { useStakingStats } from './useStakingStats';
 import { FetchBondingStats, FetchStakingStats, PranaStatsData, PranaStatsComputed } from '../types';
@@ -19,7 +19,7 @@ const fetchPranaStats = async (
 ): Promise<PranaStatsComputed> => {
   const provider = getProvider();
 
-  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, d30, d90, d180, d365 } =
+  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, satsData, d30, d90, d180, d365 } =
     await fetchPranaPricesBundle();
 
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
@@ -46,6 +46,8 @@ const fetchPranaStats = async (
   });
   
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
+  const { parsedSatsData, m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, safeSatsAtl } =
+    getSatsPerformanceInputs(satsData, latestSatPrice);
 
   // Mock historical prices relative to current to show varied percentages
   const mockM1 = latestSatPriceUsd * 0.95; // +5%
@@ -85,6 +87,13 @@ const fetchPranaStats = async (
       m6: calcChange(getFirstPrice(d180, mockM6), latestSatPriceUsd),
       y1: calcChange(getFirstPrice(d365, mockY1), latestSatPriceUsd),
       atl: calcChange(ATL_PRICE, latestSatPriceUsd),
+    },
+    priceChangeBtc: {
+      m1: calcChange(getPriceAtOrAfter(parsedSatsData, m1Cutoff, latestSatPrice), latestSatPrice),
+      m3: calcChange(getPriceAtOrAfter(parsedSatsData, m3Cutoff, latestSatPrice), latestSatPrice),
+      m6: calcChange(getPriceAtOrAfter(parsedSatsData, m6Cutoff, latestSatPrice), latestSatPrice),
+      y1: calcChange(getPriceAtOrAfter(parsedSatsData, y1Cutoff, latestSatPrice), latestSatPrice),
+      atl: calcChange(safeSatsAtl, latestSatPrice),
     },
   };
 };

@@ -54,6 +54,13 @@ export interface PranaStatsData {
     y1: number;
     atl: number;
   };
+  priceChangeBtc: {
+    m1: number;
+    m3: number;
+    m6: number;
+    y1: number;
+    atl: number;
+  };
   isLoading: boolean;
   error: string | null;
 }
@@ -74,6 +81,7 @@ export type PranaPricesBundle = {
   btcPriceVnd: number;
   usdToVndRate: number;
   latestSatPrice: number;
+  satsData: any[];
   d30: any[];
   d90: any[];
   d180: any[];

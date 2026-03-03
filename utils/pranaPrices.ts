@@ -48,6 +48,7 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
         btcPriceVnd,
         usdToVndRate,
         latestSatPrice,
+        satsData,
         d30,
         d90,
         d180,
