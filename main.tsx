@@ -6,6 +6,7 @@ import PranaStats from "./components/PranaStats";
 import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import Supply from "./components/Supply.tsx";
+import Capital from "./components/Capital";
 import SatsPriceChart from "./components/SatsPriceChart";
 import PranaVndPriceChart from "./components/PranaVndPriceChart";
 import FaqSection from "./components/FaqSection";
@@ -37,6 +38,7 @@ function App() {
         <PranaStats />
         <PranaConverter />
         <TopHoldingAddressesProvider>
+          <Capital />
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
