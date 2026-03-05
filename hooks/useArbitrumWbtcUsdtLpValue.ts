@@ -8,6 +8,7 @@ const NONFUNGIBLE_POSITION_MANAGER = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88
 const TARGET_POOL = '0x5969EFddE3cF5C0D9a88aE51E47d721096A97203';
 const TARGET_OWNER = '0x917d8fc3938FDB924332ad3B4771B234E5F468DC';
 const TARGET_POOL_FEE = 0.0005; // 0.05%
+const LP_TOKEN_ID_CACHE_TTL_MS = 60_000;
 
 const ARBITRUM_USDT = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
 const ARBITRUM_WBTC = '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f';
@@ -56,6 +57,13 @@ interface GeckoPoolResponse {
     };
   };
 }
+
+type CachedLpTokenId = {
+  tokenId: number;
+  expiresAt: number;
+};
+
+let cachedLpTokenId: CachedLpTokenId | null = null;
 
 const subIn256 = (a: bigint, b: bigint) => {
   const result = a - b;
@@ -151,23 +159,15 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
         {}
       );
 
-      const [poolToken0, poolToken1, poolFee, slot0, feeGrowthGlobal0, feeGrowthGlobal1, ownerBalanceRaw] = await Promise.all([
+      const [poolToken0, poolToken1, poolFee, slot0, feeGrowthGlobal0, feeGrowthGlobal1] = await Promise.all([
         pool.token0(),
         pool.token1(),
         pool.fee(),
         pool.slot0(),
         pool.feeGrowthGlobal0X128(),
         pool.feeGrowthGlobal1X128(),
-        positionManager.balanceOf(TARGET_OWNER),
       ]);
       const geckoPool = await geckoPoolPromise;
-
-      const ownerBalance = Number(ownerBalanceRaw);
-      const tokenIdCalls = Array.from({ length: ownerBalance }, (_, i) => positionManager.tokenOfOwnerByIndex(TARGET_OWNER, i));
-      const tokenIdsRaw: bigint[] = ownerBalance > 0 ? await Promise.all(tokenIdCalls) : [];
-      const positionsRaw = tokenIdsRaw.length > 0
-        ? await Promise.all(tokenIdsRaw.map((tokenId) => positionManager.positions(tokenId)))
-        : [];
 
       const targetPoolToken0 = String(poolToken0).toLowerCase();
       const targetPoolToken1 = String(poolToken1).toLowerCase();
@@ -190,25 +190,70 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
       const apr24hPercent =
         apr24hPercentRaw !== null && Number.isFinite(apr24hPercentRaw) ? apr24hPercentRaw : null;
 
-      for (let index = 0; index < positionsRaw.length; index += 1) {
-        const tokenId = Number(tokenIdsRaw[index]);
-        const position = positionsRaw[index];
+      const token0IsWbtc = targetPoolToken0 === ARBITRUM_WBTC;
+      const token0IsUsdt = targetPoolToken0 === ARBITRUM_USDT;
+      const token1IsWbtc = targetPoolToken1 === ARBITRUM_WBTC;
+      const token1IsUsdt = targetPoolToken1 === ARBITRUM_USDT;
 
-        const samePool =
-          String(position.token0).toLowerCase() === targetPoolToken0 &&
-          String(position.token1).toLowerCase() === targetPoolToken1 &&
-          BigInt(position.fee) === targetPoolFee;
+      if (!(token0IsWbtc || token1IsWbtc) || !(token0IsUsdt || token1IsUsdt)) {
+        throw new Error('Target pool is not the expected WBTC/USDT pool on Arbitrum');
+      }
 
-        if (!samePool || BigInt(position.liquidity) <= 0n) {
-          continue;
+      const isPositionActiveForTargetPool = (position: any) =>
+        String(position.token0).toLowerCase() === targetPoolToken0 &&
+        String(position.token1).toLowerCase() === targetPoolToken1 &&
+        BigInt(position.fee) === targetPoolFee &&
+        BigInt(position.liquidity) > 0n;
+
+      let selectedTokenId: number | null = null;
+      let selectedPosition: any | null = null;
+      const now = Date.now();
+      const hasValidCache = cachedLpTokenId !== null && cachedLpTokenId.expiresAt > now;
+
+      if (hasValidCache) {
+        try {
+          const cachedPosition = await positionManager.positions(cachedLpTokenId.tokenId);
+          if (isPositionActiveForTargetPool(cachedPosition)) {
+            selectedTokenId = cachedLpTokenId.tokenId;
+            selectedPosition = cachedPosition;
+          } else {
+            cachedLpTokenId = null;
+          }
+        } catch {
+          cachedLpTokenId = null;
         }
+      }
 
-        matchedPositionIds.push(tokenId);
-        activeCount += 1;
+      if (!hasValidCache || cachedLpTokenId === null) {
+        const ownerBalanceRaw = await positionManager.balanceOf(TARGET_OWNER);
+        const ownerBalance = Number(ownerBalanceRaw);
+        const tokenIdCalls = Array.from({ length: ownerBalance }, (_, i) =>
+          positionManager.tokenOfOwnerByIndex(TARGET_OWNER, i)
+        );
+        const tokenIdsRaw: bigint[] = ownerBalance > 0 ? await Promise.all(tokenIdCalls) : [];
+        const tokenIdsDesc = tokenIdsRaw.map((value) => Number(value)).sort((a, b) => b - a);
 
-        const tickLower = Number(position.tickLower);
-        const tickUpper = Number(position.tickUpper);
-        const liquidity = BigInt(position.liquidity);
+        for (const tokenId of tokenIdsDesc) {
+          const position = await positionManager.positions(tokenId);
+          if (isPositionActiveForTargetPool(position)) {
+            selectedTokenId = tokenId;
+            selectedPosition = position;
+            cachedLpTokenId = {
+              tokenId,
+              expiresAt: now + LP_TOKEN_ID_CACHE_TTL_MS,
+            };
+            break;
+          }
+        }
+      }
+
+      if (selectedTokenId !== null && selectedPosition !== null) {
+        matchedPositionIds.push(selectedTokenId);
+        activeCount = 1;
+
+        const tickLower = Number(selectedPosition.tickLower);
+        const tickUpper = Number(selectedPosition.tickUpper);
+        const liquidity = BigInt(selectedPosition.liquidity);
 
         if (!lowerTickCache.has(tickLower)) {
           const tickData = await pool.ticks(tickLower);
@@ -252,14 +297,14 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
         const feeGrowthInside0Now = subIn256(subIn256(feeGrowthGlobal0X128, feeGrowthBelow0), feeGrowthAbove0);
         const feeGrowthInside1Now = subIn256(subIn256(feeGrowthGlobal1X128, feeGrowthBelow1), feeGrowthAbove1);
 
-        const feeGrowthInside0Last = BigInt(position.feeGrowthInside0LastX128);
-        const feeGrowthInside1Last = BigInt(position.feeGrowthInside1LastX128);
+        const feeGrowthInside0Last = BigInt(selectedPosition.feeGrowthInside0LastX128);
+        const feeGrowthInside1Last = BigInt(selectedPosition.feeGrowthInside1LastX128);
 
         const feeDelta0 = subIn256(feeGrowthInside0Now, feeGrowthInside0Last);
         const feeDelta1 = subIn256(feeGrowthInside1Now, feeGrowthInside1Last);
 
-        const uncollected0 = BigInt(position.tokensOwed0) + (liquidity * feeDelta0) / Q128;
-        const uncollected1 = BigInt(position.tokensOwed1) + (liquidity * feeDelta1) / Q128;
+        const uncollected0 = BigInt(selectedPosition.tokensOwed0) + (liquidity * feeDelta0) / Q128;
+        const uncollected1 = BigInt(selectedPosition.tokensOwed1) + (liquidity * feeDelta1) / Q128;
 
         const sqrtLower = getSqrtRatioAtTick(tickLower);
         const sqrtUpper = getSqrtRatioAtTick(tickUpper);
@@ -267,16 +312,6 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
 
         const totalToken0 = principal.amount0 + uncollected0;
         const totalToken1 = principal.amount1 + uncollected1;
-
-        const token0IsWbtc = targetPoolToken0 === ARBITRUM_WBTC;
-        const token0IsUsdt = targetPoolToken0 === ARBITRUM_USDT;
-        const token1IsWbtc = targetPoolToken1 === ARBITRUM_WBTC;
-        const token1IsUsdt = targetPoolToken1 === ARBITRUM_USDT;
-
-        if (!(token0IsWbtc || token1IsWbtc) || !(token0IsUsdt || token1IsUsdt)) {
-          throw new Error('Target pool is not the expected WBTC/USDT pool on Arbitrum');
-        }
-
         const priceToken1PerToken0 = Math.pow(1.0001, currentTick) * Math.pow(10, 8 - 6);
         const wbtcPriceInUsdt = token0IsWbtc ? priceToken1PerToken0 : 1 / priceToken1PerToken0;
 
@@ -293,7 +328,7 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
 
         const usdValue = usdtAmount + wbtcAmount * wbtcPriceInUsdt;
         if (Number.isFinite(usdValue)) {
-          totalUsd += usdValue;
+          totalUsd = usdValue;
         }
       }
 
