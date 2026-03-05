@@ -47,7 +47,7 @@ export const Capital: React.FC = () => {
         <div className="p-5 sm:p-6">
           <div className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2 relative">
             <Landmark className="w-4 h-4 text-cyan-400" />
-            Non-PRANA Protocol Capital
+            Protocol Controlled Capital
             <InfoTooltip
               ariaLabel="Capital info"
               text="Buy the Dips Reserve"
@@ -79,7 +79,7 @@ export const Capital: React.FC = () => {
                   <div className="text-xs text-cyan-300 uppercase tracking-wider">{network}</div>
                   <div className="mt-2 grid grid-cols-1 gap-2">
                     {networkItems.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between gap-3">
+                      <div key={item.id} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="text-xs text-gray-500 font-mono mt-1 break-all">{item.address}</div>
                         </div>
