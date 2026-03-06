@@ -46,4 +46,13 @@ Bạn không nên “tin”. Bạn nên quan sát. Quan sát cách hệ thống 
 
 Bạn không nên tin chỉ vì lời nói. Hãy nhìn hành vi: xử lý vụ hack bằng tiền cá nhân, không mint thêm token, giữ tổng cung cố định, duy trì 100% định giá theo Bitcoin xuyên suốt nhiều năm. Niềm tin không xây bằng lời hứa mà được xây bằng nhất quán qua các chu kỳ. Nếu founder đánh đổi nguyên tắc khi thị trường khó khăn, mọi thứ sụp đổ, chính founder là người mất nhiều nhất. Nếu nguyên tắc vẫn được giữ, niềm tin tăng theo thời gian. Và nếu một ngày nào đó cấu trúc khuyến khích lệch khỏi lợi ích holder, nhà đầu tư có thể rời đi ngay. Một hệ thống khỏe mạnh không sợ người tham gia có quyền rời bỏ.
 
+**13. PRANA có liên hệ thế nào với Triết Học Đường Phố (THĐP)?**
+
+PRANA sinh ra từ cộng đồng Triết Học Đường Phố. THĐP là nền tảng tư tưởng và cộng đồng đã tồn tại từ năm 2011, nơi chia sẻ triết học Đông-Tây và hành trình phát triển nội tâm. PRANA là lớp hạ tầng kinh tế được xây trên cộng đồng đó. Nói đơn giản: THĐP là nền văn hóa và tầm nhìn; PRANA là công cụ tài chính giúp cộng đồng đó vận hành trong thế giới số.
+
+**14. PRANA đóng vai trò gì đối với THĐP?**
+
+PRANA là “economic layer” của THĐP. Nó tạo ra cơ chế tích lũy giá trị, khuyến khích kỷ luật dài hạn, và gắn lợi ích kinh tế với cộng đồng. Thay vì chỉ là một diễn đàn triết học, THĐP có thêm một hệ sinh thái tài chính thực sự. Mục tiêu cuối cùng là xây dựng một cộng đồng nơi tư tưởng, kỷ luật cá nhân, và tài sản dài hạn cùng phát triển.
+
+
 

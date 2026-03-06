@@ -32,3 +32,8 @@ export function rootTopHoldingAddressesFilenameFromPathname(pathname: string): s
   if (pathname !== '/top_holding_addresses.json') return null;
   return 'top_holding_addresses.json';
 }
+
+export function rootBuyDipsFilenameFromPathname(pathname: string): string | null {
+  if (pathname !== '/buy_dips.json') return null;
+  return 'buy_dips.json';
+}

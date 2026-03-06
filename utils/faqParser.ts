@@ -1,6 +1,17 @@
 import type { FaqItem } from "../types/faq";
 
-const FAQ_QUESTION_PATTERN = /^\*\*(\d+)\.\s*(.+?)\*\*$/;
+const FAQ_QUESTION_PATTERNS = [
+  /^\*\*(\d+)\.\s*(.+?)\*\*$/,
+  /^(\d+)\.\s*\*\*(.+?)\*\*$/,
+];
+
+const matchQuestionLine = (line: string): RegExpMatchArray | null => {
+  for (const pattern of FAQ_QUESTION_PATTERNS) {
+    const match = line.match(pattern);
+    if (match) return match;
+  }
+  return null;
+};
 
 export const parseFaqMarkdown = (markdown: string): FaqItem[] => {
   const lines = markdown.split("\n");
@@ -23,7 +34,7 @@ export const parseFaqMarkdown = (markdown: string): FaqItem[] => {
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
-    const questionMatch = line.match(FAQ_QUESTION_PATTERN);
+    const questionMatch = matchQuestionLine(line);
 
     if (questionMatch) {
       pushCurrentItem();

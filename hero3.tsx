@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers";
+import Manifesto from "./components/Manifesto";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
 const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };
@@ -42,6 +43,7 @@ export default function PranaHero() {
   const mvRef = useRef<ModelViewerLike | null>(null);
   const spinFrameRef = useRef<number | null>(null);
   const [spinning, setSpinning] = useState(false);
+  const [isManifestoOpen, setIsManifestoOpen] = useState(false);
 
   // Ensure default orbit after model load
   useEffect(() => {
@@ -172,8 +174,19 @@ export default function PranaHero() {
           >
             TRADE
           </a>
+          <button
+            type="button"
+            onClick={() => setIsManifestoOpen(true)}
+            className="inline-flex min-w-[200px] justify-center rounded-2xl px-10 py-3 border border-white/20 bg-gradient-to-b from-white/15 via-white/8 to-white/5 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-lg ring-1 ring-white/15 hover:border-white/40 hover:bg-white/10 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_38px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition duration-300"
+          >
+            MANIFESTO
+          </button>
         </div>
       </div>
+      <Manifesto
+        isOpen={isManifestoOpen}
+        onClose={() => setIsManifestoOpen(false)}
+      />
     </section>
   );
 }

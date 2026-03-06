@@ -6,7 +6,14 @@ import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import type { UpdateBondsV2Result } from './types/indexTypes.ts';
 import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
-import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname } from './requestHelpers.ts';
+import {
+  fileExists,
+  sendJson,
+  rootDataJsonFilenameFromPathname,
+  rootBondsJsonFilenameFromPathname,
+  rootTopHoldingAddressesFilenameFromPathname,
+  rootBuyDipsFilenameFromPathname,
+} from './requestHelpers.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,6 +113,15 @@ const server = http.createServer(async (req, res) => {
       const rootTopHoldingAddressesPath = path.join(PROJECT_ROOT, rootTopHoldingAddressesFilename);
       if (await fileExists(rootTopHoldingAddressesPath)) {
         return await serveFile(req, res, rootTopHoldingAddressesPath);
+      }
+      return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    const rootBuyDipsFilename = rootBuyDipsFilenameFromPathname(url.pathname);
+    if (rootBuyDipsFilename) {
+      const rootBuyDipsPath = path.join(PROJECT_ROOT, rootBuyDipsFilename);
+      if (await fileExists(rootBuyDipsPath)) {
+        return await serveFile(req, res, rootBuyDipsPath);
       }
       return sendJson(res, 404, { error: 'not_found' });
     }
