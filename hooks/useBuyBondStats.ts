@@ -1,100 +1,52 @@
 import { ethers } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
-import { BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, BUY_BOND_COMMITTED_PRANA_ABI } from '../constants/bonds.ts';
-import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS } from '../constants/sharedContracts.ts';
-import { useCommittedPrana } from './useCommittedPrana.ts';
-import { useBondsV2Volume } from './useBondsV2Volume.ts';
-import { getPolygonProvider } from '../utils/polygonProvider.ts';
+import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 import type { BuyBondMetric, UseBuyBondStatsResult } from '../types.ts';
+import { fetchBondMetricsApi } from '../utils/bondMetricsApi.ts';
 
 const BUY_BOND_V1_TOTAL_VOLUME_RAW = ethers.parseUnits('145235', PRANA_DECIMALS);
 
 export const useBuyBondStats = (): UseBuyBondStatsResult => {
-  const [balanceV2, setBalanceV2] = useState<bigint>(0n);
-  const [isLoadingBalanceV2, setIsLoadingBalanceV2] = useState<boolean>(true);
-  const [balanceErrorV2, setBalanceErrorV2] = useState<unknown | null>(null);
-
-  const {
-    committedPranaRaw: committedPranaRawV2,
-    isLoading: isLoadingCommittedV2,
-    error: committedErrorV2,
-  } = useCommittedPrana({
-    contractAddress: BUY_BOND_ADDRESS_V2,
-    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI,
-  });
-
-  const {
-    committedPranaRaw: committedPranaRawV1,
-    isLoading: isLoadingCommittedV1,
-    error: committedErrorV1,
-  } = useCommittedPrana({
-    contractAddress: BUY_BOND_ADDRESS_V1,
-    contractAbi: BUY_BOND_COMMITTED_PRANA_ABI,
-  });
+  const [totalBalanceRaw, setTotalBalanceRaw] = useState<bigint>(0n);
+  const [totalCommittedRaw, setTotalCommittedRaw] = useState<bigint>(0n);
+  const [totalBondVolumeRaw, setTotalBondVolumeRaw] = useState<bigint>(BUY_BOND_V1_TOTAL_VOLUME_RAW);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<unknown | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const provider = getPolygonProvider();
-    const token = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
 
-    const fetchBuyBondV2Balance = async () => {
-      setIsLoadingBalanceV2(true);
-      setBalanceErrorV2(null);
+    const run = async () => {
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const res = await token.balanceOf(BUY_BOND_ADDRESS_V2);
-        if (!cancelled) setBalanceV2(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
+        const metrics = await fetchBondMetricsApi();
+        if (cancelled) return;
+
+        setTotalBalanceRaw(BigInt(metrics.buy.totalBalanceRaw));
+        setTotalCommittedRaw(BigInt(metrics.buy.totalCommittedRaw));
+        setTotalBondVolumeRaw(BigInt(metrics.buy.totalVolumeRaw));
       } catch (e: unknown) {
         if (!cancelled) {
-          setBalanceErrorV2(e);
-          setBalanceV2(0n);
+          setError(e);
+          setTotalBalanceRaw(0n);
+          setTotalCommittedRaw(0n);
+          setTotalBondVolumeRaw(BUY_BOND_V1_TOTAL_VOLUME_RAW);
         }
       } finally {
-        if (!cancelled) setIsLoadingBalanceV2(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchBuyBondV2Balance();
+    run();
 
     return () => {
       cancelled = true;
     };
   }, []);
-
-  const {
-    buyBondTotalRawV2,
-    isLoading: isLoadingVolume,
-    error: bondVolumeError,
-  } = useBondsV2Volume();
-
-  useEffect(() => {
-    if (balanceErrorV2) {
-      console.error('Contract Balance V2 error:', balanceErrorV2);
-    }
-    if (committedErrorV1) {
-      console.error('Committed Prana V1 error:', committedErrorV1);
-    }
-    if (committedErrorV2) {
-      console.error('Committed Prana V2 error:', committedErrorV2);
-    }
-    if (bondVolumeError) {
-      console.error('Bond volume error:', bondVolumeError);
-    }
-  }, [balanceErrorV2, committedErrorV1, committedErrorV2, bondVolumeError]);
-
-  const isLoading =
-    isLoadingBalanceV2 ||
-    isLoadingCommittedV1 ||
-    isLoadingCommittedV2 ||
-    isLoadingVolume;
-
-  const error =
-    balanceErrorV2 || committedErrorV1 || committedErrorV2 || bondVolumeError;
-
-  // BuyBond V1 holds only committed PRANA; non-committed PRANA is in BuyBond V2.
-  // So "Balance" = PRANA in V2 contract + committed PRANA recorded in V1.
-  const totalBalanceRaw = (balanceV2 || 0n) + (committedPranaRawV1 || 0n);
-  const totalCommittedRaw = (committedPranaRawV1 || 0n) + (committedPranaRawV2 || 0n);
-  const totalBondVolumeRaw = (buyBondTotalRawV2 || 0n) + BUY_BOND_V1_TOTAL_VOLUME_RAW;
 
   const formattedBalance = ethers.formatUnits(totalBalanceRaw, PRANA_DECIMALS);
   const formattedCommitted = ethers.formatUnits(totalCommittedRaw, PRANA_DECIMALS);

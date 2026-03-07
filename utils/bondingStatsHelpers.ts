@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { PRANA_DECIMALS } from '../constants/sharedContracts';
+import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 
 export const formatBigIntValue = (value: bigint) => {
   const stringValue = value.toString();

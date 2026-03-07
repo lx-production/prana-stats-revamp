@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import { PRANA_DECIMALS } from '../constants/sharedContracts';
-import type { SatsPerformanceInputs } from '../types/performance';
+import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
+import type { SatsPerformanceInputs } from '../types/performance.ts';
 
 export const safeContractCall = async (call: Promise<any>, fallback: any) => {
   try {

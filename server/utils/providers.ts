@@ -1,0 +1,46 @@
+import { ethers } from 'ethers';
+import { loadDotEnvIntoProcessEnv } from '../../scripts/utils/fetchActiveStakesUtils.ts';
+import { PROJECT_ROOT } from '../projectRoot.ts';
+
+const DEFAULT_POLYGON_RPC_URL = 'https://polygon-rpc.com';
+const DEFAULT_ARBITRUM_RPC_URL = 'https://arb1.arbitrum.io/rpc';
+
+let envLoadPromise: Promise<void> | null = null;
+let polygonProvider: ethers.JsonRpcProvider | null = null;
+let arbitrumProvider: ethers.JsonRpcProvider | null = null;
+
+async function ensureServerEnvLoaded(): Promise<void> {
+  if (!envLoadPromise) {
+    envLoadPromise = loadDotEnvIntoProcessEnv(PROJECT_ROOT);
+  }
+
+  await envLoadPromise;
+}
+
+function getPolygonRpcUrl(): string {
+  return process.env.VITE_ALCHEMY_POLYGON_MAIN || process.env.POLYGON_RPC_URL || DEFAULT_POLYGON_RPC_URL;
+}
+
+function getArbitrumRpcUrl(): string {
+  return process.env.VITE_ALCHEMY_ARBITRUM_MAIN || process.env.ARBITRUM_RPC_URL || DEFAULT_ARBITRUM_RPC_URL;
+}
+
+export async function getServerPolygonProvider(): Promise<ethers.JsonRpcProvider> {
+  await ensureServerEnvLoaded();
+
+  if (!polygonProvider) {
+    polygonProvider = new ethers.JsonRpcProvider(getPolygonRpcUrl());
+  }
+
+  return polygonProvider;
+}
+
+export async function getServerArbitrumProvider(): Promise<ethers.JsonRpcProvider> {
+  await ensureServerEnvLoaded();
+
+  if (!arbitrumProvider) {
+    arbitrumProvider = new ethers.JsonRpcProvider(getArbitrumRpcUrl());
+  }
+
+  return arbitrumProvider;
+}

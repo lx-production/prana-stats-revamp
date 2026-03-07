@@ -1,4 +1,4 @@
-import { Q96, Q128, UINT256_MOD } from '../constants/arbitrumWbtcUsdtLp';
+import { Q96, Q128, UINT256_MOD } from '../constants/arbitrumWbtcUsdtLp.ts';
 
 /**
  * Performs subtraction in uint256 modulo arithmetic.

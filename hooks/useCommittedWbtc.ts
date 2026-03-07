@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { SELL_BOND_ADDRESS, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bonds';
+import { SELL_BOND_ADDRESS, SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../constants/bonds';
 import { WBTC_DECIMALS } from '../constants/sharedContracts';
-import { getPolygonProvider } from '../utils/polygonProvider';
+import { fetchBondMetricsApi } from '../utils/bondMetricsApi';
 
 interface UseCommittedWbtcParams {
   contractAddress?: string;
@@ -25,24 +25,32 @@ export const useCommittedWbtc = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const contract = useMemo(() => {
-    const provider = getPolygonProvider();
-    return new ethers.Contract(contractAddress, contractAbi, provider);
-  }, [contractAddress, contractAbi]);
-
   const fetchCommitted = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await contract.committedWbtc();
-      setData(typeof res === 'bigint' ? res : BigInt(res?.toString?.() ?? '0'));
+      void contractAbi;
+
+      const metrics = await fetchBondMetricsApi();
+      const raw =
+        contractAddress === SELL_BOND_ADDRESS_V1
+          ? metrics.sell.v1CommittedRaw
+          : contractAddress === SELL_BOND_ADDRESS_V2 || contractAddress === SELL_BOND_ADDRESS
+            ? metrics.sell.v2CommittedRaw
+            : null;
+
+      if (raw === null) {
+        throw new Error('Unsupported sell bond contract address');
+      }
+
+      setData(BigInt(raw));
     } catch (e) {
       setError(e instanceof Error ? e : new Error(String(e)));
       setData(0n);
     } finally {
       setIsLoading(false);
     }
-  }, [contract]);
+  }, [contractAbi, contractAddress]);
 
   useEffect(() => {
     fetchCommitted();

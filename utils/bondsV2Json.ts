@@ -1,5 +1,5 @@
-import { fetchJson } from './fetchJson';
-import type { BondsV2Json } from '../types';
+import { fetchJson } from './fetchJson.ts';
+import type { BondsV2Json } from '../types.ts';
 
 // Keep this small: the goal is to dedupe requests on page load,
 // not to keep the bonds data stale for long periods.
