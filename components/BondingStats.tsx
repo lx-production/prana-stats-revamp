@@ -1,9 +1,9 @@
 import React from 'react';
+import StatCard from './StatCard';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { BondingStatsProps, BondProgressBarProps } from '../types';
 import { useBondProgress } from '../hooks/useBondProgress';
-import StatCard from './StatCard';
 
 const BondProgressBar: React.FC<BondProgressBarProps> = ({
   loading,

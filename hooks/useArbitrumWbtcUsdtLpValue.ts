@@ -4,6 +4,7 @@ import type { LpCapitalData } from '../types/lpCapital.types';
 import { getArbitrumProvider } from '../utils/arbitrumProvider';
 import { fetchJsonSafe } from '../utils/fetchJson';
 import { calculatePositionMath } from '../utils/uniswapV3Helpers';
+import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../constants/sharedContracts';
 import {
   NONFUNGIBLE_POSITION_MANAGER,
   WBTC_USDT_POOL,
@@ -44,7 +45,92 @@ type CachedLpTokenId = {
   expiresAt: number;
 };
 
+type MulticallResult = {
+  success?: boolean;
+  returnData?: string;
+};
+
 let cachedLpTokenId: CachedLpTokenId | null = null;
+const LP_TOKEN_ID_STORAGE_KEY = 'prana:arbitrum-wbtc-usdt-lp-token-id';
+const POOL_IFACE = new ethers.Interface(POOL_ABI);
+const POSITION_MANAGER_IFACE = new ethers.Interface([...ERC721_ENUMERABLE_ABI, ...POSITION_MANAGER_ABI]);
+const EXPECTED_POOL_FEE_RAW = BigInt(Math.round(POOL_FEE * 1_000_000));
+const EXPECTED_POOL_TOKEN0 = [ARBITRUM_USDT, ARBITRUM_WBTC]
+  .map((address) => address.toLowerCase())
+  .sort()[0];
+const EXPECTED_POOL_TOKEN1 = [ARBITRUM_USDT, ARBITRUM_WBTC]
+  .map((address) => address.toLowerCase())
+  .sort()[1];
+const TOKEN0_IS_WBTC = EXPECTED_POOL_TOKEN0 === ARBITRUM_WBTC.toLowerCase();
+
+function getCachedLpTokenId(): CachedLpTokenId | null {
+  const now = Date.now();
+  if (cachedLpTokenId && cachedLpTokenId.expiresAt > now) return cachedLpTokenId;
+
+  if (typeof window === 'undefined') {
+    cachedLpTokenId = null;
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(LP_TOKEN_ID_STORAGE_KEY);
+    if (!raw) {
+      cachedLpTokenId = null;
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<CachedLpTokenId>;
+    const tokenId = Number(parsed?.tokenId);
+    const expiresAt = Number(parsed?.expiresAt);
+    if (!Number.isFinite(tokenId) || !Number.isFinite(expiresAt) || expiresAt <= now) {
+      window.localStorage.removeItem(LP_TOKEN_ID_STORAGE_KEY);
+      cachedLpTokenId = null;
+      return null;
+    }
+
+    cachedLpTokenId = { tokenId, expiresAt };
+    return cachedLpTokenId;
+  } catch {
+    cachedLpTokenId = null;
+    return null;
+  }
+}
+
+function setCachedLpTokenId(value: CachedLpTokenId | null) {
+  cachedLpTokenId = value;
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (!value) {
+      window.localStorage.removeItem(LP_TOKEN_ID_STORAGE_KEY);
+      return;
+    }
+    window.localStorage.setItem(LP_TOKEN_ID_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // Ignore storage failures and keep the in-memory cache.
+  }
+}
+
+async function runMulticall(
+  provider: ethers.JsonRpcProvider,
+  calls: Array<{ target: string; allowFailure: boolean; callData: string }>
+): Promise<MulticallResult[]> {
+  const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
+  return (await multicall.aggregate3.staticCall(calls)) as MulticallResult[];
+}
+
+function decodeRequiredResult<T>(
+  iface: ethers.Interface,
+  method: string,
+  result: MulticallResult
+): T {
+  if (!result?.success || typeof result.returnData !== 'string') {
+    throw new Error(`Multicall failed for ${method}`);
+  }
+
+  const decoded = iface.decodeFunctionResult(method, result.returnData);
+  return (decoded.length === 1 ? decoded[0] : decoded) as T;
+}
 
 
 export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
@@ -55,30 +141,49 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
 
     try {
       const provider = getArbitrumProvider();
-      const positionManager = new ethers.Contract(
-        NONFUNGIBLE_POSITION_MANAGER,
-        [...ERC721_ENUMERABLE_ABI, ...POSITION_MANAGER_ABI],
-        provider
-      );
-      const pool = new ethers.Contract(WBTC_USDT_POOL, POOL_ABI, provider);
       const geckoPoolPromise = fetchJsonSafe<GeckoPoolResponse>(
         `https://api.geckoterminal.com/api/v2/networks/arbitrum/pools/${WBTC_USDT_POOL.toLowerCase()}`,
         {}
       );
+      const now = Date.now();
+      const cachedToken = getCachedLpTokenId();
+      const hasValidCache = cachedToken !== null && cachedToken.expiresAt > now;
 
-      const [poolToken0, poolToken1, poolFee, slot0, feeGrowthGlobal0, feeGrowthGlobal1] = await Promise.all([
-        pool.token0(),
-        pool.token1(),
-        pool.fee(),
-        pool.slot0(),
-        pool.feeGrowthGlobal0X128(),
-        pool.feeGrowthGlobal1X128(),
-      ]);
+      const initialCalls = [
+        {
+          target: WBTC_USDT_POOL,
+          allowFailure: false,
+          callData: POOL_IFACE.encodeFunctionData('slot0', []),
+        },
+        {
+          target: WBTC_USDT_POOL,
+          allowFailure: false,
+          callData: POOL_IFACE.encodeFunctionData('feeGrowthGlobal0X128', []),
+        },
+        {
+          target: WBTC_USDT_POOL,
+          allowFailure: false,
+          callData: POOL_IFACE.encodeFunctionData('feeGrowthGlobal1X128', []),
+        },
+        hasValidCache
+          ? {
+              target: NONFUNGIBLE_POSITION_MANAGER,
+              allowFailure: true,
+              callData: POSITION_MANAGER_IFACE.encodeFunctionData('positions', [cachedToken.tokenId]),
+            }
+          : {
+              target: NONFUNGIBLE_POSITION_MANAGER,
+              allowFailure: false,
+              callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [TARGET_OWNER]),
+            },
+      ];
+
+      const [slot0Result, feeGrowth0Result, feeGrowth1Result, fourthResult] = await runMulticall(provider, initialCalls);
+      const slot0 = decodeRequiredResult<any>(POOL_IFACE, 'slot0', slot0Result);
+      const feeGrowthGlobal0 = decodeRequiredResult<bigint>(POOL_IFACE, 'feeGrowthGlobal0X128', feeGrowth0Result);
+      const feeGrowthGlobal1 = decodeRequiredResult<bigint>(POOL_IFACE, 'feeGrowthGlobal1X128', feeGrowth1Result);
 
       const geckoPool = await geckoPoolPromise;
-      const targetPoolToken0 = String(poolToken0).toLowerCase();
-      const targetPoolToken1 = String(poolToken1).toLowerCase();
-      const targetPoolFee = BigInt(poolFee);
       const currentTick = Number(slot0.tick);
       const sqrtPriceX96 = BigInt(slot0.sqrtPriceX96);
 
@@ -98,58 +203,74 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
 
       const apr24hPercent = apr24hPercentRaw !== null && Number.isFinite(apr24hPercentRaw) ? apr24hPercentRaw : null;
 
-      const token0IsWbtc = targetPoolToken0 === ARBITRUM_WBTC;
-      const token0IsUsdt = targetPoolToken0 === ARBITRUM_USDT;
-      const token1IsWbtc = targetPoolToken1 === ARBITRUM_WBTC;
-      const token1IsUsdt = targetPoolToken1 === ARBITRUM_USDT;
-
-      if (!(token0IsWbtc || token1IsWbtc) || !(token0IsUsdt || token1IsUsdt)) {
-        throw new Error('Target pool is not the expected WBTC/USDT pool on Arbitrum');
-      }
-
       const isPositionActiveForTargetPool = (position: any) =>
-        String(position.token0).toLowerCase() === targetPoolToken0 &&
-        String(position.token1).toLowerCase() === targetPoolToken1 &&
-        BigInt(position.fee) === targetPoolFee &&
+        String(position.token0).toLowerCase() === EXPECTED_POOL_TOKEN0 &&
+        String(position.token1).toLowerCase() === EXPECTED_POOL_TOKEN1 &&
+        BigInt(position.fee) === EXPECTED_POOL_FEE_RAW &&
         BigInt(position.liquidity) > 0n;
 
       let selectedTokenId: number | null = null;
       let selectedPosition: any | null = null;
-      const now = Date.now();
-      const hasValidCache = cachedLpTokenId !== null && cachedLpTokenId.expiresAt > now;
 
       if (hasValidCache) {
         try {
-          const cachedPosition = await positionManager.positions(cachedLpTokenId.tokenId);
+          const cachedPosition = decodeRequiredResult<any>(POSITION_MANAGER_IFACE, 'positions', fourthResult);
           if (isPositionActiveForTargetPool(cachedPosition)) {
-            selectedTokenId = cachedLpTokenId.tokenId;
+            selectedTokenId = cachedToken.tokenId;
             selectedPosition = cachedPosition;
           } else {
-            cachedLpTokenId = null;
+            setCachedLpTokenId(null);
           }
         } catch {
-          cachedLpTokenId = null;
+          setCachedLpTokenId(null);
         }
       }
 
-      if (!hasValidCache || cachedLpTokenId === null) {
-        const ownerBalanceRaw = await positionManager.balanceOf(TARGET_OWNER);
+      if (!hasValidCache || !selectedPosition) {
+        const ownerBalanceRaw = hasValidCache
+          ? decodeRequiredResult<bigint>(
+              POSITION_MANAGER_IFACE,
+              'balanceOf',
+              (
+                await runMulticall(provider, [
+                  {
+                    target: NONFUNGIBLE_POSITION_MANAGER,
+                    allowFailure: false,
+                    callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [TARGET_OWNER]),
+                  },
+                ])
+              )[0]
+            )
+          : decodeRequiredResult<bigint>(POSITION_MANAGER_IFACE, 'balanceOf', fourthResult);
         const ownerBalance = Number(ownerBalanceRaw);
-        const tokenIdCalls = Array.from({ length: ownerBalance }, (_, i) =>
-          positionManager.tokenOfOwnerByIndex(TARGET_OWNER, i)
-        );
-        const tokenIdsRaw: bigint[] = ownerBalance > 0 ? await Promise.all(tokenIdCalls) : [];
-        const tokenIdsDesc = tokenIdsRaw.map((value) => Number(value)).sort((a, b) => b - a);
-
-        for (const tokenId of tokenIdsDesc) {
-          const position = await positionManager.positions(tokenId);
+        
+        // Newer positions are typically the active ones, so probe from the end first
+        // and only fall back to older indexes when needed.
+        for (let ownerIndex = ownerBalance - 1; ownerIndex >= 0; ownerIndex -= 1) {
+          const [tokenIdResult] = await runMulticall(provider, [
+            {
+              target: NONFUNGIBLE_POSITION_MANAGER,
+              allowFailure: false,
+              callData: POSITION_MANAGER_IFACE.encodeFunctionData('tokenOfOwnerByIndex', [TARGET_OWNER, ownerIndex]),
+            },
+          ]);
+          const tokenIdRaw = decodeRequiredResult<bigint>(POSITION_MANAGER_IFACE, 'tokenOfOwnerByIndex', tokenIdResult);
+          const tokenId = Number(tokenIdRaw);
+          const [positionResult] = await runMulticall(provider, [
+            {
+              target: NONFUNGIBLE_POSITION_MANAGER,
+              allowFailure: false,
+              callData: POSITION_MANAGER_IFACE.encodeFunctionData('positions', [tokenId]),
+            },
+          ]);
+          const position = decodeRequiredResult<any>(POSITION_MANAGER_IFACE, 'positions', positionResult);
           if (isPositionActiveForTargetPool(position)) {
             selectedTokenId = tokenId;
             selectedPosition = position;
-            cachedLpTokenId = {
+            setCachedLpTokenId({
               tokenId,
               expiresAt: now + LP_TOKEN_ID_CACHE_TTL_MS,
-            };
+            });
             break;
           }
         }
@@ -163,26 +284,34 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
         const tickUpper = Number(selectedPosition.tickUpper);
         const liquidity = BigInt(selectedPosition.liquidity);
 
-        if (!lowerTickCache.has(tickLower)) {
-          const tickData = await pool.ticks(tickLower);
+        if (!lowerTickCache.has(tickLower) || !upperTickCache.has(tickUpper)) {
+          const [lowerTickResult, upperTickResult] = await runMulticall(provider, [
+            {
+              target: WBTC_USDT_POOL,
+              allowFailure: false,
+              callData: POOL_IFACE.encodeFunctionData('ticks', [tickLower]),
+            },
+            {
+              target: WBTC_USDT_POOL,
+              allowFailure: false,
+              callData: POOL_IFACE.encodeFunctionData('ticks', [tickUpper]),
+            },
+          ]);
+          const lowerTickData = decodeRequiredResult<any>(POOL_IFACE, 'ticks', lowerTickResult);
+          const upperTickData = decodeRequiredResult<any>(POOL_IFACE, 'ticks', upperTickResult);
+
           lowerTickCache.set(tickLower, {
-            feeGrowthOutside0X128: BigInt(tickData.feeGrowthOutside0X128),
-            feeGrowthOutside1X128: BigInt(tickData.feeGrowthOutside1X128),
+            feeGrowthOutside0X128: BigInt(lowerTickData.feeGrowthOutside0X128),
+            feeGrowthOutside1X128: BigInt(lowerTickData.feeGrowthOutside1X128),
           });
-        }
-        if (!upperTickCache.has(tickUpper)) {
-          const tickData = await pool.ticks(tickUpper);
           upperTickCache.set(tickUpper, {
-            feeGrowthOutside0X128: BigInt(tickData.feeGrowthOutside0X128),
-            feeGrowthOutside1X128: BigInt(tickData.feeGrowthOutside1X128),
+            feeGrowthOutside0X128: BigInt(upperTickData.feeGrowthOutside0X128),
+            feeGrowthOutside1X128: BigInt(upperTickData.feeGrowthOutside1X128),
           });
         }
 
         const lower = lowerTickCache.get(tickLower)!;
         const upper = upperTickCache.get(tickUpper)!;
-
-        const feeGrowthGlobal0X128 = BigInt(feeGrowthGlobal0);
-        const feeGrowthGlobal1X128 = BigInt(feeGrowthGlobal1);
 
         const { totalToken0, totalToken1, wbtcPriceInUsdt } = calculatePositionMath({
           currentTick,
@@ -190,21 +319,21 @@ export const useArbitrumWbtcUsdtLpValue = (): LpCapitalData => {
           tickUpper,
           liquidity,
           sqrtPriceX96,
-          feeGrowthGlobal0X128,
-          feeGrowthGlobal1X128,
+          feeGrowthGlobal0X128: BigInt(feeGrowthGlobal0),
+          feeGrowthGlobal1X128: BigInt(feeGrowthGlobal1),
           lowerTickData: lower,
           upperTickData: upper,
           feeGrowthInside0LastX128: BigInt(selectedPosition.feeGrowthInside0LastX128),
           feeGrowthInside1LastX128: BigInt(selectedPosition.feeGrowthInside1LastX128),
           tokensOwed0: BigInt(selectedPosition.tokensOwed0),
           tokensOwed1: BigInt(selectedPosition.tokensOwed1),
-          token0IsWbtc,
+          token0IsWbtc: TOKEN0_IS_WBTC,
         });
 
         let wbtcAmount = 0;
         let usdtAmount = 0;
 
-        if (token0IsWbtc) {
+        if (TOKEN0_IS_WBTC) {
           wbtcAmount = Number(ethers.formatUnits(totalToken0, 8));
           usdtAmount = Number(ethers.formatUnits(totalToken1, 6));
         } else {

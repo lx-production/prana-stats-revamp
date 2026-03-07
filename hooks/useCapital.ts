@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
-import { WBTC_ADDRESS } from '../constants/sharedContracts';
+import { MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../constants/sharedContracts';
 import type { CapitalData } from '../types/capital.types';
 import { getPolygonProvider } from '../utils/polygonProvider';
 import { getArbitrumProvider } from '../utils/arbitrumProvider';
@@ -16,6 +16,12 @@ const USDT_DECIMALS = 6;
 const WBTC_DECIMALS = 8;
 
 const ERC20_BALANCE_OF_ABI = ['function balanceOf(address owner) view returns (uint256)'];
+const ERC20_IFACE = new ethers.Interface(ERC20_BALANCE_OF_ABI);
+
+type MulticallResult = {
+  success?: boolean;
+  returnData?: string;
+};
 
 const initialState: CapitalData = {
   items: [],
@@ -32,24 +38,49 @@ export const useCapital = (): CapitalData => {
     try {
       const polygonProvider = getPolygonProvider();
       const arbitrumProvider = getArbitrumProvider();
-
-      const usdtPolygon = new ethers.Contract(USDT_POLYGON_ADDRESS, ERC20_BALANCE_OF_ABI, polygonProvider);
+      const polygonMulticall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, polygonProvider);
       const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, ERC20_BALANCE_OF_ABI, arbitrumProvider);
-      const wbtcPolygon = new ethers.Contract(WBTC_ADDRESS, ERC20_BALANCE_OF_ABI, polygonProvider);
+
+      const polygonCalls = [
+        {
+          target: USDT_POLYGON_ADDRESS,
+          allowFailure: false,
+          callData: ERC20_IFACE.encodeFunctionData('balanceOf', [TREZOR_1]),
+        },
+        {
+          target: USDT_POLYGON_ADDRESS,
+          allowFailure: false,
+          callData: ERC20_IFACE.encodeFunctionData('balanceOf', [METAMASK]),
+        },
+        {
+          target: WBTC_ADDRESS,
+          allowFailure: false,
+          callData: ERC20_IFACE.encodeFunctionData('balanceOf', [TREZOR_2]),
+        },
+      ];
 
       const [
         { btcPriceUsd },
-        usdtPolygonRaw,
         usdtArbitrumRaw,
-        usdtPolygonRawTrezor3,
-        wbtcRaw,
+        polygonResults,
       ] = await Promise.all([
         fetchPranaPricesBundle(),
-        usdtPolygon.balanceOf(TREZOR_1),
         usdtArbitrum.balanceOf(TREZOR_1),
-        usdtPolygon.balanceOf(METAMASK),
-        wbtcPolygon.balanceOf(TREZOR_2),
+        polygonMulticall.aggregate3.staticCall(polygonCalls) as Promise<MulticallResult[]>,
       ]);
+
+      const decodeBalance = (result: MulticallResult, label: string): bigint => {
+        if (!result?.success || typeof result.returnData !== 'string') {
+          throw new Error(`Failed to fetch ${label} balance`);
+        }
+
+        const [raw] = ERC20_IFACE.decodeFunctionResult('balanceOf', result.returnData);
+        return typeof raw === 'bigint' ? raw : BigInt(raw?.toString?.() ?? '0');
+      };
+
+      const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT Trezor 1');
+      const usdtPolygonRawTrezor3 = decodeBalance(polygonResults[1], 'Polygon USDT MetaMask');
+      const wbtcRaw = decodeBalance(polygonResults[2], 'Polygon WBTC Trezor 2');
 
       const usdtPolygonAmount = Number(ethers.formatUnits(usdtPolygonRaw, USDT_DECIMALS));
       const usdtArbitrumAmount = Number(ethers.formatUnits(usdtArbitrumRaw, USDT_DECIMALS));

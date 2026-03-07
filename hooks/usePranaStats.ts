@@ -11,6 +11,8 @@ import { useStakingStats } from './useStakingStats';
 import { FetchBondingStats, FetchStakingStats, PranaStatsData, PranaStatsComputed } from '../types';
 
 const ATL_PRICE = 0.0017; // From scripts.js
+let sharedComputedCache: PranaStatsComputed | null = null;
+let sharedInFlight: Promise<PranaStatsComputed> | null = null;
 
 const fetchPranaStats = async (
   getProvider: () => ethers.JsonRpcProvider,
@@ -98,9 +100,39 @@ const fetchPranaStats = async (
   };
 };
 
+const getSharedPranaStats = async (
+  getProvider: () => ethers.JsonRpcProvider,
+  fetchBondingStats: FetchBondingStats,
+  fetchStakingStats: FetchStakingStats
+): Promise<PranaStatsComputed> => {
+  if (sharedComputedCache) return sharedComputedCache;
+
+  if (!sharedInFlight) {
+    sharedInFlight = fetchPranaStats(getProvider, fetchBondingStats, fetchStakingStats)
+      .then((computed) => {
+        sharedComputedCache = computed;
+        return computed;
+      })
+      .finally(() => {
+        sharedInFlight = null;
+      });
+  }
+
+  return await sharedInFlight;
+};
+
+const toLoadedStats = (computed: PranaStatsComputed): PranaStatsData => ({
+  ...initialPranaStats,
+  ...computed,
+  isLoading: false,
+  error: null,
+});
+
 
 export function usePranaStats() {
-  const [stats, setStats] = useState<PranaStatsData>(initialPranaStats);
+  const [stats, setStats] = useState<PranaStatsData>(() =>
+    sharedComputedCache ? toLoadedStats(sharedComputedCache) : initialPranaStats
+  );
   const { fetchBondingStats } = useBondsOnchain();
   const { fetchStakingStats } = useStakingStats();
 
@@ -109,15 +141,14 @@ export function usePranaStats() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    try {
-      const computed = await fetchPranaStats(getProvider, fetchBondingStats, fetchStakingStats);
+    if (sharedComputedCache) {
+      setStats(toLoadedStats(sharedComputedCache));
+      return;
+    }
 
-      setStats(prev => ({
-        ...prev,
-        ...computed,
-        isLoading: false,
-        error: null,
-      }));
+    try {
+      const computed = await getSharedPranaStats(getProvider, fetchBondingStats, fetchStakingStats);
+      setStats(toLoadedStats(computed));
 
     } catch (err: any) {
       console.error("Failed to fetch Prana stats:", err);

@@ -1,59 +1,39 @@
-1. **Bitcoin là chuẩn mực.**
-   PRANA được định giá 100% bằng Bitcoin. Không phải USD, không phải narrative, không phải marketing.
+**1. Covenant of Bitcoin**
 
-2. **Nguồn cung là vĩnh viễn.**
-   PRANA có tổng cung cố định 10 triệu token. Không đốt, không lạm phát, không in thêm.
+Bitcoin là chuẩn mực của hệ thống này. PRANA được đo bằng Bitcoin, suy nghĩ bằng Bitcoin, và lớn lên cùng Bitcoin. Mọi thước đo khác chỉ là tiếng vang của fiat.
 
-3. **Giá trị đo bằng thời gian.**
-   PRANA không sinh ra để pump trong vài tuần. Nó sinh ra để tồn tại qua nhiều chu kỳ kinh tế.
+**2. Covenant of Fixed Supply**
 
-4. **PRANA là tài sản cộng đồng.**
-   Không phải token VC, không phải token insiders. Đây là crypto cộng đồng đầu tiên tại Việt Nam.
+10 triệu PRANA. Không hơn, không kém. Không lạm phát. Không giảm phát. Không thao túng nguồn cung. Sự khan hiếm tuyệt đối là nền móng của giá trị.
 
-5. **Protocol hành động thay vì đám đông.**
-   Buy the Dips là chiến lược của giao thức. Không phải lời kêu gọi cảm xúc.
+**3. Covenant of Transparency**
 
-6. **Thanh khoản là huyết mạch.**
-   WBTC/PRANA pool tồn tại để thị trường luôn có nơi mua bán tự do.
+Mọi thứ phải có thể kiểm chứng. Smart contracts mở mã nguồn. Thanh khoản on-chain. Niềm tin ở đây sinh ra từ sự thật, không phải lời hứa.
 
-7. **Bonding là cửa ngõ thanh khoản.**
-   OTC và Bonding giúp giao dịch lớn diễn ra mà không phá vỡ thị trường.
+**4. Covenant of Patience**
 
-8. **PRANA Staking là cam kết dài hạn.**
-   Heo Đất PRANA 3.0 trả lãi cố định 12% APR cho những người chọn kiên nhẫn.
+PRANA không phục vụ sự nóng vội. Ai đến để tìm cú pump nhanh sẽ rời đi nhanh. Ai đến với thời gian sẽ ở lại.
 
-9. **Treasury tồn tại để ổn định hệ sinh thái.**
-   Protocol Reserve và DEX Reserve bảo vệ cấu trúc giá trị của PRANA.
+**5. Covenant of Buy the Dips**
 
-10. **PRANA được thiết kế để mạnh hơn qua khủng hoảng.**
-    Bear market là nơi chiến lược Buy the Dips phát huy sức mạnh.
+Khi thị trường sợ hãi, protocol hành động. "Buy the Dips" là phản xạ tự động của hệ thống, không phải thứ đám đông hô hào nhưng không hành động.
 
-11. **Minh bạch là luật bất thành văn.**
-    Smart contract, reserves, tokenomics - tất cả đều có thể kiểm chứng on-chain.
+**6. Covenant of Liquidity**
 
-12. **Không chạy theo narrative.**
-    PRANA không cần NFT, không cần DAO governance, không cần hype cycle.
+Thanh khoản là lời cam kết với thị trường. PRANA luôn có nơi để mua bán. Giá trị thật không sợ giao dịch.
 
-13. **Upgrade khi cần, giữ nguyên triết lý.**
-    Hợp đồng có thể nâng cấp, nguyên tắc cốt lõi thì không.
+**7. Covenant of Long-Term Alignment**
 
-14. **Thị trường là thầy.**
-    PRANA không chống lại thị trường, nó học từ thị trường.
+Protocol, treasury, và cộng đồng phải cùng hướng về một trục thời gian dài hạn. Không có chiến thắng nhanh chóng. Chỉ có sự tích lũy chậm rãi.
 
-15. **Bitcoin là trục của hệ thống.**
-    Nếu Bitcoin là nền tảng của kỷ nguyên tiền tệ mới, PRANA là tài sản vận hành quanh trục đó.
+**8. Covenant of Simplicity**
 
-16. **Niềm tin xây bằng hành động.**
-    Protocol đã sống sót qua hack, qua bear market, qua sự thờ ơ của thị trường.
+Hệ thống không chạy theo mọi xu hướng. Không NFT. Không governance phức tạp. Càng đơn giản, càng bền.
 
-17. **PRANA không cần marketing để tồn tại.**
-    Những dự án sống nhờ marketing sẽ chết khi marketing dừng lại.
+**9. Covenant of Resilience**
 
-18. **Chỉ những người hiểu mới ở lại.**
-    PRANA không cần hàng triệu người hay cá mập đầu cơ. Nó cần một số ít người hiểu sâu.
+PRANA đã sống sót qua hack, qua bear market, qua sự thờ ơ của thị trường. Hệ thống này được xây để chịu đựng.
 
-19. **Giá trị tăng khi hệ sinh thái trưởng thành.**
-    Staking, bonding, liquidity, lending - mỗi lớp thêm vào làm hệ thống vững hơn.
+**10. Covenant of Outperformance**
 
-20. **Mục tiêu cuối cùng: vượt Bitcoin.**
-    Không phải thay thế Bitcoin. Không phải cạnh tranh với Bitcoin. Mà trở thành tài sản hiếm hoi có thể outperform Bitcoin trong dài hạn.
+PRANA tồn tại với một mục tiêu rõ ràng: Outperform Bitcoin trong dài hạn.

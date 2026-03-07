@@ -37,7 +37,7 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
       <div className="relative z-10 w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#070b1f]/70 p-5 sm:p-6 shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 id="manifesto-title" className="text-xl font-semibold text-white">
-            PRANA Manifesto
+            10 Covenants of PRANA
           </h2>
           <button
             type="button"
@@ -48,17 +48,16 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {items.map((item) => (
-            <article
-              key={item.id}
-              className="rounded-xl border border-white/10 bg-[#0b0c27]/70 p-4"
-            >
-              <h3 className="text-base font-medium text-white">{item.question}</h3>
+            <div key={item.id}>
+              <h3 className="text-base font-medium text-white">
+                {item.id}. {item.question}
+              </h3>
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-300">
                 {item.answer}
               </p>
-            </article>
+            </div>
           ))}
         </div>
       </div>
