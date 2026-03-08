@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Clock, ExternalLink } from "lucide-react";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
+import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
 
 const Timeline: React.FC = () => {
   const events = useTimelineEvents();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useTimelineAutoScroll(scrollContainerRef, events);
 
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp * 1000);
@@ -24,7 +28,10 @@ const Timeline: React.FC = () => {
           </h2>
         </div>
 
-        <div className="relative overflow-x-auto pt-4 pb-4 -mx-2 px-2">
+        <div
+          ref={scrollContainerRef}
+          className="relative overflow-x-auto pt-4 pb-4 -mx-2 px-2"
+        >
           <div className="flex gap-4 min-w-max pb-2">
             {events.map((event, index) => (
               <div
