@@ -58,15 +58,15 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
   const stats = useMemo(
     () => [
       {
-        label: 'Total Volume',
+        label: 'Volume',
         value: `${formatStatValue(data.total_volume_in_usd)} USD`,
       },
       {
-        label: 'Total PRANA Bought',
+        label: 'PRANA Bought',
         value: `${formatStatValue(data.total_prana_bought)} PRANA`,
       },
       {
-        label: 'Total Txns',
+        label: 'Transactions',
         value: formatStatValue(data.total_buy_transactions),
       },
     ],

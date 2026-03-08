@@ -3,6 +3,7 @@ import type { LpCapitalApiResponse } from '../../types/api.types.ts';
 import { fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { calculatePositionMath } from '../../utils/uniswapV3Helpers.ts';
 import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
+import { getServerArbitrumProvider } from '../utils/providers.ts';
 import {
   NONFUNGIBLE_POSITION_MANAGER,
   WBTC_USDT_POOL,
@@ -15,7 +16,6 @@ import {
   POSITION_MANAGER_ABI,
   POOL_ABI,
 } from '../../constants/arbitrumWbtcUsdtLp.ts';
-import { getServerArbitrumProvider } from '../utils/providers.ts';
 
 interface GeckoPoolResponse {
   data?: {
@@ -43,12 +43,15 @@ let cachedLpTokenId: CachedLpTokenId | null = null;
 const POOL_IFACE = new ethers.Interface(POOL_ABI);
 const POSITION_MANAGER_IFACE = new ethers.Interface([...ERC721_ENUMERABLE_ABI, ...POSITION_MANAGER_ABI]);
 const EXPECTED_POOL_FEE_RAW = BigInt(Math.round(POOL_FEE * 1_000_000));
+
 const EXPECTED_POOL_TOKEN0 = [ARBITRUM_USDT, ARBITRUM_WBTC]
   .map((address) => address.toLowerCase())
-  .sort()[0];
+  .sort()[0]; // ensuring EXPECTED_POOL_TOKEN0 is always the lexicographically smaller address—matching how Uniswap V3 assigns token0 in a pool
+
 const EXPECTED_POOL_TOKEN1 = [ARBITRUM_USDT, ARBITRUM_WBTC]
   .map((address) => address.toLowerCase())
   .sort()[1];
+
 const TOKEN0_IS_WBTC = EXPECTED_POOL_TOKEN0 === ARBITRUM_WBTC.toLowerCase();
 
 function getCachedLpTokenId(): CachedLpTokenId | null {

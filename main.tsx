@@ -10,6 +10,7 @@ import Capital from "./components/Capital";
 import SatsPriceChart from "./components/SatsPriceChart";
 import PranaVndPriceChart from "./components/PranaVndPriceChart";
 import FaqSection from "./components/FaqSection";
+import Timeline from "./components/Timeline";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -48,6 +49,7 @@ function App() {
             <PranaVndPriceChart />
           </div>
         </section>
+        <Timeline />
         <FaqSection />
       </main>
     </div>

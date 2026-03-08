@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchJson } from '../utils/fetchJson';
 import type { LpCapitalData } from '../types/lpCapital.types';
 import type { LpCapitalApiResponse } from '../types/api.types';
-import { fetchJson } from '../utils/fetchJson';
 
 const initialState: LpCapitalData = {
   usdValueNumber: 0,
