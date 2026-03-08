@@ -1,30 +1,66 @@
 import path from 'node:path';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import type { PranaPricesBundle } from '../../types.ts';
-import { fetchJson } from '../../utils/fetchJson.ts';
+import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 
-const PRICES_CACHE_TTL_MS = 30_000;
+const PRICES_CACHE_TTL_MS = 5 * 60_000;
+const USD_TO_VND_FALLBACK = 26_000;
 
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;
 
 async function fetchBtcPrices() {
-  const json = await fetchJson<{ bitcoin?: { usd?: number; vnd?: number } }>(
-    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd'
-  );
-  const usd = json?.bitcoin?.usd;
-  const vnd = json?.bitcoin?.vnd;
+  try {
+    const json = await fetchJson<{ bitcoin?: { usd?: number; vnd?: number } }>(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd'
+    );
+    const usd = json?.bitcoin?.usd;
+    const vnd = json?.bitcoin?.vnd;
 
-  if (typeof usd !== 'number' || !Number.isFinite(usd)) {
-    throw new Error('Failed to fetch BTC price USD (CoinGecko): invalid response');
+    if (typeof usd !== 'number' || !Number.isFinite(usd)) {
+      throw new Error('Failed to fetch BTC price USD (CoinGecko): invalid response');
+    }
+
+    if (typeof vnd !== 'number' || !Number.isFinite(vnd)) {
+      throw new Error('Failed to fetch BTC price VND (CoinGecko): invalid response');
+    }
+
+    return { usd, vnd };
+  } catch (error) {
+    const [binanceJson, exchangeRateJson] = await Promise.all([
+      fetchJsonSafe<{ price?: string }>('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {}),
+      fetchJsonSafe<{ rates?: { VND?: number } }>('https://api.exchangerate-api.com/v4/latest/USD', {}),
+    ]);
+    const fallbackUsd = Number(binanceJson?.price);
+    const fallbackRate = exchangeRateJson?.rates?.VND;
+
+    if (Number.isFinite(fallbackUsd) && typeof fallbackRate === 'number' && Number.isFinite(fallbackRate) && fallbackRate > 0) {
+      console.warn('CoinGecko rate limited or unavailable, using Binance BTC price fallback.', error);
+      return {
+        usd: fallbackUsd,
+        vnd: fallbackUsd * fallbackRate,
+      };
+    }
+
+    if (Number.isFinite(fallbackUsd)) {
+      console.warn('CoinGecko rate limited or unavailable, using Binance BTC price with fallback USD/VND rate.', error);
+      return {
+        usd: fallbackUsd,
+        vnd: fallbackUsd * USD_TO_VND_FALLBACK,
+      };
+    }
+
+    if (cached) {
+      console.warn('CoinGecko rate limited or unavailable, using stale cached BTC prices.', error);
+      return {
+        usd: cached.value.btcPriceUsd,
+        vnd: cached.value.btcPriceVnd,
+      };
+    }
+
+    throw error;
   }
-
-  if (typeof vnd !== 'number' || !Number.isFinite(vnd)) {
-    throw new Error('Failed to fetch BTC price VND (CoinGecko): invalid response');
-  }
-
-  return { usd, vnd };
 }
 
 async function readRootJsonArray(filename: string): Promise<any[]> {

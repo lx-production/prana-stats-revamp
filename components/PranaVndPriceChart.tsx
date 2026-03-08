@@ -59,10 +59,10 @@ const PranaVndPriceChart: React.FC = () => {
 
     const loadRate = async () => {
       try {
-        const rateData = await fetchJson<{ rates?: { VND?: number } }>("https://api.exchangerate-api.com/v4/latest/USD", undefined, {
+        const rateData = await fetchJson<{ data?: { mid?: number } }>("https://hexarate.paikama.co/api/rates/latest/USD?target=VND", undefined, {
           dedupeKey: "usd-vnd-rate",
         });
-        const nextRate = rateData?.rates?.VND;
+        const nextRate = rateData?.data?.mid;
         if (!isActive) return;
         if (typeof nextRate === "number" && Number.isFinite(nextRate) && nextRate > 0) {
           setUsdToVndRate(nextRate);
