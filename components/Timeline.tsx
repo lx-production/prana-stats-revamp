@@ -1,7 +1,45 @@
 import React, { useRef } from "react";
 import { Clock, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
+
+const listVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: {
+    opacity: 0,
+    y: 24,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+    },
+  },
+};
+
+const iconVariants = {
+  idle: {
+    scale: 1,
+  },
+  pulse: {
+    scale: [1, 1.05, 1],
+    transition: {
+      repeat: Infinity,
+      duration: 3.2,
+    },
+  },
+};
 
 const Timeline: React.FC = () => {
   const events = useTimelineEvents();
@@ -32,64 +70,77 @@ const Timeline: React.FC = () => {
           ref={scrollContainerRef}
           className="relative overflow-x-auto pt-4 pb-4 -mx-2 px-2"
         >
-          <div className="flex gap-4 min-w-max pb-2">
-            {events.map((event, index) => (
-              <div
-                key={event.id}
-                className="relative flex-shrink-0 w-[320px] sm:w-[360px]"
-                style={{
-                  animation: `fadeInUp 0.6s ease-out ${index * 0.1}s backwards`,
-                }}
-              >
-                <div className="group relative rounded-xl border border-white/10 bg-[#0b0c27]/70 hover:border-white/20 transition-all duration-300 h-full">
-                  <div className="absolute top-0 left-4 flex -translate-y-1/2 items-center gap-2">
+          <motion.div
+            className="flex gap-4 min-w-max pb-2"
+            variants={listVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {events.map((event, index) => {
+              const isLatest = index === events.length - 1;
+              return (
+                <motion.div
+                  key={event.id}
+                  className={`relative flex-shrink-0 w-[320px] sm:w-[360px] ${
+                    isLatest ? "ring-1 ring-cyan-300/50" : ""
+                  }`}
+                  variants={itemVariants}
+                  whileHover={{ y: -4 }}
+                >
+                  <div className="group relative rounded-xl border border-white/10 bg-[#0b0c27]/70 hover:border-white/20 transition-all duration-300 h-full">
+                    <div className="absolute top-0 left-4 flex -translate-y-1/2 items-center gap-2">
+                      <motion.div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                        style={{
+                          backgroundColor: event.color,
+                          boxShadow: `0 0 ${isLatest ? 30 : 20}px ${event.color}40`,
+                        }}
+                        variants={iconVariants}
+                        initial="idle"
+                        animate={isLatest ? "pulse" : "idle"}
+                      >
+                        {event.icon}
+                      </motion.div>
+                      <div className="text-xs text-gray-400 bg-[#0b0c27]/90 px-2 py-1 rounded-md border border-white/5">
+                        {formatDate(event.timestamp)}
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-10">
+                      <h3 className="text-base sm:text-lg font-semibold text-white mb-2 flex items-center justify-between gap-2">
+                        {event.title}
+                        {event.link && (
+                          <a
+                            href={event.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        {event.description}
+                      </p>
+                    </div>
+
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                      className="absolute bottom-0 left-0 h-1 w-full rounded-b-xl"
                       style={{
-                        backgroundColor: event.color,
-                        boxShadow: `0 0 20px ${event.color}40`,
+                        background: `linear-gradient(90deg, ${event.color}00 0%, ${event.color} 50%, ${event.color}00 100%)`,
                       }}
-                    >
-                      {event.icon}
-                    </div>
-                    <div className="text-xs text-gray-400 bg-[#0b0c27]/90 px-2 py-1 rounded-md border border-white/5">
-                      {formatDate(event.timestamp)}
-                    </div>
+                    />
                   </div>
 
-                  <div className="p-4 pt-10">
-                    <h3 className="text-base sm:text-lg font-semibold text-white mb-2 flex items-center justify-between gap-2">
-                      {event.title}
-                      {event.link && (
-                        <a
-                          href={event.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                    </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      {event.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className="absolute bottom-0 left-0 h-1 w-full rounded-b-xl"
-                    style={{
-                      background: `linear-gradient(90deg, ${event.color}00 0%, ${event.color} 50%, ${event.color}00 100%)`,
-                    }}
-                  />
-                </div>
-
-                {index < events.length - 1 && (
-                  <div className="absolute top-6 -right-[18px] w-[18px] h-[2px] bg-gradient-to-r from-white/20 to-transparent z-0" />
-                )}
-              </div>
-            ))}
-          </div>
+                  {index < events.length - 1 && (
+                    <div className="absolute top-6 -right-[18px] w-[18px] h-[2px] bg-gradient-to-r from-white/20 to-transparent z-0" />
+                  )}
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
 
         <div className="mt-2 text-xs text-gray-500 text-center">
@@ -98,31 +149,20 @@ const Timeline: React.FC = () => {
       </div>
 
       <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
         .overflow-x-auto::-webkit-scrollbar {
           height: 8px;
         }
-        
+
         .overflow-x-auto::-webkit-scrollbar-track {
           background: rgba(255, 255, 255, 0.05);
           border-radius: 4px;
         }
-        
+
         .overflow-x-auto::-webkit-scrollbar-thumb {
           background: rgba(6, 182, 212, 0.3);
           border-radius: 4px;
         }
-        
+
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(6, 182, 212, 0.5);
         }

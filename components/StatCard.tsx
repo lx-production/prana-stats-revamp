@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { StatCardProps } from '../types';
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -12,8 +13,13 @@ const StatCard: React.FC<StatCardProps> = ({
   className = '',
   footer,
 }) => {
+  const animationTransition = {
+    duration: 0.45,
+    delay,
+  };
+
   return (
-    <div
+    <motion.div
       className={`
         group relative z-10 hover:z-30 focus-within:z-40 rounded-2xl border transition-all duration-500
         ${highlight 
@@ -23,9 +29,10 @@ const StatCard: React.FC<StatCardProps> = ({
         backdrop-blur-md
         ${className}
       `}
-      style={{
-        animation: `fadeInUp 0.6s ease-out ${delay}s backwards`
-      }}
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={animationTransition}
+      viewport={{ once: true, amount: 0.35 }}
     >
       {/* Glow Effect */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
@@ -62,7 +69,7 @@ const StatCard: React.FC<StatCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

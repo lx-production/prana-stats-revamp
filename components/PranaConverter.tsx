@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { usePranaPrices } from '../hooks/usePranaPrices';
 import { usePranaConverter, type ConverterCurrency } from '../hooks/usePranaConverter';
 import { formatNumber } from '../utils/formatters';
@@ -60,12 +61,15 @@ export const PranaConverter: React.FC = () => {
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div
+      <motion.div
         className="
           group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5
           backdrop-blur-md transition-all duration-500 hover:border-white/20 hover:bg-white/10
         "
-        style={{ animation: `fadeInUp 0.6s ease-out 0.15s backwards` }}
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 0.45, delay: 0.15, ease: [0.43, 0.13, 0.23, 0.96] }}
       >
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -202,7 +206,7 @@ export const PranaConverter: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };

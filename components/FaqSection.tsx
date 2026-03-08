@@ -1,6 +1,16 @@
 import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 import { useFaqItems } from "../hooks/useFaqItems";
+
+const answerVariants = {
+  hidden: { opacity: 0, height: 0 },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: { duration: 0.3 },
+  },
+};
 
 const FaqSection: React.FC = () => {
   const faqItems = useFaqItems();
@@ -39,11 +49,20 @@ const FaqSection: React.FC = () => {
                   />
                 </button>
 
-                {isOpen ? (
-                  <div className="px-4 pb-4 text-sm sm:text-base leading-relaxed text-slate-300 whitespace-pre-line">
-                    {item.answer}
-                  </div>
-                ) : null}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key={`${item.id}-answer`}
+                      variants={answerVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      className="px-4 pb-4 text-sm sm:text-base leading-relaxed text-slate-300 whitespace-pre-line overflow-hidden"
+                    >
+                      {item.answer}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </article>
             );
           })}

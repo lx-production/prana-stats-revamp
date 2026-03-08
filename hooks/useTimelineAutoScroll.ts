@@ -10,6 +10,13 @@ export const useTimelineAutoScroll = (
       return;
     }
 
-    container.scrollLeft = container.scrollWidth;
+    const frame = requestAnimationFrame(() => {
+      container.scrollTo({
+        left: container.scrollWidth,
+        behavior: "smooth",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [containerRef, events.length]);
 };
