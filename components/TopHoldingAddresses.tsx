@@ -53,9 +53,6 @@ export const TopHoldingAddresses: React.FC = () => {
                   Top Holding Addresses
                 </a>
               </div>
-              <div className="text-xs text-gray-400">
-                {generatedAt ? `Updated: ${new Date(generatedAt).toLocaleString()}` : 'Showing latest cached snapshot'}
-              </div>
             </div>
           </div>
 

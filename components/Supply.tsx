@@ -66,9 +66,6 @@ export const Supply: React.FC = () => {
                 <Coins className="w-4 h-4 text-emerald-400" />
                 Supply Distribution
               </div>
-              <div className="text-xs text-gray-400">
-                {generatedAt ? `Updated: ${new Date(generatedAt).toLocaleString()}` : 'Showing latest cached snapshot'}
-              </div>
             </div>
             <div className="text-xs text-gray-500">Total Max Supply: {formatNumber(TOTAL_SUPPLY)} PRANA</div>
           </div>
