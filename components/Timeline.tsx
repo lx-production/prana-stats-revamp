@@ -62,7 +62,7 @@ const Timeline: React.FC = () => {
         <div className="flex items-center gap-2 mb-5">
           <Clock className="h-5 w-5 text-cyan-300" />
           <h2 className="text-lg sm:text-xl font-semibold tracking-wide text-white">
-            Lịch Sử PRANA
+            History
           </h2>
         </div>
 

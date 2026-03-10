@@ -82,7 +82,7 @@ export const TopHoldingAddresses: React.FC = () => {
                   key={holder.address}
                   className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 flex flex-col gap-2"
                 >
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-100">
+                  <div className="relative flex flex-wrap items-center gap-2 text-sm text-gray-100">
                     <span className="text-xs text-gray-500">{rank}.</span>
                     <span className="font-semibold leading-tight">{holder.label}</span>
                     {labelTooltips[holder.label] ? (
