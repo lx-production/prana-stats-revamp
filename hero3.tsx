@@ -170,6 +170,7 @@ export default function PranaHero() {
           </a>
           <a
             href="https://prana.triethocduongpho.net/stake/" target="_blank"
+            title="Lãi suất cố định 12% APR"
             className="inline-flex min-w-[200px] justify-center rounded-2xl px-10 py-3 border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] text-[#2B1B05] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.7),inset_0_-10px_18px_rgba(120,73,0,0.45),0_14px_30px_rgba(0,0,0,0.35)] ring-1 ring-[#FCE8A9]/40 hover:border-[#9A6B1A]/55 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-12px_20px_rgba(120,73,0,0.55),0_18px_40px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition duration-300"
           >
             STAKE
