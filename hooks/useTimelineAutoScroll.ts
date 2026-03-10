@@ -1,7 +1,7 @@
 import { RefObject, useEffect } from "react";
 
-export const useTimelineAutoScroll = (
-  containerRef: RefObject<HTMLElement>,
+export const useTimelineAutoScroll = <T extends HTMLElement>(
+  containerRef: RefObject<T | null>,
   events: unknown[]
 ) => {
   useEffect(() => {

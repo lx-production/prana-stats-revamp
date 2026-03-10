@@ -82,9 +82,7 @@ const Timeline: React.FC = () => {
               return (
                 <motion.div
                   key={event.id}
-                  className={`relative flex-shrink-0 w-[320px] sm:w-[360px] ${
-                    isLatest ? "ring-1 ring-cyan-300/50" : ""
-                  }`}
+                  className="relative flex-shrink-0 w-[320px] sm:w-[360px]"
                   variants={itemVariants}
                   whileHover={{ y: -4 }}
                 >

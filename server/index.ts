@@ -1,7 +1,7 @@
 import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
-import { DIST_DIR, PROJECT_ROOT } from './projectRoot.ts';
+import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { loadCapital } from './loaders/capital.ts';
 import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
@@ -148,11 +148,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 404, { error: 'not_found' });
     }
 
-    // Static build: serve from dist/ (with SPA fallback to index.html).
-    const requested = url.pathname === '/' ? '/index.html' : url.pathname;
+    // Static build: serve from dist/ first.
+    const requested = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
     const distPath = path.join(DIST_DIR, requested);
     if (await fileExists(distPath)) {
       return await serveFile(req, res, distPath);
+    }
+
+    // Public assets should still work even if dist/ is stale or missing a copied file.
+    const publicPath = path.join(PUBLIC_DIR, requested);
+    if (await fileExists(publicPath)) {
+      return await serveFile(req, res, publicPath);
     }
 
     const fallback = path.join(DIST_DIR, 'index.html');

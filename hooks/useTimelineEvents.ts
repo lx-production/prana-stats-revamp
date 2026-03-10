@@ -102,6 +102,14 @@ export const useTimelineEvents = (): TimelineEvent[] => {
         color: "#14b8a6",
         icon: "11",
       },
+      {
+        id: "event_12",
+        timestamp: 1773100800,
+        title: "PRANA Stats V2",
+        description: "Khai trương trang PRANA Stats mới",
+        color: "#22c55e",
+        icon: "12",
+      },
     ],
     []
   );

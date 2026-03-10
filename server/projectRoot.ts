@@ -6,3 +6,4 @@ const __dirname = path.dirname(__filename);
 
 export const PROJECT_ROOT = path.resolve(__dirname, '..');
 export const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
+export const PUBLIC_DIR = path.join(PROJECT_ROOT, 'public');
