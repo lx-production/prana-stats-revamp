@@ -16,13 +16,14 @@ const PerformanceCard: React.FC<PerformanceCardProps> = ({ performanceMetrics, c
 
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       {performanceMetrics.map((metric) => {
-        const isPositive = metric.value >= 0;
+        const displayValue = Math.abs(metric.value).toFixed(0);
+        const isPositive = Number(displayValue) === 0 || metric.value > 0;
         return (
           <div key={metric.label} className="flex flex-col gap-1 rounded-xl border border-white/5 bg-white/0 px-3 py-2">
             <span className="text-xs text-gray-500 uppercase tracking-wide">{metric.label}</span>
             <div className={`text-sm font-semibold flex items-center ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
               {isPositive ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
-              {Math.abs(metric.value).toFixed(0)}%
+              {displayValue}%
             </div>
           </div>
         );
