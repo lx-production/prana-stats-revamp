@@ -65,7 +65,7 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 id="manifesto-title" className="text-xl font-semibold text-white">
-                10 Covenants of PRANA
+                10 GIAO ƯỚC PRANA
               </h2>
               <button
                 type="button"

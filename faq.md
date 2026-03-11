@@ -1,6 +1,6 @@
-**1. PRANA có thực sự “100% priced in Bitcoin” hay chỉ là khẩu hiệu marketing?**
+**1. PRANA có thực sự “được định giá 100% theo Bitcoin” hay chỉ là khẩu hiệu marketing?**
 
-PRANA được định giá hoàn toàn bằng Bitcoin theo thiết kế chiến lược, không theo USD và không neo vào stablecoin. Chỉ có một swap pool duy nhất (WBTC/PRANA v3 trên Uniswap, 100% thanh khoản cho Protocol cung cấp từ ngày đầu). Điều đó nghĩa là mọi quyết định vận hành - staking, bonding, OTC, treasury logic - đều quy chiếu về BTC như chuẩn mực giá trị cuối cùng. Đây không phải cơ chế peg, mà là lựa chọn triết lý và mô hình định giá đi trước thời đại. 
+PRANA được định giá hoàn toàn bằng Bitcoin theo thiết kế chiến lược, không theo USD và không neo vào stablecoins. Chỉ có một swap pool duy nhất (WBTC/PRANA v3 trên Uniswap, 100% thanh khoản cho Protocol cung cấp từ ngày đầu). Điều đó nghĩa là mọi quyết định vận hành - staking, bonding, OTC, treasury logic - đều quy chiếu về BTC như chuẩn mực giá trị cuối cùng. Đây không phải cơ chế peg, mà là lựa chọn triết lý và mô hình định giá đi trước thời đại. 
 
 **2. Tổng cung cố định 10 triệu token có bao giờ thay đổi không? Có mint ẩn không?**
 

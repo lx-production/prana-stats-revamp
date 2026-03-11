@@ -92,7 +92,7 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-md px-2 py-1.5 bg-black/30">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">{stat.label}</div>
-                <div className="text-xs font-semibold text-gray-100">
+                <div className="text-[0.65rem] font-semibold text-gray-100">
                   {isLoading ? 'Loading...' : stat.value}
                 </div>
               </div>

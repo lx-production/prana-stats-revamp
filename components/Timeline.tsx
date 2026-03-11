@@ -140,10 +140,6 @@ const Timeline: React.FC = () => {
             })}
           </motion.div>
         </div>
-
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Cuộn ngang để xem thêm →
-        </div>
       </div>
 
       <style>{`
