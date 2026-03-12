@@ -2,28 +2,25 @@ import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import type { UpdateBondsV2Result } from './types/indexTypes.ts';
 import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
+import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
 
 // Tracks in-flight refresh requests to avoid multiple concurrent calls.
 let refreshInFlight: Promise<UpdateBondsV2Result> | null = null;
 let bondsLastRefreshAt = 0;
 let bondsLastResult: UpdateBondsV2Result | null = null;
-const BONDS_REFRESH_TTL_MS = 30_000; // 30 seconds
 
 let topHoldingRefreshInFlight: Promise<UpdateTopHoldingAddressesResult> | null = null;
 let topHoldingLastRefreshAt = 0;
 let topHoldingLastResult: UpdateTopHoldingAddressesResult | null = null;
-const TOP_HOLDING_REFRESH_TTL_MS = 30_000;
 
 type CachedValue<T> = {
   value: T;
   timestamp: number;
 };
 
-const API_CACHE_TTL_MS = 30_000;
-
 export async function ensureBondsRefreshed(): Promise<UpdateBondsV2Result> {
   const now = Date.now();
-  if (bondsLastResult && now - bondsLastRefreshAt < BONDS_REFRESH_TTL_MS) {
+  if (bondsLastResult && now - bondsLastRefreshAt < CACHE_TTL_MS.bondsRefresh) {
     return bondsLastResult;
   }
 
@@ -48,7 +45,7 @@ export async function ensureBondsRefreshed(): Promise<UpdateBondsV2Result> {
 
 export async function ensureHoldingsRefreshed(): Promise<UpdateTopHoldingAddressesResult> {
   const now = Date.now();
-  if (topHoldingLastResult && now - topHoldingLastRefreshAt < TOP_HOLDING_REFRESH_TTL_MS) {
+  if (topHoldingLastResult && now - topHoldingLastRefreshAt < CACHE_TTL_MS.topHoldingsRefresh) {
     return topHoldingLastResult;
   }
 
@@ -79,7 +76,7 @@ export async function getCachedApiValue<T>(
   setInFlight: (value: Promise<T> | null) => void,
 ): Promise<T> {
   const now = Date.now();
-  if (cache && now - cache.timestamp < API_CACHE_TTL_MS) {
+  if (cache && now - cache.timestamp < CACHE_TTL_MS.apiResponse) {
     return cache.value;
   }
 

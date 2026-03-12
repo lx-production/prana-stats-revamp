@@ -25,13 +25,13 @@ export const useCommittedPrana = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchCommitted = useCallback(async () => {
+  const fetchCommitted = useCallback(async (opts: { force?: boolean } = {}) => {
     setIsLoading(true);
     setError(null);
     try {
       void contractAbi;
 
-      const metrics = await fetchBondMetricsApi();
+      const metrics = await fetchBondMetricsApi(opts);
       const raw =
         contractAddress === BUY_BOND_ADDRESS_V1
           ? metrics.buy.v1CommittedRaw
@@ -69,6 +69,6 @@ export const useCommittedPrana = ({
     committedPranaRaw: data ?? 0n,
     isLoading,
     error,
-    refetch: fetchCommitted,
+    refetch: () => fetchCommitted({ force: true }),
   };
 };

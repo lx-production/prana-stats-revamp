@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchPranaPricesBundle } from '../utils/pranaPrices';
 import type { PranaPricesData } from '../types';
+import type { PranaStatsApiResponse } from '../types/api.types';
+import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 
 const initialPrices: PranaPricesData = {
   btcPriceUsd: null,
@@ -12,16 +13,29 @@ const initialPrices: PranaPricesData = {
 };
 
 export function usePranaPrices() {
-  const [prices, setPrices] = useState<PranaPricesData>(initialPrices);
+  const [prices, setPrices] = useState<PranaPricesData>(() => {
+    const cached = getCachedPranaStatsApi();
+    if (!cached) return initialPrices;
+
+    return {
+      btcPriceUsd: cached.btcPriceUsd,
+      btcPriceVnd: cached.btcPriceVnd,
+      usdToVndRate: cached.usdToVndRate,
+      latestSatPrice: cached.latestSatPrice,
+      isLoading: false,
+      error: null,
+    };
+  });
 
   const fetchData = useCallback(async () => {
     try {
-      const bundle = await fetchPranaPricesBundle();
+      const cached = getCachedPranaStatsApi();
+      const snapshot: PranaStatsApiResponse = cached ?? await fetchPranaStatsApi();
       setPrices({
-        btcPriceUsd: bundle.btcPriceUsd,
-        btcPriceVnd: bundle.btcPriceVnd,
-        usdToVndRate: bundle.usdToVndRate,
-        latestSatPrice: bundle.latestSatPrice,
+        btcPriceUsd: snapshot.btcPriceUsd,
+        btcPriceVnd: snapshot.btcPriceVnd,
+        usdToVndRate: snapshot.usdToVndRate,
+        latestSatPrice: snapshot.latestSatPrice,
         isLoading: false,
         error: null,
       });

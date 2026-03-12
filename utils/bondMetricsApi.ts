@@ -1,22 +1,12 @@
 import type { BondMetricsApiResponse } from '../types/api.types';
-import { fetchJson } from './fetchJson';
+import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
+import { createBrowserJsonCache } from './browserJsonCache';
 
-let cached: BondMetricsApiResponse | null = null;
-let inFlight: Promise<BondMetricsApiResponse> | null = null;
+const bondMetricsApiCache = createBrowserJsonCache({
+  ttlMs: CACHE_TTL_MS.apiResponse,
+  getUrl: () => '/api/bond-metrics',
+});
 
-export async function fetchBondMetricsApi(): Promise<BondMetricsApiResponse> {
-  if (cached) return cached;
-
-  if (!inFlight) {
-    inFlight = fetchJson<BondMetricsApiResponse>('/api/bond-metrics')
-      .then((result) => {
-        cached = result;
-        return result;
-      })
-      .finally(() => {
-        inFlight = null;
-      });
-  }
-
-  return await inFlight;
+export async function fetchBondMetricsApi(opts: { force?: boolean } = {}): Promise<BondMetricsApiResponse> {
+  return await bondMetricsApiCache.fetchCached<BondMetricsApiResponse>(opts);
 }

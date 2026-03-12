@@ -91,7 +91,7 @@ const PranaVndPriceChart: React.FC = () => {
       if (!option) return;
 
       try {
-        const json = await fetchJson<PricePoint[]>(option.file, { cache: "no-store" });
+        const json = await fetchJson<PricePoint[]>(option.file);
         if (!isActive) return;
         setRangeData((prev) => ({
           ...prev,

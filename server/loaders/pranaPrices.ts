@@ -3,8 +3,8 @@ import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import type { PranaPricesBundle } from '../../types.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
+import { CACHE_TTL_MS } from '../../constants/cachePolicy.js';
 
-const PRICES_CACHE_TTL_MS = 5 * 60_000;
 const USD_TO_VND_FALLBACK = 26_000;
 
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
@@ -71,7 +71,7 @@ async function readRootJsonArray(filename: string): Promise<any[]> {
 
 export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
   const now = Date.now();
-  if (cached && now - cached.timestamp < PRICES_CACHE_TTL_MS) {
+  if (cached && now - cached.timestamp < CACHE_TTL_MS.apiResponse) {
     return cached.value;
   }
 

@@ -1,0 +1,27 @@
+import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
+import type { PranaStatsApiResponse } from '../types/api.types';
+import { createBrowserJsonCache } from './browserJsonCache';
+
+const pranaStatsApiCache = createBrowserJsonCache({
+  ttlMs: CACHE_TTL_MS.apiResponse,
+  getUrl: () => '/api/prana-stats',
+});
+
+export async function fetchPranaStatsApi(opts: { force?: boolean } = {}): Promise<PranaStatsApiResponse> {
+  return await pranaStatsApiCache.fetchCached<PranaStatsApiResponse>(opts);
+}
+
+export async function fetchPranaStatsApiSafe(
+  fallback: PranaStatsApiResponse,
+  opts: { force?: boolean } = {},
+): Promise<PranaStatsApiResponse> {
+  return await pranaStatsApiCache.fetchSafe(fallback, opts);
+}
+
+export function getCachedPranaStatsApi(): PranaStatsApiResponse | null {
+  return pranaStatsApiCache.getCachedValue<PranaStatsApiResponse>();
+}
+
+export function clearPranaStatsApiCache() {
+  pranaStatsApiCache.clear();
+}

@@ -1,0 +1,17 @@
+export const CACHE_TTL_MS = Object.freeze({
+  apiResponse: 30_000,
+  bondsJson: 30_000,
+  bondsRefresh: 30_000,
+  buyDipsJson: 30_000,
+  lpTokenId: 60_000,
+  topHoldingAddressesJson: 30_000,
+  topHoldingsRefresh: 30_000,
+});
+
+export const CACHE_TTL_SECONDS = Object.freeze({
+  rootBondsJsonHttp: 30,
+  rootBuyDipsJsonHttp: 30,
+  rootDataJsonHttp: 30,
+  staticAssetsHttp: 60 * 60 * 24 * 365,
+  rootTopHoldingAddressesJsonHttp: 30,
+});

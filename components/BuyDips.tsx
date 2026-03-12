@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchJson } from '../utils/fetchJson';
+import { fetchBuyDipsJson } from '../utils/buyDipsJson';
 import { formatStatValue } from '../utils/formatters';
 
 export type BuyDipsJson = {
@@ -28,7 +28,7 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
 
     const fetchData = async () => {
       try {
-        const json = await fetchJson<BuyDipsJson>('/buy_dips.json');
+        const json = await fetchBuyDipsJson<BuyDipsJson>();
         if (!isActive) return;
         setData({
           total_volume_in_usd: json?.total_volume_in_usd,
@@ -43,6 +43,7 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
             ? err.message
             : 'Failed to fetch buy_dips.json';
         setError(message);
+        setData(fallbackBuyDips);
       } finally {
         if (isActive) setIsLoading(false);
       }

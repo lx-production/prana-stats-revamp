@@ -1,32 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { initialPranaStats } from '../constants/pranaStats';
-import { fetchJson } from '../utils/fetchJson';
-import type { PranaStatsApiResponse } from '../types/api.types';
 import type { PranaStatsData, PranaStatsComputed } from '../types';
-
-let sharedComputedCache: PranaStatsComputed | null = null;
-let sharedInFlight: Promise<PranaStatsComputed> | null = null;
-
-const fetchPranaStats = async (): Promise<PranaStatsComputed> => {
-  return await fetchJson<PranaStatsApiResponse>('/api/prana-stats');
-};
-
-const getSharedPranaStats = async (): Promise<PranaStatsComputed> => {
-  if (sharedComputedCache) return sharedComputedCache;
-
-  if (!sharedInFlight) {
-    sharedInFlight = fetchPranaStats()
-      .then((computed) => {
-        sharedComputedCache = computed;
-        return computed;
-      })
-      .finally(() => {
-        sharedInFlight = null;
-      });
-  }
-
-  return await sharedInFlight;
-};
+import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 
 const toLoadedStats = (computed: PranaStatsComputed): PranaStatsData => ({
   ...initialPranaStats,
@@ -37,18 +12,20 @@ const toLoadedStats = (computed: PranaStatsComputed): PranaStatsData => ({
 
 
 export function usePranaStats() {
-  const [stats, setStats] = useState<PranaStatsData>(() =>
-    sharedComputedCache ? toLoadedStats(sharedComputedCache) : initialPranaStats
-  );
+  const [stats, setStats] = useState<PranaStatsData>(() => {
+    const cached = getCachedPranaStatsApi();
+    return cached ? toLoadedStats(cached) : initialPranaStats;
+  });
 
   const fetchData = useCallback(async () => {
-    if (sharedComputedCache) {
-      setStats(toLoadedStats(sharedComputedCache));
+    const cached = getCachedPranaStatsApi();
+    if (cached) {
+      setStats(toLoadedStats(cached));
       return;
     }
 
     try {
-      const computed = await getSharedPranaStats();
+      const computed = await fetchPranaStatsApi();
       setStats(toLoadedStats(computed));
 
     } catch (err: any) {
