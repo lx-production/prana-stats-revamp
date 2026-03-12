@@ -4,6 +4,7 @@ import type { PranaPricesBundle } from '../types';
 const PRICES_CACHE_TTL_MS = 30_000; // 30 seconds
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;
+const NO_STORE_JSON_INIT: RequestInit = { cache: 'no-store' };
 
 const fetchBtcPrices = async () => {
   const json = await fetchJson<any>('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,vnd');
@@ -29,11 +30,11 @@ export async function fetchPranaPricesBundle(): Promise<PranaPricesBundle> {
     inFlight = (async () => {
       const [btcPrices, satsData, d30, d90, d180, d365] = await Promise.all([
         fetchBtcPrices(),
-        fetchJsonSafe<any[]>('/data_sats.json', []),
-        fetchJsonSafe<any[]>('/data_30_days.json', []),
-        fetchJsonSafe<any[]>('/data_90_days.json', []),
-        fetchJsonSafe<any[]>('/data_180_days.json', []),
-        fetchJsonSafe<any[]>('/data_365_days.json', []),
+        fetchJsonSafe<any[]>('/data_sats.json', [], NO_STORE_JSON_INIT),
+        fetchJsonSafe<any[]>('/data_30_days.json', [], NO_STORE_JSON_INIT),
+        fetchJsonSafe<any[]>('/data_90_days.json', [], NO_STORE_JSON_INIT),
+        fetchJsonSafe<any[]>('/data_180_days.json', [], NO_STORE_JSON_INIT),
+        fetchJsonSafe<any[]>('/data_365_days.json', [], NO_STORE_JSON_INIT),
       ]);
 
       const btcPriceUsd = btcPrices.usd;

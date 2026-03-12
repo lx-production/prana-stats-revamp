@@ -39,7 +39,7 @@ const SatsPriceChart: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const json = await fetchJson<SatsPoint[]>("/data_sats.json");
+        const json = await fetchJson<SatsPoint[]>("/data_sats.json", { cache: "no-store" });
         if (!isActive) return;
         setData(Array.isArray(json) ? json : []);
         setError(null);

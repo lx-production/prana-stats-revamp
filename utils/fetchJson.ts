@@ -47,9 +47,14 @@ export async function fetchJson<T = unknown>(
 }
 
 // Fetches JSON with error handling - returns fallback value on failure instead of throwing.
-export async function fetchJsonSafe<T>(url: string, fallback: T): Promise<T> {
+export async function fetchJsonSafe<T>(
+  url: string,
+  fallback: T,
+  init?: RequestInit,
+  options?: { dedupeKey?: string | null },
+): Promise<T> {
   try {
-    return await fetchJson<T>(url);
+    return await fetchJson<T>(url, init, options);
   } catch (e) {
     console.warn(`Failed to fetch ${url}`, e);
     return fallback;
