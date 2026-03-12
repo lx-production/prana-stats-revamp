@@ -2,15 +2,15 @@ import React, { useMemo } from 'react';
 import { Coins, ShoppingCart } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { usePranaStats } from '../hooks/usePranaStats';
-import InfoTooltip from './InfoTooltip';
 import { formatNumber } from '../utils/formatters';
+import InfoTooltip from './InfoTooltip';
 
 const TOTAL_SUPPLY = 10_000_000;
 const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
 const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
 
 export const Supply: React.FC = () => {
-  const { allHolders = [], isLoading, error, generatedAt } = useTopHoldingAddresses();
+  const { allHolders = [], isLoading, error } = useTopHoldingAddresses();
   const {
     buyBondCapacityDisplay,
     isLoading: isStatsLoading,

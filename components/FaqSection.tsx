@@ -20,8 +20,8 @@ const FaqSection: React.FC = () => {
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
       <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-5">
-          <MessageCircleQuestion className="h-5 w-5 text-cyan-300" />
-          <h2 className="text-lg sm:text-xl font-semibold tracking-wide text-white">
+          <MessageCircleQuestion className="h-4 w-4 text-cyan-300" />
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
             Frequently Asked Questions
           </h2>
         </div>
