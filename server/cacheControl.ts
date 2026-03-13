@@ -8,27 +8,33 @@ export function cacheControlFor(filePath: string): string | null {
   // HTML should always revalidate so deploys show up immediately.
   if (ext === '.html') return 'no-cache';
 
-  // Data JSON changes over time, so keep browser caching short and revalidating.
+  // This fallback image is intentionally stable, so let browsers keep it indefinitely.
+  if (base === 'prana-coin-fallback.png') {
+    return `public, max-age=${CACHE_TTL_SECONDS.staticAssetsHttp}, immutable`;
+  }
+
+  // Data JSON changes over time, but it is safe to let the browser reuse it briefly
+  // without an immediate roundtrip. After max-age expires, normal revalidation applies.
   if (ext === '.json' && base.startsWith('data_')) {
-    return `public, max-age=${CACHE_TTL_SECONDS.rootDataJsonHttp}, must-revalidate`;
+    return `public, max-age=${CACHE_TTL_SECONDS.rootDataJsonHttp}`;
   }
 
   // Bonds JSON is refreshed by the API endpoint and served from project root.
   // Keep it aligned with the rest of the short-lived generated JSON.
   if (ext === '.json' && base === 'bonds_v2.json') {
-    return `public, max-age=${CACHE_TTL_SECONDS.rootBondsJsonHttp}, must-revalidate`;
+    return `public, max-age=${CACHE_TTL_SECONDS.rootBondsJsonHttp}`;
   }
 
   // Top holders JSON is refreshed by the API endpoint and served from project root.
   // Keep it aligned with the rest of the short-lived generated JSON.
   if (ext === '.json' && base === 'top_holding_addresses.json') {
-    return `public, max-age=${CACHE_TTL_SECONDS.rootTopHoldingAddressesJsonHttp}, must-revalidate`;
+    return `public, max-age=${CACHE_TTL_SECONDS.rootTopHoldingAddressesJsonHttp}`;
   }
 
   // Buy dips JSON is generated data served from project root.
   // Keep it aligned with the other short-lived JSON resources.
   if (ext === '.json' && base === 'buy_dips.json') {
-    return `public, max-age=${CACHE_TTL_SECONDS.rootBuyDipsJsonHttp}, must-revalidate`;
+    return `public, max-age=${CACHE_TTL_SECONDS.rootBuyDipsJsonHttp}`;
   }
 
   // Other JSON: be safe and revalidate.

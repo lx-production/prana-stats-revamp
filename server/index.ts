@@ -2,6 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
+import { CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { loadCapital } from './loaders/capital.ts';
 import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
@@ -18,6 +19,7 @@ import { ensureBondsRefreshed, ensureHoldingsRefreshed, getCachedApiValue, type 
 import type { CapitalApiResponse, LpCapitalApiResponse, PranaStatsApiResponse, BondMetricsApiResponse } from '../types/api.types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
+const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 
 let pranaStatsCache: CachedValue<PranaStatsApiResponse> | null = null;
 let pranaStatsInFlight: Promise<PranaStatsApiResponse> | null = null;
@@ -33,15 +35,15 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
     // Endpoint the frontend can call on page load/reload
-    if (url.pathname === '/api/refresh-bonds' || url.pathname === '/api/bonds-v2/refresh') {
+    if (url.pathname === '/api/refresh-bonds' || url.pathname === '/api/bonds-v2/refresh-bonds') {
       const result = await ensureBondsRefreshed();
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     // Endpoint the frontend can call on page load.
     if (url.pathname === '/api/refresh-holdings') {
       const result = await ensureHoldingsRefreshed();
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/prana-stats') {
@@ -59,7 +61,7 @@ const server = http.createServer(async (req, res) => {
           pranaStatsInFlight = value;
         }
       );
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/capital') {
@@ -74,7 +76,7 @@ const server = http.createServer(async (req, res) => {
           capitalInFlight = value;
         }
       );
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/lp-capital') {
@@ -89,7 +91,7 @@ const server = http.createServer(async (req, res) => {
           lpCapitalInFlight = value;
         }
       );
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/bond-metrics') {
@@ -107,7 +109,7 @@ const server = http.createServer(async (req, res) => {
           bondMetricsInFlight = value;
         }
       );
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     // Serve data JSON directly from project root so live updates are visible
@@ -146,6 +148,15 @@ const server = http.createServer(async (req, res) => {
         return await serveFile(req, res, rootBuyDipsPath);
       }
       return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    // Keep legacy fallback image URL working by serving the current icon asset.
+    // This avoids falling back to index.html (no-cache) for the missing PNG file.
+    if (url.pathname === '/prana-coin-fallback.png') {
+      const fallbackIconPath = path.join(PUBLIC_DIR, 'assets', 'icons', 'prana.svg');
+      if (await fileExists(fallbackIconPath)) {
+        return await serveFile(req, res, fallbackIconPath);
+      }
     }
 
     // Static build: serve from dist/ first.

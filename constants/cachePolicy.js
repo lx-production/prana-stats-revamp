@@ -9,6 +9,7 @@ export const CACHE_TTL_MS = Object.freeze({
 });
 
 export const CACHE_TTL_SECONDS = Object.freeze({
+  apiResponseBrowserHttp: 30,
   rootBondsJsonHttp: 30,
   rootBuyDipsJsonHttp: 30,
   rootDataJsonHttp: 30,

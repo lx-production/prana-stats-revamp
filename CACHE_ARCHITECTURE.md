@@ -13,10 +13,10 @@ The goal is to keep caching:
 ### 1. One source of truth per data type
 - Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, `top_holding_addresses.json`, and `buy_dips.json`.
 - Computed app snapshots stay behind API routes such as `/api/prana-stats` and `/api/bond-metrics`.
-- Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh` and `/api/refresh-holdings`.
+- Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh-bonds` and `/api/refresh-holdings`.
 
 ### 2. Short-lived data should have short-lived caches
-- Root JSON files are revalidated frequently.
+- Root JSON files can be reused briefly by the browser before revalidation.
 - API responses are browser-revalidated on each use.
 - In-browser memory caches are short-lived and shared.
 
@@ -77,6 +77,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `topHoldingsRefresh`: `30_000`
 
 ### HTTP cache TTLs in seconds
+- `apiResponseBrowserHttp`: `30`
 - `rootDataJsonHttp`: `30`
 - `rootBondsJsonHttp`: `30`
 - `rootBuyDipsJsonHttp`: `30`
@@ -213,30 +214,42 @@ That keeps the server-side price snapshot aligned with the rest of the API fresh
 
 Defined in `server/cacheControl.ts`.
 
-These files use short-lived browser caching with revalidation:
+These files use short-lived browser caching:
 - `data_*.json`
 - `bonds_v2.json`
 - `top_holding_addresses.json`
 - `buy_dips.json`
 
 Header shape:
-- `public, max-age=30, must-revalidate`
+- `public, max-age=30`
 
 This means:
-- the browser may reuse the response briefly
-- after that, it must revalidate with the server
+- the browser may reuse the response locally for up to 30 seconds without a roundtrip
+- after that, normal revalidation can happen with the server
 - because filenames are not content-hashed, these are not `immutable`
 
 ### API headers
 
 Defined via `sendJson(...)` in `server/requestHelpers.ts`.
 
-API responses send:
-- `Cache-Control: no-cache`
+Read-only computed API responses send:
+- `Cache-Control: private, max-age=30`
+
+These currently include:
+- `/api/prana-stats`
+- `/api/capital`
+- `/api/lp-capital`
+- `/api/bond-metrics`
+- `/api/refresh-holdings`
+- `/api/bonds-v2/refresh-bonds`
 
 This means:
-- browsers should revalidate API responses instead of treating them as static assets
-- freshness is mainly controlled by the server API cache and the browser in-memory helpers
+- browsers can reuse the API response locally for up to 30 seconds without a roundtrip
+- shared caches should not store it because the response is marked `private`
+- after 30 seconds, the browser will fetch again and the server API cache still applies
+
+Other refresh and error responses still send:
+- `Cache-Control: no-cache`
 
 ### Built assets
 
@@ -267,7 +280,7 @@ Important development note:
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
 Current examples:
-- after `/api/bonds-v2/refresh` reports new data, `useBondsV2Volume` forces a fresh `bonds_v2.json` fetch
+- after `/api/bonds-v2/refresh-bonds` reports new data, `useBondsV2Volume` forces a fresh `bonds_v2.json` fetch
 - after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses` forces a fresh `top_holding_addresses.json` fetch
 - `useCommittedPrana` and `useCommittedWbtc` use forced refresh for `refetch()`
 
@@ -310,7 +323,7 @@ When adding a new cached data source:
 - adding another module-level `cached` value that never expires
 - adding a separate custom cache helper for one file when `createBrowserJsonCache(...)` already fits
 - using different current-price sources for UI that users compare side by side
-- using `cache: 'no-store'` by default when short revalidating HTTP headers are enough
+- using `cache: 'no-store'` by default when short browser-fresh HTTP headers are enough
 - making dev JSON routing different from prod routing
 
 ## Quick Reference
@@ -319,7 +332,7 @@ If you are not sure where to put a new cache:
 
 - Raw generated JSON file:
   - serve from Node root route
-  - give it short `must-revalidate` HTTP headers
+  - give it short browser-fresh HTTP headers
   - use `createBrowserJsonCache(...)` if the browser reads it often
 
 - Computed API response:

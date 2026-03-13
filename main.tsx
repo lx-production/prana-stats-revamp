@@ -14,6 +14,9 @@ import Timeline from "./components/Timeline";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
+import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
+
+prefetchInitialJson();
 
 function App() {
   useSpinningFavicon();

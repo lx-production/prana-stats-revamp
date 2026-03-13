@@ -10,9 +10,18 @@ export async function fileExists(p: string): Promise<boolean> {
   }
 }
 
-export function sendJson(res: ServerResponse, statusCode: number, body: unknown): void {
+type SendJsonOptions = {
+  cacheControl?: string;
+};
+
+export function sendJson(
+  res: ServerResponse,
+  statusCode: number,
+  body: unknown,
+  options: SendJsonOptions = {},
+): void {
   res.statusCode = statusCode;
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
 }

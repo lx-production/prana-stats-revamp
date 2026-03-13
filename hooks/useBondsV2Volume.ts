@@ -28,7 +28,7 @@ export const useBondsV2Volume = (): UseBondsV2VolumeResult => {
         try {
           // Use fetchJson so multiple hooks dedupe this GET request.
           // ensures new bonds are scanned before the cached JSON is reloaded
-          const refreshResult = await fetchJson<{ updated?: boolean }>('/api/bonds-v2/refresh'); // checks if there's any new bonds
+          const refreshResult = await fetchJson<{ updated?: boolean }>('/api/bonds-v2/refresh-bonds'); // checks if there's any new bonds
           refreshUpdated = Boolean(refreshResult?.updated);
         } catch {
           // ignore if the request fails
