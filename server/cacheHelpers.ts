@@ -1,100 +1,34 @@
 import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
 import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
-import type { UpdateBondsV2Result } from './types/indexTypes.ts';
-import type { UpdateTopHoldingAddressesResult } from '../scripts/types/updateTopHoldingAddressesTypes.ts';
 import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
 
-// Tracks in-flight refresh requests to avoid multiple concurrent calls.
-let refreshInFlight: Promise<UpdateBondsV2Result> | null = null;
-let bondsLastRefreshAt = 0;
-let bondsLastResult: UpdateBondsV2Result | null = null;
+export function createServerCache<T>(ttlMs: number) {
+  let cached: { value: T; timestamp: number } | null = null;
+  let inFlight: Promise<T> | null = null;
 
-let topHoldingRefreshInFlight: Promise<UpdateTopHoldingAddressesResult> | null = null;
-let topHoldingLastRefreshAt = 0;
-let topHoldingLastResult: UpdateTopHoldingAddressesResult | null = null;
+  return async function get(loader: () => Promise<T>): Promise<T> {
+    if (cached && Date.now() - cached.timestamp < ttlMs) {
+      return cached.value;
+    }
 
-type CachedValue<T> = {
-  value: T;
-  timestamp: number;
-};
+    if (!inFlight) {
+      inFlight = (async () => {
+        try {
+          const value = await loader();
+          cached = { value, timestamp: Date.now() };
+          return value;
+        } finally {
+          inFlight = null;
+        }
+      })();
+    }
 
-export async function ensureBondsRefreshed(): Promise<UpdateBondsV2Result> {
-  const now = Date.now();
-  if (bondsLastResult && now - bondsLastRefreshAt < CACHE_TTL_MS.bondsRefresh) {
-    return bondsLastResult;
-  }
-
-  if (!refreshInFlight) {
-    refreshInFlight = (async () => {
-      try {
-        const result = await updateBondsV2();
-        bondsLastResult = result;
-        bondsLastRefreshAt = Date.now();
-        return result;
-      } finally {
-        refreshInFlight = null;
-      }
-    })();
-  }
-
-  const result = await refreshInFlight;
-  bondsLastResult = result;
-  bondsLastRefreshAt = Date.now();
-  return result;
+    return await inFlight;
+  };
 }
 
-export async function ensureHoldingsRefreshed(): Promise<UpdateTopHoldingAddressesResult> {
-  const now = Date.now();
-  if (topHoldingLastResult && now - topHoldingLastRefreshAt < CACHE_TTL_MS.topHoldingsRefresh) {
-    return topHoldingLastResult;
-  }
+export const bondsRefreshCache = createServerCache(CACHE_TTL_MS.bondsRefresh);
+export const holdingsRefreshCache = createServerCache(CACHE_TTL_MS.topHoldingsRefresh);
 
-  if (!topHoldingRefreshInFlight) {
-    topHoldingRefreshInFlight = (async () => {
-      try {
-        const result = await updateTopHoldingAddresses();
-        topHoldingLastResult = result;
-        topHoldingLastRefreshAt = Date.now();
-        return result;
-      } finally {
-        topHoldingRefreshInFlight = null;
-      }
-    })();
-  }
-
-  const result = await topHoldingRefreshInFlight;
-  topHoldingLastResult = result;
-  topHoldingLastRefreshAt = Date.now();
-  return result;
-}
-
-export async function getCachedApiValue<T>(
-  cache: CachedValue<T> | null,
-  inFlight: Promise<T> | null,
-  loader: () => Promise<T>,
-  setCache: (value: CachedValue<T> | null) => void,
-  setInFlight: (value: Promise<T> | null) => void,
-): Promise<T> {
-  const now = Date.now();
-  if (cache && now - cache.timestamp < CACHE_TTL_MS.apiResponse) {
-    return cache.value;
-  }
-
-  if (!inFlight) {
-    const nextPromise = (async () => {
-      try {
-        const value = await loader();
-        setCache({ value, timestamp: Date.now() });
-        return value;
-      } finally {
-        setInFlight(null);
-      }
-    })();
-    setInFlight(nextPromise);
-    inFlight = nextPromise;
-  }
-
-  return await inFlight;
-}
-
-export type { CachedValue };
+export const ensureBondsRefreshed = () => bondsRefreshCache(updateBondsV2);
+export const ensureHoldingsRefreshed = () => holdingsRefreshCache(updateTopHoldingAddresses);

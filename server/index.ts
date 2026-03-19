@@ -2,7 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
+import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { loadCapital } from './loaders/capital.ts';
 import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
@@ -15,20 +15,15 @@ import {
   rootTopHoldingAddressesFilenameFromPathname,
   rootBuyDipsFilenameFromPathname,
 } from './requestHelpers.ts';
-import { ensureBondsRefreshed, ensureHoldingsRefreshed, getCachedApiValue, type CachedValue } from './cacheHelpers.ts';
-import type { CapitalApiResponse, LpCapitalApiResponse, PranaStatsApiResponse, BondMetricsApiResponse } from '../types/api.types.ts';
+import { createServerCache, ensureBondsRefreshed, ensureHoldingsRefreshed } from './cacheHelpers.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 
-let pranaStatsCache: CachedValue<PranaStatsApiResponse> | null = null;
-let pranaStatsInFlight: Promise<PranaStatsApiResponse> | null = null;
-let capitalCache: CachedValue<CapitalApiResponse> | null = null;
-let capitalInFlight: Promise<CapitalApiResponse> | null = null;
-let lpCapitalCache: CachedValue<LpCapitalApiResponse> | null = null;
-let lpCapitalInFlight: Promise<LpCapitalApiResponse> | null = null;
-let bondMetricsCache: CachedValue<BondMetricsApiResponse> | null = null;
-let bondMetricsInFlight: Promise<BondMetricsApiResponse> | null = null;
+const pranaStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const bondMetricsCache = createServerCache(CACHE_TTL_MS.apiResponse);
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -47,68 +42,28 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/prana-stats') {
-      const result = await getCachedApiValue(
-        pranaStatsCache,
-        pranaStatsInFlight,
-        async () => {
-          await ensureBondsRefreshed();
-          return await loadPranaStats();
-        },
-        (value) => {
-          pranaStatsCache = value;
-        },
-        (value) => {
-          pranaStatsInFlight = value;
-        }
-      );
+      const result = await pranaStatsCache(async () => {
+        await ensureBondsRefreshed();
+        return await loadPranaStats();
+      });
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/capital') {
-      const result = await getCachedApiValue(
-        capitalCache,
-        capitalInFlight,
-        loadCapital,
-        (value) => {
-          capitalCache = value;
-        },
-        (value) => {
-          capitalInFlight = value;
-        }
-      );
+      const result = await capitalCache(loadCapital);
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/lp-capital') {
-      const result = await getCachedApiValue(
-        lpCapitalCache,
-        lpCapitalInFlight,
-        loadLpCapital,
-        (value) => {
-          lpCapitalCache = value;
-        },
-        (value) => {
-          lpCapitalInFlight = value;
-        }
-      );
+      const result = await lpCapitalCache(loadLpCapital);
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/bond-metrics') {
-      const result = await getCachedApiValue(
-        bondMetricsCache,
-        bondMetricsInFlight,
-        async () => {
-          await ensureBondsRefreshed();
-          return await loadBondMetrics();
-        },
-        (value) => {
-          bondMetricsCache = value;
-        },
-        (value) => {
-          bondMetricsInFlight = value;
-        }
-      );
+      const result = await bondMetricsCache(async () => {
+        await ensureBondsRefreshed();
+        return await loadBondMetrics();
+      });
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 

@@ -72,7 +72,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `bondsJson`: `30_000`
 - `bondsRefresh`: `30_000`
 - `buyDipsJson`: `30_000`
-- `lpTokenId`: `60_000`
+- `lpTokenId`: `30_000`
 - `topHoldingAddressesJson`: `30_000`
 - `topHoldingsRefresh`: `30_000`
 
@@ -139,16 +139,11 @@ This means the stats card and converter read the same pricing inputs:
 
 ### Computed API snapshot: bond metrics
 - `utils/bondMetricsApi.ts`
-- `hooks/useCommittedPrana.ts`
-- `hooks/useCommittedWbtc.ts`
 - `hooks/useBuyBondStats.ts`
 - `hooks/useSellBondStats.ts`
 
 These use:
 - `/api/bond-metrics`
-
-Important detail:
-- `refetch()` in `useCommittedPrana` and `useCommittedWbtc` now passes `force: true`, so it performs a real refresh instead of reusing an old forever-cache.
 
 ### Raw JSON helpers
 
@@ -180,27 +175,21 @@ Main data sources:
 
 ## Server Cache Behavior
 
-### API cache
+### Server cache factory
 
-`server/cacheHelpers.ts` provides the shared server API caching behavior.
+`server/cacheHelpers.ts` exports `createServerCache(ttlMs)`, a single factory used for both API response caching and refresh throttling.
 
-Used for:
+Each instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
+
+API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
 - `/api/prana-stats`
 - `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
 
-Behavior:
-- cache successful computed responses for `CACHE_TTL_MS.apiResponse`
-- share in-flight requests so multiple concurrent callers do not duplicate the same server work
-
-### Refresh cache
-
-Also in `server/cacheHelpers.ts`:
-- `bondsRefresh`
-- `topHoldingsRefresh`
-
-These prevent refresh endpoints from repeatedly running expensive update scripts during a short window.
+Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh` / `topHoldingsRefresh`):
+- `ensureBondsRefreshed()` — throttles `updateBondsV2` script
+- `ensureHoldingsRefreshed()` — throttles `updateTopHoldingAddresses` script
 
 ### Price loader cache
 
@@ -232,7 +221,7 @@ This means:
 
 Defined via `sendJson(...)` in `server/requestHelpers.ts`.
 
-Read-only computed API responses send:
+Primary JSON API routes send:
 - `Cache-Control: private, max-age=30`
 
 These currently include:
@@ -240,6 +229,7 @@ These currently include:
 - `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
+- `/api/refresh-bonds`
 - `/api/refresh-holdings`
 - `/api/bonds-v2/refresh-bonds`
 
@@ -248,7 +238,7 @@ This means:
 - shared caches should not store it because the response is marked `private`
 - after 30 seconds, the browser will fetch again and the server API cache still applies
 
-Other refresh and error responses still send:
+Error responses still send:
 - `Cache-Control: no-cache`
 
 ### Built assets
@@ -282,7 +272,6 @@ Use `force: true` only when you specifically need to bypass the short-lived brow
 Current examples:
 - after `/api/bonds-v2/refresh-bonds` reports new data, `useBondsV2Volume` forces a fresh `bonds_v2.json` fetch
 - after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses` forces a fresh `top_holding_addresses.json` fetch
-- `useCommittedPrana` and `useCommittedWbtc` use forced refresh for `refetch()`
 
 Do not use forced refresh for normal page load unless there is a clear reason.
 
@@ -336,7 +325,7 @@ If you are not sure where to put a new cache:
   - use `createBrowserJsonCache(...)` if the browser reads it often
 
 - Computed API response:
-  - cache on the server with `getCachedApiValue(...)`
+  - cache on the server with `createServerCache(...)`
   - expose browser access through a small helper like `pranaStatsApi.ts`
 
 - Manual or side-effect refresh:
