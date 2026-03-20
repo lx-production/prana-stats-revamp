@@ -38,12 +38,6 @@ const formatDateTime = (value: number) =>
     minute: "2-digit",
   });
 
-const formatCompactVnd = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
-
 const formatFullVnd = (value: number) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 
@@ -166,12 +160,12 @@ const PranaVndPriceChart: React.FC = () => {
               />
               <YAxis
                 dataKey="price"
-                tickFormatter={(value) => formatCompactVnd(Number(value))}
+                tickFormatter={(value) => formatFullVnd(Number(value))}
                 tick={{ fill: "#94a3b8", fontSize: 12 }}
                 axisLine={{ stroke: "rgba(148, 163, 184, 0.3)" }}
                 tickLine={{ stroke: "rgba(148, 163, 184, 0.3)" }}
                 domain={["auto", "auto"]}
-                width={56}
+                width={64}
               />
               <Tooltip
                 contentStyle={{
