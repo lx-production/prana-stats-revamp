@@ -125,45 +125,6 @@ export interface BondProgressBarProps extends BondProgressValues {
   unit: string;
 }
 
-export type BuyBondMetricKey = 'balance' | 'committed' | 'totalVolume';
-
-export interface BuyBondMetric {
-  key: BuyBondMetricKey;
-  label: string;
-  formattedValue: string;
-  numericValue: number;
-  rawValue: bigint;
-}
-
-export interface UseBuyBondStatsResult {
-  isLoading: boolean;
-  error: unknown | null;
-  metrics: BuyBondMetric[];
-}
-
-export type SellBondMetricKey = 'balance' | 'committed' | 'totalVolume';
-
-export interface SellBondMetric {
-  key: SellBondMetricKey;
-  label: string;
-  formattedValue: string;
-  numericValue: number;
-  rawValue: bigint;
-}
-
-export interface UseSellBondStatsResult {
-  isLoading: boolean;
-  error: unknown | null;
-  metrics: SellBondMetric[];
-}
-
-export interface UseBondsV2VolumeResult {
-  buyBondTotalRawV2: bigint;
-  sellBondTotalRawV2: bigint;
-  isLoading: boolean;
-  error: unknown | null;
-}
-
 export interface BondingStatsInput {
   buyCommittedV1: bigint;
   buyCommittedV2: bigint;
@@ -194,17 +155,6 @@ export interface BondingStatsOutput {
   sellBondCommittedPercent: number;
   sellBondCapacityPercent: number;
 }
-
-export interface FetchBondingStatsParams {
-  provider: JsonRpcProvider;
-  buyBondTotalRawV2: bigint;
-  sellBondTotalRawV2: bigint;
-  pranaPriceVnd: number;
-}
-
-export type FetchBondingStats = (
-  params: FetchBondingStatsParams
-) => Promise<BondingStatsOutput>;
 
 export interface StakingStatsOutput {
   stakedPrana: number;

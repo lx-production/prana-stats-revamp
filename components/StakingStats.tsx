@@ -65,7 +65,7 @@ export const StakingStats: React.FC = () => {
                 <span>Runway: {Math.round(runwayDays).toLocaleString()} days</span>
                 <InfoTooltip
                   ariaLabel="Giải thích Runway"
-                  text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên. Công thức: Runway = Interest Balance / (Total Staked * 0.12 / 365)"
+                  text="Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract ‘mất’ một lượng PRANA bằng lãi ước tính (12% APR trên tổng đang stake, chia đều 365 ngày) và tổng stake không đổi, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Stake và quỹ thay đổi thì con số thay đổi. Công thức: Runway = Interest Balance / (Total Staked * 0.12 / 365)"
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
@@ -91,7 +91,7 @@ export const StakingStats: React.FC = () => {
                 <InfoTooltip
                   ariaLabel="Giải thích Capacity"
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
-                  text="Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
+                  text="Capacity là ước tính lượng PRANA có thể được stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
                 />
               </div>
             </div>

@@ -159,8 +159,6 @@ This endpoint owns the staking card payload:
 ### Computed API snapshot: bond metrics
 - `hooks/useBondStats.ts`
 - `utils/bondMetricsApi.ts`
-- `hooks/useBuyBondStats.ts`
-- `hooks/useSellBondStats.ts`
 
 These use:
 - `/api/bond-metrics`
@@ -299,7 +297,7 @@ Important development note:
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
 Current examples:
-- after `/api/bonds-v2/refresh-bonds` reports new data, `useBondsV2Volume` forces a fresh `bonds_v2.json` fetch
+- after `/api/bonds-v2/refresh-bonds` reports new data, `prefetchInitialJson` calls `fetchBondsV2TotalsSafe({ force: true })` so `bonds_v2.json` is refetched without reusing a stale browser cache entry
 - after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses` forces a fresh `top_holding_addresses.json` fetch
 
 Do not use forced refresh for normal page load unless there is a clear reason.
