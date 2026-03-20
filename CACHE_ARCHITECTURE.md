@@ -12,7 +12,7 @@ The goal is to keep caching:
 
 ### 1. One source of truth per data type
 - Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, `top_holding_addresses.json`, and `buy_dips.json`.
-- Computed app snapshots stay behind API routes such as `/api/prana-stats` and `/api/bond-metrics`.
+- Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, and `/api/bond-metrics`.
 - Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh-bonds` and `/api/refresh-holdings`.
 
 ### 2. Short-lived data should have short-lived caches
@@ -132,18 +132,44 @@ Both are useful:
 These now share the same current snapshot source:
 - `/api/prana-stats`
 
-This means the stats card and converter read the same pricing inputs:
+This endpoint is now focused on market cap and price-performance inputs.
+
+This means the market-cap card and converter read the same pricing inputs:
 - `latestSatPrice`
 - `btcPriceUsd`
 - `usdToVndRate`
 
+It no longer carries staking or bond card payloads.
+
+### Computed API snapshot: staking stats
+- `hooks/useStakingStats.ts`
+- `utils/stakingStatsApi.ts`
+
+These use:
+- `/api/staking-stats`
+
+This endpoint owns the staking card payload:
+- `stakedPrana`
+- `stakedVnd`
+- `interestContractBalancePrana`
+- `interestContractBalanceVnd`
+- `interestPrana`
+- `interestVnd`
+
 ### Computed API snapshot: bond metrics
+- `hooks/useBondStats.ts`
 - `utils/bondMetricsApi.ts`
 - `hooks/useBuyBondStats.ts`
 - `hooks/useSellBondStats.ts`
 
 These use:
 - `/api/bond-metrics`
+
+This endpoint is now the single bond API. It includes:
+- raw `buy` and `sell` metric blocks
+- a computed `summary` payload used by the bond cards and supply UI
+
+This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 ### Raw JSON helpers
 
@@ -183,6 +209,7 @@ Each instance holds its own TTL-checked value and in-flight promise. Callers pas
 
 API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
 - `/api/prana-stats`
+- `/api/staking-stats`
 - `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
@@ -226,6 +253,7 @@ Primary JSON API routes send:
 
 These currently include:
 - `/api/prana-stats`
+- `/api/staking-stats`
 - `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
@@ -264,6 +292,7 @@ Why this matters:
 
 Important development note:
 - when running the frontend in dev, the Node server must also be running for these proxied routes
+- if the Node server is stale, new API routes such as `/api/staking-stats` may fall through to `index.html` and surface as JSON parse errors in the browser
 
 ## Force Refresh Rules
 
@@ -287,6 +316,90 @@ Why:
 
 Now:
 - current price snapshot for app UI comes from `/api/prana-stats`
+- staking card data comes from `/api/staking-stats`
+- bond card data comes from `/api/bond-metrics`
+
+## Current API Shapes
+
+These are shortened example payloads that reflect the current responsibility split.
+
+### `/api/prana-stats`
+
+```json
+{
+  "btcPriceUsd": 70666,
+  "btcPriceVnd": 1859387378,
+  "usdToVndRate": 26312.33,
+  "latestSatPrice": 73.58,
+  "marketCapVnd": 13681372327,
+  "priceChange": {
+    "m1": 8.03,
+    "m3": -4.68,
+    "m6": -19.46,
+    "y1": 9.19,
+    "atl": 2958.59
+  },
+  "priceChangeBtc": {
+    "m1": 4.63,
+    "m3": 20.18,
+    "m6": 31.06,
+    "y1": 33.03,
+    "atl": 242.55
+  }
+}
+```
+
+### `/api/staking-stats`
+
+```json
+{
+  "stakedPrana": 915954.74,
+  "stakedVnd": 1253151790.19,
+  "interestContractBalancePrana": 139945.45,
+  "interestContractBalanceVnd": 191464583.51,
+  "interestPrana": 74806.22,
+  "interestVnd": 102345186.55
+}
+```
+
+### `/api/bond-metrics`
+
+```json
+{
+  "buy": {
+    "v1CommittedRaw": "21078512925681",
+    "v2CommittedRaw": "29792747402335",
+    "v2BalanceRaw": "145025716082335",
+    "totalBalanceRaw": "166104229008016",
+    "totalCommittedRaw": "50871260328016",
+    "totalVolumeRaw": "185073000000000"
+  },
+  "sell": {
+    "v1CommittedRaw": "95322",
+    "v2CommittedRaw": "0",
+    "v2BalanceRaw": "761928",
+    "totalBalanceRaw": "857250",
+    "totalCommittedRaw": "95322",
+    "totalVolumeRaw": "349040000000000"
+  },
+  "summary": {
+    "buyBondPrana": 185073,
+    "buyBondVnd": 252690120.95,
+    "sellBondPrana": 349040,
+    "sellBondVnd": 476563084.93,
+    "buyBondBalanceDisplay": "166,104",
+    "buyBondCommittedDisplay": "50,871",
+    "buyBondCapacityDisplay": "115,233",
+    "buyBondCommittedPercent": 30.62,
+    "buyBondCapacityPercent": 69.38,
+    "sellBondBalanceDisplay": "857,250",
+    "sellBondCommittedDisplay": "95,322",
+    "sellBondCapacityDisplay": "761,928",
+    "sellBondCommittedPercent": 11.11,
+    "sellBondCapacityPercent": 88.89
+  }
+}
+```
 
 ## Guidelines For Future Changes
 

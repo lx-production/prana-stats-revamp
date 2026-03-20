@@ -1,54 +1,22 @@
 import React, { useMemo } from 'react';
-import { Activity, Lock, DollarSign } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
-import { useStakingRunway } from '../hooks/useStakingRunway';
-import { useStakingAdditionalCapacity } from '../hooks/useStakingAdditionalCapacity';
 import { formatCurrency, formatNumber } from '../utils/formatters';
 import BondingStats from './BondingStats';
 import StatCard from './StatCard';
-import InfoTooltip from './InfoTooltip';
 import PerformanceCard from './PerformanceCard';
+import StakingStats from './StakingStats';
 
 export const PranaStats: React.FC = () => {
   const {
     marketCapVnd,
     latestSatPrice,
     btcPriceUsd,
-    stakedPrana,
-    stakedVnd,
-    interestContractBalancePrana,
-    interestContractBalanceVnd,
-    interestPrana,
-    interestVnd,
-    buyBondPrana,
-    buyBondVnd,
-    sellBondPrana,
-    sellBondVnd,
-    buyBondCommittedDisplay,
-    buyBondCapacityDisplay,
-    buyBondCommittedPercent,
-    buyBondCapacityPercent,
-    sellBondCommittedDisplay,
-    sellBondCapacityDisplay,
-    sellBondCommittedPercent,
-    sellBondCapacityPercent,
     priceChange,
     priceChangeBtc,
     isLoading,
     error
   } = usePranaStats();
-
-  const { runwayDays } = useStakingRunway({
-    interestBalancePrana: interestContractBalancePrana,
-    totalStakedPrana: stakedPrana,
-    apr: 0.12,
-  });
-
-  const { additionalStakeCapacityPrana } = useStakingAdditionalCapacity({
-    interestBalancePrana: interestContractBalancePrana,
-    interestCommittedPrana: interestPrana,
-    apr: 0.12,
-  });
 
   const performanceMetricsBtc = useMemo(
     () => [
@@ -109,82 +77,9 @@ export const PranaStats: React.FC = () => {
           }
         />
 
-        <BondingStats
-          isLoading={isLoading}
-          buyBondPrana={buyBondPrana}
-          buyBondVnd={buyBondVnd}
-          sellBondPrana={sellBondPrana}
-          sellBondVnd={sellBondVnd}
-          buyBondCommittedDisplay={buyBondCommittedDisplay}
-          buyBondCapacityDisplay={buyBondCapacityDisplay}
-          buyBondCommittedPercent={buyBondCommittedPercent}
-          buyBondCapacityPercent={buyBondCapacityPercent}
-          sellBondCommittedDisplay={sellBondCommittedDisplay}
-          sellBondCapacityDisplay={sellBondCapacityDisplay}
-          sellBondCommittedPercent={sellBondCommittedPercent}
-          sellBondCapacityPercent={sellBondCapacityPercent}
-        />
+        <BondingStats />
 
-        {/* Staked Value */}
-        <StatCard
-          title="Total Value Staked"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(stakedPrana, 'PRANA')} PRANA`}
-          subValue={`≈ ${formatCurrency(stakedVnd, 'VND')} VNĐ`}
-          icon={Lock}
-          delay={0.2}
-          loading={isLoading}
-        />
-
-        {/* Interest Contract Balance */}
-        <StatCard
-          title="Staking Interest Balance"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(interestContractBalancePrana, 'PRANA')} PRANA`}
-          subValue={`≈ ${formatCurrency(interestContractBalanceVnd, 'VND')} VNĐ`}
-          icon={Activity}
-          className="z-30"
-          delay={0.25}
-          loading={isLoading}
-          footer={
-            runwayDays && Number.isFinite(runwayDays) ? (
-              <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
-                <div className="flex items-center gap-2">
-                  <span>Runway: {Math.round(runwayDays).toLocaleString()} days</span>
-                  <InfoTooltip
-                    ariaLabel="Giải thích Runway"
-                    text="Runway là ước tính số ngày quỹ PRANA trong Interest Contract có thể tiếp tục trả lãi cho stakers, giả định APR 12% và tổng PRANA đang stake giữ nguyên. Công thức: Runway = Interest Balance / (Total Staked * 0.12 / 365)"
-                    widthClassName="w-[min(24rem,calc(100vw-2rem))]"
-                  />
-                </div>
-              </div>
-            ) : null
-          }
-        />
-
-        {/* Interest Committed */}
-        <StatCard
-          title="Staking Interest Committed"
-          mainValue={isLoading ? "Loading..." : `${formatCurrency(interestPrana, 'PRANA')} PRANA`}
-          subValue={`≈ ${formatCurrency(interestVnd, 'VND')} VNĐ`}
-          icon={Activity}
-          delay={0.3}
-          loading={isLoading}
-          footer={
-            additionalStakeCapacityPrana && Number.isFinite(additionalStakeCapacityPrana) ? (
-              <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
-                <div className="text-gray-400 flex items-center gap-2">
-                  <span>
-                    Capacity: {formatCurrency(additionalStakeCapacityPrana, 'PRANA')} PRANA
-                  </span>
-                  <InfoTooltip
-                    ariaLabel="Giải thích Capacity"
-                    widthClassName="w-[min(24rem,calc(100vw-2rem))]"
-                    text="Capacity là ước tính lượng PRANA có thể stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12"
-                  />
-                </div>
-              </div>
-            ) : null
-          }
-        />
+        <StakingStats />
 
         <PerformanceCard performanceMetrics={performanceMetricsBtc} compareLabel="PERFORMANCE VS BITCOIN" />
         <PerformanceCard performanceMetrics={performanceMetrics} compareLabel="PERFORMANCE VS FIAT" />

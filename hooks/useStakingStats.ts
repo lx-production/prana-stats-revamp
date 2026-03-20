@@ -1,31 +1,44 @@
-import { useCallback } from 'react';
-import { ethers } from 'ethers';
-import { PRANA_ABI, PRANA_ADDRESS } from '../constants/sharedContracts.ts';
-import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI } from '../constants/stakingContracts.ts';
-import { formatEther, safeContractCall } from '../utils/pranaStatsUtils';
-import type { FetchStakingStats } from '../types';
+import { useCallback, useEffect, useState } from 'react';
+import { initialStakingStats } from '../constants/stakingStats';
+import type { StakingStatsComputed, StakingStatsData } from '../types';
+import { fetchStakingStatsApi, getCachedStakingStatsApi } from '../utils/stakingStatsApi';
+
+const toLoadedStats = (computed: StakingStatsComputed): StakingStatsData => ({
+  ...initialStakingStats,
+  ...computed,
+  isLoading: false,
+  error: null,
+});
 
 export function useStakingStats() {
-  const fetchStakingStats: FetchStakingStats = useCallback(async ({ provider }) => {
-    const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
-    const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
+  const [stats, setStats] = useState<StakingStatsData>(() => {
+    const cached = getCachedStakingStatsApi();
+    return cached ? toLoadedStats(cached) : initialStakingStats;
+  });
 
-    const [stakedBalance, interestContractBalanceRaw, interestNeeded] = await Promise.all([
-      safeContractCall(tokenContract.balanceOf(STAKING_CONTRACT_ADDRESS), 0n),
-      safeContractCall(tokenContract.balanceOf(INTEREST_CONTRACT_ADDRESS), 0n),
-      safeContractCall(stakingContract.totalInterestNeeded(), 0n),
-    ]);
+  const fetchData = useCallback(async () => {
+    const cached = getCachedStakingStatsApi();
+    if (cached) {
+      setStats(toLoadedStats(cached));
+      return;
+    }
 
-    const stakedPrana = formatEther(stakedBalance) || 1000000; // Mock ~1M staked if 0/failed
-    const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
-    const interestPrana = formatEther(interestNeeded) || 80000; // Mock ~80k interest if 0/failed
-
-    return {
-      stakedPrana,
-      interestContractBalancePrana,
-      interestPrana,
-    };
+    try {
+      const computed = await fetchStakingStatsApi();
+      setStats(toLoadedStats(computed));
+    } catch (err: any) {
+      console.error('Failed to fetch staking stats:', err);
+      const message =
+        typeof err?.message === 'string' && err.message.trim().length > 0
+          ? err.message
+          : 'Failed to fetch staking stats';
+      setStats(prev => ({ ...prev, isLoading: false, error: message }));
+    }
   }, []);
 
-  return { fetchStakingStats };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return stats;
 }

@@ -26,27 +26,6 @@ export interface PranaStatsData {
   latestSatPrice: number | null;
 
   marketCapVnd: number | null;
-  stakedPrana: number | null;
-  stakedVnd: number | null;
-  interestContractBalancePrana: number | null;
-  interestContractBalanceVnd: number | null;
-  interestPrana: number | null;
-  interestVnd: number | null;
-  buyBondPrana: number | null;
-  buyBondVnd: number | null;
-  sellBondPrana: number | null;
-  sellBondVnd: number | null;
-  // Bond contract breakdown (display strings shown in the PRANA stats cards)
-  buyBondBalanceDisplay: string | null;
-  buyBondCommittedDisplay: string | null;
-  buyBondCapacityDisplay: string | null;
-  buyBondCommittedPercent: number | null;
-  buyBondCapacityPercent: number | null;
-  sellBondBalanceDisplay: string | null;
-  sellBondCommittedDisplay: string | null;
-  sellBondCapacityDisplay: string | null;
-  sellBondCommittedPercent: number | null;
-  sellBondCapacityPercent: number | null;
   priceChange: {
     m1: number;
     m3: number;
@@ -66,6 +45,40 @@ export interface PranaStatsData {
 }
 
 export type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
+
+export interface BondStatsData {
+  buyBondPrana: number | null;
+  buyBondVnd: number | null;
+  sellBondPrana: number | null;
+  sellBondVnd: number | null;
+  buyBondBalanceDisplay: string | null;
+  buyBondCommittedDisplay: string | null;
+  buyBondCapacityDisplay: string | null;
+  buyBondCommittedPercent: number | null;
+  buyBondCapacityPercent: number | null;
+  sellBondBalanceDisplay: string | null;
+  sellBondCommittedDisplay: string | null;
+  sellBondCapacityDisplay: string | null;
+  sellBondCommittedPercent: number | null;
+  sellBondCapacityPercent: number | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export type BondStatsComputed = Omit<BondStatsData, 'isLoading' | 'error'>;
+
+export interface StakingStatsData {
+  stakedPrana: number | null;
+  stakedVnd: number | null;
+  interestContractBalancePrana: number | null;
+  interestContractBalanceVnd: number | null;
+  interestPrana: number | null;
+  interestVnd: number | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export type StakingStatsComputed = Omit<StakingStatsData, 'isLoading' | 'error'>;
 
 export interface PranaPricesData {
   btcPriceUsd: number | null;
@@ -110,22 +123,6 @@ export interface BondProgressBarProps extends BondProgressValues {
   committedValue?: string;
   capacityValue?: string;
   unit: string;
-}
-
-export interface BondingStatsProps {
-  isLoading: boolean;
-  buyBondPrana: number | null;
-  buyBondVnd: number | null;
-  sellBondPrana: number | null;
-  sellBondVnd: number | null;
-  buyBondCommittedDisplay: string | null;
-  buyBondCapacityDisplay: string | null;
-  buyBondCommittedPercent: number | null;
-  buyBondCapacityPercent: number | null;
-  sellBondCommittedDisplay: string | null;
-  sellBondCapacityDisplay: string | null;
-  sellBondCommittedPercent: number | null;
-  sellBondCapacityPercent: number | null;
 }
 
 export type BuyBondMetricKey = 'balance' | 'committed' | 'totalVolume';

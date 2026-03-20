@@ -1,8 +1,10 @@
-import type { PranaStatsComputed } from '../types.ts';
+import type { BondStatsComputed, PranaStatsComputed, StakingStatsComputed } from '../types.ts';
 import type { CapitalData } from './capital.types.ts';
 import type { LpCapitalData } from './lpCapital.types.ts';
+import type { BondingStatsOutput } from '../types.ts';
 
 export type PranaStatsApiResponse = PranaStatsComputed;
+export type StakingStatsApiResponse = StakingStatsComputed;
 
 export interface CapitalApiResponse {
   items: CapitalData['items'];
@@ -22,4 +24,5 @@ export interface BondMetricsApiSide {
 export interface BondMetricsApiResponse {
   buy: BondMetricsApiSide;
   sell: BondMetricsApiSide;
+  summary: BondStatsComputed;
 }

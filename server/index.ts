@@ -6,6 +6,7 @@ import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { loadCapital } from './loaders/capital.ts';
 import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
+import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
 import {
   fileExists,
@@ -21,6 +22,7 @@ const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const stakingStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const bondMetricsCache = createServerCache(CACHE_TTL_MS.apiResponse);
@@ -42,10 +44,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/prana-stats') {
-      const result = await pranaStatsCache(async () => {
-        await ensureBondsRefreshed();
-        return await loadPranaStats();
-      });
+      const result = await pranaStatsCache(loadPranaStats);
+      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
+    }
+
+    if (url.pathname === '/api/staking-stats') {
+      const result = await stakingStatsCache(loadStakingStats);
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 

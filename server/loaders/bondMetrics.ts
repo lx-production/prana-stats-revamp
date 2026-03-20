@@ -2,10 +2,12 @@ import path from 'node:path';
 import { ethers } from 'ethers';
 import type { BondMetricsApiResponse } from '../../types/api.types.ts';
 import type { BondsV2Json } from '../../types.ts';
+import { getBondingStats } from '../../utils/bondingStats.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { getTotalsFromBondsV2Json } from '../../utils/bondsV2Json.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
+import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { PRANA_ABI, PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ABI, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import {
   BUY_BOND_ADDRESS_V1,
@@ -81,7 +83,12 @@ export async function loadBondSnapshot(): Promise<BondSnapshot> {
 }
 
 export async function loadBondMetrics(): Promise<BondMetricsApiResponse> {
-  const snapshot = await loadBondSnapshot();
+  const [snapshot, { btcPriceVnd, latestSatPrice }] = await Promise.all([
+    loadBondSnapshot(),
+    loadPranaPricesBundle(),
+  ]);
+
+  const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
 
   const buyTotalBalanceRaw = snapshot.buyBalanceV2 + snapshot.buyCommittedV1;
   const buyTotalCommittedRaw = snapshot.buyCommittedV1 + snapshot.buyCommittedV2;
@@ -90,6 +97,20 @@ export async function loadBondMetrics(): Promise<BondMetricsApiResponse> {
   const sellTotalBalanceRaw = snapshot.sellBalanceV2 + snapshot.sellCommittedV1;
   const sellTotalCommittedRaw = snapshot.sellCommittedV1 + snapshot.sellCommittedV2;
   const sellTotalVolumeRaw = snapshot.sellBondTotalRawV2 + SELL_BOND_V1_TOTAL_VOLUME_RAW;
+
+  const summary = getBondingStats({
+    buyCommittedV1: snapshot.buyCommittedV1,
+    buyCommittedV2: snapshot.buyCommittedV2,
+    buyBalanceV2: snapshot.buyBalanceV2,
+    sellCommittedV1: snapshot.sellCommittedV1,
+    sellCommittedV2: snapshot.sellCommittedV2,
+    sellBalanceV2: snapshot.sellBalanceV2,
+    buyBondTotalRawV2: snapshot.buyBondTotalRawV2,
+    sellBondTotalRawV2: snapshot.sellBondTotalRawV2,
+    buyBondV1TotalRaw: BUY_BOND_V1_TOTAL_VOLUME_RAW,
+    sellBondV1TotalRaw: SELL_BOND_V1_TOTAL_VOLUME_RAW,
+    pranaPriceVnd,
+  });
 
   return {
     buy: {
@@ -108,5 +129,6 @@ export async function loadBondMetrics(): Promise<BondMetricsApiResponse> {
       totalCommittedRaw: sellTotalCommittedRaw.toString(),
       totalVolumeRaw: sellTotalVolumeRaw.toString(),
     },
+    summary,
   };
 }

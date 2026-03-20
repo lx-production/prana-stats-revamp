@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Coins, ShoppingCart } from 'lucide-react';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
-import { usePranaStats } from '../hooks/usePranaStats';
+import { useBondStats } from '../hooks/useBondStats';
 import { formatNumber } from '../utils/formatters';
 import InfoTooltip from './InfoTooltip';
 
@@ -13,8 +13,8 @@ export const Supply: React.FC = () => {
   const { allHolders = [], isLoading, error } = useTopHoldingAddresses();
   const {
     buyBondCapacityDisplay,
-    isLoading: isStatsLoading,
-  } = usePranaStats();
+    isLoading: isBondStatsLoading,
+  } = useBondStats();
 
   const circulatingSupply = useMemo(() => {
     const nonCirculating = allHolders.reduce((sum, holder, index) => {
@@ -97,7 +97,7 @@ export const Supply: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-cyan-200 text-center">
-                {isLoading || isStatsLoading ? 'Loading...' : `${formattedBuyable} PRANA`}
+                {isLoading || isBondStatsLoading ? 'Loading...' : `${formattedBuyable} PRANA`}
               </div>
             </div>
           </div>

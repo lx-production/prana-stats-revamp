@@ -10,3 +10,7 @@ const bondMetricsApiCache = createBrowserJsonCache({
 export async function fetchBondMetricsApi(opts: { force?: boolean } = {}): Promise<BondMetricsApiResponse> {
   return await bondMetricsApiCache.fetchCached<BondMetricsApiResponse>(opts);
 }
+
+export function getCachedBondMetricsApi(): BondMetricsApiResponse | null {
+  return bondMetricsApiCache.getCachedValue<BondMetricsApiResponse>();
+}

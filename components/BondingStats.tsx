@@ -2,8 +2,9 @@ import React from 'react';
 import StatCard from './StatCard';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
-import { BondingStatsProps, BondProgressBarProps } from '../types';
+import { BondProgressBarProps } from '../types';
 import { useBondProgress } from '../hooks/useBondProgress';
+import { useBondStats } from '../hooks/useBondStats';
 
 const BondProgressBar: React.FC<BondProgressBarProps> = ({
   loading,
@@ -84,23 +85,32 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
   );
 };
 
-const BondingStats: React.FC<BondingStatsProps> = ({
-  isLoading,
-  buyBondPrana,
-  buyBondVnd,
-  sellBondPrana,
-  sellBondVnd,
-  buyBondCommittedDisplay,
-  buyBondCapacityDisplay,
-  buyBondCommittedPercent,
-  buyBondCapacityPercent,
-  sellBondCommittedDisplay,
-  sellBondCapacityDisplay,
-  sellBondCommittedPercent,
-  sellBondCapacityPercent
-}) => {
+const BondingStats: React.FC = () => {
+  const {
+    isLoading,
+    error,
+    buyBondPrana,
+    buyBondVnd,
+    sellBondPrana,
+    sellBondVnd,
+    buyBondCommittedDisplay,
+    buyBondCapacityDisplay,
+    buyBondCommittedPercent,
+    buyBondCapacityPercent,
+    sellBondCommittedDisplay,
+    sellBondCapacityDisplay,
+    sellBondCommittedPercent,
+    sellBondCapacityPercent,
+  } = useBondStats();
+
   return (
     <>
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-950/20 px-4 py-3 text-sm text-red-200 sm:col-span-2 lg:col-span-3">
+          {error}
+        </div>
+      ) : null}
+
       {/* Buy Bond Volume */}
       <StatCard
         title="Buy Bond Volume"
