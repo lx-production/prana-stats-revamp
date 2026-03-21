@@ -78,9 +78,13 @@ export const Supply: React.FC = () => {
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
-              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2">
+              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2 relative">
                 <Coins className="w-3.5 h-3.5 text-emerald-300" />
                 Circulating Supply
+                <InfoTooltip
+                  ariaLabel="Giải thích Circulating Supply"
+                  text="Tổng cung tối đa (10M) trừ đi số PRANA nằm ở các địa chỉ HODL."
+                />
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
                 {isLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
