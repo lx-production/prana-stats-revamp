@@ -1,9 +1,3 @@
-import { ethers } from 'ethers';
-import type { LpCapitalApiResponse } from '../../types/api.types.ts';
-import { fetchJsonSafe } from '../../utils/fetchJson.ts';
-import { calculatePositionMath } from '../../utils/uniswapV3Helpers.ts';
-import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
-import { getServerArbitrumProvider } from '../utils/providers.ts';
 import {
   NONFUNGIBLE_POSITION_MANAGER,
   WBTC_USDT_POOL,
@@ -16,6 +10,13 @@ import {
   POSITION_MANAGER_ABI,
   POOL_ABI,
 } from '../../constants/arbitrumWbtcUsdtLp.ts';
+
+import { ethers } from 'ethers';
+import { fetchJsonSafe } from '../../utils/fetchJson.ts';
+import { calculatePositionMath } from '../../utils/uniswapV3Helpers.ts';
+import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
+import { getServerArbitrumProvider } from '../utils/providers.ts';
+import type { LpCapitalApiResponse } from '../../types/api.types.ts';
 
 interface GeckoPoolResponse {
   data?: {
