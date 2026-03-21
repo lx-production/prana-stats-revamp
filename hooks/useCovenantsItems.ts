@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import covenantsEn from "../covenants-en.md?raw";
-import covenantsVi from "../covenants-vi.md?raw";
+import covenantsEn from "../data/covenants-en.md?raw";
+import covenantsVi from "../data/covenants-vi.md?raw";
 import { parseFaqMarkdown } from "../utils/faqParser";
 import { useSiteLanguage } from "./useSiteLanguage";
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import faqEn from "../faq-en.md?raw";
-import faqVi from "../faq-vi.md?raw";
+import faqEn from "../data/faq-en.md?raw";
+import faqVi from "../data/faq-vi.md?raw";
 import { parseFaqMarkdown } from "../utils/faqParser";
 import { useSiteLanguage } from "./useSiteLanguage";
 

@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Clock, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
 
@@ -42,6 +43,7 @@ const iconVariants = {
 };
 
 const Timeline: React.FC = () => {
+  const { locale } = useSiteLanguage();
   const events = useTimelineEvents();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +51,7 @@ const Timeline: React.FC = () => {
 
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString("vi-VN", {
+    return date.toLocaleDateString(locale === "en" ? "en-US" : "vi-VN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -62,7 +64,7 @@ const Timeline: React.FC = () => {
         <div className="flex items-center gap-2 mb-5">
           <Clock className="h-4 w-4 text-cyan-300" />
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-            History
+            {locale === "en" ? "History" : "Lịch sử"}
           </h2>
         </div>
 
