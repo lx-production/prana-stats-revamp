@@ -26,7 +26,7 @@ Thanh khoản là lời cam kết với thị trường. PRANA luôn có nơi đ
 
 Protocol, treasury, và cộng đồng phải cùng hướng về một trục thời gian dài hạn. Không có chiến thắng nhanh chóng. Chỉ có sự tích lũy chậm rãi.
 
-**8. Giao Ước Đơn Giản**
+**8. Giao Ước Tối Giản**
 
 Hệ thống không chạy theo mọi xu hướng. Không NFT. Không governance phức tạp. Càng đơn giản, càng bền.
 

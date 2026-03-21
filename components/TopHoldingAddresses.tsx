@@ -82,22 +82,26 @@ export const TopHoldingAddresses: React.FC = () => {
                   key={holder.address}
                   className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 flex flex-col gap-2"
                 >
-                  <div className="relative flex flex-wrap items-center gap-2 text-sm text-gray-100">
-                    <span className="text-xs text-gray-500">{rank}.</span>
-                    <span className="font-semibold leading-tight">{holder.label}</span>
-                    {labelTooltips[holder.label] ? (
-                      <InfoTooltip
-                        ariaLabel={labelTooltips[holder.label].ariaLabel}
-                        text={labelTooltips[holder.label].text}
-                        widthClassName={labelTooltips[holder.label].widthClassName}
-                      />
-                    ) : null}
-                    {isNonCirculating ? (
-                      <div className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
-                        <Lock className="w-3 h-3 shrink-0" />
-                        <span className="leading-none">HODL</span>
-                      </div>
-                    ) : null}
+                  <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-sm text-gray-100">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="text-xs text-gray-500">{rank}.</span>
+                      <span className="font-semibold leading-tight">{holder.label}</span>
+                      {labelTooltips[holder.label] ? (
+                        <InfoTooltip
+                          ariaLabel={labelTooltips[holder.label].ariaLabel}
+                          text={labelTooltips[holder.label].text}
+                          widthClassName={labelTooltips[holder.label].widthClassName}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="flex justify-end">
+                      {isNonCirculating ? (
+                        <div className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
+                          <Lock className="w-3 h-3 shrink-0" />
+                          <span className="leading-none">HODL</span>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col min-w-0 gap-1">
