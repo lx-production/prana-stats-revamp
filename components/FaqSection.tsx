@@ -1,16 +1,6 @@
 import React, { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 import { useFaqItems } from "../hooks/useFaqItems";
-
-const answerVariants = {
-  hidden: { opacity: 0, height: 0 },
-  visible: {
-    opacity: 1,
-    height: "auto",
-    transition: { duration: 0.3 },
-  },
-};
 
 const FaqSection: React.FC = () => {
   const faqItems = useFaqItems();
@@ -37,6 +27,8 @@ const FaqSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setOpenItemId(isOpen ? "" : item.id)}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-answer-${item.id}`}
                   className="w-full flex items-center justify-between gap-3 text-left px-4 py-4"
                 >
                   <span className="text-sm sm:text-base font-medium text-white">
@@ -49,20 +41,18 @@ const FaqSection: React.FC = () => {
                   />
                 </button>
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key={`${item.id}-answer`}
-                      variants={answerVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="hidden"
-                      className="px-4 pb-4 text-sm sm:text-base leading-relaxed text-slate-300 whitespace-pre-line overflow-hidden"
-                    >
+                <div
+                  id={`faq-answer-${item.id}`}
+                  className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="min-h-0">
+                    <div className="px-4 pb-4 text-sm sm:text-base leading-relaxed text-slate-300 whitespace-pre-line">
                       {item.answer}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
               </article>
             );
           })}
