@@ -12,6 +12,8 @@ import PranaVndPriceChart from "./components/PranaVndPriceChart";
 import FaqSection from "./components/FaqSection";
 import Timeline from "./components/Timeline";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
+import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
+import LanguageToggle from "./components/LanguageToggle";
 import NeuralShaderBackground from "./shader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
@@ -22,7 +24,9 @@ function App() {
   useSpinningFavicon();
 
   return (
+    <SiteLanguageProvider>
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
+      <LanguageToggle />
       <NeuralShaderBackground
         className="select-none"
         opacity={1}
@@ -56,6 +60,7 @@ function App() {
         <FaqSection />
       </main>
     </div>
+    </SiteLanguageProvider>
   );
 }
 

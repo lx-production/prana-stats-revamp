@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 import { useFaqItems } from "../hooks/useFaqItems";
+import { useSiteLanguage } from "../hooks/useSiteLanguage";
 
 const FaqSection: React.FC = () => {
+  const { locale } = useSiteLanguage();
   const faqItems = useFaqItems();
   const [openItemId, setOpenItemId] = useState<string>("");
 
@@ -12,7 +14,9 @@ const FaqSection: React.FC = () => {
         <div className="flex items-center gap-2 mb-5">
           <MessageCircleQuestion className="h-4 w-4 text-cyan-300" />
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-            Frequently Asked Questions
+            {locale === "en"
+              ? "Frequently Asked Questions"
+              : "Câu Hỏi Thường Gặp"}
           </h2>
         </div>
 

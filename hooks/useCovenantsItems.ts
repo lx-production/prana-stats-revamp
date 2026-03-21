@@ -1,13 +1,14 @@
 import { useMemo } from "react";
-import faqEn from "../faq-en.md?raw";
-import faqVi from "../faq-vi.md?raw";
+import covenantsEn from "../covenants-en.md?raw";
+import covenantsVi from "../covenants-vi.md?raw";
 import { parseFaqMarkdown } from "../utils/faqParser";
 import { useSiteLanguage } from "./useSiteLanguage";
 
-export const useFaqItems = () => {
+export const useCovenantsItems = () => {
   const { locale } = useSiteLanguage();
   return useMemo(
-    () => parseFaqMarkdown(locale === "en" ? faqEn : faqVi),
+    () =>
+      parseFaqMarkdown(locale === "en" ? covenantsEn : covenantsVi),
     [locale],
   );
 };

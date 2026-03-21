@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { useManifestoItems } from "../hooks/useManifestoItems";
+import { useCovenantsItems } from "../hooks/useCovenantsItems";
+import { useSiteLanguage } from "../hooks/useSiteLanguage";
 
-type ManifestoProps = {
+type CovenantsProps = {
   isOpen: boolean;
   onClose: () => void;
 };
@@ -18,8 +19,9 @@ const dialogVariants = {
   visible: { opacity: 1, scale: 1 },
 };
 
-const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
-  const items = useManifestoItems();
+const Covenants: React.FC<CovenantsProps> = ({ isOpen, onClose }) => {
+  const { locale } = useSiteLanguage();
+  const items = useCovenantsItems();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -37,7 +39,7 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
           className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="manifesto-title"
+          aria-labelledby="covenants-title"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -47,7 +49,7 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
           <motion.button
             type="button"
             onClick={onClose}
-            aria-label="Close manifesto popup"
+            aria-label={locale === "en" ? "Close covenants dialog" : "Đóng cửa sổ giao ước"}
             className="absolute inset-0 bg-black/45 backdrop-blur-sm"
             variants={backdropVariants}
             initial="hidden"
@@ -65,10 +67,10 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
           >
             <div className="relative mb-5">
               <h2
-                id="manifesto-title"
+                id="covenants-title"
                 className="px-12 text-center text-xl font-semibold text-white"
               >
-                10 GIAO ƯỚC PRANA
+                {locale === "en" ? "10 COVENANTS OF PRANA" : "10 GIAO ƯỚC PRANA"}
               </h2>
               <button
                 type="button"
@@ -98,4 +100,4 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
   );
 };
 
-export default Manifesto;
+export default Covenants;

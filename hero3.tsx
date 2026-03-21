@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Covenants from "./components/Covenants";
+import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers";
-import Manifesto from "./components/Manifesto";
 
 const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
 const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };
@@ -38,12 +39,13 @@ function useModelViewer() {
 }
 
 export default function PranaHero() {
+  const { locale } = useSiteLanguage();
   const mvReady = useModelViewer();
   const heroRef = useRef<HTMLElement | null>(null);
   const mvRef = useRef<ModelViewerLike | null>(null);
   const spinFrameRef = useRef<number | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [isManifestoOpen, setIsManifestoOpen] = useState(false);
+  const [isCovenantsOpen, setIsCovenantsOpen] = useState(false);
 
   // Ensure default orbit after model load
   useEffect(() => {
@@ -158,10 +160,10 @@ export default function PranaHero() {
         <div className="mt-12 flex flex-col sm:flex-row gap-4 sm:justify-center">
           <button
             type="button"
-            onClick={() => setIsManifestoOpen(true)}
+            onClick={() => setIsCovenantsOpen(true)}
             className="inline-flex min-w-[200px] justify-center rounded-2xl px-10 py-3 border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] text-[#2B1B05] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.7),inset_0_-10px_18px_rgba(120,73,0,0.45),0_14px_30px_rgba(0,0,0,0.35)] ring-1 ring-[#FCE8A9]/40 hover:border-[#9A6B1A]/55 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-12px_20px_rgba(120,73,0,0.55),0_18px_40px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition duration-300"
           >
-            GIAO ƯỚC
+            {locale === "en" ? "COVENANTS" : "GIAO ƯỚC"}
           </button>
           <a
             href="https://prana.triethocduongpho.net/stake/" target="_blank"
@@ -184,9 +186,9 @@ export default function PranaHero() {
           </a>
         </div>
       </div>
-      <Manifesto
-        isOpen={isManifestoOpen}
-        onClose={() => setIsManifestoOpen(false)}
+      <Covenants
+        isOpen={isCovenantsOpen}
+        onClose={() => setIsCovenantsOpen(false)}
       />
     </section>
   );
