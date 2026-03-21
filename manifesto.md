@@ -24,7 +24,7 @@ Thanh khoản là lời cam kết với thị trường. PRANA luôn có nơi đ
 
 **7. Giao Ước Đồng Bộ Dài Hạn**
 
-Protocol, treasury, và cộng đồng phải cùng hướng về một trục thời gian dài hạn. Không có chiến thắng nhanh chóng. Chỉ có sự tích lũy chậm rãi.
+Protocol, treasury, và cộng đồng phải cùng hướng về một trục thời gian dài hạn. Không có chiến thắng nhanh chóng. Chỉ có sự tích lũy lâu dài.
 
 **8. Giao Ước Tối Giản**
 

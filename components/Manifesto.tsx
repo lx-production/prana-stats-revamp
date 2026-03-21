@@ -63,20 +63,23 @@ const Manifesto: React.FC<ManifestoProps> = ({ isOpen, onClose }) => {
             exit="hidden"
             transition={{ duration: 0.35, delay: 0.05 }}
           >
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 id="manifesto-title" className="text-xl font-semibold text-white">
+            <div className="relative mb-5">
+              <h2
+                id="manifesto-title"
+                className="px-12 text-center text-xl font-semibold text-white"
+              >
                 10 GIAO ƯỚC PRANA
               </h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 p-2 text-white/80 transition hover:bg-white/10 hover:text-white"
+                className="absolute right-0 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg border border-white/15 bg-white/5 p-2 text-white/80 transition hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 text-center">
               {items.map((item) => (
                 <div key={item.id}>
                   <h3 className="text-base font-medium text-white">
