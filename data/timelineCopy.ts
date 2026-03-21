@@ -79,7 +79,7 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
   event_4: {
     title: "PRANA 1.9 — Bitcoin Halving",
     description:
-      "PRANA upgraded to 1.9, moving 100% of USDC liquidity to WBTC (Wrapped Bitcoin) on April 20, 2024 (Bitcoin halving day). 1 PRANA traded near 22 sats.",
+      "PRANA upgraded to 1.9, moving 100% of USDC liquidity to WBTC (Wrapped Bitcoin) on April 20, 2024 (Bitcoin halving day). 1 PRANA traded near 22 SAT.",
   },
   event_5: {
     title: "PRANA_v2 launch",
@@ -96,7 +96,7 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
   event_8: {
     title: "Redefining Triết Học Đường Phố",
     description:
-      "THĐP is no longer just a “community”; it became an independent content studio.",
+      "THĐP is no longer a “community”; it became an independent content creator.",
   },
   event_9: {
     title: "Master Akasha (THĐP’s AI) — Stage 2",

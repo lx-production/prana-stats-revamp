@@ -22,8 +22,8 @@ const StatCard: React.FC<StatCardProps> = ({
     <motion.div
       className={`
         group relative z-10 hover:z-30 focus-within:z-40 rounded-2xl border transition-all duration-500
-        ${highlight 
-          ? 'border-cyan-500/30 bg-cyan-950/10 shadow-[0_0_30px_rgba(8,145,178,0.1)]' 
+        ${highlight
+          ? 'border-cyan-500/30 bg-white/5 shadow-[0_0_30px_rgba(8,145,178,0.1)] hover:border-cyan-400/40 hover:bg-white/10'
           : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
         }
         backdrop-blur-md
