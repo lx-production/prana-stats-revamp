@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Covenants from "./components/Covenants";
+import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers";
 
@@ -40,6 +41,7 @@ function useModelViewer() {
 
 export default function PranaHero() {
   const { locale } = useSiteLanguage();
+  const heroHeadlines = useHeroHeadlines();
   const mvReady = useModelViewer();
   const heroRef = useRef<HTMLElement | null>(null);
   const mvRef = useRef<ModelViewerLike | null>(null);
@@ -148,13 +150,13 @@ export default function PranaHero() {
       {/* Copy & CTAs */}
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-8">
         <h1 className="text-4xl font-medium tracking-wide">
-          Định Giá Bằng Bitcoin
+          {heroHeadlines.title}
         </h1><br />
         <h2 className="text-4xl font-medium tracking-wide">
-          Vận Hành Bằng Trí Tuệ
+          {heroHeadlines.subtitle}
         </h2>
         <p className="mt-6 text-[15px] text-white/70">
-          PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm
+          {heroHeadlines.tagline}
         </p>
 
         <div className="mt-12 flex flex-col sm:flex-row gap-4 sm:justify-center">
