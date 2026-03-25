@@ -72,7 +72,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `bondsJson`: `30_000`
 - `bondsRefresh`: `30_000`
 - `buyDipsJson`: `30_000`
-- `lpTokenId`: `30_000`
+- `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
 - `topHoldingAddressesJson`: `30_000`
 - `topHoldingsRefresh`: `30_000`
 
@@ -85,7 +85,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `staticAssetsHttp`: `31536000`
 
 Rule of thumb:
-- changing protocol/app data: 30 seconds
+- changing protocol/app data: 30 seconds (exception: `lpTokenId` is 24 hours; see [LP position NFT id cache](#lp-position-nft-id-cache))
 - long-lived hashed assets: 1 year immutable
 
 ## Browser Cache Helper
@@ -215,6 +215,16 @@ API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
 Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh` / `topHoldingsRefresh`):
 - `ensureBondsRefreshed()` — throttles `updateBondsV2` script
 - `ensureHoldingsRefreshed()` — throttles `updateTopHoldingAddresses` script
+
+### LP position NFT id cache
+
+`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`CACHE_TTL_MS.apiResponse`).
+
+- TTL is `CACHE_TTL_MS.lpTokenId` (24 hours).
+- Each `loadLpCapital()` call still reads on-chain `positions(tokenId)` and checks the position is still active in the configured pool; if not, the id cache is cleared and the loader rescans wallet NFTs.
+- Server restart clears this cache.
+
+Purpose: avoid repeating `balanceOf` / `tokenOfOwnerByIndex` scans on every request while keeping USD value and pool state fresh for each response.
 
 ### Price loader cache
 
