@@ -8,7 +8,7 @@ export function useHeroHeadlines() {
       locale === "en"
         ? {
             title: "Priced by Bitcoin",
-            subtitle: "Powered by Wisdom",
+            subtitle: "Run by Wisdom",
             tagline:
               "PRANA is the bridge between the precision of Code and the understanding of Heart",
           }

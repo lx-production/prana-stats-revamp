@@ -56,7 +56,7 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
   },
   event_12: {
     title: "PRANA Stats V2",
-    description: "Khai trương trang PRANA Stats mới",
+    description: "Khai trương trang PRANA Stats mới.",
   },
 };
 

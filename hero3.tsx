@@ -4,7 +4,7 @@ import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { createOnKeyDown, createSpinCoin } from "./utils/modelViewerHelpers";
 
-const COIN_MODEL_URL = new URL("./prana.glb", import.meta.url).href;
+const COIN_MODEL_URL = "/prana-coin.glb";
 const CAMERA_ORBIT_BASE = { theta: 15, phi: 120, radius: "120%" };
 const CAMERA_ORBIT_ATTR = `${CAMERA_ORBIT_BASE.theta}deg ${CAMERA_ORBIT_BASE.phi}deg ${CAMERA_ORBIT_BASE.radius}`;
 const CAMERA_RADIUS_CLAMP = `auto auto ${CAMERA_ORBIT_BASE.radius}`;

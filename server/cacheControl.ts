@@ -8,8 +8,8 @@ export function cacheControlFor(filePath: string): string | null {
   // HTML should always revalidate so deploys show up immediately.
   if (ext === '.html') return 'no-cache';
 
-  // This fallback image is intentionally stable, so let browsers keep it indefinitely.
-  if (base === 'prana-coin-fallback.png') {
+  // Fallback image and coin model use stable URLs (public/), cache like other static assets.
+  if (base === 'prana-coin-fallback.png' || base === 'prana-coin.glb') {
     return `public, max-age=${CACHE_TTL_SECONDS.staticAssetsHttp}, immutable`;
   }
 

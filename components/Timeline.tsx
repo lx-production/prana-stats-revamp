@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
-import { Clock, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { Clock, ExternalLink } from "lucide-react";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
