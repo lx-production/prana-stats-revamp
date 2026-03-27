@@ -56,12 +56,14 @@ export const TIMELINE_EVENTS_META = [
     timestamp: 1757721600,
     color: "#0ea5e9",
     icon: "9",
+    link: "https://akasha.triethocduongpho.net/",
   },
   {
     id: "event_10",
     timestamp: 1760745600,
     color: "#a855f7",
     icon: "10",
+    link: "https://akasha.triethocduongpho.net/",
   },
   {
     id: "event_11",
