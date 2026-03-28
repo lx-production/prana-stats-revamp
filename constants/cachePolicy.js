@@ -1,10 +1,7 @@
 export const CACHE_TTL_MS = Object.freeze({
   apiResponse: 30_000,
-  bondsJson: 30_000,
   bondsRefresh: 30_000,
-  buyDipsJson: 30_000,
   lpTokenId: 86_400_000, // 24h
-  topHoldingAddressesJson: 30_000,
   topHoldingsRefresh: 30_000,
 });
 

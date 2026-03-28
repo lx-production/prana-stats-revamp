@@ -51,9 +51,11 @@ flowchart TD
 - Applies to root JSON files and built assets.
 
 ### Browser in-memory cache
-- Used by small client helpers created with `createBrowserJsonCache(...)`.
+- Used by small client helpers created with `createBrowserJsonCache(...)` (API snapshot helpers only).
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
+
+Root JSON files (`bonds_v2.json`, `buy_dips.json`, `top_holding_addresses.json`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache.
 
 ### Server API cache
 - Used for computed API endpoints.
@@ -69,12 +71,11 @@ All shared TTL values live in `constants/cachePolicy.js`.
 
 ### Millisecond TTLs
 - `apiResponse`: `30_000`
-- `bondsJson`: `30_000`
 - `bondsRefresh`: `30_000`
-- `buyDipsJson`: `30_000`
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
-- `topHoldingAddressesJson`: `30_000`
 - `topHoldingsRefresh`: `30_000`
+
+`bonds_v2.json`, `buy_dips.json`, and `top_holding_addresses.json` rely on HTTP cache and `fetchJson` dedupe only; they do not use a millisecond TTL in `createBrowserJsonCache(...)`.
 
 ### HTTP cache TTLs in seconds
 - `apiResponseBrowserHttp`: `30`
@@ -171,15 +172,15 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 ### Raw JSON helpers
 
-These use the shared browser JSON cache helper:
-- `utils/bondsV2Json.ts`
-- `utils/topHoldingAddressesJson.ts`
-- `utils/buyDipsJson.ts`
+**`fetchJson` / `fetchJsonSafe` only (HTTP cache + in-flight GET dedupe, no TTL memory cache):**
+- `utils/bondsV2Json.ts` → `/bonds_v2.json`
+- `utils/buyDipsJson.ts` → `/buy_dips.json`
+- `utils/topHoldingAddressesJson.ts` → `/top_holding_addresses.json`
 
-Their data sources are:
-- `/bonds_v2.json`
-- `/top_holding_addresses.json`
-- `/buy_dips.json`
+`top_holding_addresses.json` is no longer prefetched on app bootstrap. `useTopHoldingAddresses()` owns the flow by calling `/api/refresh-holdings` and then fetching the JSON file.
+
+**`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
+- used only by API snapshot helpers such as `pranaStatsApi.ts`, `stakingStatsApi.ts`, and `bondMetricsApi.ts`
 
 ### Chart JSON
 
@@ -307,8 +308,10 @@ Important development note:
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
 Current examples:
-- after `/api/bonds-v2/refresh-bonds` reports new data, `prefetchInitialJson` calls `fetchBondsV2TotalsSafe({ force: true })` so `bonds_v2.json` is refetched without reusing a stale browser cache entry
-- after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses` forces a fresh `top_holding_addresses.json` fetch
+- after `/api/bonds-v2/refresh-bonds` reports new data, `prefetchInitialJson` calls `fetchBondsV2TotalsSafe({ force: true })` so `bonds_v2.json` is refetched with a cache-busting query string and avoids a stale HTTP cache entry for the plain URL
+- after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses()` forces a fresh `top_holding_addresses.json` fetch
+
+`prefetchInitialJson()` no longer warms the top holdings path on startup. That keeps top holdings refresh logic in one place instead of duplicating it in both bootstrap prefetch and the hook.
 
 Do not use forced refresh for normal page load unless there is a clear reason.
 
@@ -420,7 +423,7 @@ When adding a new cached data source:
 
 2. Put its TTL in `constants/cachePolicy.js`.
 
-3. If it is browser-consumed JSON with short-lived caching, prefer `createBrowserJsonCache(...)`.
+3. If it is browser-consumed JSON that many hooks hit repeatedly, prefer `createBrowserJsonCache(...)`. For on-demand reads or simple root JSON helpers, `fetchJson` plus HTTP headers in `cacheControl.ts` is often enough.
 
 4. If it is a computed API endpoint, use the server cache helpers instead of inventing a one-off cache.
 
@@ -443,7 +446,7 @@ If you are not sure where to put a new cache:
 - Raw generated JSON file:
   - serve from Node root route
   - give it short browser-fresh HTTP headers
-  - use `createBrowserJsonCache(...)` if the browser reads it often
+  - use `createBrowserJsonCache(...)` if multiple consumers need the same snapshot in RAM within a TTL window; otherwise `fetchJson` / `fetchJsonSafe` is enough
 
 - Computed API response:
   - cache on the server with `createServerCache(...)`

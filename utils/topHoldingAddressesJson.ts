@@ -1,17 +1,12 @@
-import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
-import { createBrowserJsonCache } from './browserJsonCache.ts';
+import { fetchJsonSafe } from './fetchJson.ts';
 
+// Default URL allows browser caching based on server cache headers.
+// When `force` is true, append a one-off cache-buster to fetch the latest file.
 export function getTopHoldingAddressesJsonUrl(force = false) {
   if (!force) return '/top_holding_addresses.json';
   return `/top_holding_addresses.json?t=${Date.now()}`;
 }
 
-const topHoldingAddressesJsonCache = createBrowserJsonCache({
-  ttlMs: CACHE_TTL_MS.topHoldingAddressesJson,
-  getUrl: getTopHoldingAddressesJsonUrl,
-});
-
 export async function fetchTopHoldingAddressesJsonSafe<T>(fallback: T, opts: { force?: boolean } = {}): Promise<T> {
-  return await topHoldingAddressesJsonCache.fetchSafe(fallback, opts);
+  return await fetchJsonSafe<T>(getTopHoldingAddressesJsonUrl(opts.force === true), fallback);
 }
-

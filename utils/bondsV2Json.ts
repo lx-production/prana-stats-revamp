@@ -1,9 +1,5 @@
 import type { BondsV2Json } from '../types.ts';
-import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
-import { createBrowserJsonCache } from './browserJsonCache.ts';
-
-// Keep this small: the goal is to dedupe requests on page load,
-// not to keep the bonds data stale for long periods.
+import { fetchJsonSafe } from './fetchJson.ts';
 
 // Default URL allows browser caching based on server cache headers.
 // When `force` is true, append a one-off cache-buster to fetch the latest file.
@@ -12,14 +8,8 @@ export function getBondsV2JsonUrl(force = false) {
   return `/bonds_v2.json?t=${Date.now()}`;
 }
 
-const bondsV2JsonCache = createBrowserJsonCache({
-  ttlMs: CACHE_TTL_MS.bondsJson,
-  getUrl: getBondsV2JsonUrl,
-});
-
-// Safe wrapper that keeps cache-busting + TTL logic private.
 export async function fetchBondsV2JsonSafe<T>(fallback: T, opts: { force?: boolean } = {}): Promise<T> {
-  return await bondsV2JsonCache.fetchSafe(fallback, opts);
+  return await fetchJsonSafe<T>(getBondsV2JsonUrl(opts.force === true), fallback);
 }
 
 export const getTotalsFromBondsV2Json = (data: unknown) => {

@@ -3,11 +3,6 @@ import { fetchBondMetricsApi } from './bondMetricsApi.ts';
 import { fetchBondsV2TotalsSafe } from './bondsV2Json.ts';
 import { fetchJsonSafe } from './fetchJson.ts';
 import { fetchPranaStatsApi } from './pranaStatsApi.ts';
-import { fetchTopHoldingAddressesJsonSafe } from './topHoldingAddressesJson.ts';
-
-const fallbackTopHoldingAddressesJson = {
-  holders: [],
-};
 
 const fallbackBuyDipsJson = {};
 
@@ -16,13 +11,6 @@ let hasPrefetchedInitialJson = false;
 export function prefetchInitialJson() {
   if (hasPrefetchedInitialJson) return;
   hasPrefetchedInitialJson = true;
-
-  const refreshHoldingsThenPrefetchJson = (async () => {
-    const refreshResult = await fetchJsonSafe<{ updated?: boolean }>('/api/refresh-holdings', {});
-    await fetchTopHoldingAddressesJsonSafe(fallbackTopHoldingAddressesJson, {
-      force: Boolean(refreshResult?.updated),
-    });
-  })();
 
   const refreshBondsThenPrefetchJson = (async () => {
     const refreshResult = await fetchJsonSafe<{ updated?: boolean }>('/api/bonds-v2/refresh-bonds', {});
@@ -44,7 +32,6 @@ export function prefetchInitialJson() {
     fetchBuyDipsJsonSafe(fallbackBuyDipsJson),
 
     // Refresh-dependent warmups to avoid stale values.
-    refreshHoldingsThenPrefetchJson,
     refreshBondsThenPrefetchJson,
   ]);
 }
