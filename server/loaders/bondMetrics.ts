@@ -1,7 +1,7 @@
-import path from 'node:path';
-import { ethers } from 'ethers';
 import type { BondMetricsApiResponse } from '../../types/api.types.ts';
 import type { BondsV2Json } from '../../types.ts';
+import path from 'node:path';
+import { ethers } from 'ethers';
 import { getBondingStats } from '../../utils/bondingStats.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { getTotalsFromBondsV2Json } from '../../utils/bondsV2Json.ts';
@@ -107,8 +107,8 @@ export async function loadBondMetrics(): Promise<BondMetricsApiResponse> {
     sellBalanceV2: snapshot.sellBalanceV2,
     buyBondTotalRawV2: snapshot.buyBondTotalRawV2,
     sellBondTotalRawV2: snapshot.sellBondTotalRawV2,
-    buyBondV1TotalRaw: BUY_BOND_V1_TOTAL_VOLUME_RAW,
-    sellBondV1TotalRaw: SELL_BOND_V1_TOTAL_VOLUME_RAW,
+    buyBondTotalRawV1: BUY_BOND_V1_TOTAL_VOLUME_RAW,
+    sellBondTotalRawV1: SELL_BOND_V1_TOTAL_VOLUME_RAW,
     pranaPriceVnd,
   });
 

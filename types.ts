@@ -51,12 +51,12 @@ export interface BondStatsData {
   buyBondVnd: number | null;
   sellBondPrana: number | null;
   sellBondVnd: number | null;
-  buyBondBalanceDisplay: string | null;
+  buyBondProgressBaseDisplay: string | null;
   buyBondCommittedDisplay: string | null;
   buyBondCapacityDisplay: string | null;
   buyBondCommittedPercent: number | null;
   buyBondCapacityPercent: number | null;
-  sellBondBalanceDisplay: string | null;
+  sellBondProgressBaseDisplay: string | null;
   sellBondCommittedDisplay: string | null;
   sellBondCapacityDisplay: string | null;
   sellBondCommittedPercent: number | null;
@@ -134,8 +134,8 @@ export interface BondingStatsInput {
   sellBalanceV2: bigint;
   buyBondTotalRawV2: bigint;
   sellBondTotalRawV2: bigint;
-  buyBondV1TotalRaw: bigint;
-  sellBondV1TotalRaw: bigint;
+  buyBondTotalRawV1: bigint;
+  sellBondTotalRawV1: bigint;
   pranaPriceVnd: number;
 }
 
@@ -144,12 +144,12 @@ export interface BondingStatsOutput {
   buyBondVnd: number;
   sellBondPrana: number;
   sellBondVnd: number;
-  buyBondBalanceDisplay: string;
+  buyBondProgressBaseDisplay: string;
   buyBondCommittedDisplay: string;
   buyBondCapacityDisplay: string;
   buyBondCommittedPercent: number;
   buyBondCapacityPercent: number;
-  sellBondBalanceDisplay: string;
+  sellBondProgressBaseDisplay: string;
   sellBondCommittedDisplay: string;
   sellBondCapacityDisplay: string;
   sellBondCommittedPercent: number;
