@@ -1,6 +1,6 @@
+import type { PranaStatsData, PranaStatsComputed } from '../types';
 import { useState, useEffect, useCallback } from 'react';
 import { initialPranaStats } from '../constants/pranaStats';
-import type { PranaStatsData, PranaStatsComputed } from '../types';
 import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 
 const toLoadedStats = (computed: PranaStatsComputed): PranaStatsData => ({
