@@ -1,10 +1,10 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fetchJson } from '../utils/fetchJson';
 import { fetchTopHoldingAddressesJsonSafe } from '../utils/topHoldingAddressesJson';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { clampTopHoldingAddressesPage, getTopHoldingAddressesPageStartIndex, getTopHoldingAddressesTotalPages, TOP_HOLDING_ADDRESSES_PAGE_SIZE } from '../utils/topHoldingAddressesPagination';
 import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
 
-const PAGE_SIZE = 10;
-const TOTAL_PAGES = 2;
+const TOTAL_PAGES = getTopHoldingAddressesTotalPages();
 
 const initialTopHoldingAddresses: TopHoldingAddressesData = {
   holders: [],
@@ -25,13 +25,17 @@ const fallbackTopHoldingAddressesJson: TopHoldingAddressesJson = {
 function useTopHoldingAddressesInternal() {
   const [data, setData] = useState<TopHoldingAddressesData>(initialTopHoldingAddresses);
   const [allHolders, setAllHolders] = useState(initialTopHoldingAddresses.holders);
+  const [loadedPages, setLoadedPages] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page: number) => {
+    const targetPage = clampTopHoldingAddressesPage(page);
+    setData((prev) => ({ ...prev, isLoading: true, error: null }));
+
     try {
       let refreshUpdated = false;
       try {
-        const refreshResult = await fetchJson<{ updated?: boolean }>('/api/refresh-holdings');
+        const refreshResult = await fetchJson<{ updated?: boolean }>(`/api/refresh-holdings?page=${targetPage}`);
         refreshUpdated = Boolean(refreshResult?.updated);
       } catch {
         // Ignore refresh errors and use existing JSON.
@@ -44,7 +48,7 @@ function useTopHoldingAddressesInternal() {
 
       const nextHolders = Array.isArray(json?.holders) ? json.holders : [];
       setAllHolders(nextHolders);
-      setCurrentPage(1);
+      setLoadedPages((prev) => (prev.includes(targetPage) ? prev : [...prev, targetPage]));
       setData((prev) => ({
         ...prev,
         generatedAt: typeof json?.generatedAt === 'string' ? json.generatedAt : null,
@@ -62,21 +66,18 @@ function useTopHoldingAddressesInternal() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (loadedPages.includes(currentPage)) return;
+    void fetchData(currentPage);
+  }, [currentPage, fetchData, loadedPages]);
 
   const goToPage = useCallback((page: number) => {
-    setCurrentPage(() => {
-      if (page < 1) return 1;
-      if (page > TOTAL_PAGES) return TOTAL_PAGES;
-      return page;
-    });
+    setCurrentPage(clampTopHoldingAddressesPage(page));
   }, []);
 
   const paged = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const startIndex = getTopHoldingAddressesPageStartIndex(currentPage);
     return {
-      holders: allHolders.slice(startIndex, startIndex + PAGE_SIZE),
+      holders: allHolders.slice(startIndex, startIndex + TOP_HOLDING_ADDRESSES_PAGE_SIZE),
       startIndex,
     };
   }, [allHolders, currentPage]);

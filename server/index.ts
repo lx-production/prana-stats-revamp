@@ -32,7 +32,9 @@ const server = http.createServer(async (req, res) => {
 
     // Endpoint the frontend can call on page load.
     if (url.pathname === '/api/refresh-holdings') {
-      const result = await ensureHoldingsRefreshed();
+      const rawPage = Number(url.searchParams.get('page') ?? '1');
+      const page = Number.isFinite(rawPage) ? rawPage : 1;
+      const result = await ensureHoldingsRefreshed(page);
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 

@@ -1,4 +1,5 @@
 import type { JsonRpcProvider } from 'ethers';
+import type { TopHoldingAddress } from './constants/topHoldingAddresses.ts';
 
 // Types and interfaces for the Prana Stats application
 
@@ -180,6 +181,7 @@ export interface TopHoldingAddressBalance {
 export interface TopHoldingAddressesBuildOutputParams {
   balancesRaw: bigint[];
   rpcUrl: string;
+  holders?: TopHoldingAddress[];
 }
 
 export interface TopHoldingAddressesBuildOutput {

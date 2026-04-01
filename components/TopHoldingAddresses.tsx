@@ -28,7 +28,7 @@ export const TopHoldingAddresses: React.FC = () => {
       ariaLabel: 'PRANA Staking info',
     },
   };
-  const { holders, generatedAt, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
+  const { holders, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
