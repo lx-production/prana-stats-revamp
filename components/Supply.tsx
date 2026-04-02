@@ -10,14 +10,14 @@ const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
 const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
 
 export const Supply: React.FC = () => {
-  const { allHolders = [], isLoading, error } = useTopHoldingAddresses();
+  const { holders, isLoading, error } = useTopHoldingAddresses();
   const {
     buyBondCapacityDisplay,
     isLoading: isBondStatsLoading,
   } = useBondStats();
 
   const circulatingSupply = useMemo(() => {
-    const nonCirculating = allHolders.reduce((sum, holder, index) => {
+    const nonCirculating = holders.reduce((sum, holder, index) => {
       const rank = index + 1;
       if (!NON_CIRCULATING_RANKS.has(rank)) return sum;
       const balanceValue = Number(holder.balance);
@@ -27,10 +27,10 @@ export const Supply: React.FC = () => {
 
     const remaining = TOTAL_SUPPLY - nonCirculating;
     return Number.isFinite(remaining) ? Math.max(0, remaining) : 0;
-  }, [allHolders]);
+  }, [holders]);
 
   const buyableSupply = useMemo(() => {
-    const poolTotal = allHolders.reduce((sum, holder) => {
+    const poolTotal = holders.reduce((sum, holder) => {
       if (!BUYABLE_LABELS.has(holder.label)) return sum;
       const balanceValue = Number(holder.balance);
       if (!Number.isFinite(balanceValue)) return sum;
@@ -45,7 +45,7 @@ export const Supply: React.FC = () => {
 
     const total = poolTotal + capacityPrana;
     return Number.isFinite(total) ? total : 0;
-  }, [allHolders, buyBondCapacityDisplay]);
+  }, [holders, buyBondCapacityDisplay]);
 
   const formattedCirculating = formatNumber(Math.round(circulatingSupply));
   const formattedBuyable = formatNumber(Math.round(buyableSupply));

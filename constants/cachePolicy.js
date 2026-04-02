@@ -11,5 +11,4 @@ export const CACHE_TTL_SECONDS = Object.freeze({
   rootBuyDipsJsonHttp: 30,
   rootDataJsonHttp: 30,
   staticAssetsHttp: 60 * 60 * 24 * 365,
-  rootTopHoldingAddressesJsonHttp: 30,
 });

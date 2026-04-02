@@ -1,9 +1,8 @@
 import { ethers, type Provider } from 'ethers';
 import { redactUrl } from './bondsScanUtils.ts';
-import { getTopHoldingAddressesPageStartIndex } from './topHoldingAddressesPagination.ts';
 import { TOP_HOLDING_ADDRESSES, type TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
 import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.ts';
-import type { TopHoldingAddressBalance, TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
+import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
 
 type MulticallBalanceResult = {
   success?: boolean;
@@ -80,31 +79,4 @@ export function buildOutput({
     },
     holders: normalizedHolders,
   };
-}
-
-export function mergeTopHoldingAddressesPage(params: {
-  page: number;
-  pageHolders: TopHoldingAddressBalance[];
-  previousHolders?: TopHoldingAddressBalance[];
-}) {
-  const { page, pageHolders, previousHolders = [] } = params;
-  const previousPageAddresses = new Set(
-    TOP_HOLDING_ADDRESSES.slice(0, getTopHoldingAddressesPageStartIndex(page)).map((holder) => holder.address.toLowerCase())
-  );
-  const holdersByAddress = new Map<string, TopHoldingAddressBalance>();
-
-  previousHolders.forEach((holder) => {
-    const key = holder.address.toLowerCase();
-    if (previousPageAddresses.has(key)) {
-      holdersByAddress.set(key, holder);
-    }
-  });
-
-  pageHolders.forEach((holder) => {
-    holdersByAddress.set(holder.address.toLowerCase(), holder);
-  });
-
-  return TOP_HOLDING_ADDRESSES
-    .map((holder) => holdersByAddress.get(holder.address.toLowerCase()))
-    .filter((holder): holder is TopHoldingAddressBalance => Boolean(holder));
 }

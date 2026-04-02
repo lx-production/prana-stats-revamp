@@ -207,13 +207,8 @@ export interface TopHoldingAddressesJson {
 
 export interface TopHoldingAddressesData {
   holders: TopHoldingAddressBalance[];
-  allHolders?: TopHoldingAddressBalance[];
   totalHolders: number;
   generatedAt: string | null;
-  currentPage: number;
-  totalPages: number;
-  startIndex: number;
-  goToPage: (page: number) => void;
   isLoading: boolean;
   error: string | null;
 }

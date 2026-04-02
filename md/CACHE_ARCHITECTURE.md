@@ -11,9 +11,10 @@ The goal is to keep caching:
 ## Principles
 
 ### 1. One source of truth per data type
-- Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, `top_holding_addresses.json`, and `buy_dips.json`.
+- Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, and `buy_dips.json`.
 - Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, and `/api/bond-metrics`.
-- Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh-bonds` and `/api/refresh-holdings`.
+- Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh-bonds`.
+- Top holding addresses are now loaded directly via `/api/top-holding-addresses` with server memory cache (no JSON file handoff).
 
 ### 2. Short-lived data should have short-lived caches
 - Root JSON files can be reused briefly by the browser before revalidation.
@@ -55,7 +56,7 @@ flowchart TD
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
 
-Root JSON files (`bonds_v2.json`, `buy_dips.json`, `top_holding_addresses.json`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache.
+Root JSON files (`bonds_v2.json`, `buy_dips.json`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache.
 
 ### Server API cache
 - Used for computed API endpoints.
@@ -75,14 +76,13 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
 - `topHoldingsRefresh`: `30_000`
 
-`bonds_v2.json`, `buy_dips.json`, and `top_holding_addresses.json` rely on HTTP cache and `fetchJson` dedupe only; they do not use a millisecond TTL in `createBrowserJsonCache(...)`.
+`bonds_v2.json` and `buy_dips.json` rely on HTTP cache and `fetchJson` dedupe only; they do not use a millisecond TTL in `createBrowserJsonCache(...)`.
 
 ### HTTP cache TTLs in seconds
 - `apiResponseBrowserHttp`: `30`
 - `rootDataJsonHttp`: `30`
 - `rootBondsJsonHttp`: `30`
 - `rootBuyDipsJsonHttp`: `30`
-- `rootTopHoldingAddressesJsonHttp`: `30`
 - `staticAssetsHttp`: `31536000`
 
 Rule of thumb:
@@ -175,9 +175,12 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 **`fetchJson` / `fetchJsonSafe` only (HTTP cache + in-flight GET dedupe, no TTL memory cache):**
 - `utils/bondsV2Json.ts` → `/bonds_v2.json`
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
-- `utils/topHoldingAddressesJson.ts` → `/top_holding_addresses.json`
 
-`top_holding_addresses.json` is no longer prefetched on app bootstrap. `useTopHoldingAddresses()` owns the flow by calling `/api/refresh-holdings` and then fetching the JSON file.
+### Top holding addresses API path
+
+- `hooks/useTopHoldingAddresses.ts` fetches `/api/top-holding-addresses` directly (no `page` param).
+- The server caches the single top-holding payload in memory for `CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
+- There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
 - used only by API snapshot helpers such as `pranaStatsApi.ts`, `stakingStatsApi.ts`, and `bondMetricsApi.ts`
@@ -202,7 +205,7 @@ Main data sources:
 
 ### Server cache factory
 
-`server/cacheHelpers.ts` exports `createServerCache(ttlMs)`, a single factory used for both API response caching and refresh throttling.
+`server/cacheHelpers.ts` exports shared cache factories (`createServerCache(ttlMs)` and `createKeyedServerCache(ttlMs)`) used by API response caching and keyed short-lived caches.
 
 Each instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
 
@@ -213,9 +216,11 @@ API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
 - `/api/lp-capital`
 - `/api/bond-metrics`
 
-Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh` / `topHoldingsRefresh`):
+Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh`):
 - `ensureBondsRefreshed()` — throttles `updateBondsV2` script
-- `ensureHoldingsRefreshed()` — throttles `updateTopHoldingAddresses` script
+
+Top holdings in-memory cache (TTL = `CACHE_TTL_MS.topHoldingsRefresh`):
+- `/api/top-holding-addresses` — caches the top-holding payload (first 10 addresses) in Node memory
 
 ### LP position NFT id cache
 
@@ -242,7 +247,6 @@ Defined in `server/cacheControl.ts`.
 These files use short-lived browser caching:
 - `data_*.json`
 - `bonds_v2.json`
-- `top_holding_addresses.json`
 - `buy_dips.json`
 
 Header shape:
@@ -267,7 +271,7 @@ These currently include:
 - `/api/lp-capital`
 - `/api/bond-metrics`
 - `/api/refresh-bonds`
-- `/api/refresh-holdings`
+- `/api/top-holding-addresses`
 - `/api/bonds-v2/refresh-bonds`
 
 This means:
@@ -290,7 +294,6 @@ This is safe because their filenames change when content changes.
 `vite.config.js` proxies both API routes and root JSON files to the Node server:
 - `/api`
 - `/data_*.json`
-- `/top_holding_addresses.json`
 - `/bonds_v2.json`
 - `/buy_dips.json`
 
@@ -309,9 +312,8 @@ Use `force: true` only when you specifically need to bypass the short-lived brow
 
 Current examples:
 - after `/api/bonds-v2/refresh-bonds` reports new data, `prefetchInitialJson` calls `fetchBondsV2TotalsSafe({ force: true })` so `bonds_v2.json` is refetched with a cache-busting query string and avoids a stale HTTP cache entry for the plain URL
-- after `/api/refresh-holdings` reports new data, `useTopHoldingAddresses()` forces a fresh `top_holding_addresses.json` fetch
 
-`prefetchInitialJson()` no longer warms the top holdings path on startup. That keeps top holdings refresh logic in one place instead of duplicating it in both bootstrap prefetch and the hook.
+Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
 
 Do not use forced refresh for normal page load unless there is a clear reason.
 

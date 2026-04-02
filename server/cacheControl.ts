@@ -25,12 +25,6 @@ export function cacheControlFor(filePath: string): string | null {
     return `public, max-age=${CACHE_TTL_SECONDS.rootBondsJsonHttp}`;
   }
 
-  // Top holders JSON is refreshed by the API endpoint and served from project root.
-  // Keep it aligned with the rest of the short-lived generated JSON.
-  if (ext === '.json' && base === 'top_holding_addresses.json') {
-    return `public, max-age=${CACHE_TTL_SECONDS.rootTopHoldingAddressesJsonHttp}`;
-  }
-
   // Buy dips JSON is generated data served from project root.
   // Keep it aligned with the other short-lived JSON resources.
   if (ext === '.json' && base === 'buy_dips.json') {

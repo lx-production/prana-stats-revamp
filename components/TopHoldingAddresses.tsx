@@ -28,7 +28,7 @@ export const TopHoldingAddresses: React.FC = () => {
       ariaLabel: 'PRANA Staking info',
     },
   };
-  const { holders, currentPage, startIndex, goToPage, isLoading, error } = useTopHoldingAddresses();
+  const { holders, isLoading, error } = useTopHoldingAddresses();
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -72,7 +72,7 @@ export const TopHoldingAddresses: React.FC = () => {
               ))
             ) : (
               holders.map((holder, index) => {
-                const rank = startIndex + index + 1;
+                const rank = index + 1;
                 const isNonCirculating = nonCirculatingRanks.has(rank);
                 const balanceValue = Number(holder.balance);
                 const formattedBalance = Number.isFinite(balanceValue) ? formatNumber(Math.round(balanceValue)) : '0';
@@ -117,28 +117,6 @@ export const TopHoldingAddresses: React.FC = () => {
               })
             )}
           </div>
-
-          {!isLoading && !error ? (
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => goToPage(1)}
-                disabled={currentPage === 1}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-200 disabled:opacity-50"
-              >
-                Page 1
-              </button>
-              <button
-                type="button"
-                onClick={() => goToPage(2)}
-                disabled={currentPage === 2}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-200 disabled:opacity-50"
-              >
-                Page 2
-              </button>
-              <span className="text-xs text-gray-500">Showing {startIndex + 1}-{startIndex + holders.length}</span>
-            </div>
-          ) : null}
         </div>
       </div>
     </section>

@@ -8,7 +8,6 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:4173',
       '^/data_.*\\.json$': 'http://localhost:4173',
-      '/top_holding_addresses.json': 'http://localhost:4173',
       '/bonds_v2.json': 'http://localhost:4173',
       '/buy_dips.json': 'http://localhost:4173',
     },

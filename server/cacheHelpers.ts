@@ -1,5 +1,4 @@
 import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
-import { updateTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
 
 export function createServerCache<T>(ttlMs: number) {
@@ -56,9 +55,5 @@ export function createKeyedServerCache<TKey, TValue>(ttlMs: number) {
 }
 
 export const bondsRefreshCache = createServerCache(CACHE_TTL_MS.bondsRefresh);
-export const holdingsRefreshCache = createKeyedServerCache<number, Awaited<ReturnType<typeof updateTopHoldingAddresses>>>(
-  CACHE_TTL_MS.topHoldingsRefresh
-);
 
 export const ensureBondsRefreshed = () => bondsRefreshCache(updateBondsV2);
-export const ensureHoldingsRefreshed = (page: number) => holdingsRefreshCache(page, () => updateTopHoldingAddresses(page));

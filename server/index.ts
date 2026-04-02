@@ -8,8 +8,10 @@ import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
-import { createServerCache, ensureBondsRefreshed, ensureHoldingsRefreshed } from './cacheHelpers.ts';
-import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootTopHoldingAddressesFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
+import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
+import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
+import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
+import type { TopHoldingAddressesBuildOutput } from '../types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
@@ -19,6 +21,7 @@ const stakingStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const bondMetricsCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(CACHE_TTL_MS.topHoldingsRefresh);
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -30,11 +33,9 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
-    // Endpoint the frontend can call on page load.
-    if (url.pathname === '/api/refresh-holdings') {
-      const rawPage = Number(url.searchParams.get('page') ?? '1');
-      const page = Number.isFinite(rawPage) ? rawPage : 1;
-      const result = await ensureHoldingsRefreshed(page);
+    // Endpoint the frontend can call for top holdings with a short-lived memory cache.
+    if (url.pathname === '/api/top-holding-addresses') {
+      const result = await topHoldingAddressesCache(loadTopHoldingAddresses);
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
@@ -82,15 +83,6 @@ const server = http.createServer(async (req, res) => {
       const rootBondsPath = path.join(PROJECT_ROOT, rootBondsFilename);
       if (await fileExists(rootBondsPath)) {
         return await serveFile(req, res, rootBondsPath);
-      }
-      return sendJson(res, 404, { error: 'not_found' });
-    }
-
-    const rootTopHoldingAddressesFilename = rootTopHoldingAddressesFilenameFromPathname(url.pathname);
-    if (rootTopHoldingAddressesFilename) {
-      const rootTopHoldingAddressesPath = path.join(PROJECT_ROOT, rootTopHoldingAddressesFilename);
-      if (await fileExists(rootTopHoldingAddressesPath)) {
-        return await serveFile(req, res, rootTopHoldingAddressesPath);
       }
       return sendJson(res, 404, { error: 'not_found' });
     }

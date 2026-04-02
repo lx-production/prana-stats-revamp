@@ -38,11 +38,6 @@ export function rootBondsJsonFilenameFromPathname(pathname: string): string | nu
   return 'bonds_v2.json';
 }
 
-export function rootTopHoldingAddressesFilenameFromPathname(pathname: string): string | null {
-  if (pathname !== '/top_holding_addresses.json') return null;
-  return 'top_holding_addresses.json';
-}
-
 export function rootBuyDipsFilenameFromPathname(pathname: string): string | null {
   if (pathname !== '/buy_dips.json') return null;
   return 'buy_dips.json';
