@@ -1,5 +1,4 @@
 import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
-import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
 
 export function createServerCache<T>(ttlMs: number) {
   let cached: { value: T; timestamp: number } | null = null;
@@ -54,6 +53,14 @@ export function createKeyedServerCache<TKey, TValue>(ttlMs: number) {
   };
 }
 
-export const bondsRefreshCache = createServerCache(CACHE_TTL_MS.bondsRefresh);
+let bondsRefreshInFlight: Promise<Awaited<ReturnType<typeof updateBondsV2>>> | null = null;
 
-export const ensureBondsRefreshed = () => bondsRefreshCache(updateBondsV2);
+export async function ensureBondsRefreshed() {
+  if (!bondsRefreshInFlight) {
+    bondsRefreshInFlight = updateBondsV2().finally(() => {
+      bondsRefreshInFlight = null;
+    });
+  }
+
+  return await bondsRefreshInFlight;
+}

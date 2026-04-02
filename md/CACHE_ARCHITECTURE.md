@@ -72,8 +72,8 @@ All shared TTL values live in `constants/cachePolicy.js`.
 
 ### Millisecond TTLs
 - `apiResponse`: `30_000`
+- `bondMetricsApiResponse`: `86_400_000` (24 hours)
 - `stakingStatsApiResponse`: `86_400_000` (24 hours)
-- `bondsRefresh`: `30_000`
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
 - `topHoldingsRefresh`: `30_000`
 
@@ -81,6 +81,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 
 ### HTTP cache TTLs in seconds
 - `apiResponseBrowserHttp`: `30`
+- `bondMetricsApiResponseBrowserHttp`: `60 * 60 * 24` (24 hours)
 - `stakingStatsApiResponseBrowserHttp`: `60 * 60 * 24` (24 hours)
 - `rootDataJsonHttp`: `30`
 - `rootBondsJsonHttp`: `30`
@@ -88,7 +89,8 @@ All shared TTL values live in `constants/cachePolicy.js`.
 - `staticAssetsHttp`: `31536000`
 
 Rule of thumb:
-- changing protocol/app data: 30 seconds (exception: `lpTokenId` is 24 hours; see [LP position NFT id cache](#lp-position-nft-id-cache))
+- changing protocol/app data: 30 seconds by default
+- longer-lived computed API snapshots can use 24 hours when intentional, such as `/api/bond-metrics` and `/api/staking-stats`
 - long-lived hashed assets: 1 year immutable
 
 ## Browser Cache Helper
@@ -171,6 +173,11 @@ This endpoint owns the staking card payload:
 These use:
 - `/api/bond-metrics`
 
+Browser behavior:
+- fetches `/api/bond-metrics` directly with `fetchJson(...)`
+- relies on browser HTTP cache and concurrent GET dedupe
+- does not keep a TTL in-memory browser snapshot
+
 This endpoint is now the single bond API. It includes:
 - raw `buy` and `sell` metric blocks
 - a computed `summary` payload used by the bond cards and supply UI
@@ -191,7 +198,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
-- used by API snapshot helpers that need a shared browser-memory snapshot, such as `pranaStatsApi.ts` and `bondMetricsApi.ts`
+- used by API snapshot helpers that need a shared browser-memory snapshot, such as `pranaStatsApi.ts`
 
 ### Chart JSON
 
@@ -217,17 +224,17 @@ Main data sources:
 
 Each instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
 
-API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
+API response caches:
 - `/api/prana-stats`
 - `/api/capital`
 - `/api/lp-capital`
-- `/api/bond-metrics`
+- `/api/bond-metrics` (TTL = `CACHE_TTL_MS.bondMetricsApiResponse`, 24h)
 
 Staking stats response cache:
 - `/api/staking-stats` (TTL = `CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
-Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh`):
-- `ensureBondsRefreshed()` — throttles `updateBondsV2` script
+Refresh request dedupe:
+- `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run and does not keep a TTL cache after it completes
 
 Top holdings in-memory cache (TTL = `CACHE_TTL_MS.topHoldingsRefresh`):
 - `/api/top-holding-addresses` — caches the top-holding payload (first 10 addresses) in Node memory

@@ -1,13 +1,13 @@
 import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
-import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { loadCapital } from './loaders/capital.ts';
 import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
+import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
+import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
 import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
@@ -16,12 +16,13 @@ import type { TopHoldingAddressesBuildOutput } from '../types.ts';
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
+const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const stakingStatsCache = createServerCache(CACHE_TTL_MS.stakingStatsApiResponse);
 const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
-const bondMetricsCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const bondMetricsCache = createServerCache(CACHE_TTL_MS.bondMetricsApiResponse);
 const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(CACHE_TTL_MS.topHoldingsRefresh);
 
 const server = http.createServer(async (req, res) => {
@@ -65,7 +66,7 @@ const server = http.createServer(async (req, res) => {
         await ensureBondsRefreshed();
         return await loadBondMetrics();
       });
-      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
+      return sendJson(res, 200, result, { cacheControl: READONLY_BOND_METRICS_API_CACHE_CONTROL });
     }
 
     // Serve data JSON directly from project root so live updates are visible

@@ -1,7 +1,7 @@
 import type { BondStatsComputed, BondStatsData } from '../types';
 import { useCallback, useEffect, useState } from 'react';
 import { initialBondStats } from '../constants/bondStats';
-import { getCachedBondMetricsApi, fetchBondMetricsApi } from '../utils/bondMetricsApi';
+import { fetchBondMetricsApi } from '../utils/bondMetricsApi';
 
 const toLoadedStats = (computed: BondStatsComputed): BondStatsData => ({
   ...initialBondStats,
@@ -10,24 +10,10 @@ const toLoadedStats = (computed: BondStatsComputed): BondStatsData => ({
   error: null,
 });
 
-function getCachedBondSummary(): BondStatsComputed | null {
-  const bondMetrics = getCachedBondMetricsApi();
-  return bondMetrics?.summary ?? null;
-}
-
 export function useBondStats() {
-  const [stats, setStats] = useState<BondStatsData>(() => {
-    const cached = getCachedBondSummary();
-    return cached ? toLoadedStats(cached) : initialBondStats;
-  });
+  const [stats, setStats] = useState<BondStatsData>(initialBondStats);
 
   const fetchData = useCallback(async () => {
-    const cached = getCachedBondSummary();
-    if (cached) {
-      setStats(toLoadedStats(cached));
-      return;
-    }
-
     try {
       const response = await fetchBondMetricsApi();
       if (response.summary) {

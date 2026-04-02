@@ -17,7 +17,7 @@ export function prefetchInitialJson() {
   })();
 
   void Promise.allSettled([
-    // Warm browser cache helpers used by multiple hooks.
+    // Warm shared API responses used by multiple hooks.
     fetchPranaStatsApi(),
     fetchBondMetricsApi(),
 
