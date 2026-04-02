@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { initialStakingStats } from '../constants/stakingStats';
 import type { StakingStatsComputed, StakingStatsData } from '../types';
-import { fetchStakingStatsApi, getCachedStakingStatsApi } from '../utils/stakingStatsApi';
+import { fetchStakingStatsApi } from '../utils/stakingStatsApi';
 
 const toLoadedStats = (computed: StakingStatsComputed): StakingStatsData => ({
   ...initialStakingStats,
@@ -11,18 +11,9 @@ const toLoadedStats = (computed: StakingStatsComputed): StakingStatsData => ({
 });
 
 export function useStakingStats() {
-  const [stats, setStats] = useState<StakingStatsData>(() => {
-    const cached = getCachedStakingStatsApi();
-    return cached ? toLoadedStats(cached) : initialStakingStats;
-  });
+  const [stats, setStats] = useState<StakingStatsData>(initialStakingStats);
 
   const fetchData = useCallback(async () => {
-    const cached = getCachedStakingStatsApi();
-    if (cached) {
-      setStats(toLoadedStats(cached));
-      return;
-    }
-
     try {
       const computed = await fetchStakingStatsApi();
       setStats(toLoadedStats(computed));

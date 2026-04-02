@@ -1,11 +1,5 @@
-import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
 import type { StakingStatsApiResponse } from '../types/api.types';
-import { createBrowserJsonCache } from './browserJsonCache';
-
-const stakingStatsApiCache = createBrowserJsonCache({
-  ttlMs: CACHE_TTL_MS.apiResponse,
-  getUrl: () => '/api/staking-stats',
-});
+import { fetchJson } from './fetchJson.ts';
 
 type LegacyPranaStatsWithStaking = {
   stakedPrana?: number | null;
@@ -16,10 +10,12 @@ type LegacyPranaStatsWithStaking = {
   interestVnd?: number | null;
 };
 
-const legacyPranaStatsCache = createBrowserJsonCache({
-  ttlMs: CACHE_TTL_MS.apiResponse,
-  getUrl: () => '/api/prana-stats',
-});
+function buildApiUrl(path: string, force: boolean): string {
+  if (!force) return path;
+
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}_=${Date.now()}`;
+}
 
 function isStakingStatsResponse(value: unknown): value is StakingStatsApiResponse {
   if (!value || typeof value !== 'object') return false;
@@ -58,8 +54,12 @@ function toStakingStatsResponse(legacy: LegacyPranaStatsWithStaking): StakingSta
 }
 
 export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Promise<StakingStatsApiResponse> {
+  const force = opts.force === true;
+
   try {
-    const response = await stakingStatsApiCache.fetchCached<StakingStatsApiResponse>(opts);
+    const response = await fetchJson<StakingStatsApiResponse>(buildApiUrl('/api/staking-stats', force), undefined, {
+      dedupeKey: force ? null : undefined,
+    });
     if (isStakingStatsResponse(response)) {
       return response;
     }
@@ -67,21 +67,13 @@ export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Prom
     // Fall through to the legacy payload while servers roll forward.
   }
 
-  const legacyResponse = await legacyPranaStatsCache.fetchCached<LegacyPranaStatsWithStaking>(opts);
+  const legacyResponse = await fetchJson<LegacyPranaStatsWithStaking>(buildApiUrl('/api/prana-stats', force), undefined, {
+    dedupeKey: force ? null : undefined,
+  });
   const stakingResponse = toStakingStatsResponse(legacyResponse);
   if (stakingResponse) {
     return stakingResponse;
   }
 
   throw new Error('Failed to fetch staking stats from /api/staking-stats or legacy /api/prana-stats');
-}
-
-export function getCachedStakingStatsApi(): StakingStatsApiResponse | null {
-  const current = stakingStatsApiCache.getCachedValue<StakingStatsApiResponse>();
-  if (isStakingStatsResponse(current)) {
-    return current;
-  }
-
-  const legacy = legacyPranaStatsCache.getCachedValue<LegacyPranaStatsWithStaking>();
-  return legacy ? toStakingStatsResponse(legacy) : null;
 }

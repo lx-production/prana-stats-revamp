@@ -15,9 +15,10 @@ import type { TopHoldingAddressesBuildOutput } from '../types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
+const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
-const stakingStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
+const stakingStatsCache = createServerCache(CACHE_TTL_MS.stakingStatsApiResponse);
 const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
 const bondMetricsCache = createServerCache(CACHE_TTL_MS.apiResponse);
@@ -46,7 +47,7 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/staking-stats') {
       const result = await stakingStatsCache(loadStakingStats);
-      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
+      return sendJson(res, 200, result, { cacheControl: READONLY_STAKING_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/capital') {

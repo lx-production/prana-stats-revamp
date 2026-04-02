@@ -72,6 +72,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 
 ### Millisecond TTLs
 - `apiResponse`: `30_000`
+- `stakingStatsApiResponse`: `86_400_000` (24 hours)
 - `bondsRefresh`: `30_000`
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
 - `topHoldingsRefresh`: `30_000`
@@ -80,6 +81,7 @@ All shared TTL values live in `constants/cachePolicy.js`.
 
 ### HTTP cache TTLs in seconds
 - `apiResponseBrowserHttp`: `30`
+- `stakingStatsApiResponseBrowserHttp`: `60 * 60 * 24` (24 hours)
 - `rootDataJsonHttp`: `30`
 - `rootBondsJsonHttp`: `30`
 - `rootBuyDipsJsonHttp`: `30`
@@ -149,6 +151,11 @@ It no longer carries staking or bond card payloads.
 These use:
 - `/api/staking-stats`
 
+Browser behavior:
+- fetches `/api/staking-stats` directly with `fetchJson(...)`
+- relies on browser HTTP cache and concurrent GET dedupe
+- does not keep a TTL in-memory browser snapshot
+
 This endpoint owns the staking card payload:
 - `stakedPrana`
 - `stakedVnd`
@@ -175,6 +182,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 **`fetchJson` / `fetchJsonSafe` only (HTTP cache + in-flight GET dedupe, no TTL memory cache):**
 - `utils/bondsV2Json.ts` → `/bonds_v2.json`
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
+- `utils/stakingStatsApi.ts` → `/api/staking-stats` (with legacy fallback to `/api/prana-stats` during rollout)
 
 ### Top holding addresses API path
 
@@ -183,7 +191,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
-- used only by API snapshot helpers such as `pranaStatsApi.ts`, `stakingStatsApi.ts`, and `bondMetricsApi.ts`
+- used by API snapshot helpers that need a shared browser-memory snapshot, such as `pranaStatsApi.ts` and `bondMetricsApi.ts`
 
 ### Chart JSON
 
@@ -211,10 +219,12 @@ Each instance holds its own TTL-checked value and in-flight promise. Callers pas
 
 API response caches (TTL = `CACHE_TTL_MS.apiResponse`):
 - `/api/prana-stats`
-- `/api/staking-stats`
 - `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
+
+Staking stats response cache:
+- `/api/staking-stats` (TTL = `CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
 Refresh caches (TTL = `CACHE_TTL_MS.bondsRefresh`):
 - `ensureBondsRefreshed()` — throttles `updateBondsV2` script
@@ -264,6 +274,9 @@ Defined via `sendJson(...)` in `server/requestHelpers.ts`.
 Primary JSON API routes send:
 - `Cache-Control: private, max-age=30`
 
+Exception:
+- `/api/staking-stats` sends `Cache-Control: private, max-age=24h`
+
 These currently include:
 - `/api/prana-stats`
 - `/api/staking-stats`
@@ -275,9 +288,9 @@ These currently include:
 - `/api/bonds-v2/refresh-bonds`
 
 This means:
-- browsers can reuse the API response locally for up to 30 seconds without a roundtrip
+- browsers can reuse the API response locally for up to 30 seconds without a roundtrip (24h for `/api/staking-stats`)
 - shared caches should not store it because the response is marked `private`
-- after 30 seconds, the browser will fetch again and the server API cache still applies
+- after 30 seconds, the browser will fetch again and the server API cache still applies (24h for `/api/staking-stats`)
 
 Error responses still send:
 - `Cache-Control: no-cache`
