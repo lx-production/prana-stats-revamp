@@ -8,7 +8,7 @@ import { getTotalsFromBondsV2Json } from '../../utils/bondsV2Json.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { PRANA_ABI, PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ABI, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
+import { MINIMAL_ERC20_ABI, PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
@@ -52,8 +52,8 @@ async function safeContractCall(call: Promise<unknown>, fallback: bigint): Promi
 
 export async function loadBondSnapshot(): Promise<BondSnapshot> {
   const provider = await getServerPolygonProvider();
-  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
-  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, WBTC_ABI, provider);
+  const tokenContract = new ethers.Contract(PRANA_ADDRESS, MINIMAL_ERC20_ABI, provider);
+  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, MINIMAL_ERC20_ABI, provider);
   const buyBondV1Contract = new ethers.Contract(BUY_BOND_ADDRESS_V1, BUY_BOND_COMMITTED_PRANA_ABI, provider);
   const buyBondV2Contract = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_COMMITTED_PRANA_ABI, provider);
   const sellBondV1Contract = new ethers.Contract(SELL_BOND_ADDRESS_V1, SELL_BOND_COMMITTED_WBTC_ABI, provider);

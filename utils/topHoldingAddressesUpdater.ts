@@ -1,7 +1,13 @@
 import { ethers, type Provider } from 'ethers';
 import { redactUrl } from './bondsScanUtils.ts';
 import { TOP_HOLDING_ADDRESSES, type TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
-import { PRANA_ADDRESS, PRANA_DECIMALS, PRANA_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI } from '../constants/sharedContracts.ts';
+import {
+  MINIMAL_ERC20_ABI,
+  MULTICALL3_ADDRESS,
+  MULTICALL3_ABI,
+  PRANA_ADDRESS,
+  PRANA_DECIMALS,
+} from '../constants/sharedContracts.ts';
 import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
 
 type MulticallBalanceResult = {
@@ -13,7 +19,7 @@ export async function fetchBalancesViaMulticall(
   provider: Provider,
   holders: TopHoldingAddress[] = TOP_HOLDING_ADDRESSES,
 ): Promise<bigint[]> {
-  const iface = new ethers.Interface(PRANA_ABI);
+  const iface = new ethers.Interface(MINIMAL_ERC20_ABI);
   const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
 
   const calls = holders.map((holder) => ({
@@ -40,7 +46,7 @@ export async function fetchBalancesViaFallback(
   provider: Provider,
   holders: TopHoldingAddress[] = TOP_HOLDING_ADDRESSES,
 ): Promise<bigint[]> {
-  const token = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
+  const token = new ethers.Contract(PRANA_ADDRESS, MINIMAL_ERC20_ABI, provider);
   const raw = await Promise.all(
     holders.map(async (holder) => {
       try {

@@ -3,8 +3,8 @@ import type { StakingStatsApiResponse } from '../../types/api.types.ts';
 import { asBigInt, formatEther } from '../../utils/pranaStatsUtils.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { MINIMAL_ERC20_ABI, PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
-import { PRANA_ABI, PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 
 async function safeContractCall(call: Promise<unknown>, fallback: bigint): Promise<bigint> {
   try {
@@ -16,7 +16,7 @@ async function safeContractCall(call: Promise<unknown>, fallback: bigint): Promi
 
 async function loadStakingSnapshot() {
   const provider = await getServerPolygonProvider();
-  const tokenContract = new ethers.Contract(PRANA_ADDRESS, PRANA_ABI, provider);
+  const tokenContract = new ethers.Contract(PRANA_ADDRESS, MINIMAL_ERC20_ABI, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
 
   const [stakedBalance, interestContractBalanceRaw, interestNeeded] = await Promise.all([
