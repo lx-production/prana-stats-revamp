@@ -104,6 +104,7 @@ export type PranaPricesBundle = {
 
 export interface StatCardProps {
   title: string;
+  titleExtra?: React.ReactNode;
   mainValue: React.ReactNode;
   subValue?: string;
   icon?: React.ElementType;

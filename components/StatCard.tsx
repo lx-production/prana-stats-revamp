@@ -4,6 +4,7 @@ import { StatCardProps } from '../types';
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
+  titleExtra,
   mainValue,
   subValue,
   icon: Icon,
@@ -41,9 +42,10 @@ const StatCard: React.FC<StatCardProps> = ({
       
       <div className="p-5 flex flex-col h-full relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2 relative">
             {Icon && <Icon className="w-4 h-4 text-cyan-400" />}
             {title}
+            {titleExtra}
           </h3>
         </div>
 

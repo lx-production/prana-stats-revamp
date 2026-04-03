@@ -1,10 +1,12 @@
 import React from 'react';
 import StatCard from './StatCard';
+import InfoTooltip from './InfoTooltip';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { BondProgressBarProps } from '../types';
 import { useBondProgress } from '../hooks/useBondProgress';
 import { useBondStats } from '../hooks/useBondStats';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
 
 const BondProgressBar: React.FC<BondProgressBarProps> = ({
   loading,
@@ -86,6 +88,14 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
 };
 
 const BondingStats: React.FC = () => {
+  const { locale } = useSiteLanguage();
+  const sellBondVolumeTooltipAria =
+    locale === 'en' ? 'Sell Bond Volume explanation' : 'Giải thích Sell Bond Volume';
+  const sellBondVolumeTooltipText =
+    locale === 'en'
+      ? 'Total PRANA withdrawn from circulation from Sell Bonds'
+      : 'Tổng PRANA đã được rút khỏi thị trường từ Sell Bonds';
+
   const {
     isLoading,
     error,
@@ -135,6 +145,13 @@ const BondingStats: React.FC = () => {
       {/* Sell Bond Volume */}
       <StatCard
         title="Sell Bond Volume"
+        titleExtra={
+          <InfoTooltip
+            ariaLabel={sellBondVolumeTooltipAria}
+            text={sellBondVolumeTooltipText}
+            widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+          />
+        }
         mainValue={isLoading ? "Loading..." : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`}
         subValue={`≈ ${formatCurrency(sellBondVnd, 'VND')} VNĐ`}
         icon={BarChart3}
