@@ -6,6 +6,7 @@ import InfoTooltip from './InfoTooltip';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
+
   const {
     usdValue: lpUsdValue,
     usdValueNumber: lpUsdValueNumber,
@@ -13,6 +14,7 @@ export const Capital: React.FC = () => {
     isLoading: isLpLoading,
     error: lpError,
   } = useArbitrumWbtcUsdtLpValue();
+
   const groupedItems = items.reduce<Record<string, typeof items>>((acc, item) => {
     if (!acc[item.network]) {
       acc[item.network] = [];
@@ -20,6 +22,7 @@ export const Capital: React.FC = () => {
     acc[item.network].push(item);
     return acc;
   }, {});
+
   const totalUsd = items.reduce((sum, item) => {
     if (item.tokenSymbol === 'USDT') {
       return sum + (item.amountValue || 0);
@@ -29,6 +32,7 @@ export const Capital: React.FC = () => {
     }
     return sum;
   }, 0) + (lpUsdValueNumber || 0);
+
   const formattedTotalUsd = totalUsd.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',

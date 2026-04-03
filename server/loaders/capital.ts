@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
-import type { CapitalApiResponse } from '../../types/api.types.ts';
-import { MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
+import type { CapitalApiResponse } from '../../types/api.types.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 const TREZOR_2 = '0x917d8fc3938FDB924332ad3B4771B234E5F468DC';
@@ -13,8 +13,7 @@ const USDT_ARBITRUM_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
 const USDT_DECIMALS = 6;
 const WBTC_DECIMALS = 8;
 
-const ERC20_BALANCE_OF_ABI = ['function balanceOf(address owner) view returns (uint256)'];
-const ERC20_IFACE = new ethers.Interface(ERC20_BALANCE_OF_ABI);
+const ERC20_IFACE = new ethers.Interface(MINIMAL_ERC20_ABI);
 
 type MulticallResult = {
   success?: boolean;
@@ -37,7 +36,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
   ]);
 
   const polygonMulticall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, polygonProvider);
-  const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, ERC20_BALANCE_OF_ABI, arbitrumProvider);
+  const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, MINIMAL_ERC20_ABI, arbitrumProvider);
 
   const polygonCalls = [
     {

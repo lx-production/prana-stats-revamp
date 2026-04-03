@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchJson } from '../utils/fetchJson';
 import type { CapitalData } from '../types/capital.types';
 import type { CapitalApiResponse } from '../types/api.types';
-import { fetchJson } from '../utils/fetchJson';
 
 const initialState: CapitalData = {
   items: [],
