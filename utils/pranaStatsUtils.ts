@@ -28,7 +28,7 @@ export const parseAndSortPricePoints = (data: unknown) => {
       typeof point?.t === 'number' && Number.isFinite(point.t) &&
       typeof point?.p === 'number' && Number.isFinite(point.p)
     )
-    .sort((a, b) => a.t - b.t);
+    .sort((a, b) => a.t - b.t); // Sorts ascending by t so the series is in chronological order (oldest first)
 };
 
 export const getPerformanceCutoffs = (nowUnixSeconds = Math.floor(Date.now() / 1000)) => ({
