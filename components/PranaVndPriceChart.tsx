@@ -5,11 +5,7 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { useElementSize } from "../hooks/useElementSize";
 import { resolveUsdToVndRateForChart } from "../utils/pranaVndChart";
 import type { PranaVndPriceChartProps } from "../types/pranaVndChart";
-
-type PricePoint = {
-  t: number;
-  p: number;
-};
+import type { PricePoint } from "../types/pricePoint";
 
 type ChartPoint = {
   time: number;

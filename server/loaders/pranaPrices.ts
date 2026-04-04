@@ -4,6 +4,7 @@ import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { CACHE_TTL_MS } from '../../constants/cachePolicy.js';
 import type { PranaPricesBundle } from '../../types.ts';
+import type { PricePoint } from '../../types/pricePoint.ts';
 
 const USD_TO_VND_FALLBACK = 27_000;
 
@@ -63,10 +64,10 @@ async function fetchBtcPrices() {
   }
 }
 
-async function readRootJsonArray(filename: string): Promise<any[]> {
+async function readPricePointSeries(filename: string): Promise<PricePoint[]> {
   const fullPath = path.join(PROJECT_ROOT, filename);
-  const data = await readJsonIfExists<any[]>(fullPath);
-  return Array.isArray(data) ? data : [];
+  const data = await readJsonIfExists<unknown>(fullPath);
+  return (Array.isArray(data) ? data : []) as PricePoint[];
 }
 
 export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
@@ -79,8 +80,8 @@ export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
     inFlight = (async () => {
       const [btcPrices, satsData, d365] = await Promise.all([
         fetchBtcPrices(),
-        readRootJsonArray('data_sats.json'),
-        readRootJsonArray('data_365_days.json'),
+        readPricePointSeries('data_sats.json'),
+        readPricePointSeries('data_365_days.json'),
       ]);
 
       const btcPriceUsd = btcPrices.usd;

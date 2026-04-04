@@ -1,3 +1,5 @@
+import type { PricePoint } from './pricePoint.ts';
+
 export type PriceChangeSet = {
   m1: number;
   m3: number;
@@ -27,7 +29,7 @@ export type PranaPerformanceSectionProps = {
 };
 
 export type SatsPerformanceInputs = {
-  parsedSatsData: Array<{ t?: number; p?: number }>;
+  parsedSatsData: PricePoint[];
   m1Cutoff: number;
   m3Cutoff: number;
   m6Cutoff: number;

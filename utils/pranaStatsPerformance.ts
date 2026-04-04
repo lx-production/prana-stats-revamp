@@ -1,30 +1,30 @@
 import type { PranaPriceChanges, PriceChangeSet } from '../types/performance.ts';
-import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter, getSatsPerformanceInputs, parseAndSortPricePoints } from './pranaStatsUtils.ts';
+import type { PricePoint } from '../types/pricePoint.ts';
+import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter, getSatsPerformanceInputs } from './pranaStatsUtils.ts';
 
 const ATL_PRICE = 0.0017;
 
 type BuildPranaPriceChangesParams = {
   btcPriceUsd: number;
   latestSatPrice: number;
-  satsData: unknown;
-  d365: Array<{ t?: number; p?: number }>;
+  satsData: PricePoint[];
+  d365: PricePoint[];
 };
 
 const buildFiatPriceChange = (
   latestSatPriceUsd: number,
-  d365: Array<{ t?: number; p?: number }>,
+  d365: PricePoint[],
 ): PriceChangeSet => {
   const mockM1 = latestSatPriceUsd * 0.95;
   const mockM3 = latestSatPriceUsd * 0.8;
   const mockM6 = latestSatPriceUsd * 1.2;
   const mockY1 = latestSatPriceUsd * 0.5;
   const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs();
-  const sortedD365 = parseAndSortPricePoints(d365);
   const getHistoricalPrice = (cutoffUnixSeconds: number, fallback: number) => {
-    if (sortedD365.length === 0) return fallback;
+    if (d365.length === 0) return fallback;
 
-    const match = sortedD365.find((point) => point.t >= cutoffUnixSeconds);
-    return match?.p ?? sortedD365[0].p;
+    const match = d365.find((point) => point.t >= cutoffUnixSeconds);
+    return match?.p ?? d365[0].p;
   };
 
   return {
@@ -36,7 +36,7 @@ const buildFiatPriceChange = (
   };
 };
 
-const buildBtcPriceChange = (latestSatPrice: number, satsData: unknown): PriceChangeSet => {
+const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): PriceChangeSet => {
   const { parsedSatsData, m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, safeSatsAtl } =
     getSatsPerformanceInputs(satsData, latestSatPrice);
 

@@ -1,6 +1,7 @@
 import type { JsonRpcProvider } from 'ethers';
 import type { TopHoldingAddress } from './constants/topHoldingAddresses.ts';
 import type { PriceChangeSet } from './types/performance.ts';
+import type { PricePoint } from './types/pricePoint.ts';
 
 // Types and interfaces for the Prana Stats application
 
@@ -84,8 +85,8 @@ export type PranaPricesBundle = {
   btcPriceVnd: number;
   usdToVndRate: number;
   latestSatPrice: number;
-  satsData: any[];
-  d365: any[];
+  satsData: PricePoint[];
+  d365: PricePoint[];
 };
 
 export interface StatCardProps {

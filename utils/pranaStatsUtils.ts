@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 import type { SatsPerformanceInputs } from '../types/performance.ts';
+import type { PricePoint } from '../types/pricePoint.ts';
 
 export const safeContractCall = async (call: Promise<any>, fallback: any) => {
   try {
@@ -20,17 +21,6 @@ export const formatEther = (val: bigint) =>
 export const calcChange = (oldP: number, newP: number) =>
   oldP === 0 ? 0 : ((newP - oldP) / oldP) * 100;
 
-export const parseAndSortPricePoints = (data: unknown) => {
-  if (!Array.isArray(data)) return [];
-
-  return data
-    .filter((point): point is { t: number; p: number } =>
-      typeof point?.t === 'number' && Number.isFinite(point.t) &&
-      typeof point?.p === 'number' && Number.isFinite(point.p)
-    )
-    .sort((a, b) => a.t - b.t); // Sorts ascending by t so the series is in chronological order (oldest first)
-};
-
 export const getPerformanceCutoffs = (nowUnixSeconds = Math.floor(Date.now() / 1000)) => ({
   m1Cutoff: nowUnixSeconds - (30 * 24 * 60 * 60),
   m3Cutoff: nowUnixSeconds - (90 * 24 * 60 * 60),
@@ -39,36 +29,30 @@ export const getPerformanceCutoffs = (nowUnixSeconds = Math.floor(Date.now() / 1
 });
 
 export const getPriceAtOrAfter = (
-  arr: Array<{ t?: number; p?: number }>,
+  arr: PricePoint[],
   cutoffUnixSeconds: number,
   fallback: number
 ) => {
   if (!arr || arr.length === 0) return fallback;
 
-  const sorted = parseAndSortPricePoints(arr);
-
-  if (sorted.length === 0) return fallback;
-
-  const match = sorted.find((point) => point.t >= cutoffUnixSeconds);
-  return match?.p ?? sorted[0].p;
+  const match = arr.find((point) => point.t >= cutoffUnixSeconds);
+  return match?.p ?? arr[0].p;
 };
 
 export const getSatsPerformanceInputs = (
-  satsData: unknown,
+  satsData: PricePoint[],
   latestSatPrice: number,
   nowUnixSeconds = Math.floor(Date.now() / 1000)
 ): SatsPerformanceInputs => {
   const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs(nowUnixSeconds);
-  const parsedSatsData = Array.isArray(satsData) ? satsData : [];
 
-  const satsAtl = parsedSatsData.reduce((minPrice, point) => {
-    const value = typeof point?.p === 'number' ? point.p : Number.NaN;
-    if (!Number.isFinite(value)) return minPrice;
-    return Math.min(minPrice, value);
-  }, Number.POSITIVE_INFINITY);
+  const satsAtl = satsData.reduce(
+    (minPrice, point) => Math.min(minPrice, point.p),
+    Number.POSITIVE_INFINITY
+  );
 
   return {
-    parsedSatsData,
+    parsedSatsData: satsData,
     m1Cutoff,
     m3Cutoff,
     m6Cutoff,
