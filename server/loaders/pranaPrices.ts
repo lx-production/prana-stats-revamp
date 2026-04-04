@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
-import type { PranaPricesBundle } from '../../types.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { CACHE_TTL_MS } from '../../constants/cachePolicy.js';
+import type { PranaPricesBundle } from '../../types.ts';
 
-const USD_TO_VND_FALLBACK = 26_000;
+const USD_TO_VND_FALLBACK = 27_000;
 
 let cached: { value: PranaPricesBundle; timestamp: number } | null = null;
 let inFlight: Promise<PranaPricesBundle> | null = null;

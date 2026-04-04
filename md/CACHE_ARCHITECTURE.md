@@ -337,21 +337,6 @@ Top holding addresses no longer use forced file refetch. They are served directl
 
 Do not use forced refresh for normal page load unless there is a clear reason.
 
-## What Was Removed
-
-The old extra client-side price bundle path was removed:
-- deleted `utils/pranaPrices.ts`
-
-Why:
-- it created a second current-price data path
-- it could drift from `/api/prana-stats`
-- it made the converter and stats card disagree
-
-Now:
-- current price snapshot for app UI comes from `/api/prana-stats`
-- staking card data comes from `/api/staking-stats`
-- bond card data comes from `/api/bond-metrics`
-
 ## Current API Shapes
 
 These are shortened example payloads that reflect the current responsibility split.

@@ -7,8 +7,7 @@ import PranaConverter from "./components/PranaConverter";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import Supply from "./components/Supply.tsx";
 import Capital from "./components/Capital";
-import SatsPriceChart from "./components/SatsPriceChart";
-import PranaVndPriceChart from "./components/PranaVndPriceChart";
+import PriceChartsSection from "./components/PriceChartsSection";
 import FaqSection from "./components/FaqSection";
 import Timeline from "./components/Timeline";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
@@ -50,12 +49,7 @@ function App() {
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
-        <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-            <SatsPriceChart />
-            <PranaVndPriceChart />
-          </div>
-        </section>
+        <PriceChartsSection />
         <Timeline />
         <FaqSection />
       </main>

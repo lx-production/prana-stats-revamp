@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { DollarSign } from 'lucide-react';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { formatCurrency, formatNumber } from '../utils/formatters';
 import BondingStats from './BondingStats';
+import PranaPerformanceSection from './PranaPerformanceSection';
 import StatCard from './StatCard';
-import PerformanceCard from './PerformanceCard';
 import StakingStats from './StakingStats';
 
 export const PranaStats: React.FC = () => {
@@ -17,28 +17,6 @@ export const PranaStats: React.FC = () => {
     isLoading,
     error
   } = usePranaStats();
-
-  const performanceMetricsBtc = useMemo(
-    () => [
-      { label: '1 Month', value: priceChangeBtc.m1 },
-      { label: '3 Months', value: priceChangeBtc.m3 },
-      { label: '6 Months', value: priceChangeBtc.m6 },
-      { label: '1 Year', value: priceChangeBtc.y1 },
-      { label: 'ATL', value: priceChangeBtc.atl },
-    ],
-    [priceChangeBtc]
-  );
-
-  const performanceMetrics = useMemo(
-    () => [
-      { label: '1 Month', value: priceChange.m1 },
-      { label: '3 Months', value: priceChange.m3 },
-      { label: '6 Months', value: priceChange.m6 },
-      { label: '1 Year', value: priceChange.y1 },
-      { label: 'ATL', value: priceChange.atl },
-    ],
-    [priceChange]
-  );
 
   const pranaPriceUsd = (latestSatPrice ?? 0) / 1e8 * (btcPriceUsd ?? 0);
 
@@ -81,8 +59,7 @@ export const PranaStats: React.FC = () => {
 
         <StakingStats />
 
-        <PerformanceCard performanceMetrics={performanceMetricsBtc} compareLabel="PERFORMANCE VS BITCOIN" />
-        <PerformanceCard performanceMetrics={performanceMetrics} compareLabel="PERFORMANCE VS FIAT" />
+        <PranaPerformanceSection priceChange={priceChange} priceChangeBtc={priceChangeBtc} />
       </div>
 
       <style>{`

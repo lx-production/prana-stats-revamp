@@ -1,8 +1,10 @@
-import { fetchJson } from "../utils/fetchJson";
 import React, { useEffect, useMemo, useState } from "react";
+import { fetchJson } from "../utils/fetchJson";
 import { Activity } from "lucide-react";
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { useElementSize } from "../hooks/useElementSize";
+import { resolveUsdToVndRateForChart } from "../utils/pranaVndChart";
+import type { PranaVndPriceChartProps } from "../types/pranaVndChart";
 
 type PricePoint = {
   t: number;
@@ -16,7 +18,6 @@ type ChartPoint = {
 
 type RangeKey = "7_days" | "30_days" | "90_days" | "180_days" | "365_days" | "max";
 
-const USD_TO_VND_FALLBACK = 26000;
 const MAX_POINTS = 150;
 const RANGE_OPTIONS: Array<{ key: RangeKey; label: string; file: string }> = [
   { key: "30_days", label: "30D", file: "/data_30_days.json" },
@@ -41,39 +42,13 @@ const formatDateTime = (value: number) =>
 const formatFullVnd = (value: number) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 
-const PranaVndPriceChart: React.FC = () => {
+const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate }) => {
   const [selectedRange, setSelectedRange] = useState<RangeKey>("365_days");
   const [rangeData, setRangeData] = useState<Partial<Record<RangeKey, PricePoint[]>>>({});
-  const [usdToVndRate, setUsdToVndRate] = useState<number>(USD_TO_VND_FALLBACK);
   const [error, setError] = useState<string | null>(null);
   const { ref: chartContainerRef, size: chartSize } = useElementSize<HTMLDivElement>();
 
-  useEffect(() => {
-    let isActive = true;
-
-    const loadRate = async () => {
-      try {
-        const rateData = await fetchJson<{ data?: { mid?: number } }>("https://hexarate.paikama.co/api/rates/latest/USD?target=VND", undefined, {
-          dedupeKey: "usd-vnd-rate",
-        });
-        const nextRate = rateData?.data?.mid;
-        if (!isActive) return;
-        if (typeof nextRate === "number" && Number.isFinite(nextRate) && nextRate > 0) {
-          setUsdToVndRate(nextRate);
-        }
-      } catch {
-        if (isActive) {
-          setUsdToVndRate(USD_TO_VND_FALLBACK);
-        }
-      }
-    };
-
-    loadRate();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+  const effectiveUsdToVndRate = useMemo(() => resolveUsdToVndRateForChart(usdToVndRate), [usdToVndRate]);
 
   useEffect(() => {
     if (rangeData[selectedRange]) return;
@@ -111,7 +86,7 @@ const PranaVndPriceChart: React.FC = () => {
 
   const rawData = rangeData[selectedRange] ?? [];
 
-  const { chartData, latest } = useMemo(() => {
+  const { chartData } = useMemo(() => {
     if (rawData.length === 0) {
       return { chartData: [] as ChartPoint[], latest: null as number | null };
     }
@@ -121,16 +96,16 @@ const PranaVndPriceChart: React.FC = () => {
     const sampled = sorted.filter((_, index) => index % step === 0 || index === sorted.length - 1);
     const points = sampled.map((point) => ({
       time: point.t * 1000,
-      price: Math.round(point.p * usdToVndRate),
+      price: Math.round(point.p * effectiveUsdToVndRate),
     }));
 
     const latestPoint = sorted[sorted.length - 1];
 
     return {
       chartData: points,
-      latest: Math.round(latestPoint.p * usdToVndRate),
+      latest: Math.round(latestPoint.p * effectiveUsdToVndRate),
     };
-  }, [rawData, usdToVndRate]);
+  }, [rawData, effectiveUsdToVndRate]);
 
   return (
     <div className="h-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 flex flex-col">
@@ -190,7 +165,7 @@ const PranaVndPriceChart: React.FC = () => {
           ) : null}
         </div>
       )}
-      
+
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         {RANGE_OPTIONS.map((option) => {
           const isSelected = option.key === selectedRange;

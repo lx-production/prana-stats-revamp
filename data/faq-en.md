@@ -1,6 +1,6 @@
 **1. Is PRANA really “priced 100% in Bitcoin,” or is that just marketing?**
 
-PRANA is priced entirely in Bitcoin by strategic design—not in USD and not pegged to stablecoins. There is only one swap pool (WBTC/PRANA v3 on Uniswap, with 100% of liquidity for the protocol supplied from day one). That means every operational decision—staking, bonding, OTC, treasury logic—maps back to BTC as the ultimate value standard. This is not a peg mechanism; it is a philosophical choice and a pricing model that is ahead of its time.
+PRANA is priced entirely in Bitcoin by strategic design—not in USD and not pegged to stablecoins. There is only one swap pool (WBTC/PRANA v3 on Uniswap, with 100% protocol supplied liquididy from day one). That means every operational decision—staking, bonding, OTC, treasury logic—maps back to BTC as the ultimate value standard. This is not a peg mechanism; it is a philosophical choice and a pricing model that is ahead of its time.
 
 **2. Can the fixed 10 million token supply ever change? Is there hidden minting?**
 

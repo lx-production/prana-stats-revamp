@@ -1,8 +1,8 @@
-import { fetchJson } from "../utils/fetchJson";
 import React, { useEffect, useMemo, useState } from "react";
 import { Activity } from "lucide-react";
-import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
+import { fetchJson } from "../utils/fetchJson";
 import { useElementSize } from "../hooks/useElementSize";
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 
 type SatsPoint = {
   t: number;

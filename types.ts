@@ -1,5 +1,6 @@
 import type { JsonRpcProvider } from 'ethers';
 import type { TopHoldingAddress } from './constants/topHoldingAddresses.ts';
+import type { PriceChangeSet } from './types/performance.ts';
 
 // Types and interfaces for the Prana Stats application
 
@@ -27,20 +28,8 @@ export interface PranaStatsData {
   latestSatPrice: number | null;
 
   marketCapVnd: number | null;
-  priceChange: {
-    m1: number;
-    m3: number;
-    m6: number;
-    y1: number;
-    atl: number;
-  };
-  priceChangeBtc: {
-    m1: number;
-    m3: number;
-    m6: number;
-    y1: number;
-    atl: number;
-  };
+  priceChange: PriceChangeSet;
+  priceChangeBtc: PriceChangeSet;
   isLoading: boolean;
   error: string | null;
 }

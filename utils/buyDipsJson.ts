@@ -8,7 +8,3 @@ export function getBuyDipsJsonUrl(force = false) {
 export async function fetchBuyDipsJson<T>(opts: { force?: boolean } = {}): Promise<T> {
   return await fetchJson<T>(getBuyDipsJsonUrl(opts.force === true));
 }
-
-export async function fetchBuyDipsJsonSafe<T>(fallback: T, opts: { force?: boolean } = {}): Promise<T> {
-  return await fetchJsonSafe<T>(getBuyDipsJsonUrl(opts.force === true), fallback);
-}
