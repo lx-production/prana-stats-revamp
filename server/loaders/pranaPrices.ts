@@ -77,12 +77,9 @@ export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
 
   if (!inFlight) {
     inFlight = (async () => {
-      const [btcPrices, satsData, d30, d90, d180, d365] = await Promise.all([
+      const [btcPrices, satsData, d365] = await Promise.all([
         fetchBtcPrices(),
         readRootJsonArray('data_sats.json'),
-        readRootJsonArray('data_30_days.json'),
-        readRootJsonArray('data_90_days.json'),
-        readRootJsonArray('data_180_days.json'),
         readRootJsonArray('data_365_days.json'),
       ]);
 
@@ -97,9 +94,6 @@ export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
         usdToVndRate,
         latestSatPrice,
         satsData,
-        d30,
-        d90,
-        d180,
         d365,
       };
 

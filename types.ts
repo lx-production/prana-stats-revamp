@@ -85,9 +85,6 @@ export type PranaPricesBundle = {
   usdToVndRate: number;
   latestSatPrice: number;
   satsData: any[];
-  d30: any[];
-  d90: any[];
-  d180: any[];
   d365: any[];
 };
 
