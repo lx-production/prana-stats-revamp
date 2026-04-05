@@ -1,9 +1,9 @@
-import type { BondStatsComputed, PranaStatsComputed, StakingStatsComputed } from '../types.ts';
+import type { BondStatsComputed, PranaStatsApiSnapshot, StakingStatsComputed } from '../types.ts';
 import type { CapitalData } from './capital.types.ts';
 import type { LpCapitalData } from './lpCapital.types.ts';
 import type { BondingStatsOutput } from '../types.ts';
 
-export type PranaStatsApiResponse = PranaStatsComputed;
+export type PranaStatsApiResponse = PranaStatsApiSnapshot;
 export type StakingStatsApiResponse = StakingStatsComputed;
 
 export interface CapitalApiResponse {

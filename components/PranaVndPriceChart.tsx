@@ -1,107 +1,40 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { fetchJson } from "../utils/fetchJson";
-import { Activity } from "lucide-react";
-import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
-import { useElementSize } from "../hooks/useElementSize";
-import { resolveUsdToVndRateForChart } from "../utils/pranaVndChart";
-import type { PranaVndPriceChartProps } from "../types/pranaVndChart";
-import type { PricePoint } from "../types/pricePoint";
+import React from 'react';
+import { Activity } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { useElementSize } from '../hooks/useElementSize';
+import type { PranaVndPriceChartProps, RangeKey } from '../types/pranaVndChart';
 
-type ChartPoint = {
-  time: number;
-  price: number;
-};
-
-type RangeKey = "7_days" | "30_days" | "90_days" | "180_days" | "365_days" | "max";
-
-const MAX_POINTS = 150;
-const RANGE_OPTIONS: Array<{ key: RangeKey; label: string; file: string }> = [
-  { key: "30_days", label: "30D", file: "/data_30_days.json" },
-  { key: "90_days", label: "90D", file: "/data_90_days.json" },
-  { key: "180_days", label: "180D", file: "/data_180_days.json" },
-  { key: "365_days", label: "1Y", file: "/data_365_days.json" },
-  { key: "max", label: "MAX", file: "/data_max.json" },
+const RANGE_OPTIONS: Array<{ key: RangeKey; label: string }> = [
+  { key: '30_days', label: '30D' },
+  { key: '90_days', label: '90D' },
+  { key: '180_days', label: '180D' },
+  { key: '365_days', label: '1Y' },
+  { key: 'max', label: 'MAX' },
 ];
 
 const formatDate = (value: number) =>
-  new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 const formatDateTime = (value: number) =>
-  new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
 const formatFullVnd = (value: number) =>
-  new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
 
-const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate }) => {
-  const [selectedRange, setSelectedRange] = useState<RangeKey>("365_days");
-  const [rangeData, setRangeData] = useState<Partial<Record<RangeKey, PricePoint[]>>>({});
-  const [error, setError] = useState<string | null>(null);
+const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({
+  chartData,
+  error,
+  isLoading,
+  selectedRange,
+  onSelectRange,
+}) => {
   const { ref: chartContainerRef, size: chartSize } = useElementSize<HTMLDivElement>();
-
-  const effectiveUsdToVndRate = useMemo(() => resolveUsdToVndRateForChart(usdToVndRate), [usdToVndRate]);
-
-  useEffect(() => {
-    if (rangeData[selectedRange]) return;
-
-    let isActive = true;
-
-    const loadRangeData = async () => {
-      const option = RANGE_OPTIONS.find((item) => item.key === selectedRange);
-      if (!option) return;
-
-      try {
-        const json = await fetchJson<PricePoint[]>(option.file);
-        if (!isActive) return;
-        setRangeData((prev) => ({
-          ...prev,
-          [selectedRange]: Array.isArray(json) ? json : [],
-        }));
-        setError(null);
-      } catch (err: any) {
-        if (!isActive) return;
-        const message =
-          typeof err?.message === "string" && err.message.trim().length > 0
-            ? err.message
-            : `Failed to fetch ${option.file}`;
-        setError(message);
-      }
-    };
-
-    loadRangeData();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedRange, rangeData]);
-
-  const rawData = rangeData[selectedRange] ?? [];
-
-  const { chartData } = useMemo(() => {
-    if (rawData.length === 0) {
-      return { chartData: [] as ChartPoint[], latest: null as number | null };
-    }
-
-    const sorted = [...rawData].sort((a, b) => a.t - b.t);
-    const step = Math.max(1, Math.ceil(sorted.length / MAX_POINTS));
-    const sampled = sorted.filter((_, index) => index % step === 0 || index === sorted.length - 1);
-    const points = sampled.map((point) => ({
-      time: point.t * 1000,
-      price: Math.round(point.p * effectiveUsdToVndRate),
-    }));
-
-    const latestPoint = sorted[sorted.length - 1];
-
-    return {
-      chartData: points,
-      latest: Math.round(latestPoint.p * effectiveUsdToVndRate),
-    };
-  }, [rawData, effectiveUsdToVndRate]);
 
   return (
     <div className="h-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 flex flex-col">
@@ -114,6 +47,8 @@ const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate })
 
       {error ? (
         <div className="mt-4 text-sm text-red-200">{error}</div>
+      ) : isLoading ? (
+        <div className="mt-4 text-sm text-gray-400">Loading...</div>
       ) : (
         <div ref={chartContainerRef} className="mt-5 h-64 w-full">
           {chartSize.width > 0 && chartSize.height > 0 ? (
@@ -122,7 +57,7 @@ const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate })
               <XAxis
                 dataKey="time"
                 type="number"
-                domain={["dataMin", "dataMax"]}
+                domain={['dataMin', 'dataMax']}
                 scale="time"
                 tickFormatter={formatDate}
                 tick={{ fill: "#94a3b8", fontSize: 12 }}
@@ -135,7 +70,7 @@ const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate })
                 tick={{ fill: "#94a3b8", fontSize: 12 }}
                 axisLine={{ stroke: "rgba(148, 163, 184, 0.3)" }}
                 tickLine={{ stroke: "rgba(148, 163, 184, 0.3)" }}
-                domain={["auto", "auto"]}
+                domain={['auto', 'auto']}
                 width={64}
               />
               <Tooltip
@@ -146,7 +81,7 @@ const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate })
                   color: "#e2e8f0",
                 }}
                 labelFormatter={(value) => formatDateTime(Number(value))}
-                formatter={(value) => [`${formatFullVnd(Number(value))} VND`, "Price"]}
+                formatter={(value) => [`${formatFullVnd(Number(value))} VND`, 'Price']}
               />
               <Line
                 type="monotone"
@@ -169,7 +104,7 @@ const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({ usdToVndRate })
             <button
               key={option.key}
               type="button"
-              onClick={() => setSelectedRange(option.key)}
+              onClick={() => onSelectRange(option.key)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 isSelected
                   ? "bg-emerald-400/20 text-emerald-200 border border-emerald-300/40"

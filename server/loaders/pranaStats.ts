@@ -1,20 +1,14 @@
 import type { PranaStatsApiResponse } from '../../types/api.types.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { buildPranaPriceChanges } from '../../utils/pranaStatsPerformance.ts';
+import { buildBtcPriceChange } from '../../utils/pranaStatsPerformance.ts';
 
 export async function loadPranaStats(): Promise<PranaStatsApiResponse> {
-  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, satsData, d365 } =
+  const { btcPriceUsd, btcPriceVnd, usdToVndRate, latestSatPrice, satsData } =
     await loadPranaPricesBundle();
 
   const pranaPriceVnd = (latestSatPrice / 1e8) * btcPriceVnd;
   const marketCap = Math.round(pranaPriceVnd * 1e7);
-  
-  const { priceChange, priceChangeBtc } = buildPranaPriceChanges({
-    btcPriceUsd,
-    latestSatPrice,
-    satsData,
-    d365,
-  });
+  const priceChangeBtc = buildBtcPriceChange(latestSatPrice, satsData);
 
   return {
     btcPriceUsd,
@@ -22,7 +16,6 @@ export async function loadPranaStats(): Promise<PranaStatsApiResponse> {
     usdToVndRate,
     latestSatPrice,
     marketCapVnd: marketCap,
-    priceChange,
     priceChangeBtc,
   };
 }

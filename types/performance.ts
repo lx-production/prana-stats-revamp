@@ -21,11 +21,16 @@ export type PranaPriceChanges = {
 export type PerformanceCardProps = {
   performanceMetrics: PerformanceMetric[];
   compareLabel: string;
+  isLoading?: boolean;
+  error?: string | null;
 };
 
 export type PranaPerformanceSectionProps = {
   priceChange: PriceChangeSet;
   priceChangeBtc: PriceChangeSet;
+  isLoading?: boolean;
+  fiatLoading?: boolean;
+  fiatError?: string | null;
 };
 
 export type SatsPerformanceInputs = {

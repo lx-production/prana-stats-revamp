@@ -36,6 +36,7 @@ export interface PranaStatsData {
 }
 
 export type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
+export type PranaStatsApiSnapshot = Omit<PranaStatsData, 'isLoading' | 'error' | 'priceChange'>;
 
 export interface BondStatsData {
   buyBondPrana: number | null;
@@ -86,7 +87,6 @@ export type PranaPricesBundle = {
   usdToVndRate: number;
   latestSatPrice: number;
   satsData: PricePoint[];
-  d365: PricePoint[];
 };
 
 export interface StatCardProps {

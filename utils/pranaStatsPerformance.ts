@@ -1,20 +1,21 @@
-import type { PranaPriceChanges, PriceChangeSet } from '../types/performance.ts';
+import type { PriceChangeSet } from '../types/performance.ts';
 import type { PricePoint } from '../types/pricePoint.ts';
 import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter, getSatsPerformanceInputs } from './pranaStatsUtils.ts';
 
 const ATL_PRICE = 0.0017;
 
-type BuildPranaPriceChangesParams = {
+type BuildFiatPriceChangeFrom365Params = {
   btcPriceUsd: number;
   latestSatPrice: number;
-  satsData: PricePoint[];
   d365: PricePoint[];
 };
 
-const buildFiatPriceChange = (
-  latestSatPriceUsd: number,
-  d365: PricePoint[],
-): PriceChangeSet => {
+export const buildFiatPriceChangeFrom365 = ({
+  btcPriceUsd,
+  latestSatPrice,
+  d365,
+}: BuildFiatPriceChangeFrom365Params): PriceChangeSet => {
+  const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
   const mockM1 = latestSatPriceUsd * 0.95;
   const mockM3 = latestSatPriceUsd * 0.8;
   const mockM6 = latestSatPriceUsd * 1.2;
@@ -36,7 +37,7 @@ const buildFiatPriceChange = (
   };
 };
 
-const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): PriceChangeSet => {
+export const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): PriceChangeSet => {
   const { parsedSatsData, m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, safeSatsAtl } =
     getSatsPerformanceInputs(satsData, latestSatPrice);
 
@@ -46,19 +47,5 @@ const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): Pr
     m6: calcChange(getPriceAtOrAfter(parsedSatsData, m6Cutoff, latestSatPrice), latestSatPrice),
     y1: calcChange(getPriceAtOrAfter(parsedSatsData, y1Cutoff, latestSatPrice), latestSatPrice),
     atl: calcChange(safeSatsAtl, latestSatPrice),
-  };
-};
-
-export const buildPranaPriceChanges = ({
-  btcPriceUsd,
-  latestSatPrice,
-  satsData,
-  d365,
-}: BuildPranaPriceChangesParams): PranaPriceChanges => {
-  const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
-
-  return {
-    priceChange: buildFiatPriceChange(latestSatPriceUsd, d365),
-    priceChangeBtc: buildBtcPriceChange(latestSatPrice, satsData),
   };
 };

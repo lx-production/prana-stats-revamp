@@ -78,10 +78,9 @@ export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
 
   if (!inFlight) {
     inFlight = (async () => {
-      const [btcPrices, satsData, d365] = await Promise.all([
+      const [btcPrices, satsData] = await Promise.all([
         fetchBtcPrices(),
         readPricePointSeries('data_sats.json'),
-        readPricePointSeries('data_365_days.json'),
       ]);
 
       const btcPriceUsd = btcPrices.usd;
@@ -95,7 +94,6 @@ export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
         usdToVndRate,
         latestSatPrice,
         satsData,
-        d365,
       };
 
       cached = { value, timestamp: Date.now() };

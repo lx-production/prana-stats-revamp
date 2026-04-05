@@ -1,9 +1,10 @@
-import type { PranaStatsData, PranaStatsComputed } from '../types';
+import type { PranaStatsData } from '../types';
+import type { PranaStatsApiResponse } from '../types/api.types';
 import { useState, useEffect, useCallback } from 'react';
 import { initialPranaStats } from '../constants/pranaStats';
 import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 
-const toLoadedStats = (computed: PranaStatsComputed): PranaStatsData => ({
+const toLoadedStats = (computed: PranaStatsApiResponse): PranaStatsData => ({
   ...initialPranaStats,
   ...computed,
   isLoading: false,

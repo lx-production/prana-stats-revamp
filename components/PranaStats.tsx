@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DollarSign } from 'lucide-react';
+import { initialPranaStats } from '../constants/pranaStats';
+import { usePrana365Data } from '../hooks/usePrana365Data';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { formatCurrency, formatNumber } from '../utils/formatters';
+import { buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
 import BondingStats from './BondingStats';
 import PranaPerformanceSection from './PranaPerformanceSection';
 import StatCard from './StatCard';
@@ -12,13 +15,24 @@ export const PranaStats: React.FC = () => {
     marketCapVnd,
     latestSatPrice,
     btcPriceUsd,
-    priceChange,
     priceChangeBtc,
     isLoading,
     error
   } = usePranaStats();
+  const { data: d365, isLoading: isPrana365Loading, error: prana365Error } = usePrana365Data();
 
   const pranaPriceUsd = (latestSatPrice ?? 0) / 1e8 * (btcPriceUsd ?? 0);
+  const priceChange = useMemo(() => {
+    if (typeof btcPriceUsd !== 'number' || typeof latestSatPrice !== 'number') {
+      return initialPranaStats.priceChange;
+    }
+
+    return buildFiatPriceChangeFrom365({
+      btcPriceUsd,
+      latestSatPrice,
+      d365,
+    });
+  }, [btcPriceUsd, latestSatPrice, d365]);
 
   return (
     <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-20">
@@ -59,7 +73,13 @@ export const PranaStats: React.FC = () => {
 
         <StakingStats />
 
-        <PranaPerformanceSection priceChange={priceChange} priceChangeBtc={priceChangeBtc} />
+        <PranaPerformanceSection
+          priceChange={priceChange}
+          priceChangeBtc={priceChangeBtc}
+          isLoading={isLoading}
+          fiatLoading={isPrana365Loading}
+          fiatError={prana365Error}
+        />
       </div>
 
       <style>{`
