@@ -7,6 +7,8 @@ const PranaPerformanceSection: React.FC<PranaPerformanceSectionProps> = ({
   priceChange,
   priceChangeBtc,
   isLoading = false,
+  btcLoading = false,
+  btcError = null,
   fiatLoading = false,
   fiatError = null,
 }) => {
@@ -17,7 +19,8 @@ const PranaPerformanceSection: React.FC<PranaPerformanceSectionProps> = ({
       <PerformanceCard
         performanceMetrics={performanceMetricsBtc}
         compareLabel="PERFORMANCE VS BITCOIN"
-        isLoading={isLoading}
+        isLoading={isLoading || btcLoading}
+        error={btcError}
       />
       <PerformanceCard
         performanceMetrics={performanceMetrics}

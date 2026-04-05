@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import SatsPriceChart from './SatsPriceChart';
 import PranaVndPriceChart from './PranaVndPriceChart';
 import { usePrana365Data } from '../hooks/usePrana365Data';
+import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
+import type { SatsChartPoint } from '../types/satsChart';
 import type { RangeKey, PranaVndChartPoint } from '../types/pranaVndChart';
 import type { PricePoint } from '../types/pricePoint';
 import { fetchJson } from '../utils/fetchJson';
@@ -19,6 +21,7 @@ const RANGE_FILES: Record<Exclude<RangeKey, '365_days'>, string> = {
 const PriceChartsSection: React.FC = () => {
   const { usdToVndRate } = usePranaStats();
   const { data: d365, isLoading: isPrana365Loading, error: prana365Error } = usePrana365Data();
+  const { data: satsData, isLoading: isPranaSatsLoading, error: pranaSatsError } = usePranaSatsData();
   const [selectedRange, setSelectedRange] = useState<RangeKey>('365_days');
   const [rangeData, setRangeData] = useState<Partial<Record<RangeKey, PricePoint[]>>>({});
   const [rangeErrors, setRangeErrors] = useState<Partial<Record<RangeKey, string | null>>>({});
@@ -91,11 +94,29 @@ const PriceChartsSection: React.FC = () => {
       price: Math.round(point.p * effectiveUsdToVndRate),
     }));
   }, [rawData, effectiveUsdToVndRate]);
+  const satsChartData = useMemo(() => {
+    if (satsData.length === 0) {
+      return [] as SatsChartPoint[];
+    }
+
+    const sorted = [...satsData].sort((a, b) => a.t - b.t);
+    const step = Math.max(1, Math.ceil(sorted.length / MAX_POINTS));
+    const sampled = sorted.filter((_, index) => index % step === 0 || index === sorted.length - 1);
+
+    return sampled.map((point) => ({
+      time: point.t * 1000,
+      price: point.p,
+    }));
+  }, [satsData]);
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-        <SatsPriceChart />
+        <SatsPriceChart
+          chartData={satsChartData}
+          error={pranaSatsError}
+          isLoading={isPranaSatsLoading}
+        />
         <PranaVndPriceChart
           chartData={chartData}
           error={error}

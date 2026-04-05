@@ -29,6 +29,8 @@ export type PranaPerformanceSectionProps = {
   priceChange: PriceChangeSet;
   priceChangeBtc: PriceChangeSet;
   isLoading?: boolean;
+  btcLoading?: boolean;
+  btcError?: string | null;
   fiatLoading?: boolean;
   fiatError?: string | null;
 };

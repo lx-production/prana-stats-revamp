@@ -2,9 +2,10 @@ import React, { useMemo } from 'react';
 import { DollarSign } from 'lucide-react';
 import { initialPranaStats } from '../constants/pranaStats';
 import { usePrana365Data } from '../hooks/usePrana365Data';
+import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { formatCurrency, formatNumber } from '../utils/formatters';
-import { buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
+import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
 import BondingStats from './BondingStats';
 import PranaPerformanceSection from './PranaPerformanceSection';
 import StatCard from './StatCard';
@@ -15,11 +16,11 @@ export const PranaStats: React.FC = () => {
     marketCapVnd,
     latestSatPrice,
     btcPriceUsd,
-    priceChangeBtc,
     isLoading,
     error
   } = usePranaStats();
   const { data: d365, isLoading: isPrana365Loading, error: prana365Error } = usePrana365Data();
+  const { data: satsData, isLoading: isPranaSatsLoading, error: pranaSatsError } = usePranaSatsData();
 
   const pranaPriceUsd = (latestSatPrice ?? 0) / 1e8 * (btcPriceUsd ?? 0);
   const priceChange = useMemo(() => {
@@ -33,6 +34,13 @@ export const PranaStats: React.FC = () => {
       d365,
     });
   }, [btcPriceUsd, latestSatPrice, d365]);
+  const priceChangeBtc = useMemo(() => {
+    if (typeof latestSatPrice !== 'number') {
+      return initialPranaStats.priceChangeBtc;
+    }
+
+    return buildBtcPriceChange(latestSatPrice, satsData);
+  }, [latestSatPrice, satsData]);
 
   return (
     <section className="w-full max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 relative z-20">
@@ -77,6 +85,8 @@ export const PranaStats: React.FC = () => {
           priceChange={priceChange}
           priceChangeBtc={priceChangeBtc}
           isLoading={isLoading}
+          btcLoading={isPranaSatsLoading}
+          btcError={pranaSatsError}
           fiatLoading={isPrana365Loading}
           fiatError={prana365Error}
         />

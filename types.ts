@@ -36,7 +36,10 @@ export interface PranaStatsData {
 }
 
 export type PranaStatsComputed = Omit<PranaStatsData, 'isLoading' | 'error'>;
-export type PranaStatsApiSnapshot = Omit<PranaStatsData, 'isLoading' | 'error' | 'priceChange'>;
+export type PranaStatsApiSnapshot = Omit<
+  PranaStatsData,
+  'isLoading' | 'error' | 'priceChange' | 'priceChangeBtc'
+>;
 
 export interface BondStatsData {
   buyBondPrana: number | null;
