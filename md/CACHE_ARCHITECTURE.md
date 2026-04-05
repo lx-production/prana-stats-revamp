@@ -52,7 +52,9 @@ flowchart TD
 - Applies to root JSON files and built assets.
 
 ### Browser in-memory cache
-- Used by small client helpers created with `createBrowserJsonCache(...)` (API snapshot helpers only).
+- Used by small client helpers created with `createBrowserJsonCache(...)`:
+  - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`)
+  - chart series that multiple UI areas consume in one session (see [Chart JSON and performance](#chart-json-and-performance))
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
 
@@ -134,17 +136,21 @@ Both are useful:
 - `hooks/usePranaPrices.ts`
 - `utils/pranaStatsApi.ts`
 
-These now share the same current snapshot source:
+These share the same current snapshot source:
 - `/api/prana-stats`
 
-This endpoint is now focused on market cap and price-performance inputs.
+This endpoint returns **pricing and market cap only** (no performance percentages):
+- `btcPriceUsd`, `btcPriceVnd`, `usdToVndRate`, `latestSatPrice`, `marketCapVnd`
 
-This means the market-cap card and converter read the same pricing inputs:
-- `latestSatPrice`
-- `btcPriceUsd`
-- `usdToVndRate`
+The market-cap card and converter read the same pricing inputs from this API.
 
-It no longer carries staking or bond card payloads.
+**Fiat and BTC performance** (`priceChange`, `priceChangeBtc`) are **not** in the API response. They are computed in the browser in `components/PranaStats.tsx` from:
+- `hooks/usePrana365Data.ts` + `utils/prana365Data.ts` → `/data_365_days.json` (fiat vs USD, with current `btcPriceUsd` / `latestSatPrice`)
+- `hooks/usePranaSatsData.ts` + `utils/pranaSatsData.ts` → `/data_sats.json` (performance vs Bitcoin / SAT)
+
+Those two hooks use `createBrowserJsonCache(...)` with `CACHE_TTL_MS.apiResponse` so **stats cards and charts** can share one in-memory fetch per file without duplicating network work.
+
+The API no longer carries staking or bond card payloads.
 
 ### Computed API snapshot: staking stats
 - `hooks/useStakingStats.ts`
@@ -198,23 +204,31 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
-- used by API snapshot helpers that need a shared browser-memory snapshot, such as `pranaStatsApi.ts`
+- `utils/pranaStatsApi.ts` → `/api/prana-stats`
+- `utils/prana365Data.ts` → `/data_365_days.json`
+- `utils/pranaSatsData.ts` → `/data_sats.json`
 
-### Chart JSON
+### Chart JSON and performance
 
-Charts fetch the JSON directly with `fetchJson(...)`, but they now rely on the shared HTTP cache policy instead of forcing `cache: 'no-store'`.
+`components/PriceChartsSection.tsx` is the container for chart data:
+- It calls `usePranaSatsData()` and `usePrana365Data()` so SAT and 1Y VND ranges share the same cached series as the performance cards in `PranaStats`.
+- It passes **pre-built `chartData`** into display-only chart components:
+  - `components/SatsPriceChart.tsx`
+  - `components/PranaVndPriceChart.tsx`
 
-Files:
-- `components/SatsPriceChart.tsx`
-- `components/PranaVndPriceChart.tsx`
+**Cached in the browser (TTL + shared hook):**
+- `/data_sats.json` — `usePranaSatsData` / `pranaSatsData.ts`
+- `/data_365_days.json` — `usePrana365Data` / `prana365Data.ts`
 
-Main data sources:
-- `/data_sats.json`
+**Fetched on demand with `fetchJson(...)`** (HTTP cache + GET dedupe; no TTL browser wrapper in code):
 - `/data_30_days.json`
 - `/data_90_days.json`
 - `/data_180_days.json`
-- `/data_365_days.json`
 - `/data_max.json`
+
+All of these still rely on the Node server’s short HTTP cache policy for root JSON (see [Root JSON headers](#root-json-headers)).
+
+**Server note:** `server/loaders/pranaPrices.ts` still reads `data_sats.json` on the server to derive `latestSatPrice` for the price bundle. It does **not** send the full sats series in `/api/prana-stats`; the browser loads `data_sats.json` separately for charts and BTC performance.
 
 ## Server Cache Behavior
 
@@ -251,9 +265,9 @@ Purpose: avoid repeating `balanceOf` / `tokenOfOwnerByIndex` scans on every requ
 
 ### Price loader cache
 
-`server/loaders/pranaPrices.ts` now uses the same short API TTL model rather than a special longer TTL.
+`server/loaders/pranaPrices.ts` uses the same short API TTL model (`CACHE_TTL_MS.apiResponse`). The bundle includes BTC prices and `latestSatPrice` from the last point of `data_sats.json` (read from disk). It does **not** load `data_365_days.json`; that file is consumed in the browser for fiat performance and the VND chart’s 1Y range.
 
-That keeps the server-side price snapshot aligned with the rest of the API freshness model.
+That keeps the server-side price snapshot aligned with the rest of the API freshness model while avoiding redundant server reads for series only needed on the client.
 
 ## HTTP Cache Headers
 
@@ -323,8 +337,9 @@ Why this matters:
 - freshness bugs are easier to reproduce consistently
 
 Important development note:
-- when running the frontend in dev, the Node server must also be running for these proxied routes
+- when running the frontend in dev, the Node server must also be running for these proxied routes (default API target: port `4173`)
 - if the Node server is stale, new API routes such as `/api/staking-stats` may fall through to `index.html` and surface as JSON parse errors in the browser
+- if `npm run serve` fails with `EADDRINUSE` on `4173`, an **older** `node server/index.ts` may still be listening; that process will keep serving **old** API shapes until you stop it and restart. Vite on `5173` proxies `/api` to whatever is on `4173`, so code changes to loaders are invisible until the Node server restarts.
 
 ## Force Refresh Rules
 
@@ -343,27 +358,15 @@ These are shortened example payloads that reflect the current responsibility spl
 
 ### `/api/prana-stats`
 
+Pricing and market cap only. Fiat and BTC performance percentages are computed in the client from `/data_365_days.json` and `/data_sats.json` (see [Chart JSON and performance](#chart-json-and-performance)).
+
 ```json
 {
   "btcPriceUsd": 70666,
   "btcPriceVnd": 1859387378,
   "usdToVndRate": 26312.33,
   "latestSatPrice": 73.58,
-  "marketCapVnd": 13681372327,
-  "priceChange": {
-    "m1": 8.03,
-    "m3": -4.68,
-    "m6": -19.46,
-    "y1": 9.19,
-    "atl": 2958.59
-  },
-  "priceChangeBtc": {
-    "m1": 4.63,
-    "m3": 20.18,
-    "m6": 31.06,
-    "y1": 33.03,
-    "atl": 242.55
-  }
+  "marketCapVnd": 13681372327
 }
 ```
 
@@ -430,7 +433,7 @@ When adding a new cached data source:
 
 2. Put its TTL in `constants/cachePolicy.js`.
 
-3. If it is browser-consumed JSON that many hooks hit repeatedly, prefer `createBrowserJsonCache(...)`. For on-demand reads or simple root JSON helpers, `fetchJson` plus HTTP headers in `cacheControl.ts` is often enough.
+3. If it is browser-consumed JSON that many hooks or sibling components hit repeatedly (same tab session), prefer `createBrowserJsonCache(...)` (see `prana365Data.ts` / `pranaSatsData.ts`). For on-demand reads or a single consumer, `fetchJson` plus HTTP headers in `cacheControl.ts` is often enough.
 
 4. If it is a computed API endpoint, use the server cache helpers instead of inventing a one-off cache.
 
