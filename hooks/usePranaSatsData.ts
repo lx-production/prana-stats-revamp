@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { PranaSatsDataState } from '../types/pranaSats';
-import { fetchPranaSatsData, getCachedPranaSatsData } from '../utils/pranaSatsData';
+import { fetchPranaSatsData } from '../utils/pranaSatsData';
 
 const initialState: PranaSatsDataState = {
   data: [],
@@ -9,21 +9,11 @@ const initialState: PranaSatsDataState = {
 };
 
 export function usePranaSatsData() {
-  const [state, setState] = useState<PranaSatsDataState>(() => {
-    const cached = getCachedPranaSatsData();
-    if (!cached) return initialState;
-
-    return {
-      data: cached,
-      isLoading: false,
-      error: null,
-    };
-  });
+  const [state, setState] = useState<PranaSatsDataState>(initialState);
 
   const fetchData = useCallback(async () => {
     try {
-      const cached = getCachedPranaSatsData();
-      const data = cached ?? await fetchPranaSatsData();
+      const data = await fetchPranaSatsData();
       setState({
         data,
         isLoading: false,

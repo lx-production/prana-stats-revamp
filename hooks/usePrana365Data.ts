@@ -1,6 +1,6 @@
 import type { Prana365DataState } from '../types/prana365';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchPrana365Data, getCachedPrana365Data } from '../utils/prana365Data';
+import { fetchPrana365Data } from '../utils/prana365Data';
 
 const initialState: Prana365DataState = {
   data: [],
@@ -9,21 +9,11 @@ const initialState: Prana365DataState = {
 };
 
 export function usePrana365Data() {
-  const [state, setState] = useState<Prana365DataState>(() => {
-    const cached = getCachedPrana365Data();
-    if (!cached) return initialState;
-
-    return {
-      data: cached,
-      isLoading: false,
-      error: null,
-    };
-  });
+  const [state, setState] = useState<Prana365DataState>(initialState);
 
   const fetchData = useCallback(async () => {
     try {
-      const cached = getCachedPrana365Data();
-      const data = cached ?? await fetchPrana365Data();
+      const data = await fetchPrana365Data();
       setState({
         data,
         isLoading: false,
