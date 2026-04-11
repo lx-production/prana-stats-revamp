@@ -1,10 +1,9 @@
 import type { CapitalApiResponse } from '../../types/api.types.ts';
 import { ethers } from 'ethers';
-import { loadBondSnapshot } from './bondMetrics.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { SELL_BOND_ADDRESS_V2 } from '../../constants/bonds.ts';
+import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
+import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';
@@ -30,6 +29,18 @@ function decodeBalance(result: MulticallResult, label: string): bigint {
   return typeof raw === 'bigint' ? raw : BigInt(raw?.toString?.() ?? '0');
 }
 
+async function loadSellBondCapacityRaw(provider: ethers.Provider): Promise<bigint> {
+  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, MINIMAL_ERC20_ABI, provider);
+  const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI, provider);
+
+  const [sellCommittedV2, sellBalanceV2] = await Promise.all([
+    sellBondV2Contract.committedWbtc() as Promise<bigint>,
+    wbtcTokenContract.balanceOf(SELL_BOND_ADDRESS_V2) as Promise<bigint>,
+  ]);
+
+  return sellBalanceV2 > sellCommittedV2 ? sellBalanceV2 - sellCommittedV2 : 0n;
+}
+
 export async function loadCapital(): Promise<CapitalApiResponse> {
   const [polygonProvider, arbitrumProvider] = await Promise.all([
     getServerPolygonProvider(),
@@ -52,19 +63,15 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
     },
   ];
 
-  const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults, bondSnapshot] = await Promise.all([
+  const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults, sellBondCapacityRaw] = await Promise.all([
     loadPranaPricesBundle(),
     usdtArbitrum.balanceOf(TREZOR_1),
     polygonMulticall.aggregate3.staticCall(polygonCalls) as Promise<MulticallResult[]>,
-    loadBondSnapshot(),
+    loadSellBondCapacityRaw(polygonProvider),
   ]);
 
   const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT Trezor 1');
   const usdtPolygonRawTrezor3 = decodeBalance(polygonResults[1], 'Polygon USDT MetaMask');
-  const sellBondCapacityRaw =
-    bondSnapshot.sellBalanceV2 > bondSnapshot.sellCommittedV2
-      ? bondSnapshot.sellBalanceV2 - bondSnapshot.sellCommittedV2
-      : 0n;
 
   const usdtPolygonAmount = Number(ethers.formatUnits(usdtPolygonRaw, USDT_DECIMALS));
   const usdtArbitrumAmount = Number(ethers.formatUnits(usdtArbitrumRaw, USDT_DECIMALS));
