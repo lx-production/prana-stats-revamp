@@ -4,6 +4,8 @@ import { Landmark } from 'lucide-react';
 import { useCapital } from '../hooks/useCapital';
 import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
 
+const SELL_BOND_CAPACITY_ADDRESS = '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71';
+
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
 
@@ -85,7 +87,15 @@ export const Capital: React.FC = () => {
                     {networkItems.map((item) => (
                       <div key={item.id} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-xs text-gray-500 font-mono mt-1 break-all">{item.address}</div>
+                          <div className="text-xs text-gray-500 font-mono mt-1 break-all flex items-center gap-1 relative">
+                            {item.address}
+                            {network === 'Polygon' && item.address === SELL_BOND_CAPACITY_ADDRESS ? (
+                              <InfoTooltip
+                                ariaLabel="Sell bond capacity details"
+                                text="Sell Bond Capacity"
+                              />
+                            ) : null}
+                          </div>
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-white-200 font-semibold whitespace-nowrap">

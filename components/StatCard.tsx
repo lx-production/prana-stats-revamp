@@ -53,7 +53,7 @@ const StatCard: React.FC<StatCardProps> = ({
           {loading ? (
             <div className="h-8 w-32 bg-white/10 animate-pulse rounded" />
           ) : (
-            <div className={`text-2xl sm:text-3xl font-bold tracking-tight ${highlight ? 'text-cyan-100' : 'text-white'}`}>
+            <div className={`text-2xl sm:text-3xl font-bold tracking-tight ${highlight ? 'bg-gradient-to-r from-teal-300 via-emerald-400 to-cyan-400 bg-clip-text text-transparent' : 'text-white'}`}>
               {mainValue}
             </div>
           )}
