@@ -1,11 +1,12 @@
-import { ethers } from 'ethers';
-import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import type { CapitalApiResponse } from '../../types/api.types.ts';
+import { ethers } from 'ethers';
+import { loadBondSnapshot } from './bondMetrics.ts';
+import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { SELL_BOND_ADDRESS_V2 } from '../../constants/bonds.ts';
+import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
+import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
-const TREZOR_2 = '0x917d8fc3938FDB924332ad3B4771B234E5F468DC';
 const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';
 
 const USDT_POLYGON_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
@@ -49,27 +50,26 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
       allowFailure: false,
       callData: ERC20_IFACE.encodeFunctionData('balanceOf', [METAMASK]),
     },
-    {
-      target: WBTC_ADDRESS,
-      allowFailure: false,
-      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [TREZOR_2]),
-    },
   ];
 
-  const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults] = await Promise.all([
+  const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults, bondSnapshot] = await Promise.all([
     loadPranaPricesBundle(),
     usdtArbitrum.balanceOf(TREZOR_1),
     polygonMulticall.aggregate3.staticCall(polygonCalls) as Promise<MulticallResult[]>,
+    loadBondSnapshot(),
   ]);
 
   const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT Trezor 1');
   const usdtPolygonRawTrezor3 = decodeBalance(polygonResults[1], 'Polygon USDT MetaMask');
-  const wbtcRaw = decodeBalance(polygonResults[2], 'Polygon WBTC Trezor 2');
+  const sellBondCapacityRaw =
+    bondSnapshot.sellBalanceV2 > bondSnapshot.sellCommittedV2
+      ? bondSnapshot.sellBalanceV2 - bondSnapshot.sellCommittedV2
+      : 0n;
 
   const usdtPolygonAmount = Number(ethers.formatUnits(usdtPolygonRaw, USDT_DECIMALS));
   const usdtArbitrumAmount = Number(ethers.formatUnits(usdtArbitrumRaw, USDT_DECIMALS));
   const usdtPolygonAmountTrezor3 = Number(ethers.formatUnits(usdtPolygonRawTrezor3, USDT_DECIMALS));
-  const wbtcAmount = Number(ethers.formatUnits(wbtcRaw, WBTC_DECIMALS));
+  const wbtcAmount = Number(ethers.formatUnits(sellBondCapacityRaw, WBTC_DECIMALS));
   const wbtcUsdValue = wbtcAmount * btcPriceUsd;
 
   return {
@@ -118,7 +118,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         label: 'Capital Wallet',
         tokenSymbol: 'WBTC',
         network: 'Polygon',
-        address: TREZOR_2,
+        address: SELL_BOND_ADDRESS_V2,
         amount: Number.isFinite(wbtcAmount) ? wbtcAmount.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '0',
         amountValue: Number.isFinite(wbtcAmount) ? wbtcAmount : 0,
         usdValue: Number.isFinite(wbtcUsdValue)

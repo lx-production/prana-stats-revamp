@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
+import InfoTooltip from './InfoTooltip';
 import { Coins, ShoppingCart } from 'lucide-react';
-import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 import { useBondStats } from '../hooks/useBondStats';
 import { formatNumber } from '../utils/formatters';
-import InfoTooltip from './InfoTooltip';
+import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 
 const TOTAL_SUPPLY = 10_000_000;
 const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);

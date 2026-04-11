@@ -1,8 +1,8 @@
 import React from 'react';
+import InfoTooltip from './InfoTooltip';
 import { Landmark } from 'lucide-react';
 import { useCapital } from '../hooks/useCapital';
 import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
-import InfoTooltip from './InfoTooltip';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();

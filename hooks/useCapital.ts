@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchJson } from '../utils/fetchJson';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CapitalData } from '../types/capital.types';
 import type { CapitalApiResponse } from '../types/api.types';
 

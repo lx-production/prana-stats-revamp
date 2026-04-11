@@ -30,12 +30,12 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
         ) : (
           <div className="h-full w-full flex">
             <div
-              className="h-full bg-emerald-400/90"
+              className="h-full bg-blue-800/90"
               style={{ width: `${safeCommittedPercent}%` }}
               aria-label="Committed"
             />
             <div
-              className="h-full bg-indigo-400/90"
+              className="h-full bg-green-400/90"
               style={{ width: `${safeCapacityPercent}%` }}
               aria-label="Capacity"
             />
@@ -46,7 +46,7 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
       {/* Legend */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="flex min-w-0 items-start gap-2">
-          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400/90 shrink-0" />
+          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-blue-800/90 shrink-0" />
           <div className="min-w-0 leading-tight">
             <div className="text-gray-300 font-medium">Committing</div>
             <div className="text-gray-400 font-mono whitespace-nowrap">
@@ -65,7 +65,7 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
         </div>
 
         <div className="flex min-w-0 items-start gap-2">
-          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-indigo-400/90 shrink-0" />
+          <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-green-400/90 shrink-0" />
           <div className="min-w-0 leading-tight">
             <div className="text-gray-300 font-medium">Capacity</div>
             <div className="text-gray-400 font-mono whitespace-nowrap">
