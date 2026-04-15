@@ -18,8 +18,8 @@ The goal is to keep caching:
 
 ### 2. Short-lived data should have short-lived caches
 - Root JSON files can be reused briefly by the browser before revalidation.
-- API responses are browser-revalidated on each use.
-- In-browser memory caches are short-lived and shared.
+- API responses use `Cache-Control: private` with a route-specific `max-age`: the browser may reuse a response without a network round-trip until that window expires, then it requests again (the server may still answer from its own TTL cache).
+- In-browser memory caches are short-lived and shared where they exist (see [Browser in-memory cache](#browser-in-memory-cache)).
 
 ### 3. Dev and prod should behave the same
 - The Vite dev server proxies API requests and root JSON requests to the Node server.
@@ -46,6 +46,8 @@ flowchart TD
   serverApi --> browserMemory
   browserMemory --> ui
 ```
+
+The diagram is simplified: only code paths that call `createBrowserJsonCache` (today, `/api/prana-stats` via `utils/pranaStatsApi.ts`) layer a TTL in-memory snapshot on top of HTTP caching. Other JSON APIs are loaded with `fetchJson` only, so they rely on the browser HTTP `max-age` for that URL plus concurrent GET dedupe, without that extra in-memory TTL wrapper.
 
 ### Browser HTTP cache
 - Controlled by `Cache-Control` headers from the Node server.
@@ -196,11 +198,11 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
 - `utils/prana365Data.ts` → `/data_365_days.json`
 - `utils/pranaSatsData.ts` → `/data_sats.json`
-- `utils/stakingStatsApi.ts` → `/api/staking-stats` (with legacy fallback to `/api/prana-stats` during rollout)
+- `utils/stakingStatsApi.ts` → `/api/staking-stats`
 
 ### Top holding addresses API path
 
-- `hooks/useTopHoldingAddresses.ts` fetches `/api/top-holding-addresses` directly (no `page` param).
+- `hooks/useTopHoldingAddresses.ts` fetches `/api/top-holding-addresses` directly.
 - The server caches the single top-holding payload in memory for `CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
@@ -254,7 +256,7 @@ Top holdings in-memory cache (TTL = `CACHE_TTL_MS.topHoldingsRefresh`):
 
 `server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`CACHE_TTL_MS.apiResponse`).
 
-- TTL is `CACHE_TTL_MS.lpTokenId` (24 hours).
+- TTL is `LP_TOKEN_ID_CACHE_TTL_MS` from `constants/arbitrumWbtcUsdtLp.ts`, which is set to `CACHE_TTL_MS.lpTokenId` (24 hours) in the central registry.
 - Each `loadLpCapital()` call still reads on-chain `positions(tokenId)` and checks the position is still active in the configured pool; if not, the id cache is cleared and the loader rescans wallet NFTs.
 - Server restart clears this cache.
 
@@ -289,26 +291,27 @@ This means:
 
 Defined via `sendJson(...)` in `server/requestHelpers.ts`.
 
-Primary JSON API routes send:
+Most JSON API routes send:
 - `Cache-Control: private, max-age=30`
 
-Exception:
-- `/api/staking-stats` sends `Cache-Control: private, max-age=24h`
-
-These currently include:
-- `/api/prana-stats`
+Longer browser cache (`private`, 24 hours) for intentional snapshot endpoints:
 - `/api/staking-stats`
-- `/api/capital`
-- `/api/lp-capital`
 - `/api/bond-metrics`
-- `/api/refresh-bonds`
-- `/api/top-holding-addresses`
-- `/api/bonds-v2/refresh-bonds`
+
+Routes (each uses one of the header shapes above, as wired in `server/index.ts`):
+- `/api/prana-stats` — `max-age=30`
+- `/api/staking-stats` — `max-age=24h`
+- `/api/capital` — `max-age=30`
+- `/api/lp-capital` — `max-age=30`
+- `/api/bond-metrics` — `max-age=24h`
+- `/api/refresh-bonds` — `max-age=30`
+- `/api/top-holding-addresses` — `max-age=30`
+- `/api/bonds-v2/refresh-bonds` — `max-age=30`
 
 This means:
-- browsers can reuse the API response locally for up to 30 seconds without a roundtrip (24h for `/api/staking-stats`)
+- browsers can reuse a response locally until that route’s `max-age` expires (30 seconds for most APIs above, 24 hours for `/api/staking-stats` and `/api/bond-metrics`)
 - shared caches should not store it because the response is marked `private`
-- after 30 seconds, the browser will fetch again and the server API cache still applies (24h for `/api/staking-stats`)
+- after the browser’s `max-age` window, the next request hits the network; the server may still return a cached payload from its own TTL (including 24h server caches for staking and bond metrics)
 
 Error responses still send:
 - `Cache-Control: no-cache`
@@ -343,7 +346,7 @@ Important development note:
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
 Current examples:
-- after `/api/bonds-v2/refresh-bonds` reports new data, `prefetchInitialJson` calls `fetchBondsV2TotalsSafe({ force: true })` so `bonds_v2.json` is refetched with a cache-busting query string and avoids a stale HTTP cache entry for the plain URL
+- `prefetchInitialJson` (in `utils/prefetchInitialJson.ts`) calls `/api/bonds-v2/refresh-bonds`, then `fetchBondsV2TotalsSafe({ force: Boolean(refreshResult?.updated) })`: the cache-busting query string on `bonds_v2.json` is used only when the refresh response indicates `updated` is truthy, so a forced refetch avoids a stale HTTP cache entry for the plain URL only when the file actually changed
 
 Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
 
@@ -461,4 +464,4 @@ If you are not sure where to put a new cache:
 
 - Manual or side-effect refresh:
   - keep it as an explicit API route
-  - use `force: true` only after the refresh says new data is available
+  - use `force: true` on dependent fetches only when the refresh response indicates new data (see `prefetchInitialJson` and `force: Boolean(refreshResult?.updated)`)
