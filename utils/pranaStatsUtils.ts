@@ -46,10 +46,7 @@ export const getSatsPerformanceInputs = (
 ): SatsPerformanceInputs => {
   const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs(nowUnixSeconds);
 
-  const satsAtl = satsData.reduce(
-    (minPrice, point) => Math.min(minPrice, point.p),
-    Number.POSITIVE_INFINITY
-  );
+  const satsAtl = 21.83;
 
   return {
     parsedSatsData: satsData,
