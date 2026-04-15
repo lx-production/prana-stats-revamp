@@ -9,8 +9,8 @@ import { loadBondMetrics } from './loaders/bondMetrics.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
-import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
+import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import type { TopHoldingAddressesBuildOutput } from '../types.ts';
 
 const PORT = Number(process.env.PORT || 4173);

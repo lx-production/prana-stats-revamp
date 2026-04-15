@@ -115,7 +115,7 @@ Main API:
 Behavior:
 - If cached data is still within TTL, return it immediately.
 - If a non-forced request is already in flight, reuse that Promise.
-- If `force: true` is passed, bypass the local cache and fetch again.
+- If `force: true` is passed, bypass the local cache and fetch again. (Right now, the derived 'force' from refresh-bonds is only used for fetchBondsV2TotalsSafe from prefetchInitialJson)
 - Forced refresh also disables the lower-level `fetchJson()` dedupe for that request by setting `dedupeKey: null`.
 
 ## Low-Level Fetch Dedupe

@@ -1,3 +1,7 @@
+import StatCard from './StatCard';
+import StakingStats from './StakingStats';
+import BondingStats from './BondingStats';
+import PranaPerformanceSection from './PranaPerformanceSection';
 import React, { useMemo } from 'react';
 import { DollarSign } from 'lucide-react';
 import { initialPranaStats } from '../constants/pranaStats';
@@ -6,10 +10,6 @@ import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { formatCurrency, formatNumber } from '../utils/formatters';
 import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
-import BondingStats from './BondingStats';
-import PranaPerformanceSection from './PranaPerformanceSection';
-import StatCard from './StatCard';
-import StakingStats from './StakingStats';
 
 export const PranaStats: React.FC = () => {
   const {
@@ -19,6 +19,7 @@ export const PranaStats: React.FC = () => {
     isLoading,
     error
   } = usePranaStats();
+  
   const { data: d365, isLoading: isPrana365Loading, error: prana365Error } = usePrana365Data();
   const { data: satsData, isLoading: isPranaSatsLoading, error: pranaSatsError } = usePranaSatsData();
 
