@@ -16,17 +16,13 @@ export const buildFiatPriceChangeFrom365 = ({
   d365,
 }: BuildFiatPriceChangeFrom365Params): PriceChangeSet => {
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
-  const mockM1 = latestSatPriceUsd * 0.95;
-  const mockM3 = latestSatPriceUsd * 0.8;
-  const mockM6 = latestSatPriceUsd * 1.2;
-  const mockY1 = latestSatPriceUsd * 0.5;
   const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs();
 
   return {
-    m1: calcChange(getPriceAtOrAfter(d365, m1Cutoff, mockM1), latestSatPriceUsd),
-    m3: calcChange(getPriceAtOrAfter(d365, m3Cutoff, mockM3), latestSatPriceUsd),
-    m6: calcChange(getPriceAtOrAfter(d365, m6Cutoff, mockM6), latestSatPriceUsd),
-    y1: calcChange(getPriceAtOrAfter(d365, y1Cutoff, mockY1), latestSatPriceUsd),
+    m1: calcChange(getPriceAtOrAfter(d365, m1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    m3: calcChange(getPriceAtOrAfter(d365, m3Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    m6: calcChange(getPriceAtOrAfter(d365, m6Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    y1: calcChange(getPriceAtOrAfter(d365, y1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
     atl: calcChange(ATL_PRICE, latestSatPriceUsd),
   };
 };
