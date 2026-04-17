@@ -3,7 +3,13 @@ import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
+import {
+  MINIMAL_ERC20_ABI,
+  MULTICALL3_ABI,
+  MULTICALL3_ADDRESS,
+  WBTC_ADDRESS,
+  WBTC_PRANA_V3_POOL,
+} from '../../constants/sharedContracts.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';
@@ -61,6 +67,11 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
       allowFailure: false,
       callData: ERC20_IFACE.encodeFunctionData('balanceOf', [METAMASK]),
     },
+    {
+      target: WBTC_ADDRESS,
+      allowFailure: false,
+      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [WBTC_PRANA_V3_POOL]),
+    },
   ];
 
   const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults, sellBondCapacityRaw] = await Promise.all([
@@ -72,12 +83,15 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
 
   const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT Trezor 1');
   const usdtPolygonRawTrezor3 = decodeBalance(polygonResults[1], 'Polygon USDT MetaMask');
+  const wbtcPranaPoolRaw = decodeBalance(polygonResults[2], 'Polygon WBTC/PRANA pool WBTC reserve');
 
   const usdtPolygonAmount = Number(ethers.formatUnits(usdtPolygonRaw, USDT_DECIMALS));
   const usdtArbitrumAmount = Number(ethers.formatUnits(usdtArbitrumRaw, USDT_DECIMALS));
   const usdtPolygonAmountTrezor3 = Number(ethers.formatUnits(usdtPolygonRawTrezor3, USDT_DECIMALS));
   const wbtcAmount = Number(ethers.formatUnits(sellBondCapacityRaw, WBTC_DECIMALS));
+  const wbtcPranaPoolAmount = Number(ethers.formatUnits(wbtcPranaPoolRaw, WBTC_DECIMALS));
   const wbtcUsdValue = wbtcAmount * btcPriceUsd;
+  const wbtcPranaPoolUsdValue = wbtcPranaPoolAmount * btcPriceUsd;
 
   return {
     items: [
@@ -132,6 +146,25 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
           ? wbtcUsdValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
           : null,
         usdValueNumber: Number.isFinite(wbtcUsdValue) ? wbtcUsdValue : null,
+      },
+      {
+        id: 'wbtc-prana-pool',
+        label: 'Capital Wallet',
+        tokenSymbol: 'WBTC',
+        network: 'Polygon',
+        address: WBTC_PRANA_V3_POOL,
+        amount: Number.isFinite(wbtcPranaPoolAmount)
+          ? wbtcPranaPoolAmount.toLocaleString('en-US', { maximumFractionDigits: 8 })
+          : '0',
+        amountValue: Number.isFinite(wbtcPranaPoolAmount) ? wbtcPranaPoolAmount : 0,
+        usdValue: Number.isFinite(wbtcPranaPoolUsdValue)
+          ? wbtcPranaPoolUsdValue.toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 2,
+            })
+          : null,
+        usdValueNumber: Number.isFinite(wbtcPranaPoolUsdValue) ? wbtcPranaPoolUsdValue : null,
       },
     ],
   };

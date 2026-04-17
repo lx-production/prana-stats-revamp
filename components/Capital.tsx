@@ -5,6 +5,7 @@ import { useCapital } from '../hooks/useCapital';
 import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
 
 const SELL_BOND_CAPACITY_ADDRESS = '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71';
+const WBTC_PRANA_POOL_ADDRESS = '0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
@@ -93,6 +94,11 @@ export const Capital: React.FC = () => {
                               <InfoTooltip
                                 ariaLabel="Sell bond capacity details"
                                 text="Sell Bond Capacity"
+                              />
+                            ) : network === 'Polygon' && item.address === WBTC_PRANA_POOL_ADDRESS ? (
+                              <InfoTooltip
+                                ariaLabel="WBTC/PRANA DEX pool details"
+                                text="WBTC/PRANA DEX Pool"
                               />
                             ) : null}
                           </div>
