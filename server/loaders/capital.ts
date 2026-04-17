@@ -3,13 +3,7 @@ import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import {
-  MINIMAL_ERC20_ABI,
-  MULTICALL3_ABI,
-  MULTICALL3_ADDRESS,
-  WBTC_ADDRESS,
-  WBTC_PRANA_V3_POOL,
-} from '../../constants/sharedContracts.ts';
+import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';

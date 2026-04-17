@@ -1,7 +1,7 @@
 import React from 'react';
-import type { PranaPerformanceSectionProps } from '../types/performance';
-import { usePranaPerformanceMetrics } from '../hooks/usePranaPerformanceMetrics';
 import PerformanceCard from './PerformanceCard';
+import { usePranaPerformanceMetrics } from '../hooks/usePranaPerformanceMetrics';
+import type { PranaPerformanceSectionProps } from '../types/performance';
 
 const PranaPerformanceSection: React.FC<PranaPerformanceSectionProps> = ({
   priceChange,

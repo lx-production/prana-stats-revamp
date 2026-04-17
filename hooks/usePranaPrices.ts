@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 import type { PranaPricesData } from '../types';
 import type { PranaStatsApiResponse } from '../types/api.types';
-import { fetchPranaStatsApi, getCachedPranaStatsApi } from '../utils/pranaStatsApi';
 
 const initialPrices: PranaPricesData = {
   btcPriceUsd: null,
