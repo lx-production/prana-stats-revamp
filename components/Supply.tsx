@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
 import InfoTooltip from './InfoTooltip';
+import React, { useMemo } from 'react';
 import { Coins, ShoppingCart } from 'lucide-react';
 import { useBondStats } from '../hooks/useBondStats';
 import { formatNumber } from '../utils/formatters';

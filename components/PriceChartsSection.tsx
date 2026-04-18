@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import SatsPriceChart from './SatsPriceChart';
 import PranaVndPriceChart from './PranaVndPriceChart';
+import React, { useEffect, useMemo, useState } from 'react';
 import { usePrana365Data } from '../hooks/usePrana365Data';
 import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
@@ -11,6 +11,10 @@ import type { RangeKey, PranaVndChartPoint } from '../types/pranaVndChart';
 import type { PricePoint } from '../types/pricePoint';
 
 const MAX_POINTS = 150;
+
+// Price/sats series from JSON exports and hooks are already ordered by `t` ascending.
+// Intentionally no `.sort` before downsampling (avoids O(n log n) on large arrays); re-add only if a source breaks that contract.
+
 const RANGE_FILES: Record<Exclude<RangeKey, '365_days'>, string> = {
   '30_days': '/data_30_days.json',
   '90_days': '/data_90_days.json',
@@ -85,9 +89,8 @@ const PriceChartsSection: React.FC = () => {
       return [] as PranaVndChartPoint[];
     }
 
-    const sorted = [...rawData].sort((a, b) => a.t - b.t);
-    const step = Math.max(1, Math.ceil(sorted.length / MAX_POINTS));
-    const sampled = sorted.filter((_, index) => index % step === 0 || index === sorted.length - 1);
+    const step = Math.max(1, Math.ceil(rawData.length / MAX_POINTS));
+    const sampled = rawData.filter((_, index) => index % step === 0 || index === rawData.length - 1);
 
     return sampled.map((point) => ({
       time: point.t * 1000,
@@ -99,9 +102,8 @@ const PriceChartsSection: React.FC = () => {
       return [] as SatsChartPoint[];
     }
 
-    const sorted = [...satsData].sort((a, b) => a.t - b.t);
-    const step = Math.max(1, Math.ceil(sorted.length / MAX_POINTS));
-    const sampled = sorted.filter((_, index) => index % step === 0 || index === sorted.length - 1);
+    const step = Math.max(1, Math.ceil(satsData.length / MAX_POINTS));
+    const sampled = satsData.filter((_, index) => index % step === 0 || index === satsData.length - 1);
 
     return sampled.map((point) => ({
       time: point.t * 1000,

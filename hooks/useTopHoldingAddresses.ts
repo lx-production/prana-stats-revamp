@@ -1,5 +1,5 @@
-import { fetchJson } from '../utils/fetchJson';
 import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { fetchJson } from '../utils/fetchJson';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses';
 import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
 

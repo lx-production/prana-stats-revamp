@@ -1,21 +1,21 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
 import "./index.css";
+import ReactDOM from "react-dom/client";
 import PranaHero from "./hero3.tsx";
-import PranaStats from "./components/PranaStats";
-import PranaConverter from "./components/PranaConverter";
-import TopHoldingAddresses from "./components/TopHoldingAddresses";
-import Supply from "./components/Supply.tsx";
+import Supply from "./components/Supply";
 import Capital from "./components/Capital";
-import PriceChartsSection from "./components/PriceChartsSection";
+import PranaStats from "./components/PranaStats";
 import FaqSection from "./components/FaqSection";
 import Timeline from "./components/Timeline";
-import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
-import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
-import LanguageToggle from "./components/LanguageToggle";
 import NeuralShaderBackground from "./shader.tsx";
+import LanguageToggle from "./components/LanguageToggle";
+import PranaConverter from "./components/PranaConverter";
+import TopHoldingAddresses from "./components/TopHoldingAddresses";
+import PriceChartsSection from "./components/PriceChartsSection";
+import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
+import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 
 prefetchInitialJson();
 
@@ -44,8 +44,8 @@ function App() {
         <PranaHero />
         <PranaStats />
         <PranaConverter />
+        <Capital />
         <TopHoldingAddressesProvider>
-          <Capital />
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
