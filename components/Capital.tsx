@@ -88,7 +88,7 @@ export const Capital: React.FC = () => {
                     {networkItems.map((item) => (
                       <div key={item.id} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-xs text-gray-500 font-mono mt-1 break-all flex items-center gap-1 relative">
+                          <div className="text-xs text-gray-500 font-mono mt-1 break-all flex items-start gap-1 relative">
                             {item.address}
                             {network === 'Polygon' && item.address === SELL_BOND_CAPACITY_ADDRESS ? (
                               <InfoTooltip
@@ -108,15 +108,15 @@ export const Capital: React.FC = () => {
                             {item.amount} {item.tokenSymbol}
                           </div>
                           {item.tokenSymbol === 'WBTC' && item.usdValue ? (
-                            <div className="text-xs text-gray-400 mt-1 whitespace-nowrap">{item.usdValue}</div>
+                            <div className="text-xs text-gray-400 whitespace-nowrap">{item.usdValue}</div>
                           ) : null}
                         </div>
                       </div>
                     ))}
                     {network === 'Arbitrum' && !lpError ? (
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-xs text-gray-500 font-mono break-all flex items-center gap-1 relative">
+                          <div className="text-xs text-gray-500 font-mono break-all flex items-start gap-1 relative">
                             0x917d8fc3938FDB924332ad3B4771B234E5F468DC
                             <InfoTooltip
                               ariaLabel="LP position details"

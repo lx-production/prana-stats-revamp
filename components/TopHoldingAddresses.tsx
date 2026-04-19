@@ -94,11 +94,11 @@ export const TopHoldingAddresses: React.FC = () => {
                         />
                       ) : null}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-end self-center">
                       {isNonCirculating ? (
-                        <div className="inline-flex items-center justify-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide leading-none text-amber-300">
+                        <div className="inline-flex h-6 items-center justify-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 text-[10px] font-medium uppercase tracking-wide text-amber-300">
                           <Lock className="w-3 h-3 shrink-0" />
-                          <span className="leading-none">HODL</span>
+                          <span>HODL</span>
                         </div>
                       ) : null}
                     </div>
