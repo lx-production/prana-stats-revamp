@@ -1,11 +1,11 @@
 import React from 'react';
 import StatCard from './StatCard';
 import InfoTooltip from './InfoTooltip';
+import { BondProgressBarProps } from '../types';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
-import { BondProgressBarProps } from '../types';
-import { useBondProgress } from '../hooks/useBondProgress';
 import { useBondStats } from '../hooks/useBondStats';
+import { useBondProgress } from '../hooks/useBondProgress';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 
 const BondProgressBar: React.FC<BondProgressBarProps> = ({

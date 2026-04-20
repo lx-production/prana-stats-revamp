@@ -9,12 +9,12 @@ const buildPerformanceMetrics = (priceChange: PriceChangeSet): PerformanceMetric
   { label: 'ATL', value: priceChange.atl },
 ];
 
-export function usePranaPerformanceMetrics(priceChange: PriceChangeSet, priceChangeBtc: PriceChangeSet) {
-  const performanceMetrics = useMemo(() => buildPerformanceMetrics(priceChange), [priceChange]);
-  const performanceMetricsBtc = useMemo(() => buildPerformanceMetrics(priceChangeBtc), [priceChangeBtc]);
+export function usePranaPerformanceMetrics(priceChangeFiat: PriceChangeSet, priceChangeBtc: PriceChangeSet) {
+  const fiatPerformance = useMemo(() => buildPerformanceMetrics(priceChangeFiat), [priceChangeFiat]);
+  const btcPerformance = useMemo(() => buildPerformanceMetrics(priceChangeBtc), [priceChangeBtc]);
 
   return {
-    performanceMetrics,
-    performanceMetricsBtc,
+    fiatPerformance,
+    btcPerformance,
   };
 }

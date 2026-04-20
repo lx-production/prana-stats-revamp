@@ -1,7 +1,7 @@
-import type { BondStatsComputed, BondStatsData } from '../types';
 import { useCallback, useEffect, useState } from 'react';
 import { initialBondStats } from '../constants/bondStats';
 import { fetchBondMetricsApi } from '../utils/bondMetricsApi';
+import type { BondStatsComputed, BondStatsData } from '../types';
 
 const toLoadedStats = (computed: BondStatsComputed): BondStatsData => ({
   ...initialBondStats,

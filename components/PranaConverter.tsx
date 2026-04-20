@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePranaPrices } from '../hooks/usePranaPrices';
-import { usePranaConverter, type ConverterCurrency } from '../hooks/usePranaConverter';
 import { formatNumber } from '../utils/formatters';
+import { usePranaPrices } from '../hooks/usePranaPrices';
+import { ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { usePranaConverter, type ConverterCurrency } from '../hooks/usePranaConverter';
 
 const currencies: Array<{ value: ConverterCurrency; label: string }> = [
   { value: 'USD', label: 'USD' },
@@ -28,6 +28,7 @@ export const PranaConverter: React.FC = () => {
     btcPriceUsd,
     usdToVndRate,
   });
+  
   const [isUnitOpen, setIsUnitOpen] = useState(false);
   const unitRef = useRef<HTMLDivElement | null>(null);
   const selectedCurrency = currencies.find((item) => item.value === currency) ?? currencies[0];

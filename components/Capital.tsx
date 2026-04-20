@@ -3,9 +3,8 @@ import InfoTooltip from './InfoTooltip';
 import { Landmark } from 'lucide-react';
 import { useCapital } from '../hooks/useCapital';
 import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
-
-const SELL_BOND_CAPACITY_ADDRESS = '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71';
-const WBTC_PRANA_POOL_ADDRESS = '0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED';
+import { SELL_BOND_ADDRESS_V2 } from '../constants/bonds';
+import { WBTC_PRANA_V3_POOL } from '../constants/sharedContracts';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
@@ -90,12 +89,12 @@ export const Capital: React.FC = () => {
                         <div className="min-w-0">
                           <div className="text-xs text-gray-500 font-mono mt-1 break-all flex items-start gap-1 relative">
                             {item.address}
-                            {network === 'Polygon' && item.address === SELL_BOND_CAPACITY_ADDRESS ? (
+                            {network === 'Polygon' && item.address === SELL_BOND_ADDRESS_V2 ? (
                               <InfoTooltip
                                 ariaLabel="Sell bond capacity details"
                                 text="Sell Bond Capacity"
                               />
-                            ) : network === 'Polygon' && item.address === WBTC_PRANA_POOL_ADDRESS ? (
+                            ) : network === 'Polygon' && item.address === WBTC_PRANA_V3_POOL ? (
                               <InfoTooltip
                                 ariaLabel="WBTC/PRANA DEX pool details"
                                 text="WBTC/PRANA DEX Pool"

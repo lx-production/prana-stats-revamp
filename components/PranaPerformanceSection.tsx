@@ -1,7 +1,7 @@
 import React from 'react';
 import PerformanceCard from './PerformanceCard';
-import { usePranaPerformanceMetrics } from '../hooks/usePranaPerformanceMetrics';
 import type { PranaPerformanceSectionProps } from '../types/performance';
+import { usePranaPerformanceMetrics } from '../hooks/usePranaPerformanceMetrics';
 
 const PranaPerformanceSection: React.FC<PranaPerformanceSectionProps> = ({
   priceChange,
@@ -12,18 +12,18 @@ const PranaPerformanceSection: React.FC<PranaPerformanceSectionProps> = ({
   fiatLoading = false,
   fiatError = null,
 }) => {
-  const { performanceMetrics, performanceMetricsBtc } = usePranaPerformanceMetrics(priceChange, priceChangeBtc);
+  const { fiatPerformance, btcPerformance } = usePranaPerformanceMetrics(priceChange, priceChangeBtc);
 
   return (
     <>
       <PerformanceCard
-        performanceMetrics={performanceMetricsBtc}
+        performanceMetrics={btcPerformance}
         compareLabel="PERFORMANCE VS BITCOIN"
         isLoading={isLoading || btcLoading}
         error={btcError}
       />
       <PerformanceCard
-        performanceMetrics={performanceMetrics}
+        performanceMetrics={fiatPerformance}
         compareLabel="PERFORMANCE VS FIAT"
         isLoading={isLoading || fiatLoading}
         error={fiatError}
