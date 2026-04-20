@@ -83,7 +83,7 @@ export const Capital: React.FC = () => {
             ) : (
               Object.entries(groupedItems).map(([network, networkItems]) => (
                 <div key={network} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                  <div className="text-xs text-cyan-300 uppercase tracking-wider">{network}</div>
+                  <div className="text-xs text-cyan-300 uppercase tracking-wider mb-4">{network}</div>
                   <div className="mt-2 grid grid-cols-1 gap-2">
                     {networkItems.map((item) => (
                       <div key={item.id} className="flex items-start justify-between gap-3">
@@ -104,12 +104,19 @@ export const Capital: React.FC = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm text-white-200 font-semibold whitespace-nowrap">
+                          <div className="text-xs text-white-200 font-semibold whitespace-nowrap">
                             {item.amount} {item.tokenSymbol}
                           </div>
-                          {item.tokenSymbol === 'WBTC' && item.usdValue ? (
-                            <div className="text-xs text-gray-400 whitespace-nowrap">{item.usdValue}</div>
-                          ) : null}
+                          <div
+                            className={
+                              item.tokenSymbol === 'WBTC' && item.usdValue
+                                ? 'text-xs text-gray-400 whitespace-nowrap'
+                                : 'text-xs text-gray-400 invisible whitespace-nowrap select-none'
+                            }
+                            aria-hidden={!(item.tokenSymbol === 'WBTC' && item.usdValue)}
+                          >
+                            {item.tokenSymbol === 'WBTC' && item.usdValue ? item.usdValue : '\u00a0'}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -123,9 +130,16 @@ export const Capital: React.FC = () => {
                               text="Uniswap V3 LP WBTC/USDT"
                             />
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">24h APR: {apr24hLabel ?? 'N/A'}</div>
+                          <div className="text-xs text-gray-500">24h APR: {apr24hLabel ?? 'N/A'}</div>
                         </div>
-                        <div className="text-sm text-white-200 font-semibold whitespace-nowrap">{lpUsdValue}</div>
+                        <div
+                          className={
+                            lpUsdValue ? 'text-xs text-white-200 font-semibold whitespace-nowrap' : 'text-xs text-gray-400 invisible whitespace-nowrap select-none'
+                          }
+                          aria-hidden={!lpUsdValue}
+                        >
+                          {lpUsdValue ? lpUsdValue : '\u00a0'}
+                        </div>
                       </div>
                     ) : null}
                   </div>
