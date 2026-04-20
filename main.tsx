@@ -15,7 +15,8 @@ import PranaPerformanceSection from "./components/PranaPerformanceSection";
 import StakingStats from "./components/StakingStats";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import PriceChartsSection from "./components/PriceChartsSection";
-import { usePranaStatsSection } from "./hooks/usePranaStatsSection";
+import { useBasicStats } from "./hooks/useBasicStats";
+import { usePranaPerformanceSectionData } from "./hooks/usePranaPerformanceSectionData";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
@@ -25,7 +26,8 @@ prefetchInitialJson();
 
 function App() {
   useSpinningFavicon();
-  const { error, basicStatsProps, performanceSectionProps } = usePranaStatsSection();
+  const { error, basicStatsProps } = useBasicStats();
+  const { performanceSectionProps } = usePranaPerformanceSectionData();
 
   return (
     <SiteLanguageProvider>
