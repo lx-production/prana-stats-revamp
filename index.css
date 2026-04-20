@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shine {
+  100% {
+    left: 125%;
+  }
+}
+
+@layer utilities {
+  .animate-shine {
+    animation: shine 1s ease-in-out forwards;
+  }
+}
+
 .text-4xl {
   font-size: 2rem;
   line-height: 1.2rem;
