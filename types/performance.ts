@@ -22,13 +22,3 @@ export type PerformanceCardProps = {
   isLoading?: boolean;
   error?: string | null;
 };
-
-export type PranaPerformanceSectionProps = {
-  priceChangeFiat: PriceChangeSet;
-  priceChangeBtc: PriceChangeSet;
-  isLoading?: boolean;
-  btcLoading?: boolean;
-  btcError?: string | null;
-  fiatLoading?: boolean;
-  fiatError?: string | null;
-};
