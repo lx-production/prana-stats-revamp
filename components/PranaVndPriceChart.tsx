@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { useElementSize } from '../hooks/useElementSize';
-import type { PranaVndPriceChartProps, RangeKey } from '../types/pranaVndChart';
+import type { PranaVndPriceChartProps, RangeKey } from '../types/charts';
 
 const RANGE_OPTIONS: Array<{ key: RangeKey; label: string }> = [
   { key: '30_days', label: '30D' },

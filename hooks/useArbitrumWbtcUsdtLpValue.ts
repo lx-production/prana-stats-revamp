@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchJson } from '../utils/fetchJson';
-import type { LpCapitalData } from '../types/lpCapital.types';
+import type { LpCapitalData } from '../types/capital.types';
 import type { LpCapitalApiResponse } from '../types/api.types';
 
 const initialState: LpCapitalData = {

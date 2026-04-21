@@ -1,3 +1,14 @@
+export type SatsChartPoint = {
+  time: number;
+  price: number;
+};
+
+export type SatsPriceChartProps = {
+  chartData: SatsChartPoint[];
+  error: string | null;
+  isLoading: boolean;
+};
+
 export type RangeKey = '30_days' | '90_days' | '180_days' | '365_days' | 'max';
 
 export type PranaVndChartPoint = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { PranaSatsDataState } from '../types/pranaSats';
+import type { PranaSatsDataState } from '../types/pricePoint';
 import { fetchPranaSatsData } from '../utils/pranaSatsData';
 
 const initialState: PranaSatsDataState = {

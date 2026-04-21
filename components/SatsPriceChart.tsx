@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity } from 'lucide-react';
 import { useElementSize } from '../hooks/useElementSize';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
-import type { SatsPriceChartProps } from '../types/satsChart';
+import type { SatsPriceChartProps } from '../types/charts';
 
 const formatDate = (value: number) =>
   new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

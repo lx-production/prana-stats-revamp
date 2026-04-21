@@ -6,8 +6,7 @@ import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { fetchJson } from '../utils/fetchJson';
 import { resolveUsdToVndRateForChart } from '../utils/pranaVndChart';
-import type { SatsChartPoint } from '../types/satsChart';
-import type { RangeKey, PranaVndChartPoint } from '../types/pranaVndChart';
+import type { SatsChartPoint, RangeKey, PranaVndChartPoint } from '../types/charts';
 import type { PricePoint } from '../types/pricePoint';
 
 const MAX_POINTS = 150;

@@ -1,4 +1,4 @@
-import type { Prana365DataState } from '../types/prana365';
+import type { Prana365DataState } from '../types/pricePoint';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchPrana365Data } from '../utils/prana365Data';
 

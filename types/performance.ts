@@ -11,11 +11,6 @@ export type PerformanceMetric = {
   value: number;
 };
 
-export type PranaPriceChanges = {
-  priceChange: PriceChangeSet;
-  priceChangeBtc: PriceChangeSet;
-};
-
 export type PerformanceCardProps = {
   performanceMetrics: PerformanceMetric[];
   compareLabel: string;

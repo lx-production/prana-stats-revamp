@@ -3,3 +3,15 @@ export type PricePoint = {
   t: number;
   p: number;
 };
+
+export type PranaSatsDataState = {
+  data: PricePoint[];
+  isLoading: boolean;
+  error: string | null;
+};
+
+export type Prana365DataState = {
+  data: PricePoint[];
+  isLoading: boolean;
+  error: string | null;
+};
