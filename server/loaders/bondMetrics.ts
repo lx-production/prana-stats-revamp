@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { BondMetricsApiResponse } from '../../types/api.types.ts';
-import type { BondsV2Json } from '../../types.ts';
+import type { BondsV2Json } from '../../types/types.ts';
 import { ethers } from 'ethers';
 import { getBondingStats } from '../../utils/bondingStats.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';

@@ -129,7 +129,7 @@ export const Capital: React.FC = () => {
                               text="Uniswap V3 LP WBTC/USDT"
                             />
                           </div>
-                          <div className="text-xs text-gray-500">24h APR: {apr24hLabel ?? 'N/A'}</div>
+                          <div className="text-[0.6rem] text-white-200">24h APR: {apr24hLabel ?? 'N/A'}</div>
                         </div>
                         <div
                           className={

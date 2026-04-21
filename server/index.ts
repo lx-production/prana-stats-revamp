@@ -11,7 +11,7 @@ import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
 import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
-import type { TopHoldingAddressesBuildOutput } from '../types.ts';
+import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;

@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { loadDotEnvIntoProcessEnv, getRpcUrl } from '../utils/bondsScanUtils.ts';
 import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.ts';
-import type { TopHoldingAddressesBuildOutput } from '../types.ts';
+import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 import type { TopHoldingAddressesUpdateStrategy } from './types/updateTopHoldingAddressesTypes.ts';
 
 export async function loadTopHoldingAddresses(): Promise<TopHoldingAddressesBuildOutput> {

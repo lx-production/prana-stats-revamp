@@ -3,7 +3,7 @@ import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { CACHE_TTL_MS } from '../../constants/cachePolicy.js';
-import type { PranaPricesBundle } from '../../types.ts';
+import type { PranaPricesBundle } from '../../types/types.ts';
 import type { PricePoint } from '../../types/pricePoint.ts';
 
 const USD_TO_VND_FALLBACK = 27_000;

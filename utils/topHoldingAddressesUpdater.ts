@@ -8,7 +8,7 @@ import {
   PRANA_ADDRESS,
   PRANA_DECIMALS,
 } from '../constants/sharedContracts.ts';
-import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types.ts';
+import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types/types.ts';
 
 type MulticallBalanceResult = {
   success?: boolean;

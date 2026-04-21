@@ -1,7 +1,7 @@
 import type { JsonRpcProvider } from 'ethers';
-import type { TopHoldingAddress } from './constants/topHoldingAddresses.ts';
-import type { PriceChangeSet } from './types/performance.ts';
-import type { PricePoint } from './types/pricePoint.ts';
+import type { TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
+import type { PriceChangeSet } from './performance.ts';
+import type { PricePoint } from './pricePoint.ts';
 
 // Types and interfaces for the Prana Stats application
 

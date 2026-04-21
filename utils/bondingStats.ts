@@ -1,4 +1,4 @@
-import type { BondingStatsInput, BondingStatsOutput } from '../types.ts';
+import type { BondingStatsInput, BondingStatsOutput } from '../types/types.ts';
 import { formatBigIntValue, formatPranaDisplayFromRaw, formatPranaFloatFromRaw } from './bondingStatsHelpers.ts';
 
 export const getBondingStats = ({

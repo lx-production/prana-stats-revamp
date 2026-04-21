@@ -1,4 +1,4 @@
-import type { BondsV2Json } from '../types.ts';
+import type { BondsV2Json } from '../types/types.ts';
 import { fetchJsonSafe } from './fetchJson.ts';
 
 // Default URL allows browser caching based on server cache headers.
