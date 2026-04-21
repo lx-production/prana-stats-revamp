@@ -1,6 +1,6 @@
 import type { PricePoint } from '../types/pricePoint.ts';
 import type { PriceChangeSet } from '../types/performance.ts';
-import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter, getSatsPerformanceInputs } from './pranaStatsUtils.ts';
+import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter } from './pranaStatsUtils.ts';
 
 const ATL_PRICE = 0.0017;
 
@@ -28,14 +28,15 @@ export const buildFiatPriceChangeFrom365 = ({
 };
 
 export const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): PriceChangeSet => {
-  const { parsedSatsData, m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, safeSatsAtl } =
-    getSatsPerformanceInputs(satsData, latestSatPrice);
+  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs();
+  const satsAtl = 21.83;
+  const safeSatsAtl = Number.isFinite(satsAtl) ? satsAtl : latestSatPrice;
 
   return {
-    m1: calcChange(getPriceAtOrAfter(parsedSatsData, m1Cutoff, latestSatPrice), latestSatPrice),
-    m3: calcChange(getPriceAtOrAfter(parsedSatsData, m3Cutoff, latestSatPrice), latestSatPrice),
-    m6: calcChange(getPriceAtOrAfter(parsedSatsData, m6Cutoff, latestSatPrice), latestSatPrice),
-    y1: calcChange(getPriceAtOrAfter(parsedSatsData, y1Cutoff, latestSatPrice), latestSatPrice),
+    m1: calcChange(getPriceAtOrAfter(satsData, m1Cutoff, latestSatPrice), latestSatPrice),
+    m3: calcChange(getPriceAtOrAfter(satsData, m3Cutoff, latestSatPrice), latestSatPrice),
+    m6: calcChange(getPriceAtOrAfter(satsData, m6Cutoff, latestSatPrice), latestSatPrice),
+    y1: calcChange(getPriceAtOrAfter(satsData, y1Cutoff, latestSatPrice), latestSatPrice),
     atl: calcChange(safeSatsAtl, latestSatPrice),
   };
 };

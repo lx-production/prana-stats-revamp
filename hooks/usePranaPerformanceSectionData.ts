@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { initialPranaStats } from '../constants/pranaStats';
-import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
+import { usePranaStats } from './usePranaStats';
 import { usePrana365Data } from './usePrana365Data';
 import { usePranaSatsData } from './usePranaSatsData';
-import { usePranaStats } from './usePranaStats';
+import { initialPranaStats } from '../constants/pranaStats';
+import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../utils/pranaStatsPerformance';
 
 export function usePranaPerformanceSectionData() {
   const {
@@ -24,7 +24,7 @@ export function usePranaPerformanceSectionData() {
     error: pranaSatsError,
   } = usePranaSatsData();
 
-  const priceChange = useMemo(() => {
+  const priceChangeFiat = useMemo(() => {
     if (typeof btcPriceUsd !== 'number' || typeof latestSatPrice !== 'number') {
       return initialPranaStats.priceChange;
     }
@@ -46,7 +46,7 @@ export function usePranaPerformanceSectionData() {
 
   return {
     performanceSectionProps: {
-      priceChange,
+      priceChangeFiat,
       priceChangeBtc,
       isLoading,
       btcLoading: isPranaSatsLoading,

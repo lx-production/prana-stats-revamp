@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
-import type { SatsPerformanceInputs } from '../types/performance.ts';
 import type { PricePoint } from '../types/pricePoint.ts';
 
 export const safeContractCall = async (call: Promise<any>, fallback: any) => {
@@ -39,21 +38,3 @@ export const getPriceAtOrAfter = (
   return match?.p ?? arr[0].p;
 };
 
-export const getSatsPerformanceInputs = (
-  satsData: PricePoint[],
-  latestSatPrice: number,
-  nowUnixSeconds = Math.floor(Date.now() / 1000)
-): SatsPerformanceInputs => {
-  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs(nowUnixSeconds);
-
-  const satsAtl = 21.83;
-
-  return {
-    parsedSatsData: satsData,
-    m1Cutoff,
-    m3Cutoff,
-    m6Cutoff,
-    y1Cutoff,
-    safeSatsAtl: Number.isFinite(satsAtl) ? satsAtl : latestSatPrice,
-  };
-};

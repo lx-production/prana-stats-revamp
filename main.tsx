@@ -4,23 +4,23 @@ import ReactDOM from "react-dom/client";
 import PranaHero from "./hero3.tsx";
 import Supply from "./components/Supply";
 import Capital from "./components/Capital";
+import Timeline from "./components/Timeline";
+import FaqSection from "./components/FaqSection";
 import BasicStats from "./components/BasicStats";
 import BondingStats from "./components/BondingStats";
-import FaqSection from "./components/FaqSection";
-import Timeline from "./components/Timeline";
 import NeuralShaderBackground from "./shader.tsx";
+import StakingStats from "./components/StakingStats";
 import LanguageToggle from "./components/LanguageToggle";
 import PranaConverter from "./components/PranaConverter";
 import PranaPerformanceSection from "./components/PranaPerformanceSection";
-import StakingStats from "./components/StakingStats";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import PriceChartsSection from "./components/PriceChartsSection";
 import { useBasicStats } from "./hooks/useBasicStats";
-import { usePranaPerformanceSectionData } from "./hooks/usePranaPerformanceSectionData";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
+import { usePranaPerformanceSectionData } from "./hooks/usePranaPerformanceSectionData";
 
 prefetchInitialJson();
 

@@ -1,5 +1,3 @@
-import type { PricePoint } from './pricePoint.ts';
-
 export type PriceChangeSet = {
   m1: number;
   m3: number;
@@ -26,20 +24,11 @@ export type PerformanceCardProps = {
 };
 
 export type PranaPerformanceSectionProps = {
-  priceChange: PriceChangeSet;
+  priceChangeFiat: PriceChangeSet;
   priceChangeBtc: PriceChangeSet;
   isLoading?: boolean;
   btcLoading?: boolean;
   btcError?: string | null;
   fiatLoading?: boolean;
   fiatError?: string | null;
-};
-
-export type SatsPerformanceInputs = {
-  parsedSatsData: PricePoint[];
-  m1Cutoff: number;
-  m3Cutoff: number;
-  m6Cutoff: number;
-  y1Cutoff: number;
-  safeSatsAtl: number;
 };
