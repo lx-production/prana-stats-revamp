@@ -25,3 +25,18 @@ export const formatStatValue = (value: unknown) => {
   if (!Number.isFinite(numeric)) return '--';
   return formatNumber(Math.round(numeric));
 };
+
+export const formatDate = (value: number) =>
+  new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+export const formatDateTime = (value: number) =>
+  new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+export const formatFullVnd = (value: number) =>
+  new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);

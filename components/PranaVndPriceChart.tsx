@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity } from 'lucide-react';
 import { useElementSize } from '../hooks/useElementSize';
+import { formatDate, formatDateTime, formatFullVnd } from '../utils/formatters';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import type { PranaVndPriceChartProps, RangeKey } from '../types/charts';
 
@@ -11,21 +12,6 @@ const RANGE_OPTIONS: Array<{ key: RangeKey; label: string }> = [
   { key: '365_days', label: '1Y' },
   { key: 'max', label: 'MAX' },
 ];
-
-const formatDate = (value: number) =>
-  new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-const formatDateTime = (value: number) =>
-  new Date(value).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-const formatFullVnd = (value: number) =>
-  new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
 
 const PranaVndPriceChart: React.FC<PranaVndPriceChartProps> = ({
   chartData,
