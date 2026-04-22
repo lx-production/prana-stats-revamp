@@ -129,15 +129,19 @@ export const Capital: React.FC = () => {
                               text="Uniswap V3 LP WBTC/USDT"
                             />
                           </div>
-                          <div className="text-[0.6rem] text-white-200">24h APR: {apr24hLabel ?? 'N/A'}</div>
                         </div>
-                        <div
-                          className={
-                            lpUsdValue ? 'text-xs text-white-200 font-semibold whitespace-nowrap' : 'text-xs text-gray-400 invisible whitespace-nowrap select-none'
-                          }
-                          aria-hidden={!lpUsdValue}
-                        >
-                          {lpUsdValue ? lpUsdValue : '\u00a0'}
+                        <div className="text-right">
+                          <div
+                            className={
+                              lpUsdValue ? 'text-xs text-white-200 font-semibold whitespace-nowrap' : 'text-xs text-gray-400 invisible whitespace-nowrap select-none'
+                            }
+                            aria-hidden={!lpUsdValue}
+                          >
+                            {lpUsdValue ? lpUsdValue : '\u00a0'}
+                          </div>
+                          <div className="text-xs text-gray-400 whitespace-nowrap">
+                            24h APR: {apr24hLabel ?? 'N/A'}
+                          </div>
                         </div>
                       </div>
                     ) : null}
