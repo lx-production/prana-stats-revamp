@@ -11,17 +11,6 @@ export async function fetchPranaStatsApi(opts: { force?: boolean } = {}): Promis
   return await pranaStatsApiCache.fetchCached<PranaStatsApiResponse>(opts);
 }
 
-export async function fetchPranaStatsApiSafe(
-  fallback: PranaStatsApiResponse,
-  opts: { force?: boolean } = {},
-): Promise<PranaStatsApiResponse> {
-  return await pranaStatsApiCache.fetchSafe(fallback, opts);
-}
-
 export function getCachedPranaStatsApi(): PranaStatsApiResponse | null {
   return pranaStatsApiCache.getCachedValue<PranaStatsApiResponse>();
-}
-
-export function clearPranaStatsApiCache() {
-  pranaStatsApiCache.clear();
 }

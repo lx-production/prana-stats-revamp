@@ -55,24 +55,8 @@ export function createBrowserJsonCache(config: BrowserJsonCacheConfig) {
     return (await inFlight) as T;
   };
 
-  const fetchSafe = async <T = unknown>(fallback: T, opts: FetchJsonCacheOptions = {}): Promise<T> => {
-    try {
-      return await fetchCached<T>(opts);
-    } catch (error) {
-      console.warn(`Failed to fetch ${config.getUrl(false)}`, error);
-      return fallback;
-    }
-  };
-
-  const clear = () => {
-    cached = null;
-    inFlight = null;
-  };
-
   return {
     getCachedValue,
     fetchCached,
-    fetchSafe,
-    clear,
   };
 }
