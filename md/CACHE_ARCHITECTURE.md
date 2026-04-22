@@ -104,13 +104,10 @@ It provides:
 - a short-lived in-memory cache
 - in-flight request sharing
 - forced refresh support
-- optional safe fallback behavior
 
 Main API:
 - `getCachedValue()`
 - `fetchCached({ force?: boolean })`
-- `fetchSafe(fallback, { force?: boolean })`
-- `clear()`
 
 Behavior:
 - If cached data is still within TTL, return it immediately.
@@ -206,7 +203,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - The server caches the single top-holding payload in memory for `CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
-**`createBrowserJsonCache(...)` (TTL in-memory + force + safe wrapper):**
+**`createBrowserJsonCache(...)` (TTL in-memory + force):**
 - `utils/pranaStatsApi.ts` → `/api/prana-stats`
 
 ### Chart JSON and performance
@@ -433,7 +430,7 @@ When adding a new cached data source:
 
 2. Put its TTL in `constants/cachePolicy.js`.
 
-3. If it is browser-consumed JSON, default to `fetchJson` plus HTTP headers in `cacheControl.ts` (concurrent GET dedupe covers multiple mounts). Use `createBrowserJsonCache(...)` only when you need a TTL in-memory snapshot, forced refresh, or `fetchSafe` semantics beyond HTTP cache.
+3. If it is browser-consumed JSON, default to `fetchJson` plus HTTP headers in `cacheControl.ts` (concurrent GET dedupe covers multiple mounts). Use `createBrowserJsonCache(...)` only when you need a TTL in-memory snapshot or forced refresh beyond HTTP cache.
 
 4. If it is a computed API endpoint, use the server cache helpers instead of inventing a one-off cache.
 
@@ -456,7 +453,7 @@ If you are not sure where to put a new cache:
 - Raw generated JSON file:
   - serve from Node root route
   - give it short browser-fresh HTTP headers
-  - use `fetchJson` / `fetchJsonSafe` by default; add `createBrowserJsonCache(...)` only if you need extra client TTL, force refresh, or safe fallback on top of HTTP cache
+  - use `fetchJson` / `fetchJsonSafe` by default; add `createBrowserJsonCache(...)` only if you need extra client TTL or force refresh on top of HTTP cache
 
 - Computed API response:
   - cache on the server with `createServerCache(...)`
