@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
+import { BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
 
 export function cacheControlFor(filePath: string): string | null {
   const ext = path.extname(filePath).toLowerCase();

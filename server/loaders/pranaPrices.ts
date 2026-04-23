@@ -2,7 +2,7 @@ import path from 'node:path';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
-import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
 import type { PranaPricesBundle } from '../../types/types.ts';
 import type { PricePoint } from '../../types/pricePoint.ts';
 

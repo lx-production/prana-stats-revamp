@@ -71,7 +71,7 @@ Root JSON files (`bonds_v2.json`, `buy_dips.json`) are fetched with `fetchJson` 
 
 ## Central TTL Registry
 
-All shared TTL values live in `constants/cachePolicy.js`.
+All shared TTL values live in `constants/cachePolicy.ts`.
 
 ### Millisecond TTLs
 - `apiResponse`: `30_000`
@@ -428,7 +428,7 @@ When adding a new cached data source:
 - computed API
 - refresh side effect
 
-2. Put its TTL in `constants/cachePolicy.js`.
+2. Put its TTL in `constants/cachePolicy.ts`.
 
 3. If it is browser-consumed JSON, default to `fetchJson` plus HTTP headers in `cacheControl.ts` (concurrent GET dedupe covers multiple mounts). Use `createBrowserJsonCache(...)` only when you need a TTL in-memory snapshot or forced refresh beyond HTTP cache.
 

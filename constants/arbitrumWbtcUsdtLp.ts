@@ -1,5 +1,5 @@
 // Arbitrum WBTC/USDT LP Constants
-import { SERVER_CACHE_TTL_MS } from './cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from './cachePolicy.ts';
 
 // Contract addresses
 export const NONFUNGIBLE_POSITION_MANAGER = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88';

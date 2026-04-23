@@ -1,4 +1,4 @@
-import { SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 import { createBrowserJsonCache } from './browserJsonCache';
 import type { PranaStatsApiResponse } from '../types/api.types';
 
