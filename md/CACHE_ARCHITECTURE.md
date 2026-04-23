@@ -200,7 +200,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 ### Top holding addresses API path
 
 - `hooks/useTopHoldingAddresses.ts` fetches `/api/top-holding-addresses` directly.
-- The server caches the single top-holding payload in memory for `CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
+- The server caches the single top-holding payload in memory for `SERVER_CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force):**
@@ -238,22 +238,22 @@ API response caches:
 - `/api/prana-stats`
 - `/api/capital`
 - `/api/lp-capital`
-- `/api/bond-metrics` (TTL = `CACHE_TTL_MS.bondMetricsApiResponse`, 24h)
+- `/api/bond-metrics` (TTL = `SERVER_CACHE_TTL_MS.bondMetricsApiResponse`, 24h)
 
 Staking stats response cache:
-- `/api/staking-stats` (TTL = `CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
+- `/api/staking-stats` (TTL = `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
 Refresh request dedupe:
 - `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run and does not keep a TTL cache after it completes
 
-Top holdings in-memory cache (TTL = `CACHE_TTL_MS.topHoldingsRefresh`):
+Top holdings in-memory cache (TTL = `SERVER_CACHE_TTL_MS.topHoldingsRefresh`):
 - `/api/top-holding-addresses` — caches the top-holding payload (first 10 addresses) in Node memory
 
 ### LP position NFT id cache
 
-`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`CACHE_TTL_MS.apiResponse`).
+`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`SERVER_CACHE_TTL_MS.apiResponse`).
 
-- TTL is `LP_TOKEN_ID_CACHE_TTL_MS` from `constants/arbitrumWbtcUsdtLp.ts`, which is set to `CACHE_TTL_MS.lpTokenId` (24 hours) in the central registry.
+- TTL is `LP_TOKEN_ID_CACHE_TTL_MS` from `constants/arbitrumWbtcUsdtLp.ts`, which is set to `SERVER_CACHE_TTL_MS.lpTokenId` (24 hours) in the central registry.
 - Each `loadLpCapital()` call still reads on-chain `positions(tokenId)` and checks the position is still active in the configured pool; if not, the id cache is cleared and the loader rescans wallet NFTs.
 - Server restart clears this cache.
 
@@ -261,7 +261,7 @@ Purpose: avoid repeating `balanceOf` / `tokenOfOwnerByIndex` scans on every requ
 
 ### Price loader cache
 
-`server/loaders/pranaPrices.ts` uses the same short API TTL model (`CACHE_TTL_MS.apiResponse`). The bundle includes BTC prices and `latestSatPrice` from the last point of `data_sats.json` (read from disk). It does **not** load `data_365_days.json`; that file is consumed in the browser for fiat performance and the VND chart’s 1Y range.
+`server/loaders/pranaPrices.ts` uses the same short API TTL model (`SERVER_CACHE_TTL_MS.apiResponse`). The bundle includes BTC prices and `latestSatPrice` from the last point of `data_sats.json` (read from disk). It does **not** load `data_365_days.json`; that file is consumed in the browser for fiat performance and the VND chart’s 1Y range.
 
 That keeps the server-side price snapshot aligned with the rest of the API freshness model while avoiding redundant server reads for series only needed on the client.
 

@@ -7,23 +7,23 @@ import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { CACHE_TTL_MS, CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
+import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.js';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
 import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
-const READONLY_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
-const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
-const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
+const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
+const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
+const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 
-const pranaStatsCache = createServerCache(CACHE_TTL_MS.apiResponse);
-const stakingStatsCache = createServerCache(CACHE_TTL_MS.stakingStatsApiResponse);
-const capitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
-const lpCapitalCache = createServerCache(CACHE_TTL_MS.apiResponse);
-const bondMetricsCache = createServerCache(CACHE_TTL_MS.bondMetricsApiResponse);
-const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(CACHE_TTL_MS.topHoldingsRefresh);
+const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
+const stakingStatsCache = createServerCache(SERVER_CACHE_TTL_MS.stakingStatsApiResponse);
+const capitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
+const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
+const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
+const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(SERVER_CACHE_TTL_MS.topHoldingsRefresh);
 
 const server = http.createServer(async (req, res) => {
   try {

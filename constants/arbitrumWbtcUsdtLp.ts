@@ -1,5 +1,5 @@
 // Arbitrum WBTC/USDT LP Constants
-import { CACHE_TTL_MS } from './cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from './cachePolicy.js';
 
 // Contract addresses
 export const NONFUNGIBLE_POSITION_MANAGER = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88';
@@ -8,7 +8,7 @@ export const TARGET_OWNER = '0x917d8fc3938FDB924332ad3B4771B234E5F468DC';
 
 // Pool configuration
 export const POOL_FEE = 0.0005; // 0.05%
-export const LP_TOKEN_ID_CACHE_TTL_MS = CACHE_TTL_MS.lpTokenId;
+export const LP_TOKEN_ID_CACHE_TTL_MS = SERVER_CACHE_TTL_MS.lpTokenId;
 
 // Token addresses
 export const ARBITRUM_USDT = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';

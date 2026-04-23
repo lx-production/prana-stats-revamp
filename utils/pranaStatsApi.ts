@@ -1,9 +1,9 @@
-import { CACHE_TTL_MS } from '../constants/cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.js';
 import { createBrowserJsonCache } from './browserJsonCache';
 import type { PranaStatsApiResponse } from '../types/api.types';
 
 const pranaStatsApiCache = createBrowserJsonCache({
-  ttlMs: CACHE_TTL_MS.apiResponse,
+  ttlMs: SERVER_CACHE_TTL_MS.apiResponse,
   getUrl: () => '/api/prana-stats',
 });
 

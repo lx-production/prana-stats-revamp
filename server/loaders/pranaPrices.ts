@@ -2,7 +2,7 @@ import path from 'node:path';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
-import { CACHE_TTL_MS } from '../../constants/cachePolicy.js';
+import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.js';
 import type { PranaPricesBundle } from '../../types/types.ts';
 import type { PricePoint } from '../../types/pricePoint.ts';
 
@@ -72,7 +72,7 @@ async function readPricePointSeries(filename: string): Promise<PricePoint[]> {
 
 export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {
   const now = Date.now();
-  if (cached && now - cached.timestamp < CACHE_TTL_MS.apiResponse) {
+  if (cached && now - cached.timestamp < SERVER_CACHE_TTL_MS.apiResponse) {
     return cached.value;
   }
 
