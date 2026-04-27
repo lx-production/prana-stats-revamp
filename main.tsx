@@ -14,6 +14,7 @@ import LanguageToggle from "./components/LanguageToggle";
 import PranaConverter from "./components/PranaConverter";
 import PriceChartsSection from "./components/PriceChartsSection";
 import TopHoldingAddresses from "./components/TopHoldingAddresses";
+import DoublePranaAbsorptionFlow from "./components/DoublePranaAbsorptionFlow";
 import PranaPerformanceSection from "./components/PranaPerformanceSection";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -53,6 +54,7 @@ function App() {
             <PranaPerformanceSection />
           </div>
         </section>
+        <DoublePranaAbsorptionFlow />
         <PranaConverter />
         <Capital />
         <TopHoldingAddressesProvider>
