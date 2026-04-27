@@ -1,17 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  Clock3,
-  LockKeyhole,
-  ScrollText,
-  ShoppingCart,
-  Sparkles,
-} from 'lucide-react';
-import { useBondStats } from '../hooks/useBondStats';
-import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import type { SiteLocale } from '../types/locale.types';
+import { motion } from 'framer-motion';
+import { useBondStats } from '../hooks/useBondStats';
 import { formatCurrency } from '../utils/formatters';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
+import { ArrowRight, Clock3, LockKeyhole, ScrollText, ShoppingCart, Sparkles } from 'lucide-react';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
@@ -323,7 +316,7 @@ const FlowNode: React.FC<{
   className?: string;
 }> = ({ title, label, visual, className = '' }) => (
   <motion.div
-    className={`relative min-h-[9rem] rounded-2xl border border-white/10 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md ${className}`}
+    className={`relative min-h-[9rem] min-w-0 max-w-full rounded-2xl border border-white/10 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md ${className}`}
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, amount: 0.45 }}
@@ -335,7 +328,7 @@ const FlowNode: React.FC<{
       </div>
       <div className="min-w-0">
         <div className="text-xs uppercase tracking-[0.22em] text-white/45">{label}</div>
-        <div className="mt-1 text-base font-semibold text-white">{title}</div>
+        <div className="mt-1 break-words text-base font-semibold text-white">{title}</div>
       </div>
     </div>
   </motion.div>
@@ -523,16 +516,16 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative min-h-[39rem] overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 sm:min-h-[34rem] lg:min-h-[31rem]">
+          <div className="relative min-h-[39rem] min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 sm:min-h-[34rem] lg:min-h-[31rem]">
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:48px_48px] opacity-40" />
 
-            <div className="relative grid h-full gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
-              <div className="relative flex min-h-[21rem] flex-col gap-4 lg:min-h-[26rem]">
+            <div className="relative grid h-full min-w-0 gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+              <div className="relative flex min-h-[21rem] min-w-0 flex-col gap-4 lg:min-h-[26rem]">
                 <h3 className="w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-amber-100 lg:max-w-[14rem] lg:self-center">
                   {copy.flow.firstAbsorptionTitle}
                 </h3>
 
-                <div className="relative flex min-h-[21rem] flex-1 flex-col items-center">
+                <div className="relative flex min-h-[21rem] min-w-0 flex-1 flex-col items-center">
                   <ParticleStream
                     particles={wbtcParticles}
                     className="inset-x-4 top-[4.6rem] h-16 lg:left-[18%] lg:right-[14%]"
@@ -573,15 +566,15 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                 </div>
               </div>
 
-              <div className="relative flex min-h-[25rem] flex-col items-center justify-start lg:min-h-[29rem]">
+              <div className="relative flex min-h-[25rem] min-w-0 flex-col items-center justify-start lg:min-h-[29rem]">
                 <h3 className="mb-4 w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
                   {copy.flow.secondAbsorptionTitle}
                 </h3>
 
-                <div className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/[0.06] px-4 py-3 text-sm">
-                  <div>
+                <div className="mb-2 flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/[0.06] px-4 py-3 text-sm">
+                  <div className="min-w-0">
                     <div className="text-xs uppercase tracking-[0.18em] text-fuchsia-200/70">{copy.flow.protocolLabel}</div>
-                    <div className="mt-1 font-semibold text-white">{copy.flow.protocolTitle}</div>
+                    <div className="mt-1 break-words font-semibold text-white">{copy.flow.protocolTitle}</div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <TokenIcon token="bitcoin" alt={copy.alt.bitcoin} className="h-5 w-5" />
