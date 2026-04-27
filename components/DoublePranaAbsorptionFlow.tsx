@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Clock3,
   LockKeyhole,
+  ScrollText,
   ShoppingCart,
   Sparkles,
 } from 'lucide-react';
@@ -12,6 +13,7 @@ import type { SiteLocale } from '../types/locale.types';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
+const ROTATION_SLOWDOWN = 2;
 
 type StreamParticle = {
   id: string;
@@ -37,48 +39,38 @@ const pranaParticles: StreamParticle[] = Array.from({ length: 30 }, (_, index) =
   size: 2 + (index % 5),
 }));
 
-const sinkParticles = Array.from({ length: 54 }, (_, index) => ({
-  id: `sink-${index}`,
-  angle: index * 6.67,
-  radius: 42 + (index % 8) * 8,
-  delay: index * 0.07,
-  duration: 3.1 + (index % 7) * 0.2,
-}));
+const sinkParticles = Array.from({ length: 54 }, (_, index) => {
+  const radius = 42 + (index % 8) * 8;
+
+  return {
+    id: `sink-${index}`,
+    startAngle: index * 6.67,
+    endAngle: index * 6.67 + 960,
+    distancePath: [radius, radius * 0.94, radius * 0.82, radius * 0.66, radius * 0.48, radius * 0.3, radius * 0.12, 0],
+    opacityPath: [0, 0.92, 0.95, 0.82, 0.58, 0.28, 0, 0],
+    scalePath: [0.55, 1, 0.9, 0.74, 0.52, 0.28, 0, 0],
+    times: [0, 0.12, 0.28, 0.45, 0.62, 0.78, 0.92, 1],
+    delay: index * 0.07,
+    duration: (4.8 + (index % 7) * 0.22) * ROTATION_SLOWDOWN,
+  };
+});
 
 const absorbedPranaTokens = Array.from({ length: 12 }, (_, index) => {
-  const angle = (index * 30 + 16) * (Math.PI / 180);
   const radius = 78 + (index % 5) * 16;
-  const spiralStops = Array.from({ length: 26 }, (_, stopIndex) => stopIndex / 25);
-  const xPath = spiralStops.map((stop, stopIndex) => {
-    const pull = Math.pow(stop, 1.18);
-    const nextRadius = radius * (1 - pull);
-    return Math.cos(angle + Math.PI * 3.65 * stop + stopIndex * 0.01) * nextRadius;
-  });
-  const yPath = spiralStops.map((stop, stopIndex) => {
-    const pull = Math.pow(stop, 1.18);
-    const nextRadius = radius * (1 - pull);
-    return Math.sin(angle + Math.PI * 3.65 * stop + stopIndex * 0.01) * nextRadius;
-  });
-  const opacityPath = spiralStops.map((stop) => {
-    if (stop < 0.1) return stop * 9.5;
-    if (stop > 0.82) return Math.max(0, (1 - stop) / 0.18);
-    return 0.95;
-  });
-  const scalePath = spiralStops.map((stop) => {
-    if (stop < 0.1) return 0.2 + stop * 8;
-    return Math.max(0, 1 - Math.pow(stop, 1.65) * 0.92);
-  });
-  const spin = 840 + (index % 4) * 90;
+  const distancePath = [radius, radius * 0.96, radius * 0.88, radius * 0.76, radius * 0.62, radius * 0.46, radius * 0.3, radius * 0.16, radius * 0.08, 0];
+  const tokenTimes = [0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.94, 1];
+  const spin = 720 + (index % 4) * 90;
 
   return {
     id: `absorbed-prana-${index}`,
-    xPath,
-    yPath,
-    opacityPath,
-    scalePath,
-    times: spiralStops,
+    startAngle: index * 30 + 16,
+    endAngle: index * 30 + 16 + 1320,
+    distancePath,
+    opacityPath: [0, 0.75, 0.96, 0.92, 0.82, 0.65, 0.38, 0.12, 0, 0],
+    scalePath: [0.18, 0.82, 1, 0.92, 0.78, 0.58, 0.36, 0.16, 0, 0],
+    tokenTimes,
     delay: index * 0.42,
-    duration: 6.2 + (index % 4) * 0.36,
+    duration: (6.6 + (index % 4) * 0.34) * ROTATION_SLOWDOWN,
     repeatDelay: 0.65 + (index % 3) * 0.28,
     spin,
     size: index % 3 === 0 ? 'h-8 w-8' : 'h-7 w-7',
@@ -89,9 +81,9 @@ const copyByLocale = {
   en: {
     sectionAria: 'Double PRANA absorption flow visualization',
     badge: 'Double PRANA absorption',
-    title: 'One WBTC payment creates two supply-side effects.',
+    title: 'One WBTC payment creates two supply-side effects',
     intro:
-      'The bond path slows new PRANA distribution through vesting. The protocol path converts the same paid WBTC into market buy pressure, then removes the repurchased PRANA from circulation.',
+      'Effect 1: PRANA is distributed gradually through vesting. Effect 2: The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation.',
     steps: [
       {
         title: '1. Bond purchase',
@@ -122,6 +114,8 @@ const copyByLocale = {
       },
     ],
     flow: {
+      firstAbsorptionTitle: 'Absorption 1',
+      secondAbsorptionTitle: 'Absorption 2',
       userLabel: 'User',
       wbtcTitle: 'WBTC enters',
       contractLabel: 'Contract',
@@ -139,7 +133,7 @@ const copyByLocale = {
       accretion: 'Buyback accretion disk',
       eventHorizon: 'Event horizon',
       caption:
-        'Repurchased PRANA spirals inward and never returns to the market float.',
+        'PRANA is bought by the Protocol from the DEX pool, enters the HODL absorption core, and never return to the market.',
     },
     alt: {
       bitcoin: 'Bitcoin token icon',
@@ -149,9 +143,9 @@ const copyByLocale = {
   vi: {
     sectionAria: 'Minh họa dòng hấp thụ kép PRANA',
     badge: 'Hấp thụ kép PRANA',
-    title: 'Một khoản WBTC tạo ra hai tác động lên nguồn cung.',
+    title: 'Một khoản WBTC tạo ra hai tác động lên nguồn cung',
     intro:
-      'Nhánh bond làm PRANA được phân phối chậm qua vesting. Nhánh giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
+      'Tác động 1: PRANA được phân phối chậm qua vesting. Tác động 2: Giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
     steps: [
       {
         title: '1. Mua bond',
@@ -183,13 +177,15 @@ const copyByLocale = {
       },
     ],
     flow: {
+      firstAbsorptionTitle: 'Hấp thụ lần 1',
+      secondAbsorptionTitle: 'Hấp thụ lần 2',
       userLabel: 'Người dùng',
       wbtcTitle: 'WBTC đi vào',
       contractLabel: 'Hợp đồng',
       contractTitle: 'BuyPranaBondV2',
       bondRoute: 'nhánh bond',
       vestingRoute: 'PRANA vesting',
-      vestingLabel: 'Kỳ vesting đã chọn',
+      vestingLabel: 'Vesting',
       vestingTitle: 'Mở khóa chậm',
       protocolLabel: 'Giao thức',
       protocolTitle: 'WBTC market buy PRANA',
@@ -200,7 +196,7 @@ const copyByLocale = {
       accretion: 'Đĩa bồi tụ từ buyback',
       eventHorizon: 'Chân trời sự kiện',
       caption:
-        'PRANA mua lại xoáy vào tâm hấp thụ và không quay lại nguồn cung thị trường.',
+        'PRANA được Protocol mua khỏi DEX pool, đi vào tâm hấp thụ HODL và không bao giờ quay lại thị trường.',
     },
     alt: {
       bitcoin: 'Biểu tượng Bitcoin',
@@ -219,6 +215,8 @@ const copyByLocale = {
     accent: string;
   }>;
   flow: {
+    firstAbsorptionTitle: string;
+    secondAbsorptionTitle: string;
     userLabel: string;
     wbtcTitle: string;
     contractLabel: string;
@@ -338,6 +336,15 @@ const FlowNode: React.FC<{
   </motion.div>
 );
 
+const FlowConnector: React.FC<{
+  className?: string;
+}> = ({ className = '' }) => (
+  <div className={`relative flex min-h-10 flex-1 justify-center ${className}`} aria-hidden="true">
+    <div className="absolute inset-y-0 w-px bg-gradient-to-b from-transparent via-cyan-100/55 to-transparent shadow-[0_0_18px_rgba(103,232,249,0.5)]" />
+    <div className="absolute inset-y-1 w-2 rounded-full bg-gradient-to-b from-amber-200/0 via-amber-200/20 to-cyan-200/0 blur-sm" />
+  </div>
+);
+
 const GravityWell: React.FC<{
   alt: typeof copyByLocale.en.alt;
 }> = ({ alt }) => (
@@ -347,7 +354,7 @@ const GravityWell: React.FC<{
     <motion.div
       className="absolute inset-[4%] rounded-full border border-cyan-200/10"
       animate={{ rotate: 360 }}
-      transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 28 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
     >
       <div className="absolute left-1/2 top-0 h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.9)]" />
       <div className="absolute bottom-3 right-8 h-1.5 w-1.5 rounded-full bg-amber-200 shadow-[0_0_16px_rgba(251,191,36,0.85)]" />
@@ -356,12 +363,12 @@ const GravityWell: React.FC<{
     <motion.div
       className="absolute inset-[8%] rounded-full bg-[conic-gradient(from_120deg,transparent_0deg,rgba(251,191,36,0.72)_42deg,rgba(217,70,239,0.44)_82deg,transparent_130deg,rgba(34,211,238,0.46)_205deg,rgba(251,191,36,0.64)_255deg,transparent_318deg)] blur-[0.5px] shadow-[0_0_54px_rgba(217,70,239,0.28)]"
       animate={{ rotate: 360, scale: [1, 1.015, 1] }}
-      transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 16 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
     />
     <motion.div
       className="absolute inset-[15%] rounded-full border border-amber-100/25 bg-[radial-gradient(ellipse_at_center,transparent_32%,rgba(251,191,36,0.2)_47%,transparent_61%)]"
       animate={{ rotate: -360 }}
-      transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 12 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
     />
     <motion.div
       className="absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(251,191,36,0.92),rgba(34,211,238,0.58),rgba(217,70,239,0.78),transparent)] blur-sm"
@@ -372,7 +379,7 @@ const GravityWell: React.FC<{
     <motion.div
       className="absolute inset-[23%] rounded-full border border-cyan-200/25 bg-[conic-gradient(from_180deg,transparent,rgba(34,211,238,0.28),transparent,rgba(217,70,239,0.32),transparent)]"
       animate={{ rotate: -360, scale: [1, 1.04, 1] }}
-      transition={{ duration: 7.4, repeat: Infinity, ease: 'easeInOut' }}
+      transition={{ duration: 7.4 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'easeInOut' }}
     />
     <div className="absolute inset-[33%] rounded-full border border-white/10 bg-[radial-gradient(circle_at_center,rgba(0,0,0,1)_0%,rgba(0,0,0,0.98)_54%,rgba(24,9,42,0.92)_70%,rgba(168,85,247,0.32)_100%)] shadow-[0_0_38px_rgba(0,0,0,1),0_0_88px_rgba(168,85,247,0.76),inset_0_0_36px_rgba(0,0,0,1)]" />
     <div className="absolute inset-[42%] rounded-full bg-black shadow-[0_0_24px_rgba(0,0,0,1)]" />
@@ -380,57 +387,81 @@ const GravityWell: React.FC<{
     {absorbedPranaTokens.map((token) => (
       <motion.div
         key={token.id}
-        className={`absolute left-1/2 top-1/2 grid ${token.size} place-items-center rounded-full border border-cyan-100/20 bg-black/55 p-1 shadow-[0_0_20px_rgba(34,211,238,0.45)] backdrop-blur-sm`}
-        initial={{
-          x: token.xPath[0],
-          y: token.yPath[0],
-          opacity: 0,
-          rotate: 0,
-          scale: 0.2,
-        }}
-        animate={{
-          x: token.xPath,
-          y: token.yPath,
-          opacity: token.opacityPath,
-          rotate: token.times.map((stop) => token.spin * stop),
-          scale: token.scalePath,
-        }}
+        className="absolute left-1/2 top-1/2 h-0 w-0"
+        initial={{ rotate: token.startAngle }}
+        animate={{ rotate: token.endAngle }}
         transition={{
           duration: token.duration,
           delay: token.delay,
           repeat: Infinity,
           repeatDelay: token.repeatDelay,
           ease: 'linear',
-          times: token.times,
         }}
       >
-        <TokenIcon token="prana" alt={alt.prana} className="h-full w-full" />
+        <motion.div
+          className={`grid ${token.size} place-items-center rounded-full border border-cyan-100/20 bg-black/55 p-1 shadow-[0_0_20px_rgba(34,211,238,0.45)] backdrop-blur-sm`}
+          initial={{
+            x: token.distancePath[0],
+            y: '-50%',
+            opacity: 0,
+            scale: 0.18,
+            rotate: 0,
+          }}
+          animate={{
+            x: token.distancePath,
+            opacity: token.opacityPath,
+            scale: token.scalePath,
+            rotate: token.tokenTimes.map((stop) => -token.spin * stop),
+          }}
+          transition={{
+            duration: token.duration,
+            delay: token.delay,
+            repeat: Infinity,
+            repeatDelay: token.repeatDelay,
+            ease: 'linear',
+            times: token.tokenTimes,
+          }}
+        >
+          <TokenIcon token="prana" alt={alt.prana} className="h-full w-full" />
+        </motion.div>
       </motion.div>
     ))}
 
     {sinkParticles.map((particle) => (
-      <motion.span
+      <motion.div
         key={particle.id}
-        className="absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.95)]"
-        initial={{
-          x: Math.cos((particle.angle * Math.PI) / 180) * particle.radius,
-          y: Math.sin((particle.angle * Math.PI) / 180) * particle.radius,
-          opacity: 0,
-          scale: 1,
-        }}
-        animate={{
-          x: 0,
-          y: 0,
-          opacity: [0, 0.95, 0],
-          scale: [1, 0.58, 0],
-        }}
+        className="absolute left-1/2 top-1/2 h-0 w-0"
+        initial={{ rotate: particle.startAngle }}
+        animate={{ rotate: particle.endAngle }}
         transition={{
           duration: particle.duration,
           delay: particle.delay,
           repeat: Infinity,
-          ease: 'easeIn',
+          ease: 'linear',
         }}
-      />
+      >
+        <motion.span
+          className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.95)]"
+          initial={{
+            x: particle.distancePath[0],
+            y: '-50%',
+            opacity: 0,
+            scale: 0.55,
+          }}
+          animate={{
+            x: particle.distancePath,
+            opacity: particle.opacityPath,
+            scale: particle.scalePath,
+          }}
+          transition={{
+            duration: particle.duration,
+            delay: particle.delay,
+            repeat: Infinity,
+            ease: 'linear',
+            times: particle.times,
+          }}
+        />
+      </motion.div>
     ))}
 
   </div>
@@ -486,54 +517,58 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
           <div className="relative min-h-[39rem] overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 sm:min-h-[34rem] lg:min-h-[31rem]">
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:48px_48px] opacity-40" />
 
-            <div className="relative grid h-full gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-              <div className="relative flex min-h-[21rem] flex-col justify-between gap-4 lg:min-h-[26rem]">
-                <ParticleStream
-                  particles={wbtcParticles}
-                  className="left-[18%] right-[14%] top-[4.6rem] h-16"
-                  particleClassName="bg-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.9)]"
-                  token="bitcoin"
-                />
-                <ParticleStream
-                  particles={pranaParticles}
-                  className="left-[18%] right-[-8%] bottom-[4.7rem] h-20"
-                  particleClassName="bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
-                  token="prana"
-                />
+            <div className="relative grid h-full gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+              <div className="relative flex min-h-[21rem] flex-col gap-4 lg:min-h-[26rem]">
+                <h3 className="w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-amber-100 lg:max-w-[14rem] lg:self-center">
+                  {copy.flow.firstAbsorptionTitle}
+                </h3>
 
-                <FlowNode
-                  title={copy.flow.wbtcTitle}
-                  label={copy.flow.userLabel}
-                  visual={<TokenIcon token="bitcoin" alt={copy.alt.bitcoin} className="h-7 w-7" />}
-                  className="max-w-[13rem]"
-                />
+                <div className="relative flex min-h-[21rem] flex-1 flex-col items-center">
+                  <ParticleStream
+                    particles={wbtcParticles}
+                    className="inset-x-4 top-[4.6rem] h-16 lg:left-[18%] lg:right-[14%]"
+                    particleClassName="bg-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.9)]"
+                    token="bitcoin"
+                  />
+                  <ParticleStream
+                    particles={pranaParticles}
+                    className="inset-x-4 bottom-[4.7rem] h-20 lg:left-[18%] lg:right-[-8%]"
+                    particleClassName="bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
+                    token="prana"
+                  />
 
-                <div className="absolute left-[42%] top-[5.4rem] hidden items-center gap-2 text-white/45 sm:flex">
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  <span className="text-xs uppercase tracking-[0.16em]">{copy.flow.bondRoute}</span>
+                  <FlowNode
+                    title={copy.flow.wbtcTitle}
+                    label={copy.flow.userLabel}
+                    visual={<TokenIcon token="bitcoin" alt={copy.alt.bitcoin} className="h-7 w-7" />}
+                    className="w-full lg:max-w-[14rem]"
+                  />
+
+                  <FlowConnector />
+
+                  <FlowNode
+                    title={copy.flow.contractTitle}
+                    label={copy.flow.contractLabel}
+                    visual={<ScrollText className="h-5 w-5 text-amber-200" aria-hidden="true" />}
+                    className="w-full lg:max-w-[14rem] border-amber-200/20 bg-amber-300/[0.06]"
+                  />
+
+                  <FlowConnector className="opacity-90" />
+
+                  <FlowNode
+                    title={copy.flow.vestingTitle}
+                    label={copy.flow.vestingLabel}
+                    visual={<TokenIcon token="prana" alt={copy.alt.prana} className="h-7 w-7" />}
+                    className="w-full lg:max-w-[14rem] border-cyan-200/20 bg-cyan-300/[0.06]"
+                  />
                 </div>
-
-                <FlowNode
-                  title={copy.flow.contractTitle}
-                  label={copy.flow.contractLabel}
-                  visual={<Sparkles className="h-5 w-5 text-amber-200" aria-hidden="true" />}
-                  className="ml-auto max-w-[14rem] border-amber-200/20 bg-amber-300/[0.06]"
-                />
-
-                <div className="absolute left-[36%] bottom-[5.2rem] hidden items-center gap-2 text-white/45 sm:flex">
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  <span className="text-xs uppercase tracking-[0.16em]">{copy.flow.vestingRoute}</span>
-                </div>
-
-                <FlowNode
-                  title={copy.flow.vestingTitle}
-                  label={copy.flow.vestingLabel}
-                  visual={<TokenIcon token="prana" alt={copy.alt.prana} className="h-7 w-7" />}
-                  className="max-w-[13rem] border-cyan-200/20 bg-cyan-300/[0.06]"
-                />
               </div>
 
-              <div className="relative flex min-h-[25rem] flex-col items-center justify-center lg:min-h-[29rem]">
+              <div className="relative flex min-h-[25rem] flex-col items-center justify-start lg:min-h-[29rem]">
+                <h3 className="mb-4 w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
+                  {copy.flow.secondAbsorptionTitle}
+                </h3>
+
                 <div className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/[0.06] px-4 py-3 text-sm">
                   <div>
                     <div className="text-xs uppercase tracking-[0.18em] text-fuchsia-200/70">{copy.flow.protocolLabel}</div>
@@ -547,6 +582,10 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                 </div>
 
                 <GravityWell alt={copy.alt} />
+
+                <p className="mt-3 w-full text-center text-sm leading-6 text-white/62">
+                  {copy.blackHole.caption}
+                </p>
               </div>
             </div>
           </div>
