@@ -8,8 +8,10 @@ import {
   ShoppingCart,
   Sparkles,
 } from 'lucide-react';
+import { useBondStats } from '../hooks/useBondStats';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import type { SiteLocale } from '../types/locale.types';
+import { formatCurrency } from '../utils/formatters';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
@@ -125,7 +127,7 @@ const copyByLocale = {
       vestingLabel: 'Chosen vesting period',
       vestingTitle: 'Slow unlock',
       protocolLabel: 'Protocol',
-      protocolTitle: 'WBTC market buys PRANA',
+      protocolTitle: 'WBTC from the BuyBond contract is used by the Protocol to buy PRANA from the DEX pool',
     },
     blackHole: {
       outOfCirculation: 'Out of circulation',
@@ -134,6 +136,7 @@ const copyByLocale = {
       eventHorizon: 'Event horizon',
       caption:
         'PRANA is bought by the Protocol from the DEX pool, enters the HODL absorption core, and never return to the market.',
+      sellBondPranaLabel: 'PRANA withdrawn from market',
     },
     alt: {
       bitcoin: 'Bitcoin token icon',
@@ -188,7 +191,7 @@ const copyByLocale = {
       vestingLabel: 'Vesting',
       vestingTitle: 'Mở khóa chậm',
       protocolLabel: 'Giao thức',
-      protocolTitle: 'WBTC market buy PRANA',
+      protocolTitle: 'WBTC từ hợp đồng BuyBond được Protocol dùng để mua PRANA từ DEX pool',
     },
     blackHole: {
       outOfCirculation: 'Rời khỏi lưu thông',
@@ -197,6 +200,7 @@ const copyByLocale = {
       eventHorizon: 'Chân trời sự kiện',
       caption:
         'PRANA được Protocol mua khỏi DEX pool, đi vào tâm hấp thụ HODL và không bao giờ quay lại thị trường.',
+      sellBondPranaLabel: 'PRANA đã rút khỏi thị trường',
     },
     alt: {
       bitcoin: 'Biểu tượng Bitcoin',
@@ -234,6 +238,7 @@ const copyByLocale = {
     accretion: string;
     eventHorizon: string;
     caption: string;
+    sellBondPranaLabel: string;
   };
   alt: {
     bitcoin: string;
@@ -470,6 +475,10 @@ const GravityWell: React.FC<{
 const DoublePranaAbsorptionFlow: React.FC = () => {
   const { locale } = useSiteLanguage();
   const copy = copyByLocale[locale];
+  const { isLoading: isBondStatsLoading, sellBondPrana } = useBondStats();
+  const sellBondPranaValue = isBondStatsLoading
+    ? 'Loading...'
+    : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`;
 
   return (
     <section
@@ -586,6 +595,14 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                 <p className="mt-3 w-full text-center text-sm leading-6 text-white/62">
                   {copy.blackHole.caption}
                 </p>
+                <div className="mt-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-2 text-center">
+                  <div className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70">
+                    {copy.blackHole.sellBondPranaLabel}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-50">
+                    {sellBondPranaValue}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
