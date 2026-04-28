@@ -54,8 +54,8 @@ function App() {
             <PranaPerformanceSection />
           </div>
         </section>
-        <DoublePranaAbsorptionFlow />
         <PranaConverter />
+        <DoublePranaAbsorptionFlow />
         <Capital />
         <TopHoldingAddressesProvider>
           <TopHoldingAddresses />

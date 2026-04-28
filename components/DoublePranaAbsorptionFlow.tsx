@@ -1,14 +1,23 @@
-import React from 'react';
-import type { SiteLocale } from '../types/locale.types';
+import React, { useEffect, useState } from 'react';
+import InfoTooltip from './InfoTooltip';
 import { motion } from 'framer-motion';
 import { useBondStats } from '../hooks/useBondStats';
 import { formatCurrency } from '../utils/formatters';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { ArrowRight, Clock3, LockKeyhole, ScrollText, ShoppingCart, Sparkles } from 'lucide-react';
+import { fetchBuyDipsJson } from '../utils/buyDipsJson';
+import type { SiteLocale } from '../types/locale.types';
+import type { BuyDipsJson } from '../types/buyDips.types';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
 const ROTATION_SLOWDOWN = 2;
+
+const fallbackBuyDips: BuyDipsJson = {
+  total_volume_in_usd: undefined,
+  total_prana_bought: undefined,
+  total_buy_transactions: undefined,
+};
 
 type StreamParticle = {
   id: string;
@@ -517,9 +526,41 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
   const { locale } = useSiteLanguage();
   const copy = copyByLocale[locale];
   const { isLoading: isBondStatsLoading, sellBondPrana } = useBondStats();
-  const sellBondPranaValue = isBondStatsLoading
+  const [buyDipsData, setBuyDipsData] = useState<BuyDipsJson>(fallbackBuyDips);
+  const [isBuyDipsLoading, setIsBuyDipsLoading] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchData = async () => {
+      try {
+        const json = await fetchBuyDipsJson<BuyDipsJson>();
+        if (!isActive) return;
+        setBuyDipsData({
+          total_volume_in_usd: json?.total_volume_in_usd,
+          total_prana_bought: json?.total_prana_bought,
+          total_buy_transactions: json?.total_buy_transactions,
+        });
+      } catch {
+        if (!isActive) return;
+        setBuyDipsData(fallbackBuyDips);
+      } finally {
+        if (isActive) setIsBuyDipsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const totalWithdrawnPrana =
+    sellBondPrana === null ? null : sellBondPrana + (buyDipsData.total_prana_bought ?? 0);
+  const sellBondPranaValue = isBondStatsLoading || isBuyDipsLoading
     ? 'Loading...'
-    : `${formatCurrency(sellBondPrana, 'PRANA')} PRANA`;
+    : `${formatCurrency(totalWithdrawnPrana, 'PRANA')} PRANA`;
 
   return (
     <section
@@ -654,8 +695,14 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                   {copy.blackHole.caption}
                 </p>
                 <div className="mt-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-2 text-center">
-                  <div className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70">
-                    {copy.blackHole.sellBondPranaLabel}
+                  <div className="relative inline-flex items-center justify-center gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70">
+                    <span>{copy.blackHole.sellBondPranaLabel}</span>
+                    <InfoTooltip
+                      ariaLabel="PRANA withdrawn from market explanation"
+                      text="Buy the Dips + Sell Bonds Volume"
+                      positionClassName="bottom-full right-0 mb-2"
+                      widthClassName="w-[min(18rem,calc(100vw-2rem))]"
+                    />
                   </div>
                   <div className="mt-1 text-sm font-semibold text-emerald-50">
                     {sellBondPranaValue}

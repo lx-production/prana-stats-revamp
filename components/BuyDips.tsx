@@ -1,12 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchBuyDipsJson } from '../utils/buyDipsJson';
 import { formatStatValue } from '../utils/formatters';
-
-export type BuyDipsJson = {
-  total_volume_in_usd?: number;
-  total_prana_bought?: number;
-  total_buy_transactions?: number;
-};
+import type { BuyDipsJson } from '../types/buyDips.types';
 
 type BuyDipsProps = {
   className?: string;
