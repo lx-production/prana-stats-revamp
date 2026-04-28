@@ -1,0 +1,344 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Clock3, LockKeyhole, ShoppingCart } from 'lucide-react';
+import type { DoublePranaAltCopy, DoublePranaStepVisual } from '../types/doublePranaAbsorptionFlow.types';
+
+const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
+const PRANA_ICON = '/assets/icons/prana.svg';
+const ROTATION_SLOWDOWN = 2;
+
+type StreamParticle = {
+  id: string;
+  top: number;
+  delay: number;
+  duration: number;
+  size: number;
+};
+
+export const wbtcParticles: StreamParticle[] = Array.from({ length: 20 }, (_, index) => ({
+  id: `wbtc-${index}`,
+  top: 12 + ((index * 31) % 72),
+  delay: index * 0.18,
+  duration: 4.8 + (index % 5) * 0.28,
+  size: 3 + (index % 4),
+}));
+
+export const pranaParticles: StreamParticle[] = Array.from({ length: 30 }, (_, index) => ({
+  id: `prana-${index}`,
+  top: 10 + ((index * 23) % 76),
+  delay: index * 0.12,
+  duration: 3.9 + (index % 6) * 0.18,
+  size: 2 + (index % 5),
+}));
+
+const sinkParticles = Array.from({ length: 54 }, (_, index) => {
+  const radius = 42 + (index % 8) * 8;
+
+  return {
+    id: `sink-${index}`,
+    startAngle: index * 6.67,
+    endAngle: index * 6.67 + 960,
+    distancePath: [radius, radius * 0.94, radius * 0.82, radius * 0.66, radius * 0.48, radius * 0.3, radius * 0.12, 0],
+    opacityPath: [0, 0.92, 0.95, 0.82, 0.58, 0.28, 0, 0],
+    scalePath: [0.55, 1, 0.9, 0.74, 0.52, 0.28, 0, 0],
+    times: [0, 0.12, 0.28, 0.45, 0.62, 0.78, 0.92, 1],
+    delay: index * 0.07,
+    duration: (4.8 + (index % 7) * 0.22) * ROTATION_SLOWDOWN,
+  };
+});
+
+const absorbedPranaTokens = Array.from({ length: 12 }, (_, index) => {
+  const radius = 78 + (index % 5) * 16;
+  const distancePath = [radius, radius * 0.96, radius * 0.88, radius * 0.76, radius * 0.62, radius * 0.46, radius * 0.3, radius * 0.16, radius * 0.08, 0];
+  const tokenTimes = [0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.94, 1];
+  const spin = 720 + (index % 4) * 90;
+
+  return {
+    id: `absorbed-prana-${index}`,
+    startAngle: index * 30 + 16,
+    endAngle: index * 30 + 16 + 1320,
+    distancePath,
+    opacityPath: [0, 0.75, 0.96, 0.92, 0.82, 0.65, 0.38, 0.12, 0, 0],
+    scalePath: [0.18, 0.82, 1, 0.92, 0.78, 0.58, 0.36, 0.16, 0, 0],
+    tokenTimes,
+    delay: index * 0.42,
+    duration: (6.6 + (index % 4) * 0.34) * ROTATION_SLOWDOWN,
+    repeatDelay: 0.65 + (index % 3) * 0.28,
+    spin,
+    size: index % 3 === 0 ? 'h-8 w-8' : 'h-7 w-7',
+  };
+});
+
+export const TokenIcon: React.FC<{
+  token: 'bitcoin' | 'prana';
+  alt?: string;
+  className?: string;
+  decorative?: boolean;
+}> = ({ token, alt = '', className = '', decorative = false }) => (
+  <img
+    src={token === 'bitcoin' ? BITCOIN_ICON : PRANA_ICON}
+    alt={decorative ? '' : alt}
+    aria-hidden={decorative}
+    className={className}
+    draggable={false}
+  />
+);
+
+export const StepVisual: React.FC<{
+  visual: DoublePranaStepVisual;
+  accent: string;
+  alt: DoublePranaAltCopy;
+}> = ({ visual, accent, alt }) => {
+  if (visual === 'bitcoin') {
+    return <TokenIcon token="bitcoin" alt={alt.bitcoin} className="h-4 w-4" />;
+  }
+
+  if (visual === 'pranaLock') {
+    return (
+      <span className="relative grid h-5 w-5 place-items-center">
+        <TokenIcon token="prana" alt={alt.prana} className="h-4 w-4" />
+        <LockKeyhole className="absolute -right-1 -top-1 h-3 w-3 text-emerald-200" aria-hidden="true" />
+      </span>
+    );
+  }
+
+  const Icon = visual === 'clock' ? Clock3 : ShoppingCart;
+  return <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />;
+};
+
+export const VerticalParticleStream: React.FC<{
+  particles: StreamParticle[];
+  className: string;
+  particleClassName: string;
+  token?: 'bitcoin' | 'prana';
+}> = ({ particles, className, particleClassName, token }) => (
+  <div className={`pointer-events-none absolute overflow-hidden ${className}`} aria-hidden="true">
+    {particles.map((particle, index) => (
+      <motion.span
+        key={particle.id}
+        className={`absolute grid place-items-center rounded-full ${particleClassName}`}
+        style={{
+          left: `${particle.top}%`,
+          width: particle.size,
+          height: particle.size * 4.2,
+        }}
+        initial={{ top: '-18%', opacity: 0, scale: 0.72 }}
+        animate={{ top: '118%', opacity: [0, 0.95, 0.82, 0], scale: [0.72, 1.12, 0.88] }}
+        transition={{
+          duration: particle.duration * 1.08,
+          delay: particle.delay,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      >
+        {token && index % 4 === 0 ? (
+          <TokenIcon token={token} decorative className="h-3.5 w-3.5 min-w-3.5" />
+        ) : null}
+      </motion.span>
+    ))}
+  </div>
+);
+
+export const ContainedParticleField: React.FC<{
+  particles: StreamParticle[];
+  className?: string;
+  particleClassName: string;
+  token?: 'bitcoin' | 'prana';
+  reverse?: boolean;
+}> = ({ particles, className = '', particleClassName, token, reverse = false }) => (
+  <div className={`pointer-events-none absolute overflow-hidden ${className}`} aria-hidden="true">
+    {particles.map((particle, index) => {
+      const xStart = 16 + ((index * 29) % 68);
+      const xEnd = reverse ? xStart - 10 - (index % 4) * 4 : xStart + 10 + (index % 4) * 4;
+      const yStart = 18 + ((index * 17) % 62);
+      const yEnd = yStart + (index % 2 === 0 ? 10 : -8);
+
+      return (
+        <motion.span
+          key={particle.id}
+          className={`absolute grid place-items-center rounded-full ${particleClassName}`}
+          style={{
+            left: `${xStart}%`,
+            top: `${yStart}%`,
+            width: particle.size,
+            height: particle.size,
+          }}
+          animate={{
+            x: [`0%`, `${xEnd - xStart}%`, '0%'],
+            y: ['0%', `${yEnd - yStart}%`, '0%'],
+            opacity: [0.18, 0.88, 0.46, 0.18],
+            scale: [0.72, 1.12, 0.92, 0.72],
+          }}
+          transition={{
+            duration: particle.duration * 0.95,
+            delay: particle.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
+          {token && index % 8 === 0 ? (
+            <TokenIcon token={token} decorative className="h-3.5 w-3.5 min-w-3.5" />
+          ) : null}
+        </motion.span>
+      );
+    })}
+  </div>
+);
+
+export const FlowNode: React.FC<{
+  title: string;
+  label: string;
+  visual: React.ReactNode;
+  className?: string;
+  children?: React.ReactNode;
+}> = ({ title, label, visual, className = '', children }) => (
+  <motion.div
+    className={`relative min-h-[9rem] min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md ${className}`}
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.45 }}
+    transition={{ duration: 0.5 }}
+  >
+    {children}
+    <div className="relative z-10 flex items-center gap-3">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10">
+        {visual}
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs uppercase tracking-[0.22em] text-white/45">{label}</div>
+        <div className="mt-1 break-words text-base font-semibold text-white">{title}</div>
+      </div>
+    </div>
+  </motion.div>
+);
+
+export const FlowConnector: React.FC<{
+  className?: string;
+}> = ({ className = '' }) => (
+  <div className={`relative flex min-h-10 flex-1 justify-center ${className}`} aria-hidden="true">
+    <div className="absolute inset-y-0 w-px bg-gradient-to-b from-transparent via-cyan-100/55 to-transparent shadow-[0_0_18px_rgba(103,232,249,0.5)]" />
+    <div className="absolute inset-y-1 w-2 rounded-full bg-gradient-to-b from-amber-200/0 via-amber-200/20 to-cyan-200/0 blur-sm" />
+  </div>
+);
+
+export const GravityWell: React.FC<{
+  alt: DoublePranaAltCopy;
+}> = ({ alt }) => (
+  <div className="relative mx-auto aspect-square w-[min(82vw,22rem)] sm:w-full" aria-hidden="true">
+    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(103,232,249,0.18)_0%,rgba(168,85,247,0.12)_34%,transparent_68%)] blur-xl" />
+
+    <motion.div
+      className="absolute inset-[4%] rounded-full border border-cyan-200/10"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 28 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
+    >
+      <div className="absolute left-1/2 top-0 h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.9)]" />
+      <div className="absolute bottom-3 right-8 h-1.5 w-1.5 rounded-full bg-amber-200 shadow-[0_0_16px_rgba(251,191,36,0.85)]" />
+    </motion.div>
+
+    <motion.div
+      className="absolute inset-[8%] rounded-full bg-[conic-gradient(from_120deg,transparent_0deg,rgba(251,191,36,0.72)_42deg,rgba(217,70,239,0.44)_82deg,transparent_130deg,rgba(34,211,238,0.46)_205deg,rgba(251,191,36,0.64)_255deg,transparent_318deg)] blur-[0.5px] shadow-[0_0_54px_rgba(217,70,239,0.28)]"
+      animate={{ rotate: 360, scale: [1, 1.015, 1] }}
+      transition={{ duration: 16 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
+    />
+    <motion.div
+      className="absolute inset-[15%] rounded-full border border-amber-100/25 bg-[radial-gradient(ellipse_at_center,transparent_32%,rgba(251,191,36,0.2)_47%,transparent_61%)]"
+      animate={{ rotate: -360 }}
+      transition={{ duration: 12 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
+    />
+    <motion.div
+      className="absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(251,191,36,0.92),rgba(34,211,238,0.58),rgba(217,70,239,0.78),transparent)] blur-sm"
+      animate={{ opacity: [0.58, 0.95, 0.58], scaleX: [0.94, 1.03, 0.94] }}
+      transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+    />
+
+    <motion.div
+      className="absolute inset-[23%] rounded-full border border-cyan-200/25 bg-[conic-gradient(from_180deg,transparent,rgba(34,211,238,0.28),transparent,rgba(217,70,239,0.32),transparent)]"
+      animate={{ rotate: -360, scale: [1, 1.04, 1] }}
+      transition={{ duration: 7.4 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <div className="absolute inset-[33%] rounded-full border border-white/10 bg-[radial-gradient(circle_at_center,rgba(0,0,0,1)_0%,rgba(0,0,0,0.98)_54%,rgba(24,9,42,0.92)_70%,rgba(168,85,247,0.32)_100%)] shadow-[0_0_38px_rgba(0,0,0,1),0_0_88px_rgba(168,85,247,0.76),inset_0_0_36px_rgba(0,0,0,1)]" />
+    <div className="absolute inset-[42%] rounded-full bg-black shadow-[0_0_24px_rgba(0,0,0,1)]" />
+
+    {absorbedPranaTokens.map((token) => (
+      <motion.div
+        key={token.id}
+        className="absolute left-1/2 top-1/2 h-0 w-0"
+        initial={{ rotate: token.startAngle }}
+        animate={{ rotate: token.endAngle }}
+        transition={{
+          duration: token.duration,
+          delay: token.delay,
+          repeat: Infinity,
+          repeatDelay: token.repeatDelay,
+          ease: 'linear',
+        }}
+      >
+        <motion.div
+          className={`grid ${token.size} place-items-center rounded-full border border-cyan-100/20 bg-black/55 p-1 shadow-[0_0_20px_rgba(34,211,238,0.45)] backdrop-blur-sm`}
+          initial={{
+            x: token.distancePath[0],
+            y: '-50%',
+            opacity: 0,
+            scale: 0.18,
+            rotate: 0,
+          }}
+          animate={{
+            x: token.distancePath,
+            opacity: token.opacityPath,
+            scale: token.scalePath,
+            rotate: token.tokenTimes.map((stop) => -token.spin * stop),
+          }}
+          transition={{
+            duration: token.duration,
+            delay: token.delay,
+            repeat: Infinity,
+            repeatDelay: token.repeatDelay,
+            ease: 'linear',
+            times: token.tokenTimes,
+          }}
+        >
+          <TokenIcon token="prana" alt={alt.prana} className="h-full w-full" />
+        </motion.div>
+      </motion.div>
+    ))}
+
+    {sinkParticles.map((particle) => (
+      <motion.div
+        key={particle.id}
+        className="absolute left-1/2 top-1/2 h-0 w-0"
+        initial={{ rotate: particle.startAngle }}
+        animate={{ rotate: particle.endAngle }}
+        transition={{
+          duration: particle.duration,
+          delay: particle.delay,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      >
+        <motion.span
+          className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.95)]"
+          initial={{
+            x: particle.distancePath[0],
+            y: '-50%',
+            opacity: 0,
+            scale: 0.55,
+          }}
+          animate={{
+            x: particle.distancePath,
+            opacity: particle.opacityPath,
+            scale: particle.scalePath,
+          }}
+          transition={{
+            duration: particle.duration,
+            delay: particle.delay,
+            repeat: Infinity,
+            ease: 'linear',
+            times: particle.times,
+          }}
+        />
+      </motion.div>
+    ))}
+
+  </div>
+);
