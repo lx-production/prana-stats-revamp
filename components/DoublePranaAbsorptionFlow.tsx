@@ -81,9 +81,9 @@ const copyByLocale = {
       '1. PRANA is distributed gradually through vesting.\n2. The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation.',
     steps: [
       {
-        title: '1. Bond purchase',
+        title: '1. Buy PRANA bond',
         body:
-          'Users pay WBTC into BuyPranaBondV2 and receive a claim on PRANA instead of immediate market supply.',
+          'Users pay WBTC into BuyPranaBondV2 and receive a claim on PRANA, instead of PRANA being released to the market immediately.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
@@ -144,9 +144,9 @@ const copyByLocale = {
       '1. PRANA được phân phối chậm qua vesting.\n2. Giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
     steps: [
       {
-        title: '1. Mua bond',
+        title: '1. Mua PRANA bond',
         body:
-          'Người dùng trả WBTC vào BuyPranaBondV2 và nhận quyền nhận PRANA, thay vì đưa PRANA ra thị trường ngay lập tức.',
+          'Người dùng trả WBTC vào BuyPranaBondV2 và nhận quyền nhận PRANA, thay vì PRANA được đưa ra thị trường ngay lập tức.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
