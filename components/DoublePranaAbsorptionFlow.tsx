@@ -75,10 +75,10 @@ const absorbedPranaTokens = Array.from({ length: 12 }, (_, index) => {
 const copyByLocale = {
   en: {
     sectionAria: 'Double PRANA absorption flow visualization',
-    badge: 'Double PRANA absorption',
+    badge: 'Dual PRANA Bonding Effect',
     title: 'One WBTC payment creates two supply-side effects',
     intro:
-      'Effect 1: PRANA is distributed gradually through vesting. Effect 2: The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation.',
+      '1. PRANA is distributed gradually through vesting.\n2. The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation.',
     steps: [
       {
         title: '1. Bond purchase',
@@ -109,15 +109,15 @@ const copyByLocale = {
       },
     ],
     flow: {
-      firstAbsorptionTitle: 'Absorption 1',
-      secondAbsorptionTitle: 'Absorption 2',
+      firstAbsorptionTitle: 'Effect 1',
+      secondAbsorptionTitle: 'Effect 2',
       userLabel: 'User',
       wbtcTitle: 'WBTC enters',
       contractLabel: 'Contract',
       contractTitle: 'BuyPranaBondV2',
       bondRoute: 'bond route',
       vestingRoute: 'vested PRANA',
-      vestingLabel: 'Chosen vesting period',
+      vestingLabel: 'Vesting',
       vestingTitle: 'Slow unlock',
       protocolLabel: 'Protocol',
       protocolTitle: 'WBTC from the BuyBond contract is used by the Protocol to buy PRANA from the DEX pool',
@@ -138,10 +138,10 @@ const copyByLocale = {
   },
   vi: {
     sectionAria: 'Minh họa dòng hấp thụ kép PRANA',
-    badge: 'Hấp thụ kép PRANA',
+    badge: 'Tác động kép PRANA Bonding',
     title: 'Một khoản WBTC tạo ra hai tác động lên nguồn cung',
     intro:
-      'Tác động 1: PRANA được phân phối chậm qua vesting. Tác động 2: Giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
+      '1. PRANA được phân phối chậm qua vesting.\n2. Giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
     steps: [
       {
         title: '1. Mua bond',
@@ -173,8 +173,8 @@ const copyByLocale = {
       },
     ],
     flow: {
-      firstAbsorptionTitle: 'Hấp thụ lần 1',
-      secondAbsorptionTitle: 'Hấp thụ lần 2',
+      firstAbsorptionTitle: 'Tác động lần 1',
+      secondAbsorptionTitle: 'Tác động lần 2',
       userLabel: 'Người dùng',
       wbtcTitle: 'WBTC đi vào',
       contractLabel: 'Hợp đồng',
@@ -276,7 +276,7 @@ const StepVisual: React.FC<{
   return <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />;
 };
 
-const ParticleStream: React.FC<{
+const VerticalParticleStream: React.FC<{
   particles: StreamParticle[];
   className: string;
   particleClassName: string;
@@ -288,24 +288,70 @@ const ParticleStream: React.FC<{
         key={particle.id}
         className={`absolute grid place-items-center rounded-full ${particleClassName}`}
         style={{
-          top: `${particle.top}%`,
+          left: `${particle.top}%`,
           width: particle.size,
-          height: particle.size,
+          height: particle.size * 4.2,
         }}
-        initial={{ x: '-12%', opacity: 0, scale: 0.7 }}
-        animate={{ x: '112%', opacity: [0, 0.95, 0.8, 0], scale: [0.7, 1.15, 0.9] }}
+        initial={{ top: '-18%', opacity: 0, scale: 0.72 }}
+        animate={{ top: '118%', opacity: [0, 0.95, 0.82, 0], scale: [0.72, 1.12, 0.88] }}
         transition={{
-          duration: particle.duration,
+          duration: particle.duration * 1.08,
           delay: particle.delay,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: 'linear',
         }}
       >
-        {token && index % 7 === 0 ? (
+        {token && index % 4 === 0 ? (
           <TokenIcon token={token} decorative className="h-3.5 w-3.5 min-w-3.5" />
         ) : null}
       </motion.span>
     ))}
+  </div>
+);
+
+const ContainedParticleField: React.FC<{
+  particles: StreamParticle[];
+  className?: string;
+  particleClassName: string;
+  token?: 'bitcoin' | 'prana';
+  reverse?: boolean;
+}> = ({ particles, className = '', particleClassName, token, reverse = false }) => (
+  <div className={`pointer-events-none absolute overflow-hidden ${className}`} aria-hidden="true">
+    {particles.map((particle, index) => {
+      const xStart = 16 + ((index * 29) % 68);
+      const xEnd = reverse ? xStart - 10 - (index % 4) * 4 : xStart + 10 + (index % 4) * 4;
+      const yStart = 18 + ((index * 17) % 62);
+      const yEnd = yStart + (index % 2 === 0 ? 10 : -8);
+
+      return (
+        <motion.span
+          key={particle.id}
+          className={`absolute grid place-items-center rounded-full ${particleClassName}`}
+          style={{
+            left: `${xStart}%`,
+            top: `${yStart}%`,
+            width: particle.size,
+            height: particle.size,
+          }}
+          animate={{
+            x: [`0%`, `${xEnd - xStart}%`, '0%'],
+            y: ['0%', `${yEnd - yStart}%`, '0%'],
+            opacity: [0.18, 0.88, 0.46, 0.18],
+            scale: [0.72, 1.12, 0.92, 0.72],
+          }}
+          transition={{
+            duration: particle.duration * 0.95,
+            delay: particle.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
+          {token && index % 8 === 0 ? (
+            <TokenIcon token={token} decorative className="h-3.5 w-3.5 min-w-3.5" />
+          ) : null}
+        </motion.span>
+      );
+    })}
   </div>
 );
 
@@ -314,15 +360,17 @@ const FlowNode: React.FC<{
   label: string;
   visual: React.ReactNode;
   className?: string;
-}> = ({ title, label, visual, className = '' }) => (
+  children?: React.ReactNode;
+}> = ({ title, label, visual, className = '', children }) => (
   <motion.div
-    className={`relative min-h-[9rem] min-w-0 max-w-full rounded-2xl border border-white/10 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md ${className}`}
+    className={`relative min-h-[9rem] min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md ${className}`}
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, amount: 0.45 }}
     transition={{ duration: 0.5 }}
   >
-    <div className="flex items-center gap-3">
+    {children}
+    <div className="relative z-10 flex items-center gap-3">
       <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10">
         {visual}
       </div>
@@ -479,7 +527,7 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
       aria-label={copy.sectionAria}
     >
       <motion.div
-        className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#070414]/80 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur-xl"
         initial={{ opacity: 0, y: 32 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
@@ -498,7 +546,7 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
               <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-normal text-white sm:text-3xl">
                 {copy.title}
               </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/68 sm:text-base">
+              <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-6 text-white/68 sm:text-base">
                 {copy.intro}
               </p>
             </div>
@@ -526,17 +574,11 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                 </h3>
 
                 <div className="relative flex min-h-[21rem] min-w-0 flex-1 flex-col items-center">
-                  <ParticleStream
+                  <VerticalParticleStream
                     particles={wbtcParticles}
-                    className="inset-x-4 top-[4.6rem] h-16 lg:left-[18%] lg:right-[14%]"
+                    className="left-1/2 top-[5.2rem] z-10 h-[6.4rem] w-20 -translate-x-1/2"
                     particleClassName="bg-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.9)]"
                     token="bitcoin"
-                  />
-                  <ParticleStream
-                    particles={pranaParticles}
-                    className="inset-x-4 bottom-[4.7rem] h-20 lg:left-[18%] lg:right-[-8%]"
-                    particleClassName="bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
-                    token="prana"
                   />
 
                   <FlowNode
@@ -544,7 +586,9 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                     label={copy.flow.userLabel}
                     visual={<TokenIcon token="bitcoin" alt={copy.alt.bitcoin} className="h-7 w-7" />}
                     className="w-full lg:max-w-[14rem]"
-                  />
+                  >
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_68%,rgba(251,191,36,0.14),transparent_42%)]" />
+                  </FlowNode>
 
                   <FlowConnector />
 
@@ -553,7 +597,21 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                     label={copy.flow.contractLabel}
                     visual={<ScrollText className="h-5 w-5 text-amber-200" aria-hidden="true" />}
                     className="w-full lg:max-w-[14rem] border-amber-200/20 bg-amber-300/[0.06]"
-                  />
+                  >
+                    <ContainedParticleField
+                      particles={wbtcParticles}
+                      className="inset-x-8 bottom-5 top-[4.1rem]"
+                      particleClassName="bg-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.9)]"
+                      token="bitcoin"
+                    />
+                    <ContainedParticleField
+                      particles={pranaParticles}
+                      className="inset-x-7 bottom-5 top-[4.4rem]"
+                      particleClassName="bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
+                      token="prana"
+                      reverse
+                    />
+                  </FlowNode>
 
                   <FlowConnector className="opacity-90" />
 
@@ -562,7 +620,14 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                     label={copy.flow.vestingLabel}
                     visual={<TokenIcon token="prana" alt={copy.alt.prana} className="h-7 w-7" />}
                     className="w-full lg:max-w-[14rem] border-cyan-200/20 bg-cyan-300/[0.06]"
-                  />
+                  >
+                    <ContainedParticleField
+                      particles={pranaParticles}
+                      className="left-1/2 bottom-5 top-[4.2rem] w-28 -translate-x-1/2"
+                      particleClassName="bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
+                      token="prana"
+                    />
+                  </FlowNode>
                 </div>
               </div>
 
