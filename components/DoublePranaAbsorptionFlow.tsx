@@ -155,7 +155,7 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                     title={copy.flow.vestingTitle}
                     label={copy.flow.vestingLabel}
                     visual={<TokenIcon token="prana" alt={copy.alt.prana} className="h-7 w-7" />}
-                    className="w-full lg:max-w-[14rem] border-cyan-200/20 bg-cyan-300/[0.06]"
+                    className="w-full lg:max-w-[14rem] border-cyan-200/20 !bg-black/55"
                   >
                     <ContainedParticleField
                       particles={pranaParticles}
