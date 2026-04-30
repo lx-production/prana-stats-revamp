@@ -88,7 +88,7 @@ const Timeline: React.FC = () => {
                   variants={itemVariants}
                   whileHover={{ y: -4 }}
                 >
-                  <div className="group relative rounded-xl border border-white/10 bg-[#0b0c27]/70 hover:border-white/20 transition-all duration-300 h-full">
+                  <div className="group relative rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300 h-full">
                     <div className="absolute top-0 left-4 flex -translate-y-1/2 items-center gap-2">
                       <motion.div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-lg"

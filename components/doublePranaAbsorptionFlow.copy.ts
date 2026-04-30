@@ -2,16 +2,16 @@ import type { DoublePranaCopyByLocale } from '../types/doublePranaAbsorptionFlow
 
 export const copyByLocale = {
   en: {
-    sectionAria: 'Double PRANA absorption flow visualization',
+    sectionAria: 'Double PRANA bonding effect visualization',
     badge: 'Dual PRANA Bonding Effect',
     title: 'One WBTC payment creates two supply-side effects',
     intro:
-      '1. PRANA is distributed gradually through vesting.\n2. The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation.',
+      '1. PRANA is distributed gradually through vesting.\n2. The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation forever.',
     steps: [
       {
-        title: '1. Buy PRANA bond',
+        title: '1. Investor buys PRANA bond',
         body:
-          'Users pay WBTC into BuyPranaBondV2 and receive a claim on PRANA, instead of PRANA being released to the market immediately.',
+          'Investor pays WBTC into BuyPranaBondV2 and receive a claim on PRANA, instead of PRANA being released to the market immediately.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
@@ -24,7 +24,7 @@ export const copyByLocale = {
       },
       {
         title: '3. Protocol buyback',
-        body: 'The protocol routes the paid WBTC toward the main Uniswap pool to market buy PRANA.',
+        body: 'Protocol uses the received WBTC to directly buy PRANA from the main Uniswap pool.',
         visual: 'buyback',
         accent: 'text-fuchsia-300',
       },
@@ -65,16 +65,16 @@ export const copyByLocale = {
     },
   },
   vi: {
-    sectionAria: 'Minh họa dòng hấp thụ kép PRANA',
+    sectionAria: 'Minh họa dòng tác động kép PRANA Bonding',
     badge: 'Tác động kép PRANA Bonding',
     title: 'Một khoản WBTC tạo ra hai tác động lên nguồn cung',
     intro:
-      '1. PRANA được phân phối chậm qua vesting.\n2. Giao thức dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa PRANA mua lại ra khỏi lưu thông.',
+      '1. PRANA được phân phối chậm qua vesting.\n2. Protocol dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.',
     steps: [
       {
-        title: '1. Mua PRANA bond',
+        title: '1. Nhà đầu tư mua PRANA bond',
         body:
-          'Người dùng trả WBTC vào BuyPranaBondV2 và nhận quyền nhận PRANA, thay vì PRANA được đưa ra thị trường ngay lập tức.',
+          'Nhà đầu tư trả WBTC vào BuyPranaBondV2 và nhận quyền nhận PRANA, thay vì PRANA được đưa ra thị trường ngay lập tức.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
@@ -86,9 +86,9 @@ export const copyByLocale = {
         accent: 'text-cyan-300',
       },
       {
-        title: '3. Giao thức mua lại',
+        title: '3. Protocol mua lại',
         body:
-          'Giao thức chuyển WBTC đã nhận về pool Uniswap chính để market buy PRANA.',
+          'Protocol dùng WBTC đã nhận để mua trực tiếp PRANA từ pool Uniswap chính.',
         visual: 'buyback',
         accent: 'text-fuchsia-300',
       },

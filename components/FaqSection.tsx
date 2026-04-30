@@ -26,7 +26,7 @@ const FaqSection: React.FC = () => {
             return (
               <article
                 key={item.id}
-                className="rounded-xl border border-white/10 bg-[#0b0c27]/70 transition-colors duration-200 hover:border-white/20"
+                className="rounded-xl border border-white/10 transition-colors duration-200 hover:border-white/20"
               >
                 <button
                   type="button"
