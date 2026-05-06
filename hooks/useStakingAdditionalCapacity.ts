@@ -5,7 +5,7 @@ type UseStakingAdditionalCapacityArgs = {
   interestBalancePrana: number | null | undefined;
   /** PRANA that is already committed/needed (whole units, not raw bigint). */
   interestCommittedPrana: number | null | undefined;
-  /** APR as a fraction (e.g. 0.12 for 12%). Defaults to 12%. */
+  /** APR as a fraction (e.g. 0.15 for 15%). Defaults to 15%. */
   apr?: number;
 };
 
@@ -23,7 +23,7 @@ type UseStakingAdditionalCapacityResult = {
 export function useStakingAdditionalCapacity({
   interestBalancePrana,
   interestCommittedPrana,
-  apr = 0.12,
+  apr = 0.15,
 }: UseStakingAdditionalCapacityArgs): UseStakingAdditionalCapacityResult {
   return useMemo(() => {
     const balance = typeof interestBalancePrana === 'number' ? interestBalancePrana : null;

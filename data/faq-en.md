@@ -10,9 +10,9 @@ The maximum supply is 10 million and will never be burned or minted beyond that.
 
 PRANA does not rely on the DEX pool alone. The bonding/OTC system exists precisely to handle large flows without instantly whipsawing the market. OTC helps trades avoid directly hitting spot price, while the treasury is designed for long-term stability. Liquidity is not just depth on the UI or on the DEX; it is the full capital architecture behind the protocol.
 
-**4. Where does the fixed 12% staking APR come from? Is it sustainable?**
+**4. Where does the fixed 15% staking APR come from? Is it sustainable?**
 
-The 12% APR is paid from the staking reserve fund pre-allocated in tokenomics (Protocol Reserve). It is not based on endless inflation and does not depend on a Ponzi-style flow of “later participants paying earlier ones.” Total rewards were calculated upfront from the allocated supply. As that fund gradually depletes (over a very long horizon), the 12% APR for new stakes will also taper. No magic, just math.
+The 15% APR is paid from the staking reserve fund pre-allocated in tokenomics (Protocol Reserve). It is not based on endless inflation and does not depend on a Ponzi-style flow of “later participants paying earlier ones.” Total rewards were calculated upfront from the allocated supply. As that fund gradually depletes (over a very long horizon), the 15% APR for new stakes will also taper. No magic, just math.
 
 **5. Has PRANA ever been hacked?**
 

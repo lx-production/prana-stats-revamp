@@ -8,7 +8,7 @@ import { formatCurrency } from '../utils/formatters';
 import InfoTooltip from './InfoTooltip';
 import StatCard from './StatCard';
 
-const APR = 0.12;
+const APR = 0.15;
 
 export const StakingStats: React.FC = () => {
   const { locale } = useSiteLanguage();
@@ -39,15 +39,15 @@ export const StakingStats: React.FC = () => {
     locale === 'en' ? 'Runway explanation' : 'Giải thích Runway';
   const runwayTooltipText =
     locale === 'en'
-      ? "Runway is a simple estimate: if each day the Interest Contract balance pays out PRANA equal to estimated rewards (12% APR on total staked, spread evenly over 365 days) and total stake stays the same, the current balance lasts about that many days. When stake or the fund changes, the number changes. Formula: Runway = Interest Balance / (Total Staked × 0.12 / 365)."
-      : "Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract ‘mất’ một lượng PRANA bằng lãi ước tính (12% APR trên tổng đang stake, chia đều 365 ngày) và tổng stake không đổi, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Stake và quỹ thay đổi thì con số thay đổi. Công thức: Runway = Interest Balance / (Total Staked * 0.12 / 365)";
+      ? "Runway is a simple estimate: if each day the Interest Contract balance pays out PRANA equal to estimated rewards (15% APR on total staked, spread evenly over 365 days) and total stake stays the same, the current balance lasts about that many days. When stake or the fund changes, the number changes. Formula: Runway = Interest Balance / (Total Staked × 0.15 / 365)."
+      : "Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract ‘mất’ một lượng PRANA bằng lãi ước tính (15% APR trên tổng đang stake, chia đều 365 ngày) và tổng stake không đổi, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Stake và quỹ thay đổi thì con số thay đổi. Công thức: Runway = Interest Balance / (Total Staked * 0.15 / 365)";
 
   const capacityTooltipAria =
     locale === 'en' ? 'Capacity explanation' : 'Giải thích Capacity';
   const capacityTooltipText =
     locale === 'en'
-      ? 'Capacity estimates how much more PRANA can be staked while the PRANA left in the Interest Contract is still enough to pay rewards, assuming a fixed 12% APR. Formula: Capacity ≈ (Interest Balance − Interest Committed) / 0.12.'
-      : 'Capacity là ước tính lượng PRANA có thể được stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 12%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.12';
+      ? 'Capacity estimates how much more PRANA can be staked while the PRANA left in the Interest Contract is still enough to pay rewards, assuming a fixed 15% APR. Formula: Capacity ≈ (Interest Balance − Interest Committed) / 0.15.'
+      : 'Capacity là ước tính lượng PRANA có thể được stake thêm mà phần quỹ PRANA còn lại trong Interest Contract vẫn đủ để trả lãi với giả định APR cố định 15%. Công thức: Capacity ≈ (Interest Balance − Interest Committed) / 0.15';
 
   return (
     <>

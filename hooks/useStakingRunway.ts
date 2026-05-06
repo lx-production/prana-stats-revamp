@@ -5,7 +5,7 @@ type UseStakingRunwayArgs = {
   interestBalancePrana: number | null | undefined;
   /** Total value staked in PRANA (whole units, not raw bigint). */
   totalStakedPrana: number | null | undefined;
-  /** APR as a fraction (e.g. 0.12 for 12%). Defaults to 12%. */
+  /** APR as a fraction (e.g. 0.15 for 15%). Defaults to 15%. */
   apr?: number;
 };
 
@@ -19,7 +19,7 @@ type UseStakingRunwayResult = {
 export function useStakingRunway({
   interestBalancePrana,
   totalStakedPrana,
-  apr = 0.12,
+  apr = 0.15,
 }: UseStakingRunwayArgs): UseStakingRunwayResult {
   return useMemo(() => {
     const interest = typeof interestBalancePrana === 'number' ? interestBalancePrana : null;

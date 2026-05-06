@@ -7,16 +7,14 @@ export function useHeroHeadlines() {
     () =>
       locale === "en"
         ? {
-            title: "Priced by Bitcoin",
-            subtitle: "Run by Wisdom",
-            tagline:
-              "PRANA is the bridge between the precision of Code and the understanding of Heart",
+            title: "Stake PRANA - 15% APR",
+            subtitle: "Simple - Fixed - Transparent.",
+            tagline: "Guaranteed by reserves, not by inflation or future users.",
           }
         : {
-            title: "Định Giá Bằng Bitcoin",
-            subtitle: "Vận Hành Bằng Trí Tuệ",
-            tagline:
-              "PRANA là cầu nối giữa sự chính xác của Code và sự thấu hiểu của Tâm",
+            title: "Stake PRANA - 15% APR",
+            subtitle: "Đơn Giản - Cố Định - Minh Bạch",
+            tagline: "Lãi suất được đảm bảo bằng quỹ dự trữ đã phân bổ sẵn, không phải bằng lạm phát hay người mới",
           },
     [locale],
   );

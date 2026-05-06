@@ -24,7 +24,7 @@ export const TopHoldingAddresses: React.FC = () => {
       ariaLabel: 'DEX Pool & Bonds Reserve info',
     },
     'PRANA Staking': {
-      text: 'Lãi suất cố định 12% APR',
+      text: 'Lãi suất cố định 15% APR',
       ariaLabel: 'PRANA Staking info',
     },
   };
