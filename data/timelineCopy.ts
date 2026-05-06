@@ -58,6 +58,10 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
     title: "PRANA Stats V2",
     description: "Khai trương trang PRANA Stats mới.",
   },
+  event_13: {
+    title: "Tăng lãi suất PRANA Staking",
+    description: "Mỗi kỳ hạn tăng thêm 3%. Kỳ hạn 1 năm: 15%",
+  },
 };
 
 export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
@@ -116,5 +120,9 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
   event_12: {
     title: "PRANA Stats V2",
     description: "Launch of the new PRANA Stats page.",
+  },
+  event_13: {
+    title: "PRANA Staking Interest Rate Increased",
+    description: "Each term increased by 3%. 1-year term: 15%",
   },
 };

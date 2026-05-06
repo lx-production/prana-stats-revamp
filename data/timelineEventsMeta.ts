@@ -77,6 +77,12 @@ export const TIMELINE_EVENTS_META = [
     color: "#22c55e",
     icon: "12",
   },
+  {
+    id: "event_13",
+    timestamp: 1778025600,
+    color: "#f97316",
+    icon: "13",
+  },
 ] as const satisfies readonly TimelineEventMeta[];
 
 export type TimelineEventId = (typeof TIMELINE_EVENTS_META)[number]["id"];

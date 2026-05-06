@@ -7,7 +7,7 @@ export function useHeroHeadlines() {
     () =>
       locale === "en"
         ? {
-            title: "Stake PRANA - 15% APR",
+            title: "Stake with 15% APR",
             subtitle: "Simple - Fixed - Transparent.",
             tagline: "Guaranteed by reserves, not by inflation or future users.",
           }
