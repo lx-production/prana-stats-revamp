@@ -12,7 +12,7 @@ export function useHeroHeadlines() {
             tagline: "Guaranteed by reserves, not by inflation or future users.",
           }
         : {
-            title: "Stake PRANA - 15% APR",
+            title: "Stake với lãi suất 15%",
             subtitle: "Đơn Giản - Cố Định - Minh Bạch",
             tagline: "Lãi suất được đảm bảo bằng quỹ dự trữ đã phân bổ sẵn, không phải bằng lạm phát hay người mới",
           },
