@@ -1,88 +1,20 @@
 {
-  "generatedAt": "2026-01-12T06:26:19.705Z",
+  "generatedAt": "2026-05-07T07:07:39.177Z",
   "rpcUrl": "https://polygon-mainnet.g.alchemy.com/v2/%3Credacted%3E",
   "contract": {
     "address": "0x714425A4F4d624ef83fEff810a0EEC30B0847868"
   },
   "chain": {
-    "blockNumber": 81539957,
-    "blockTimestamp": 1768199178
+    "blockNumber": 86513115,
+    "blockTimestamp": 1778137659
   },
   "scan": {
-    "lastStakeId": 30,
-    "stakersCount": 8,
-    "totalStakesSeen": 12,
-    "activeStakesCount": 12
+    "lastStakeId": 41,
+    "stakersCount": 10,
+    "totalStakesSeen": 21,
+    "activeStakesCount": 19
   },
   "activeStakes": [
-    {
-      "stakeId": 4,
-      "staker": "0xC9f3129B230776ba3EBCb8b0480Ecc71666399fe",
-      "amountRaw": "27930000000000",
-      "amountPrana": "27930.0",
-      "startTime": "1742218972",
-      "startTimeIso": "2025-03-17T13:42:52.000Z",
-      "startTimeLocal": "3/17/2025, 8:42:52 PM",
-      "durationSeconds": "31536000",
-      "durationDays": 365,
-      "apr": 12,
-      "lastClaimTime": "1742218972",
-      "matureTime": "1773754972",
-      "matureTimeIso": "2026-03-17T13:42:52.000Z",
-      "matureTimeLocal": "3/17/2026, 8:42:52 PM",
-      "remainingSeconds": "5555794"
-    },
-    {
-      "stakeId": 5,
-      "staker": "0xC15E3Ba929c1fe40fcF9cBf3df4E3B16A7230d74",
-      "amountRaw": "11741745044232",
-      "amountPrana": "11741.745044232",
-      "startTime": "1742382437",
-      "startTimeIso": "2025-03-19T11:07:17.000Z",
-      "startTimeLocal": "3/19/2025, 6:07:17 PM",
-      "durationSeconds": "31536000",
-      "durationDays": 365,
-      "apr": 12,
-      "lastClaimTime": "1742382437",
-      "matureTime": "1773918437",
-      "matureTimeIso": "2026-03-19T11:07:17.000Z",
-      "matureTimeLocal": "3/19/2026, 6:07:17 PM",
-      "remainingSeconds": "5719259"
-    },
-    {
-      "stakeId": 7,
-      "staker": "0x2f8aA83Fa644213ae3587eF32256f1B1D8c5cf58",
-      "amountRaw": "30000000000000",
-      "amountPrana": "30000.0",
-      "startTime": "1742524957",
-      "startTimeIso": "2025-03-21T02:42:37.000Z",
-      "startTimeLocal": "3/21/2025, 9:42:37 AM",
-      "durationSeconds": "31536000",
-      "durationDays": 365,
-      "apr": 12,
-      "lastClaimTime": "1742524957",
-      "matureTime": "1774060957",
-      "matureTimeIso": "2026-03-21T02:42:37.000Z",
-      "matureTimeLocal": "3/21/2026, 9:42:37 AM",
-      "remainingSeconds": "5861779"
-    },
-    {
-      "stakeId": 14,
-      "staker": "0x2214D4122f9fd8dd77A2152D52642762A7C9Bd31",
-      "amountRaw": "8357000000000",
-      "amountPrana": "8357.0",
-      "startTime": "1745758612",
-      "startTimeIso": "2025-04-27T12:56:52.000Z",
-      "startTimeLocal": "4/27/2025, 7:56:52 PM",
-      "durationSeconds": "31536000",
-      "durationDays": 365,
-      "apr": 12,
-      "lastClaimTime": "1745758612",
-      "matureTime": "1777294612",
-      "matureTimeIso": "2026-04-27T12:56:52.000Z",
-      "matureTimeLocal": "4/27/2026, 7:56:52 PM",
-      "remainingSeconds": "9095434"
-    },
     {
       "stakeId": 19,
       "staker": "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
@@ -94,11 +26,11 @@
       "durationSeconds": "31536000",
       "durationDays": 365,
       "apr": 12,
-      "lastClaimTime": "1767555741",
+      "lastClaimTime": "1778055980",
       "matureTime": "1778188602",
       "matureTimeIso": "2026-05-07T21:16:42.000Z",
       "matureTimeLocal": "5/8/2026, 4:16:42 AM",
-      "remainingSeconds": "9989424"
+      "remainingSeconds": "50943"
     },
     {
       "stakeId": 20,
@@ -115,7 +47,7 @@
       "matureTime": "1778903229",
       "matureTimeIso": "2026-05-16T03:47:09.000Z",
       "matureTimeLocal": "5/16/2026, 10:47:09 AM",
-      "remainingSeconds": "10704051"
+      "remainingSeconds": "765570"
     },
     {
       "stakeId": 24,
@@ -132,7 +64,7 @@
       "matureTime": "1789101843",
       "matureTimeIso": "2026-09-11T04:44:03.000Z",
       "matureTimeLocal": "9/11/2026, 11:44:03 AM",
-      "remainingSeconds": "20902665"
+      "remainingSeconds": "10964184"
     },
     {
       "stakeId": 25,
@@ -149,7 +81,7 @@
       "matureTime": "1789384380",
       "matureTimeIso": "2026-09-14T11:13:00.000Z",
       "matureTimeLocal": "9/14/2026, 6:13:00 PM",
-      "remainingSeconds": "21185202"
+      "remainingSeconds": "11246721"
     },
     {
       "stakeId": 26,
@@ -162,11 +94,11 @@
       "durationSeconds": "31536000",
       "durationDays": 365,
       "apr": 12,
-      "lastClaimTime": "1767555783",
+      "lastClaimTime": "1778056024",
       "matureTime": "1790886435",
       "matureTimeIso": "2026-10-01T20:27:15.000Z",
       "matureTimeLocal": "10/2/2026, 3:27:15 AM",
-      "remainingSeconds": "22687257"
+      "remainingSeconds": "12748776"
     },
     {
       "stakeId": 28,
@@ -183,7 +115,7 @@
       "matureTime": "1791962775",
       "matureTimeIso": "2026-10-14T07:26:15.000Z",
       "matureTimeLocal": "10/14/2026, 2:26:15 PM",
-      "remainingSeconds": "23763597"
+      "remainingSeconds": "13825116"
     },
     {
       "stakeId": 29,
@@ -196,11 +128,11 @@
       "durationSeconds": "31536000",
       "durationDays": 365,
       "apr": 12,
-      "lastClaimTime": "1767555801",
+      "lastClaimTime": "1778056058",
       "matureTime": "1794402283",
       "matureTimeIso": "2026-11-11T13:04:43.000Z",
       "matureTimeLocal": "11/11/2026, 8:04:43 PM",
-      "remainingSeconds": "26203105"
+      "remainingSeconds": "16264624"
     },
     {
       "stakeId": 30,
@@ -213,11 +145,198 @@
       "durationSeconds": "31536000",
       "durationDays": 365,
       "apr": 12,
-      "lastClaimTime": "1767556663",
+      "lastClaimTime": "1778056098",
       "matureTime": "1799092663",
       "matureTimeIso": "2027-01-04T19:57:43.000Z",
       "matureTimeLocal": "1/5/2027, 2:57:43 AM",
-      "remainingSeconds": "30893485"
+      "remainingSeconds": "20955004"
+    },
+    {
+      "stakeId": 31,
+      "staker": "0x1f47425ae14045C3cF98Ec8F6A3D7A01A2ceD9BC",
+      "amountRaw": "16800000000000",
+      "amountPrana": "16800.0",
+      "startTime": "1771862678",
+      "startTimeIso": "2026-02-23T16:04:38.000Z",
+      "startTimeLocal": "2/23/2026, 11:04:38 PM",
+      "durationSeconds": "15552000",
+      "durationDays": 180,
+      "apr": 11,
+      "lastClaimTime": "1778056192",
+      "matureTime": "1787414678",
+      "matureTimeIso": "2026-08-22T16:04:38.000Z",
+      "matureTimeLocal": "8/22/2026, 11:04:38 PM",
+      "remainingSeconds": "9277019"
+    },
+    {
+      "stakeId": 32,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "2700000000000",
+      "amountPrana": "2700.0",
+      "startTime": "1774067833",
+      "startTimeIso": "2026-03-21T04:37:13.000Z",
+      "startTimeLocal": "3/21/2026, 11:37:13 AM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1774067833",
+      "matureTime": "1805603833",
+      "matureTimeIso": "2027-03-21T04:37:13.000Z",
+      "matureTimeLocal": "3/21/2027, 11:37:13 AM",
+      "remainingSeconds": "27466174"
+    },
+    {
+      "stakeId": 33,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "900000000000",
+      "amountPrana": "900.0",
+      "startTime": "1774399209",
+      "startTimeIso": "2026-03-25T00:40:09.000Z",
+      "startTimeLocal": "3/25/2026, 7:40:09 AM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1774399209",
+      "matureTime": "1805935209",
+      "matureTimeIso": "2027-03-25T00:40:09.000Z",
+      "matureTimeLocal": "3/25/2027, 7:40:09 AM",
+      "remainingSeconds": "27797550"
+    },
+    {
+      "stakeId": 34,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "870000000000",
+      "amountPrana": "870.0",
+      "startTime": "1774412251",
+      "startTimeIso": "2026-03-25T04:17:31.000Z",
+      "startTimeLocal": "3/25/2026, 11:17:31 AM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1774412251",
+      "matureTime": "1805948251",
+      "matureTimeIso": "2027-03-25T04:17:31.000Z",
+      "matureTimeLocal": "3/25/2027, 11:17:31 AM",
+      "remainingSeconds": "27810592"
+    },
+    {
+      "stakeId": 35,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "968000000000",
+      "amountPrana": "968.0",
+      "startTime": "1775138293",
+      "startTimeIso": "2026-04-02T13:58:13.000Z",
+      "startTimeLocal": "4/2/2026, 8:58:13 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1775138293",
+      "matureTime": "1806674293",
+      "matureTimeIso": "2027-04-02T13:58:13.000Z",
+      "matureTimeLocal": "4/2/2027, 8:58:13 PM",
+      "remainingSeconds": "28536634"
+    },
+    {
+      "stakeId": 36,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "1150000000000",
+      "amountPrana": "1150.0",
+      "startTime": "1775831685",
+      "startTimeIso": "2026-04-10T14:34:45.000Z",
+      "startTimeLocal": "4/10/2026, 9:34:45 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1775831685",
+      "matureTime": "1807367685",
+      "matureTimeIso": "2027-04-10T14:34:45.000Z",
+      "matureTimeLocal": "4/10/2027, 9:34:45 PM",
+      "remainingSeconds": "29230026"
+    },
+    {
+      "stakeId": 37,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "450000000000",
+      "amountPrana": "450.0",
+      "startTime": "1775832297",
+      "startTimeIso": "2026-04-10T14:44:57.000Z",
+      "startTimeLocal": "4/10/2026, 9:44:57 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1775832297",
+      "matureTime": "1807368297",
+      "matureTimeIso": "2027-04-10T14:44:57.000Z",
+      "matureTimeLocal": "4/10/2027, 9:44:57 PM",
+      "remainingSeconds": "29230638"
+    },
+    {
+      "stakeId": 38,
+      "staker": "0x2f8aA83Fa644213ae3587eF32256f1B1D8c5cf58",
+      "amountRaw": "33600000000000",
+      "amountPrana": "33600.0",
+      "startTime": "1776086495",
+      "startTimeIso": "2026-04-13T13:21:35.000Z",
+      "startTimeLocal": "4/13/2026, 8:21:35 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1776086495",
+      "matureTime": "1807622495",
+      "matureTimeIso": "2027-04-13T13:21:35.000Z",
+      "matureTimeLocal": "4/13/2027, 8:21:35 PM",
+      "remainingSeconds": "29484836"
+    },
+    {
+      "stakeId": 39,
+      "staker": "0xCF10A936309aBD68D4bd8C78a5d34EaC14eb22e8",
+      "amountRaw": "1000000000000",
+      "amountPrana": "1000.0",
+      "startTime": "1777892766",
+      "startTimeIso": "2026-05-04T11:06:06.000Z",
+      "startTimeLocal": "5/4/2026, 6:06:06 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1777892766",
+      "matureTime": "1809428766",
+      "matureTimeIso": "2027-05-04T11:06:06.000Z",
+      "matureTimeLocal": "5/4/2027, 6:06:06 PM",
+      "remainingSeconds": "31291107"
+    },
+    {
+      "stakeId": 40,
+      "staker": "0x3C473e1bad36A2d1DdFBe687112672dB41ee07a0",
+      "amountRaw": "382000000000",
+      "amountPrana": "382.0",
+      "startTime": "1777895818",
+      "startTimeIso": "2026-05-04T11:56:58.000Z",
+      "startTimeLocal": "5/4/2026, 6:56:58 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 12,
+      "lastClaimTime": "1777895818",
+      "matureTime": "1809431818",
+      "matureTimeIso": "2027-05-04T11:56:58.000Z",
+      "matureTimeLocal": "5/4/2027, 6:56:58 PM",
+      "remainingSeconds": "31294159"
+    },
+    {
+      "stakeId": 41,
+      "staker": "0xC9f3129B230776ba3EBCb8b0480Ecc71666399fe",
+      "amountRaw": "43131000000000",
+      "amountPrana": "43131.0",
+      "startTime": "1778067854",
+      "startTimeIso": "2026-05-06T11:44:14.000Z",
+      "startTimeLocal": "5/6/2026, 6:44:14 PM",
+      "durationSeconds": "31536000",
+      "durationDays": 365,
+      "apr": 15,
+      "lastClaimTime": "1778067854",
+      "matureTime": "1809603854",
+      "matureTimeIso": "2027-05-06T11:44:14.000Z",
+      "matureTimeLocal": "5/6/2027, 6:44:14 PM",
+      "remainingSeconds": "31466195"
     }
   ]
 }

@@ -5,13 +5,12 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI } from '../constants/stakingContracts.ts';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
-import type { ActiveStake, ActiveStakesResult, StakeData, StakerEntry } from './types/fetchActiveStakesTypes.ts';
+import type { ActiveStake, ActiveStakesResult, StakeData } from './types/fetchActiveStakesTypes.ts';
 import { formatUnixSecondsToHuman, getRpcUrl, isRateLimitError, loadDotEnvIntoProcessEnv, redactUrl, sleep, toBigInt, toNumberSafe } from './utils/fetchActiveStakesUtils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const LAST_STAKE_ID = 30;
 
 async function main(): Promise<void> {
   await loadDotEnvIntoProcessEnv(PROJECT_ROOT);
@@ -32,8 +31,9 @@ async function main(): Promise<void> {
 
   const stakers: string[] = await stakingContract.getStakers();
 
-  const stakeById = new Map<number, StakerEntry>();
+  const activeStakes: ActiveStake[] = [];
   let totalStakesSeen = 0;
+  let lastStakeId = 0;
 
   for (const staker of stakers) {
     let stakes: StakeData[] = [];
@@ -53,46 +53,36 @@ async function main(): Promise<void> {
     for (const s of stakes) {
       totalStakesSeen += 1;
       const stakeId = toNumberSafe(s?.id);
-      if (!stakeById.has(stakeId)) {
-        stakeById.set(stakeId, { staker, stake: s });
-      }
+      lastStakeId = Math.max(lastStakeId, stakeId);
+
+      const startTime = toBigInt(s.startTime);
+      const duration = toBigInt(s.duration);
+      const endTime = startTime + duration;
+      const isActive = now < endTime;
+      if (!isActive) continue;
+
+      const remainingSeconds = endTime > now ? endTime - now : 0n;
+      const matureHuman = formatUnixSecondsToHuman(endTime);
+      const startHuman = formatUnixSecondsToHuman(startTime);
+
+      activeStakes.push({
+        stakeId,
+        staker,
+        amountRaw: toBigInt(s.amount).toString(),
+        amountPrana: ethers.formatUnits(toBigInt(s.amount), PRANA_DECIMALS),
+        startTime: startTime.toString(),
+        startTimeIso: startHuman.iso,
+        startTimeLocal: startHuman.local,
+        durationSeconds: duration.toString(),
+        durationDays: Number(duration) / 86400,
+        apr: toNumberSafe(s.apr),
+        lastClaimTime: toBigInt(s.lastClaimTime).toString(),
+        matureTime: endTime.toString(),
+        matureTimeIso: matureHuman.iso,
+        matureTimeLocal: matureHuman.local,
+        remainingSeconds: remainingSeconds.toString(),
+      });
     }
-  }
-
-  const activeStakes: ActiveStake[] = [];
-
-  for (let stakeId = 1; stakeId <= LAST_STAKE_ID; stakeId += 1) {
-    const entry = stakeById.get(stakeId);
-    if (!entry) continue;
-
-    const { staker, stake } = entry;
-    const startTime = toBigInt(stake.startTime);
-    const duration = toBigInt(stake.duration);
-    const endTime = startTime + duration;
-    const isActive = now < endTime;
-    if (!isActive) continue;
-
-    const remainingSeconds = endTime > now ? endTime - now : 0n;
-    const matureHuman = formatUnixSecondsToHuman(endTime);
-    const startHuman = formatUnixSecondsToHuman(startTime);
-
-    activeStakes.push({
-      stakeId,
-      staker,
-      amountRaw: toBigInt(stake.amount).toString(),
-      amountPrana: ethers.formatUnits(toBigInt(stake.amount), PRANA_DECIMALS),
-      startTime: startTime.toString(),
-      startTimeIso: startHuman.iso,
-      startTimeLocal: startHuman.local,
-      durationSeconds: duration.toString(),
-      durationDays: Number(duration) / 86400,
-      apr: toNumberSafe(stake.apr),
-      lastClaimTime: toBigInt(stake.lastClaimTime).toString(),
-      matureTime: endTime.toString(),
-      matureTimeIso: matureHuman.iso,
-      matureTimeLocal: matureHuman.local,
-      remainingSeconds: remainingSeconds.toString(),
-    });
   }
 
   activeStakes.sort((a, b) => a.stakeId - b.stakeId);
@@ -108,7 +98,7 @@ async function main(): Promise<void> {
       blockTimestamp,
     },
     scan: {
-      lastStakeId: LAST_STAKE_ID,
+      lastStakeId,
       stakersCount: stakers.length,
       totalStakesSeen,
       activeStakesCount: activeStakes.length,
