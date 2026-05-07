@@ -169,6 +169,17 @@ This endpoint owns the staking card payload:
 - `interestContractBalanceVnd`
 - `interestPrana`
 - `interestVnd`
+- `dailyInterestPrana`
+- `runwayDays`
+
+Runway refactor notes:
+- `/api/staking-stats` no longer depends on a single fixed APR assumption in the browser.
+- The server now loads active stakes from chain (`getStakers()` + `getStakerStakes(...)`) via `server/loaders/activeStakes.ts`.
+- That loader writes/updates `active_stakes.json` as a snapshot and computes weighted daily interest from each stake's own APR.
+- `runwayDays` is computed server-side as:
+  - `runwayDays = interestContractBalancePrana / dailyInterestPrana`
+  - where `dailyInterestPrana = sum(amountPrana * apr / 100 / 365)` across active stakes.
+- If chain fetch fails, the loader falls back to the latest readable `active_stakes.json`.
 
 ### Computed API snapshot: bond metrics
 - `hooks/useBondStats.ts`
@@ -344,6 +355,7 @@ Use `force: true` only when you specifically need to bypass the short-lived brow
 
 Current examples:
 - `prefetchInitialJson` (in `utils/prefetchInitialJson.ts`) calls `/api/bonds-v2/refresh-bonds`, then `fetchBondsV2TotalsSafe({ force: Boolean(refreshResult?.updated) })`: the cache-busting query string on `bonds_v2.json` is used only when the refresh response indicates `updated` is truthy, so a forced refetch avoids a stale HTTP cache entry for the plain URL only when the file actually changed
+- `fetchStakingStatsApi` (in `utils/stakingStatsApi.ts`) normally requests `/api/staking-stats` without force. If the cached browser response shape is invalid (for example after an API shape change), it retries once with `force: true` (`?_=` cache-buster).
 
 Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
 
@@ -376,7 +388,9 @@ Pricing and market cap only. Fiat and BTC performance percentages are computed i
   "interestContractBalancePrana": 139945.45,
   "interestContractBalanceVnd": 191464583.51,
   "interestPrana": 74806.22,
-  "interestVnd": 102345186.55
+  "interestVnd": 102345186.55,
+  "dailyInterestPrana": 306.56,
+  "runwayDays": 393.91
 }
 ```
 
