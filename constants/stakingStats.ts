@@ -7,6 +7,8 @@ export const initialStakingStats: StakingStatsData = {
   interestContractBalanceVnd: null,
   interestPrana: null,
   interestVnd: null,
+  dailyInterestPrana: null,
+  runwayDays: null,
   isLoading: true,
   error: null,
 };

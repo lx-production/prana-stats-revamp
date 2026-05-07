@@ -18,7 +18,9 @@ function isStakingStatsResponse(value: unknown): value is StakingStatsApiRespons
     typeof candidate.interestContractBalancePrana === 'number' &&
     typeof candidate.interestContractBalanceVnd === 'number' &&
     typeof candidate.interestPrana === 'number' &&
-    typeof candidate.interestVnd === 'number'
+    typeof candidate.interestVnd === 'number' &&
+    typeof candidate.dailyInterestPrana === 'number' &&
+    (typeof candidate.runwayDays === 'number' || candidate.runwayDays === null)
   );
 }
 
@@ -31,6 +33,10 @@ export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Prom
 
   if (isStakingStatsResponse(response)) {
     return response;
+  }
+
+  if (!force) {
+    return await fetchStakingStatsApi({ force: true });
   }
 
   throw new Error('Failed to fetch staking stats: invalid response from /api/staking-stats');
