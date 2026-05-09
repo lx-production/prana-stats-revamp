@@ -33,8 +33,8 @@ export const StakingStats: React.FC = () => {
     locale === 'en' ? 'Runway explanation' : 'Giải thích Runway';
   const runwayTooltipText =
     locale === 'en'
-      ? "Runway is a simple estimate: if each day the Interest Contract balance pays out PRANA equal to current active stake rewards, the current balance lasts about that many days. Each active stake uses its own APR from the staking contract, so older 12% stakes and newer 15% stakes are counted separately. When stake or the fund changes, the number changes."
-      : "Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract ‘mất’ một lượng PRANA bằng lãi của các stake active hiện tại, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Mỗi stake dùng APR riêng được lưu trong staking contract, nên stake cũ 12% và stake mới 15% được tính riêng. Stake và quỹ thay đổi thì con số thay đổi.";
+      ? "Runway is a simple estimate: if each day the Interest Contract balance needs to pay out PRANA equal to current active stake rewards, the current balance lasts about that many days. Each active stake uses its own APR from the staking contract, so older 12% stakes and newer 15% stakes are counted separately. When stake or the fund changes, the number changes."
+      : "Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract cần trả một lượng PRANA bằng lãi của các stake active hiện tại, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Mỗi stake dùng APR riêng được lưu trong staking contract, nên stake cũ 12% và stake mới 15% được tính riêng. Stake và quỹ thay đổi thì con số thay đổi.";
 
   const capacityTooltipAria =
     locale === 'en' ? 'Capacity explanation' : 'Giải thích Capacity';
