@@ -1,11 +1,11 @@
-import { ethers } from 'ethers';
 import type { StakingStatsApiResponse } from '../../types/api.types.ts';
-import { asBigInt, formatEther } from '../../utils/pranaStatsUtils.ts';
-import { getServerPolygonProvider } from '../utils/providers.ts';
+import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { getServerPolygonProvider } from '../utils/providers.ts';
+import { asBigInt, formatEther } from '../../utils/pranaStatsUtils.ts';
 import { MINIMAL_ERC20_ABI, PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
-import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 import { calculateDailyInterestPrana, loadActiveStakesSnapshot } from './activeStakes.ts';
+import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 
 async function safeContractCall(call: Promise<unknown>, fallback: bigint): Promise<bigint> {
   try {
