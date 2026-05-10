@@ -1,4 +1,5 @@
 import type { StakingStatsApiResponse } from '../../types/api.types.ts';
+import type { ActiveStakesResult } from '../../types/activeStakes.types.ts';
 import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
@@ -13,6 +14,22 @@ async function safeContractCall(call: Promise<unknown>, fallback: bigint): Promi
   } catch {
     return fallback;
   }
+}
+
+function getLatestMatureTime(activeStakesSnapshot: ActiveStakesResult | null): number | null {
+  const fromSnapshot = activeStakesSnapshot?.interest?.latestMatureTime;
+  if (fromSnapshot) {
+    const timestamp = Number.parseFloat(fromSnapshot);
+    return Number.isFinite(timestamp) ? timestamp : null;
+  }
+
+  const latest = activeStakesSnapshot?.activeStakes.reduce<number | null>((max, stake) => {
+    const matureTime = Number.parseFloat(stake.matureTime);
+    if (!Number.isFinite(matureTime)) return max;
+    return max === null || matureTime > max ? matureTime : max;
+  }, null);
+
+  return latest ?? null;
 }
 
 async function loadStakingSnapshot() {
@@ -36,12 +53,18 @@ async function loadStakingSnapshot() {
     : 0;
   const claimableUnclaimedInterestPrana =
     activeStakesSnapshot?.interest?.claimableUnclaimedInterestPrana ?? 0;
-  const runwayBalancePrana = Math.max(
-    interestContractBalancePrana - claimableUnclaimedInterestPrana,
-    0,
-  );
-  const runwayDays = dailyInterestPrana > 0
-    ? runwayBalancePrana / dailyInterestPrana
+  const surplusPrana = interestContractBalancePrana - interestPrana;
+  const surplusDays = dailyInterestPrana > 0 && surplusPrana > 0
+    ? surplusPrana / dailyInterestPrana
+    : null;
+  const latestMatureTime = getLatestMatureTime(activeStakesSnapshot);
+  const snapshotBlockTimestamp =
+    activeStakesSnapshot?.chain.blockTimestamp ?? Math.floor(Date.now() / 1000);
+  const daysUntilLatestMaturity = latestMatureTime
+    ? Math.max((latestMatureTime - snapshotBlockTimestamp) / 86_400, 0)
+    : null;
+  const surplusRunwayRemainingDays = surplusDays !== null && daysUntilLatestMaturity !== null
+    ? daysUntilLatestMaturity + surplusDays
     : null;
 
   return {
@@ -50,7 +73,7 @@ async function loadStakingSnapshot() {
     interestPrana,
     claimableUnclaimedInterestPrana,
     dailyInterestPrana,
-    runwayDays,
+    surplusRunwayRemainingDays,
   };
 }
 
@@ -71,6 +94,6 @@ export async function loadStakingStats(): Promise<StakingStatsApiResponse> {
     interestVnd: stakingStats.interestPrana * pranaPriceVnd,
     claimableUnclaimedInterestPrana: stakingStats.claimableUnclaimedInterestPrana,
     dailyInterestPrana: stakingStats.dailyInterestPrana,
-    runwayDays: stakingStats.runwayDays,
+    surplusRunwayRemainingDays: stakingStats.surplusRunwayRemainingDays,
   };
 }

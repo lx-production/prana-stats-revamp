@@ -21,8 +21,32 @@ function isStakingStatsResponse(value: unknown): value is StakingStatsApiRespons
     typeof candidate.interestVnd === 'number' &&
     typeof candidate.claimableUnclaimedInterestPrana === 'number' &&
     typeof candidate.dailyInterestPrana === 'number' &&
-    (typeof candidate.runwayDays === 'number' || candidate.runwayDays === null)
+    (typeof candidate.surplusRunwayRemainingDays === 'number' || candidate.surplusRunwayRemainingDays === null)
   );
+}
+
+function normalizeStakingStatsResponse(value: unknown): StakingStatsApiResponse | null {
+  if (isStakingStatsResponse(value)) return value;
+  if (!value || typeof value !== 'object') return null;
+
+  const candidate = value as Record<string, unknown>;
+  const hasLegacySurplusRunway =
+    typeof candidate.surplusRunwayUntilIso === 'string' ||
+    candidate.surplusRunwayUntilIso === null;
+
+  if (!hasLegacySurplusRunway) return null;
+
+  const surplusRunwayRemainingDays =
+    typeof candidate.surplusRunwayUntilIso === 'string'
+      ? Math.max((new Date(candidate.surplusRunwayUntilIso).getTime() - Date.now()) / 86_400_000, 0)
+      : null;
+
+  const normalized = {
+    ...candidate,
+    surplusRunwayRemainingDays,
+  };
+
+  return isStakingStatsResponse(normalized) ? normalized : null;
 }
 
 export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Promise<StakingStatsApiResponse> {
@@ -32,8 +56,9 @@ export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Prom
     dedupeKey: force ? null : undefined,
   });
 
-  if (isStakingStatsResponse(response)) {
-    return response;
+  const normalized = normalizeStakingStatsResponse(response);
+  if (normalized) {
+    return normalized;
   }
 
   if (!force) {

@@ -86,6 +86,7 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
   let claimableStakesCount = 0;
   let dailyInterestRaw = 0n;
   let claimableUnclaimedInterestRaw = 0n;
+  let latestMatureTime: bigint | null = null;
 
   for (const staker of stakers) {
     const stakes = await getStakerStakesWithRetry(stakingContract, staker);
@@ -107,6 +108,9 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
 
       if (isActive) {
         dailyInterestRaw += calculateInterestRaw(amountRaw, apr, SECONDS_PER_DAY);
+        latestMatureTime = latestMatureTime === null || endTime > latestMatureTime
+          ? endTime
+          : latestMatureTime;
       }
 
       if (isActive || isMaturedClaimable) {
@@ -169,6 +173,7 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
     interest: {
       dailyInterestPrana: formatPranaRawToNumber(dailyInterestRaw),
       claimableUnclaimedInterestPrana: formatPranaRawToNumber(claimableUnclaimedInterestRaw),
+      latestMatureTime: latestMatureTime?.toString() ?? null,
     },
     activeStakes,
   };

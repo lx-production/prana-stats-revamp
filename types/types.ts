@@ -71,7 +71,7 @@ export interface StakingStatsData {
   interestVnd: number | null;
   claimableUnclaimedInterestPrana: number | null;
   dailyInterestPrana: number | null;
-  runwayDays: number | null;
+  surplusRunwayRemainingDays: number | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -157,7 +157,7 @@ export interface StakingStatsOutput {
   interestPrana: number;
   claimableUnclaimedInterestPrana: number;
   dailyInterestPrana: number;
-  runwayDays: number | null;
+  surplusRunwayRemainingDays: number | null;
 }
 
 export interface FetchStakingStatsParams {

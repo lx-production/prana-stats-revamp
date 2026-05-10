@@ -47,6 +47,7 @@ export interface ActiveStakesResult {
   interest?: {
     dailyInterestPrana: number;
     claimableUnclaimedInterestPrana: number;
+    latestMatureTime: string | null;
   };
   activeStakes: ActiveStake[];
 }
