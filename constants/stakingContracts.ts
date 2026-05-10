@@ -9,6 +9,7 @@ export const INTEREST_CONTRACT_ADDRESS = '0x1DE1E9BEF781fb3440C2c22E8ca1bF61BD26
 // Staking Contract ABI
 export const STAKING_CONTRACT_ABI: StakingContractAbi = [
   'function totalInterestNeeded() view returns (uint256)',
+  'function gracePeriod() view returns (uint256)',
   'function getStakers() view returns (address[])',
   'function getStakerStakes(address staker) view returns (tuple(uint32 id,uint256 amount,uint256 startTime,uint256 duration,uint8 apr,uint256 lastClaimTime)[])',
 ];

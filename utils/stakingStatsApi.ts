@@ -19,6 +19,7 @@ function isStakingStatsResponse(value: unknown): value is StakingStatsApiRespons
     typeof candidate.interestContractBalanceVnd === 'number' &&
     typeof candidate.interestPrana === 'number' &&
     typeof candidate.interestVnd === 'number' &&
+    typeof candidate.claimableUnclaimedInterestPrana === 'number' &&
     typeof candidate.dailyInterestPrana === 'number' &&
     (typeof candidate.runwayDays === 'number' || candidate.runwayDays === null)
   );

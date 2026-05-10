@@ -42,6 +42,11 @@ export interface ActiveStakesResult {
     stakersCount: number;
     totalStakesSeen: number;
     activeStakesCount: number;
+    claimableStakesCount?: number;
+  };
+  interest?: {
+    dailyInterestPrana: number;
+    claimableUnclaimedInterestPrana: number;
   };
   activeStakes: ActiveStake[];
 }

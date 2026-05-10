@@ -31,16 +31,24 @@ async function loadStakingSnapshot() {
   const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
   const interestPrana = formatEther(interestNeeded) || 80000;
   const dailyInterestPrana = activeStakesSnapshot
-    ? calculateDailyInterestPrana(activeStakesSnapshot.activeStakes)
+    ? activeStakesSnapshot.interest?.dailyInterestPrana
+      ?? calculateDailyInterestPrana(activeStakesSnapshot.activeStakes)
     : 0;
+  const claimableUnclaimedInterestPrana =
+    activeStakesSnapshot?.interest?.claimableUnclaimedInterestPrana ?? 0;
+  const runwayBalancePrana = Math.max(
+    interestContractBalancePrana - claimableUnclaimedInterestPrana,
+    0,
+  );
   const runwayDays = dailyInterestPrana > 0
-    ? interestContractBalancePrana / dailyInterestPrana
+    ? runwayBalancePrana / dailyInterestPrana
     : null;
 
   return {
     stakedPrana,
     interestContractBalancePrana,
     interestPrana,
+    claimableUnclaimedInterestPrana,
     dailyInterestPrana,
     runwayDays,
   };
@@ -61,6 +69,7 @@ export async function loadStakingStats(): Promise<StakingStatsApiResponse> {
     interestContractBalanceVnd: stakingStats.interestContractBalancePrana * pranaPriceVnd,
     interestPrana: stakingStats.interestPrana,
     interestVnd: stakingStats.interestPrana * pranaPriceVnd,
+    claimableUnclaimedInterestPrana: stakingStats.claimableUnclaimedInterestPrana,
     dailyInterestPrana: stakingStats.dailyInterestPrana,
     runwayDays: stakingStats.runwayDays,
   };

@@ -69,6 +69,7 @@ export interface StakingStatsData {
   interestContractBalanceVnd: number | null;
   interestPrana: number | null;
   interestVnd: number | null;
+  claimableUnclaimedInterestPrana: number | null;
   dailyInterestPrana: number | null;
   runwayDays: number | null;
   isLoading: boolean;
@@ -154,6 +155,7 @@ export interface StakingStatsOutput {
   stakedPrana: number;
   interestContractBalancePrana: number;
   interestPrana: number;
+  claimableUnclaimedInterestPrana: number;
   dailyInterestPrana: number;
   runwayDays: number | null;
 }

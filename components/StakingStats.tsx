@@ -33,8 +33,8 @@ export const StakingStats: React.FC = () => {
     locale === 'en' ? 'Runway explanation' : 'Giải thích Runway';
   const runwayTooltipText =
     locale === 'en'
-      ? "Runway is a simple estimate: if each day the Interest Contract balance needs to pay out PRANA equal to current active stake rewards, the current balance lasts about that many days. Each active stake uses its own APR from the staking contract, so older 12% stakes and newer 15% stakes are counted separately. When stake or the fund changes, the number changes."
-      : "Runway là ước lượng đơn giản: Nếu mỗi ngày quỹ Interest Contract cần trả một lượng PRANA bằng lãi của các stake active hiện tại, thì số dư hiện tại đủ khoảng bao nhiêu ngày. Mỗi stake dùng APR riêng được lưu trong staking contract, nên stake cũ 12% và stake mới 15% được tính riêng. Stake và quỹ thay đổi thì con số thay đổi.";
+      ? "Runway estimates, after subtracting interest users can already claim, roughly how many days the Interest Contract balance would last if each day the fund still had to pay out an amount equal to interest accruing on all stakes that have not yet matured. Daily interest is computed from those stakes, using each stake’s own APR stored in the staking contract. Matured stakes that are still within the grace period and still have claimable interest are included in the amount subtracted first. Formula: Runway ≈ (Interest Contract balance − Claimable interest now) / Estimated interest accruing per day."
+      : "Runway ước tính sau khi trừ phần lãi user đã có thể claim ngay, số dư Interest Contract còn đủ khoảng bao nhiêu ngày nếu mỗi ngày quỹ vẫn phải chi một lượng tương đương lãi đang tích lũy trên các stake chưa đáo hạn. Lãi mỗi ngày được tính từ các stake đó, dùng APR riêng của từng stake trong staking contract. Stake đã đáo hạn nhưng còn trong grace period và vẫn còn lãi claim được được tính vào phần trừ trước. Công thức: Runway ≈ (Số dư Interest Contract − Lãi có thể claim ngay) / Ước lượng lãi tích lũy mỗi ngày.";
 
   const capacityTooltipAria =
     locale === 'en' ? 'Capacity explanation' : 'Giải thích Capacity';
@@ -69,7 +69,7 @@ export const StakingStats: React.FC = () => {
         delay={0.25}
         loading={isLoading}
         footer={
-          runwayDays && Number.isFinite(runwayDays) ? (
+          runwayDays !== null && Number.isFinite(runwayDays) ? (
             <div className="text-sm text-gray-400 font-mono flex flex-col gap-1.5 relative w-full">
               <div className="flex items-center gap-2">
                 <span>

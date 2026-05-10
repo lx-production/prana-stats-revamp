@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 type UseStakingRunwayArgs = {
   /** Interest contract PRANA balance (whole units, not raw bigint). */
   interestBalancePrana: number | null | undefined;
+  /** Interest that users can already claim (whole units, not raw bigint). */
+  claimableUnclaimedInterestPrana?: number | null | undefined;
   /** Total value staked in PRANA (whole units, not raw bigint). */
   totalStakedPrana: number | null | undefined;
   /** APR as a fraction (e.g. 0.15 for 15%). Defaults to 15%. */
@@ -18,11 +20,16 @@ type UseStakingRunwayResult = {
 
 export function useStakingRunway({
   interestBalancePrana,
+  claimableUnclaimedInterestPrana,
   totalStakedPrana,
   apr = 0.15,
 }: UseStakingRunwayArgs): UseStakingRunwayResult {
   return useMemo(() => {
     const interest = typeof interestBalancePrana === 'number' ? interestBalancePrana : null;
+    const claimableInterest =
+      typeof claimableUnclaimedInterestPrana === 'number'
+        ? claimableUnclaimedInterestPrana
+        : 0;
     const staked = typeof totalStakedPrana === 'number' ? totalStakedPrana : null;
     if (!interest || !staked || interest <= 0 || staked <= 0) {
       return { runwayDays: null, dailyInterestPrana: null };
@@ -33,12 +40,13 @@ export function useStakingRunway({
       return { runwayDays: null, dailyInterestPrana: null };
     }
 
-    const runwayDays = interest / dailyInterestPrana;
+    const runwayBalancePrana = Math.max(interest - claimableInterest, 0);
+    const runwayDays = runwayBalancePrana / dailyInterestPrana;
     if (!Number.isFinite(runwayDays) || runwayDays <= 0) {
       return { runwayDays: null, dailyInterestPrana: null };
     }
 
     return { runwayDays, dailyInterestPrana };
-  }, [interestBalancePrana, totalStakedPrana, apr]);
+  }, [interestBalancePrana, claimableUnclaimedInterestPrana, totalStakedPrana, apr]);
 }
 
