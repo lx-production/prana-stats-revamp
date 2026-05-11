@@ -13,5 +13,3 @@ export const formatPranaDisplayFromRaw = (raw: bigint) => {
   // Keep grouping format consistent with other stats cards (e.g. 58,485).
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(rounded);
 };
-
-export const formatPranaFloatFromRaw = (val: bigint) => parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));

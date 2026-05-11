@@ -5,6 +5,7 @@ import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
+import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 import type { ActiveStake, ActiveStakesResult, StakeData } from '../../types/activeStakes.types.ts';
 import { formatUnixSecondsToHuman, getRpcUrl, isRateLimitError, redactUrl, sleep, toBigInt, toNumberSafe } from '../../scripts/utils/fetchActiveStakesUtils.ts';
@@ -46,10 +47,6 @@ function calculateInterestRaw(amountRaw: bigint, apr: number, seconds: bigint): 
   const annualInterestRaw = (amountRaw * BigInt(apr)) / PERCENT_SCALE;
   const interestPerSecondRaw = annualInterestRaw / SECONDS_PER_YEAR;
   return interestPerSecondRaw * seconds;
-}
-
-function formatPranaRawToNumber(amountRaw: bigint): number {
-  return Number.parseFloat(ethers.formatUnits(amountRaw, PRANA_DECIMALS));
 }
 
 export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
@@ -161,8 +158,8 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
       claimableStakesCount,
     },
     interest: {
-      dailyInterestPrana: formatPranaRawToNumber(dailyInterestRaw),
-      claimableUnclaimedInterestPrana: formatPranaRawToNumber(claimableUnclaimedInterestRaw),
+      dailyInterestPrana: formatPranaFloatFromRaw(dailyInterestRaw),
+      claimableUnclaimedInterestPrana: formatPranaFloatFromRaw(claimableUnclaimedInterestRaw),
       latestMatureTime: latestMatureTime?.toString() ?? null,
     },
     activeStakes,

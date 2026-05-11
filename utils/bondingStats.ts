@@ -1,5 +1,6 @@
 import type { BondingStatsInput, BondingStatsOutput } from '../types/types.ts';
-import { formatBigIntValue, formatPranaDisplayFromRaw, formatPranaFloatFromRaw } from './bondingStatsHelpers.ts';
+import { formatBigIntValue, formatPranaDisplayFromRaw } from './bondingStatsHelpers.ts';
+import { formatPranaFloatFromRaw } from './formatters.ts';
 
 export const getBondingStats = ({
   buyCommittedV1,

@@ -3,7 +3,8 @@ import type { ActiveStakesResult } from '../../types/activeStakes.types.ts';
 import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
-import { asBigInt, formatEther } from '../../utils/pranaStatsUtils.ts';
+import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
+import { asBigInt } from '../../utils/pranaStatsUtils.ts';
 import { MINIMAL_ERC20_ABI, PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 import { calculateDailyInterestPrana, loadActiveStakesSnapshot } from './activeStakes.ts';
 import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
@@ -44,9 +45,9 @@ async function loadStakingSnapshot() {
     loadActiveStakesSnapshot().catch(() => null),
   ]);
 
-  const stakedPrana = formatEther(stakedBalance) || 1000000;
-  const interestContractBalancePrana = formatEther(interestContractBalanceRaw);
-  const interestPrana = formatEther(interestNeeded) || 80000;
+  const stakedPrana = formatPranaFloatFromRaw(stakedBalance) || 1000000;
+  const interestContractBalancePrana = formatPranaFloatFromRaw(interestContractBalanceRaw);
+  const interestPrana = formatPranaFloatFromRaw(interestNeeded) || 80000;
   const dailyInterestPrana = activeStakesSnapshot
     ? activeStakesSnapshot.interest?.dailyInterestPrana
       ?? calculateDailyInterestPrana(activeStakesSnapshot.activeStakes)

@@ -1,4 +1,10 @@
+import { ethers } from 'ethers';
+import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
+
 // Helper functions for formatting values in the UI
+
+export const formatPranaFloatFromRaw = (val: bigint) =>
+  parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
 
 export const formatCurrency = (value: number | null, currency: 'VND' | 'PRANA') => {
   if (value === null || value === undefined) return 'Loading...';
