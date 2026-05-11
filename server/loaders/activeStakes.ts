@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { ethers } from 'ethers';
 import { PROJECT_ROOT } from '../projectRoot.ts';
+import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
@@ -28,17 +29,6 @@ async function getStakerStakesWithRetry(
       }
       throw err;
     }
-  }
-}
-
-async function readActiveStakesSnapshot(): Promise<ActiveStakesResult | null> {
-  try {
-    const raw = await fs.readFile(ACTIVE_STAKES_PATH, 'utf8');
-    const parsed = JSON.parse(raw) as Partial<ActiveStakesResult>;
-    if (!Array.isArray(parsed.activeStakes)) return null;
-    return parsed as ActiveStakesResult;
-  } catch {
-    return null;
   }
 }
 
@@ -185,8 +175,8 @@ export async function loadActiveStakesSnapshot(): Promise<ActiveStakesResult> {
     await fs.writeFile(ACTIVE_STAKES_PATH, JSON.stringify(snapshot, null, 2), 'utf8');
     return snapshot;
   } catch (err) {
-    const cachedSnapshot = await readActiveStakesSnapshot();
-    if (cachedSnapshot) return cachedSnapshot;
+    const cachedSnapshot = await readJsonIfExists<ActiveStakesResult>(ACTIVE_STAKES_PATH);
+    if (cachedSnapshot && Array.isArray(cachedSnapshot.activeStakes)) return cachedSnapshot;
     throw err;
   }
 }
