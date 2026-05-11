@@ -33,8 +33,8 @@ export const StakingStats: React.FC = () => {
     locale === 'en' ? 'Surplus Runway explanation' : 'Giải thích Surplus Runway';
   const runwayTooltipText =
     locale === 'en'
-      ? "Surplus Runway estimates how many days from now the Interest Contract remains funded after reserving enough PRANA for all currently committed staking interest. Formula: Surplus Days ≈ (Interest Balance − Interest Committed) / Estimated Daily Interest. Surplus Runway ≈ Days until the latest active stake maturity + Surplus Days. Daily interest uses each active stake’s own APR from the staking contract."
-      : "Surplus Runway ước tính từ hôm nay quỹ Interest Contract còn được bảo đảm khoảng bao nhiêu ngày sau khi đã dành đủ PRANA cho toàn bộ lãi staking hiện đang cam kết. Công thức: Số ngày dư ≈ (Số dư Interest Contract − Lãi đã cam kết) / Ước lượng lãi mỗi ngày. Surplus Runway ≈ Số ngày còn lại đến thời điểm đáo hạn xa nhất của stake active + Số ngày dư. Lãi mỗi ngày dùng APR riêng của từng stake active trong staking contract.";
+      ? "Surplus Runway estimates how many days the Interest Contract remains funded for all active stakes. Surplus Runway = Days to latest maturity + (Balance − Committed) / Daily Interest."
+      : "Surplus Runway ước tính số ngày quỹ Interest Contract còn đủ trả lãi staking, tính từ hôm nay. Surplus Runway = Ngày đến đáo hạn xa nhất + (Dư quỹ − Lãi cam kết) / Lãi mỗi ngày.";
 
   const capacityTooltipAria =
     locale === 'en' ? 'Capacity explanation' : 'Giải thích Capacity';
