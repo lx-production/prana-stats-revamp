@@ -56,8 +56,8 @@ export const Supply: React.FC = () => {
     locale === 'en' ? 'Circulating Supply explanation' : 'Giải thích Circulating Supply';
   const circulatingTooltipText =
     locale === 'en'
-      ? 'Maximum total supply (10M) minus PRANA held in the designated HODL addresses. Does not account for PRANA that many people have lost.'
-      : 'Tổng cung tối đa (10M) trừ đi số PRANA nằm ở các địa chỉ HODL. Không tính tới số PRANA nhiều người đã làm mất.';
+      ? 'Maximum supply (10M) less PRANA in HODL wallets. Lost PRANA (keys forgotten, etc.) has not been subtracted.'
+      : 'Tổng cung tối đa (10M) trừ đi số PRANA nằm ở các địa chỉ HODL. Chưa trừ số PRANA nhiều người đã làm mất.';
 
   const buyableTooltipAria =
     locale === 'en' ? 'Buyable Supply explanation' : 'Giải thích Buyable Supply';

@@ -1,59 +1,24 @@
-import type { BuyDipsJson } from '../types/buyDips.types';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import InfoTooltip from './InfoTooltip';
 import { motion } from 'framer-motion';
 import { useBondStats } from '../hooks/useBondStats';
 import { formatCurrency } from '../utils/formatters';
-import { fetchBuyDipsJson } from '../utils/buyDipsJson';
+import { useBuyDips } from '../hooks/useBuyDips';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { ArrowRight, ScrollText, Sparkles } from 'lucide-react';
 import { copyByLocale } from './doublePranaAbsorptionFlow.copy';
 import { ContainedParticleField, FlowConnector, FlowNode, GravityWell, StepVisual, TokenIcon, VerticalParticleStream, pranaParticles, wbtcParticles } from './DoublePranaAbsorptionFlow.parts';
 
-const fallbackBuyDips: BuyDipsJson = {
-  total_volume_in_usd: undefined,
-  total_prana_bought: undefined,
-  total_buy_transactions: undefined,
-};
-
 const DoublePranaAbsorptionFlow: React.FC = () => {
   const { locale } = useSiteLanguage();
   const copy = copyByLocale[locale];
   const { isLoading: isBondStatsLoading, sellBondPrana } = useBondStats();
-  const [buyDipsData, setBuyDipsData] = useState<BuyDipsJson>(fallbackBuyDips);
-  const [isBuyDipsLoading, setIsBuyDipsLoading] = useState(true);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const fetchData = async () => {
-      try {
-        const json = await fetchBuyDipsJson<BuyDipsJson>();
-        if (!isActive) return;
-        setBuyDipsData({
-          total_volume_in_usd: json?.total_volume_in_usd,
-          total_prana_bought: json?.total_prana_bought,
-          total_buy_transactions: json?.total_buy_transactions,
-        });
-      } catch {
-        if (!isActive) return;
-        setBuyDipsData(fallbackBuyDips);
-      } finally {
-        if (isActive) setIsBuyDipsLoading(false);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+  const buyDipsData = useBuyDips();
 
   const totalWithdrawnPrana =
     sellBondPrana === null ? null : sellBondPrana + (buyDipsData.total_prana_bought ?? 0);
 
-  const blackHoleValue = isBondStatsLoading || isBuyDipsLoading
+  const blackHoleValue = isBondStatsLoading || buyDipsData.isLoading
     ? 'Loading...'
     : `${formatCurrency(totalWithdrawnPrana, 'PRANA')} PRANA`;
 

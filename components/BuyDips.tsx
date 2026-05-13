@@ -1,55 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { fetchBuyDipsJson } from '../utils/buyDipsJson';
+import React, { useMemo } from 'react';
+import { useBuyDips } from '../hooks/useBuyDips';
 import { formatStatValue } from '../utils/formatters';
-import type { BuyDipsJson } from '../types/buyDips.types';
 
 type BuyDipsProps = {
   className?: string;
 };
 
-const fallbackBuyDips: BuyDipsJson = {
-  total_volume_in_usd: undefined,
-  total_prana_bought: undefined,
-  total_buy_transactions: undefined,
-};
-
 export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
-  const [data, setData] = useState<BuyDipsJson>(fallbackBuyDips);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const fetchData = async () => {
-      try {
-        const json = await fetchBuyDipsJson<BuyDipsJson>();
-        if (!isActive) return;
-        setData({
-          total_volume_in_usd: json?.total_volume_in_usd,
-          total_prana_bought: json?.total_prana_bought,
-          total_buy_transactions: json?.total_buy_transactions,
-        });
-        setError(null);
-      } catch (err: any) {
-        if (!isActive) return;
-        const message =
-          typeof err?.message === 'string' && err.message.trim().length > 0
-            ? err.message
-            : 'Failed to fetch buy_dips.json';
-        setError(message);
-        setData(fallbackBuyDips);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+  const data = useBuyDips();
 
   const stats = useMemo(
     () => [
@@ -81,15 +39,15 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
           Buy The Dips
         </a>
       </div>
-        {error ? (
-          <div className="mt-2 text-xs text-red-200">{error}</div>
+        {data.error ? (
+          <div className="mt-2 text-xs text-red-200">{data.error}</div>
         ) : (
           <div className="mt-2 grid grid-cols-3 gap-2">
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-md px-2 py-1.5 bg-black/30">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">{stat.label}</div>
                 <div className="text-[0.65rem] font-semibold text-gray-100">
-                  {isLoading ? 'Loading...' : stat.value}
+                  {data.isLoading ? 'Loading...' : stat.value}
                 </div>
               </div>
             ))}

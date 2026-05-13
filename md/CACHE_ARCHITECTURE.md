@@ -47,7 +47,7 @@ flowchart TD
   browserMemory --> ui
 ```
 
-The diagram is simplified: only code paths that call `createBrowserJsonCache` (today, `/api/prana-stats` via `utils/pranaStatsApi.ts`) layer a TTL in-memory snapshot on top of HTTP caching. Other JSON APIs are loaded with `fetchJson` only, so they rely on the browser HTTP `max-age` for that URL plus concurrent GET dedupe, without that extra in-memory TTL wrapper.
+The diagram is simplified: only code paths that call `createBrowserJsonCache` layer a TTL in-memory snapshot on top of HTTP caching. Other JSON APIs are loaded with `fetchJson` only, so they rely on the browser HTTP `max-age` for that URL plus concurrent GET dedupe, without that extra in-memory TTL wrapper.
 
 ### Browser HTTP cache
 - Controlled by `Cache-Control` headers from the Node server.
@@ -56,10 +56,11 @@ The diagram is simplified: only code paths that call `createBrowserJsonCache` (t
 ### Browser in-memory cache
 - Used by small client helpers created with `createBrowserJsonCache(...)`:
   - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`)
+  - Shared generated JSON helpers (e.g. `utils/buyDipsJson.ts` → `/buy_dips.json`)
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
 
-Root JSON files (`bonds_v2.json`, `buy_dips.json`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache.
+Most root JSON files are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache. `buy_dips.json` also has a short in-memory cache because multiple components consume the same payload.
 
 ### Server API cache
 - Used for computed API endpoints.
@@ -80,7 +81,7 @@ All shared TTL values live in `constants/cachePolicy.ts`.
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
 - `topHoldingsRefresh`: `30_000`
 
-`bonds_v2.json` and `buy_dips.json` rely on HTTP cache and `fetchJson` dedupe only; they do not use a millisecond TTL in `createBrowserJsonCache(...)`.
+`bonds_v2.json` relies on HTTP cache and `fetchJson` dedupe only. `buy_dips.json` uses `createBrowserJsonCache(...)` with the same short TTL as its HTTP cache header.
 
 ### HTTP cache TTLs in seconds
 - `apiResponseBrowserHttp`: `30`
@@ -203,7 +204,6 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 **`fetchJson` / `fetchJsonSafe` only (HTTP cache + in-flight GET dedupe, no TTL memory cache):**
 - `utils/bondsV2Json.ts` → `/bonds_v2.json`
-- `utils/buyDipsJson.ts` → `/buy_dips.json`
 - `utils/prana365Data.ts` → `/data_365_days.json`
 - `utils/pranaSatsData.ts` → `/data_sats.json`
 - `utils/stakingStatsApi.ts` → `/api/staking-stats`
@@ -216,6 +216,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force):**
 - `utils/pranaStatsApi.ts` → `/api/prana-stats`
+- `utils/buyDipsJson.ts` → `/buy_dips.json`
 
 ### Chart JSON and performance
 
