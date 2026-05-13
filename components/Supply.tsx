@@ -1,6 +1,7 @@
 import InfoTooltip from './InfoTooltip';
 import React, { useMemo } from 'react';
 import { Coins, ShoppingCart } from 'lucide-react';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useBondStats } from '../hooks/useBondStats';
 import { formatNumber } from '../utils/formatters';
 import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
@@ -10,6 +11,7 @@ const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
 const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
 
 export const Supply: React.FC = () => {
+  const { locale } = useSiteLanguage();
   const { holders, isLoading, error } = useTopHoldingAddresses();
   const {
     buyBondCapacityDisplay,
@@ -50,8 +52,22 @@ export const Supply: React.FC = () => {
   const formattedCirculating = formatNumber(Math.round(circulatingSupply));
   const formattedBuyable = formatNumber(Math.round(buyableSupply));
 
+  const circulatingTooltipAria =
+    locale === 'en' ? 'Circulating Supply explanation' : 'Giải thích Circulating Supply';
+  const circulatingTooltipText =
+    locale === 'en'
+      ? 'Maximum total supply (10M) minus PRANA held in the designated HODL addresses. Does not account for PRANA that many people have lost.'
+      : 'Tổng cung tối đa (10M) trừ đi số PRANA nằm ở các địa chỉ HODL. Không tính tới số PRANA nhiều người đã làm mất.';
+
+  const buyableTooltipAria =
+    locale === 'en' ? 'Buyable Supply explanation' : 'Giải thích Buyable Supply';
+  const buyableTooltipText =
+    locale === 'en'
+      ? 'Total PRANA in the WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, and BuyBond capacity.'
+      : 'Tổng PRANA trong WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, và BuyBond capacity.';
+
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-30">
       <div
         className="
           group relative overflow-visible rounded-2xl border border-white/10 bg-white/5
@@ -82,8 +98,9 @@ export const Supply: React.FC = () => {
                 <Coins className="w-3.5 h-3.5 text-emerald-300" />
                 Circulating Supply
                 <InfoTooltip
-                  ariaLabel="Giải thích Circulating Supply"
-                  text="Tổng cung tối đa (10M) trừ đi số PRANA nằm ở các địa chỉ HODL."
+                  ariaLabel={circulatingTooltipAria}
+                  text={circulatingTooltipText}
+                  widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
@@ -96,8 +113,9 @@ export const Supply: React.FC = () => {
                 <ShoppingCart className="w-3.5 h-3.5 text-cyan-300" />
                 Buyable Supply
                 <InfoTooltip
-                  ariaLabel="Buyable Supply calculation"
-                  text="Tổng PRANA trong WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, và BuyBond capacity."
+                  ariaLabel={buyableTooltipAria}
+                  text={buyableTooltipText}
+                  widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-cyan-200 text-center">
