@@ -15,13 +15,14 @@ import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
+const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 const stakingStatsCache = createServerCache(SERVER_CACHE_TTL_MS.stakingStatsApiResponse);
 const capitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
-const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
+const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.lpCapitalApiResponse);
 const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
 const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(SERVER_CACHE_TTL_MS.topHoldingsRefresh);
 
@@ -58,7 +59,7 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/lp-capital') {
       const result = await lpCapitalCache(loadLpCapital);
-      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
+      return sendJson(res, 200, result, { cacheControl: READONLY_LP_CAPITAL_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/bond-metrics') {
