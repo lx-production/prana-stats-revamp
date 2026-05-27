@@ -1,56 +1,29 @@
 import InfoTooltip from './InfoTooltip';
-import React, { useMemo } from 'react';
-import { Coins, ShoppingCart } from 'lucide-react';
+import React from 'react';
+import { Coins, Droplets, ShoppingCart } from 'lucide-react';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { useBondStats } from '../hooks/useBondStats';
 import { formatNumber } from '../utils/formatters';
-import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
+import { useSupplyMetrics } from '../hooks/useSupplyMetrics';
 
 const TOTAL_SUPPLY = 10_000_000;
-const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
-const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
 
 export const Supply: React.FC = () => {
   const { locale } = useSiteLanguage();
-  const { holders, isLoading, error } = useTopHoldingAddresses();
   const {
-    buyBondCapacityDisplay,
-    isLoading: isBondStatsLoading,
-  } = useBondStats();
-
-  const circulatingSupply = useMemo(() => {
-    const nonCirculating = holders.reduce((sum, holder, index) => {
-      const rank = index + 1;
-      if (!NON_CIRCULATING_RANKS.has(rank)) return sum;
-      const balanceValue = Number(holder.balance);
-      if (!Number.isFinite(balanceValue)) return sum;
-      return sum + balanceValue;
-    }, 0);
-
-    const remaining = TOTAL_SUPPLY - nonCirculating;
-    return Number.isFinite(remaining) ? Math.max(0, remaining) : 0;
-  }, [holders]);
-
-  const buyableSupply = useMemo(() => {
-    const poolTotal = holders.reduce((sum, holder) => {
-      if (!BUYABLE_LABELS.has(holder.label)) return sum;
-      const balanceValue = Number(holder.balance);
-      if (!Number.isFinite(balanceValue)) return sum;
-      return sum + balanceValue;
-    }, 0);
-
-    const capacityPranaRaw = typeof buyBondCapacityDisplay === 'string'
-      ? Number(buyBondCapacityDisplay.replace(/,/g, ''))
-      : 0;
-      
-    const capacityPrana = Number.isFinite(capacityPranaRaw) ? capacityPranaRaw : 0;
-
-    const total = poolTotal + capacityPrana;
-    return Number.isFinite(total) ? total : 0;
-  }, [holders, buyBondCapacityDisplay]);
+    circulatingSupply,
+    buyableSupply,
+    liquidityDensityPercent,
+    isCirculatingSupplyLoading,
+    isBuyableSupplyLoading,
+    isLiquidityDensityLoading,
+    error,
+  } = useSupplyMetrics();
 
   const formattedCirculating = formatNumber(Math.round(circulatingSupply));
   const formattedBuyable = formatNumber(Math.round(buyableSupply));
+  const formattedLiquidityDensity = liquidityDensityPercent === null
+    ? null
+    : `${formatNumber(liquidityDensityPercent, 2)}%`;
 
   const circulatingTooltipAria =
     locale === 'en' ? 'Circulating Supply explanation' : 'Giải thích Circulating Supply';
@@ -65,6 +38,13 @@ export const Supply: React.FC = () => {
     locale === 'en'
       ? 'Total PRANA in the WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, and BuyBond capacity.'
       : 'Tổng PRANA trong WBTC/PRANA DEX Pool, DEX Pool & Bonds Reserve, và BuyBond capacity.';
+
+  const liquidityDensityTooltipAria =
+    locale === 'en' ? 'Liquidity Density explanation' : 'Giải thích Liquidity Density';
+  const liquidityDensityTooltipText =
+    locale === 'en'
+      ? 'USD value of WBTC plus PRANA in the WBTC/PRANA DEX Pool, divided by circulating market cap.'
+      : 'Giá trị USD của WBTC cộng PRANA trong WBTC/PRANA DEX Pool, chia cho vốn hóa lưu hành.';
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-30">
@@ -92,7 +72,7 @@ export const Supply: React.FC = () => {
             </div>
           ) : null}
 
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
               <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2 relative">
                 <Coins className="w-3.5 h-3.5 text-emerald-300" />
@@ -104,7 +84,7 @@ export const Supply: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
-                {isLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
+                {isCirculatingSupplyLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
               </div>
             </div>
 
@@ -119,7 +99,22 @@ export const Supply: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-cyan-200 text-center">
-                {isLoading || isBondStatsLoading ? 'Loading...' : `${formattedBuyable} PRANA`}
+                {isBuyableSupplyLoading ? 'Loading...' : `${formattedBuyable} PRANA`}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
+              <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2 relative">
+                <Droplets className="w-3.5 h-3.5 text-blue-300" />
+                Liquidity Density
+                <InfoTooltip
+                  ariaLabel={liquidityDensityTooltipAria}
+                  text={liquidityDensityTooltipText}
+                  widthClassName="w-[min(24rem,calc(100vw-2rem))]"
+                />
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-blue-200 text-center">
+                {isLiquidityDensityLoading ? 'Loading...' : formattedLiquidityDensity ?? '--'}
               </div>
             </div>
           </div>
