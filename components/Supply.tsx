@@ -80,6 +80,7 @@ export const Supply: React.FC = () => {
                 <InfoTooltip
                   ariaLabel={circulatingTooltipAria}
                   text={circulatingTooltipText}
+                  positionClassName="top-full mt-2 left-1/2 -translate-x-1/2"
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
@@ -95,6 +96,7 @@ export const Supply: React.FC = () => {
                 <InfoTooltip
                   ariaLabel={buyableTooltipAria}
                   text={buyableTooltipText}
+                  positionClassName="top-full mt-2 left-1/2 -translate-x-1/2"
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
@@ -110,6 +112,7 @@ export const Supply: React.FC = () => {
                 <InfoTooltip
                   ariaLabel={liquidityDensityTooltipAria}
                   text={liquidityDensityTooltipText}
+                  positionClassName="top-full mt-2 left-1/2 -translate-x-1/2"
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
