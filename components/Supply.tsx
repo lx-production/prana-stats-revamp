@@ -117,7 +117,11 @@ export const Supply: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-blue-200 text-center">
-                {isLiquidityDensityLoading ? 'Loading...' : formattedLiquidityDensity ?? '--'}
+                {isLiquidityDensityLoading
+                  ? 'Loading...'
+                  : formattedLiquidityDensity
+                    ? `> ${formattedLiquidityDensity}`
+                    : '--'}
               </div>
             </div>
           </div>
