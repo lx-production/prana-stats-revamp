@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import PranaHero from "./hero3.tsx";
 import Supply from "./components/Supply";
 import Capital from "./components/Capital";
+import Liquidity from "./components/Liquidity";
 import Timeline from "./components/Timeline";
 import FaqSection from "./components/FaqSection";
 import BasicStats from "./components/BasicStats";
@@ -56,8 +57,9 @@ function App() {
         </section>
         <PranaConverter />
         <DoublePranaAbsorptionFlow />
-        <Capital />
         <TopHoldingAddressesProvider>
+          <Capital />
+          <Liquidity />
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>
