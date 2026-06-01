@@ -30,12 +30,6 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
-    // Endpoint the frontend can call on page load/reload
-    if (url.pathname === '/api/refresh-bonds' || url.pathname === '/api/bonds-v2/refresh-bonds') {
-      const result = await ensureBondsRefreshed();
-      return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
-    }
-
     // Endpoint the frontend can call for top holdings with a short-lived memory cache.
     if (url.pathname === '/api/top-holding-addresses') {
       const result = await topHoldingAddressesCache(loadTopHoldingAddresses);

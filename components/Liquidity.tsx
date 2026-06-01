@@ -85,7 +85,7 @@ export const Liquidity: React.FC = () => {
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-4">
               <div className="text-xs uppercase tracking-wider text-gray-500 flex items-center justify-center gap-2 relative">
                 <ShieldCheck className="w-3.5 h-3.5 text-cyan-300" />
-                Protocol Capital Coverage
+                Protocol Reserve Ratio
                 <InfoTooltip
                   ariaLabel={protocolCapitalCoverageTooltipAria}
                   text={protocolCapitalCoverageTooltipText}

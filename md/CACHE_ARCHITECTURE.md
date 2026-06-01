@@ -13,7 +13,7 @@ The goal is to keep caching:
 ### 1. One source of truth per data type
 - Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, and `buy_dips.json`.
 - Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, and `/api/bond-metrics`.
-- Refresh/update side effects stay behind explicit API routes such as `/api/bonds-v2/refresh-bonds`.
+- Bond refresh side effects run inside `/api/bond-metrics`, before the server reads the computed bond snapshot.
 - Top holding addresses are now loaded directly via `/api/top-holding-addresses` with server memory cache (no JSON file handoff).
 
 ### 2. Short-lived data should have short-lived caches
@@ -113,7 +113,7 @@ Main API:
 Behavior:
 - If cached data is still within TTL, return it immediately.
 - If a non-forced request is already in flight, reuse that Promise.
-- If `force: true` is passed, bypass the local cache and fetch again. (Right now, the derived 'force' from refresh-bonds is only used for fetchBondsV2TotalsSafe from prefetchInitialJson)
+- If `force: true` is passed, bypass the local cache and fetch again.
 - Forced refresh also disables the lower-level `fetchJson()` dedupe for that request by setting `dedupeKey: null`.
 
 ## Low-Level Fetch Dedupe
@@ -255,8 +255,8 @@ API response caches:
 Staking stats response cache:
 - `/api/staking-stats` (TTL = `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
-Refresh request dedupe:
-- `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run and does not keep a TTL cache after it completes
+Bond refresh request dedupe:
+- `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run used by `/api/bond-metrics` and does not keep a TTL cache after it completes
 
 Top holdings in-memory cache (TTL = `SERVER_CACHE_TTL_MS.topHoldingsRefresh`):
 - `/api/top-holding-addresses` — caches the top-holding payload (first 10 addresses) in Node memory
@@ -313,9 +313,7 @@ Routes (each uses one of the header shapes above, as wired in `server/index.ts`)
 - `/api/capital` — `max-age=30`
 - `/api/lp-capital` — `max-age=30`
 - `/api/bond-metrics` — `max-age=24h`
-- `/api/refresh-bonds` — `max-age=30`
 - `/api/top-holding-addresses` — `max-age=30`
-- `/api/bonds-v2/refresh-bonds` — `max-age=30`
 
 This means:
 - browsers can reuse a response locally until that route’s `max-age` expires (30 seconds for most APIs above, 24 hours for `/api/staking-stats` and `/api/bond-metrics`)
@@ -355,7 +353,6 @@ Important development note:
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
 Current examples:
-- `prefetchInitialJson` (in `utils/prefetchInitialJson.ts`) calls `/api/bonds-v2/refresh-bonds`, then `fetchBondsV2TotalsSafe({ force: Boolean(refreshResult?.updated) })`: the cache-busting query string on `bonds_v2.json` is used only when the refresh response indicates `updated` is truthy, so a forced refetch avoids a stale HTTP cache entry for the plain URL only when the file actually changed
 - `fetchStakingStatsApi` (in `utils/stakingStatsApi.ts`) normally requests `/api/staking-stats` without force. If the cached browser response shape is invalid (for example after an API shape change), it retries once with `force: true` (`?_=` cache-buster).
 
 Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
@@ -475,5 +472,5 @@ If you are not sure where to put a new cache:
   - expose browser access through a small helper like `pranaStatsApi.ts`
 
 - Manual or side-effect refresh:
-  - keep it as an explicit API route
-  - use `force: true` on dependent fetches only when the refresh response indicates new data (see `prefetchInitialJson` and `force: Boolean(refreshResult?.updated)`)
+  - only add an explicit API route when something needs to trigger the side effect directly
+  - otherwise prefer running the side effect inside the computed API that depends on it, like `/api/bond-metrics` does with `ensureBondsRefreshed()`
