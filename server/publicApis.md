@@ -1,0 +1,14 @@
+https://prana.triethocduongpho.net/api/prana-stats
+https://prana.triethocduongpho.net/api/staking-stats
+https://prana.triethocduongpho.net/api/capital
+https://prana.triethocduongpho.net/api/lp-capital
+https://prana.triethocduongpho.net/api/bond-metrics
+https://prana.triethocduongpho.net/api/top-holding-addresses
+https://prana.triethocduongpho.net/data_30_days.json
+https://prana.triethocduongpho.net/data_90_days.json
+https://prana.triethocduongpho.net/data_180_days.json
+https://prana.triethocduongpho.net/data_365_days.json
+https://prana.triethocduongpho.net/data_max.json
+https://prana.triethocduongpho.net/data_sats.json
+https://prana.triethocduongpho.net/bonds_v2.json
+https://prana.triethocduongpho.net/buy_dips.json
