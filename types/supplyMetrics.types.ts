@@ -5,3 +5,13 @@ export interface SupplyMetricsData {
   isBuyableSupplyLoading: boolean;
   error: string | null;
 }
+
+export interface SupplyMetricsHolder {
+  label: string;
+  balance: string;
+}
+
+export interface ComputedSupplyMetrics {
+  circulatingSupply: number;
+  buyableSupply: number;
+}

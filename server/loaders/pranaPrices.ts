@@ -1,10 +1,7 @@
-import path from 'node:path';
-import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
-import { PROJECT_ROOT } from '../projectRoot.ts';
+import { readPricePointSeries } from './summaryUtils.ts';
 import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
 import type { PranaPricesBundle } from '../../types/types.ts';
-import type { PricePoint } from '../../types/pricePoint.ts';
 
 const USD_TO_VND_FALLBACK = 27_000;
 
@@ -62,12 +59,6 @@ async function fetchBtcPrices() {
 
     throw error;
   }
-}
-
-async function readPricePointSeries(filename: string): Promise<PricePoint[]> {
-  const fullPath = path.join(PROJECT_ROOT, filename);
-  const data = await readJsonIfExists<unknown>(fullPath);
-  return (Array.isArray(data) ? data : []) as PricePoint[];
 }
 
 export async function loadPranaPricesBundle(): Promise<PranaPricesBundle> {

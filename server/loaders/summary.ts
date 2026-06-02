@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadCapital } from './capital.ts';
 import { loadLpCapital } from './lpCapital.ts';
@@ -8,116 +7,17 @@ import { loadBondMetrics } from './bondMetrics.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { parseFaqMarkdown } from '../../utils/faqParser.ts';
-import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
-import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
 import { TIMELINE_COPY_EN } from '../../data/timelineCopy.ts';
 import { TIMELINE_EVENTS_META } from '../../data/timelineEventsMeta.ts';
+import { computeProtocolCapitalUsd } from '../../utils/protocolCapital.ts';
+import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
+import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetrics.ts';
+import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
+import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
+import { formatDate as formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
+import { mdList, mdNumbered, mdQuestions, normalizeOrigin, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
-import type { PricePoint } from '../../types/pricePoint.ts';
-import type { TopHoldingAddressesBuildOutput } from '../../types/types.ts';
-import { formatDate as formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
-
-const TOTAL_SUPPLY = 10_000_000;
-const SATS_PER_BTC = 100_000_000;
-const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
-const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
-const DEX_POOL_LABEL = 'WBTC/PRANA DEX Pool';
-const DEX_POOL_WBTC_CAPITAL_ID = 'wbtc-prana-pool';
-
-function toFiniteNumber(value: unknown): number {
-  const numeric = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function normalizeOrigin(origin: string): string {
-  return origin.replace(/\/+$/, '');
-}
-
-function mdList(items: string[]): string {
-  return items.map((item) => `- ${item}`).join('\n');
-}
-
-function mdNumbered(items: Array<{ title: string; body: string }>): string {
-  return items.map((item, index) => `${index + 1}. **${item.title}**\n   ${item.body}`).join('\n');
-}
-
-function mdQuestions(items: Array<{ question: string; answer: string }>): string {
-  return items.map((item, index) => `${index + 1}. **${item.question}**\n   ${item.answer}`).join('\n');
-}
-
-async function readMarkdownData(filename: string): Promise<string> {
-  return await fs.readFile(path.join(PROJECT_ROOT, 'data', filename), 'utf8');
-}
-
-async function readPricePointSeries(filename: string): Promise<PricePoint[]> {
-  const data = await readJsonIfExists<unknown>(path.join(PROJECT_ROOT, filename));
-  return (Array.isArray(data) ? data : []) as PricePoint[];
-}
-
-function buildSupplyMetrics(holders: TopHoldingAddressesBuildOutput['holders'], buyBondCapacityDisplay: string | null): {
-  circulatingSupply: number;
-  buyableSupply: number;
-} {
-  const nonCirculating = holders.reduce((sum, holder, index) => {
-    const rank = index + 1;
-    if (!NON_CIRCULATING_RANKS.has(rank)) return sum;
-    return sum + toFiniteNumber(holder.balance);
-  }, 0);
-
-  const poolTotal = holders.reduce((sum, holder) => {
-    if (!BUYABLE_LABELS.has(holder.label)) return sum;
-    return sum + toFiniteNumber(holder.balance);
-  }, 0);
-
-  const capacityPrana = typeof buyBondCapacityDisplay === 'string'
-    ? toFiniteNumber(buyBondCapacityDisplay.replace(/,/g, ''))
-    : 0;
-
-  return {
-    circulatingSupply: Math.max(0, TOTAL_SUPPLY - nonCirculating),
-    buyableSupply: poolTotal + capacityPrana,
-  };
-}
-
-function buildCapitalTotalUsd(capital: Awaited<ReturnType<typeof loadCapital>>, lpCapital: Awaited<ReturnType<typeof loadLpCapital>>): number {
-  const capitalTotal = capital.items.reduce((sum, item) => {
-    if (item.tokenSymbol === 'USDT') return sum + toFiniteNumber(item.amountValue);
-    if (item.tokenSymbol === 'WBTC') return sum + toFiniteNumber(item.usdValueNumber);
-    return sum;
-  }, 0);
-
-  return capitalTotal + toFiniteNumber(lpCapital.usdValueNumber);
-}
-
-function buildLiquidityMetrics(params: {
-  btcPriceUsd: number;
-  latestSatPrice: number;
-  circulatingSupply: number;
-  holders: TopHoldingAddressesBuildOutput['holders'];
-  capital: Awaited<ReturnType<typeof loadCapital>>;
-  protocolCapitalUsd: number;
-}): {
-  liquidityDensityPercent: number | null;
-  protocolCapitalCoveragePercent: number | null;
-} {
-  const pranaUsdPrice = (params.latestSatPrice / SATS_PER_BTC) * params.btcPriceUsd;
-  const circulatingMarketCapUsd = params.circulatingSupply * pranaUsdPrice;
-  const dexPoolPranaAmount = toFiniteNumber(params.holders.find((holder) => holder.label === DEX_POOL_LABEL)?.balance);
-  const dexPoolWbtcUsdValue = toFiniteNumber(
-    params.capital.items.find((item) => item.id === DEX_POOL_WBTC_CAPITAL_ID)?.usdValueNumber,
-  );
-  const liquidityUsd = dexPoolWbtcUsdValue + dexPoolPranaAmount * pranaUsdPrice;
-
-  return {
-    liquidityDensityPercent: circulatingMarketCapUsd > 0 && Number.isFinite(liquidityUsd)
-      ? (liquidityUsd / circulatingMarketCapUsd) * 100
-      : null,
-    protocolCapitalCoveragePercent: circulatingMarketCapUsd > 0 && Number.isFinite(params.protocolCapitalUsd)
-      ? (params.protocolCapitalUsd / circulatingMarketCapUsd) * 100
-      : null,
-  };
-}
 
 function formatPerformanceSet(priceChange: PriceChangeSet): string {
   return mdList([
@@ -159,15 +59,15 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
 
   const pranaUsdPrice = (prices.latestSatPrice / SATS_PER_BTC) * prices.btcPriceUsd;
   const pranaVndPrice = (prices.latestSatPrice / SATS_PER_BTC) * prices.btcPriceVnd;
-  const marketCapVnd = Math.round(pranaVndPrice * TOTAL_SUPPLY);
-  const protocolCapitalUsd = buildCapitalTotalUsd(capital, lpCapital);
-  const supply = buildSupplyMetrics(topHoldingAddresses.holders, bondMetrics.summary.buyBondCapacityDisplay);
-  const liquidity = buildLiquidityMetrics({
+  const marketCapVnd = Math.round(pranaVndPrice * PRANA_TOTAL_SUPPLY);
+  const protocolCapitalUsd = computeProtocolCapitalUsd(capital.items, lpCapital.usdValueNumber);
+  const supply = computeSupplyMetrics(topHoldingAddresses.holders, bondMetrics.summary.buyBondCapacityDisplay);
+  const liquidity = computeLiquidityMetrics({
     btcPriceUsd: prices.btcPriceUsd,
     latestSatPrice: prices.latestSatPrice,
     circulatingSupply: supply.circulatingSupply,
-    holders: topHoldingAddresses.holders,
-    capital,
+    dexPoolPranaAmount: getDexPoolPranaAmount(topHoldingAddresses.holders),
+    dexPoolWbtcUsdValue: getDexPoolWbtcUsdValue(capital.items),
     protocolCapitalUsd,
   });
   const fiatPerformance = buildFiatPriceChangeFrom365({
@@ -253,7 +153,7 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
     '## Liquidity And Supply',
     '',
     mdList([
-      `Total max supply: ${formatNumber(TOTAL_SUPPLY)} PRANA`,
+      `Total max supply: ${formatNumber(PRANA_TOTAL_SUPPLY)} PRANA`,
       `Circulating supply: ${formatNumber(supply.circulatingSupply)} PRANA`,
       `Buyable supply: ${formatNumber(supply.buyableSupply)} PRANA`,
       `Liquidity density: > ${formatPercent(liquidity.liquidityDensityPercent)}`,

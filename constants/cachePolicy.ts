@@ -1,5 +1,6 @@
 export const SERVER_CACHE_TTL_MS = Object.freeze({
   apiResponse: 30_000,
+  summaryApiResponse: 3_600_000, // 1h, /api/summary response snapshot TTL
   lpCapitalApiResponse: 3_600_000, // 1h, /api/lp-capital response snapshot TTL
   bondMetricsApiResponse: 86_400_000, // 24h, /api/bond-metrics response snapshot TTL
   stakingStatsApiResponse: 86_400_000, // 24h, /api/staking-stats response snapshot TTL

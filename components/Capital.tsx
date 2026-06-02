@@ -5,6 +5,7 @@ import { useCapital } from '../hooks/useCapital';
 import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
 import { SELL_BOND_ADDRESS_V2 } from '../constants/bonds';
 import { WBTC_PRANA_V3_POOL } from '../constants/sharedContracts';
+import { computeProtocolCapitalUsd } from '../utils/protocolCapital';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
@@ -25,15 +26,7 @@ export const Capital: React.FC = () => {
     return acc;
   }, {});
 
-  const totalUsd = items.reduce((sum, item) => {
-    if (item.tokenSymbol === 'USDT') {
-      return sum + (item.amountValue || 0);
-    }
-    if (item.tokenSymbol === 'WBTC') {
-      return sum + (item.usdValueNumber || 0);
-    }
-    return sum;
-  }, 0) + (lpUsdValueNumber || 0);
+  const totalUsd = computeProtocolCapitalUsd(items, lpUsdValueNumber);
 
   const formattedTotalUsd = totalUsd.toLocaleString('en-US', {
     style: 'currency',

@@ -26,7 +26,7 @@ const capitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.lpCapitalApiResponse);
 const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
 const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(SERVER_CACHE_TTL_MS.topHoldingsRefresh);
-const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.apiResponse);
+const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
 
 const server = http.createServer(async (req, res) => {
   try {
