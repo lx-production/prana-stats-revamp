@@ -6,11 +6,12 @@ import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
+import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
 import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
-import { fileExists, sendJson, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
+import { fileExists, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
@@ -25,10 +26,20 @@ const capitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.lpCapitalApiResponse);
 const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
 const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(SERVER_CACHE_TTL_MS.topHoldingsRefresh);
+const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.apiResponse);
 
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+
+    if (url.pathname === '/api/summary') {
+      const origin = `${url.protocol}//${url.host}`;
+      const result = await summaryCache(() => loadSummaryMarkdown({ origin }));
+      return sendText(res, 200, result, {
+        cacheControl: READONLY_API_CACHE_CONTROL,
+        contentType: 'text/markdown; charset=utf-8',
+      });
+    }
 
     // Endpoint the frontend can call for top holdings with a short-lived memory cache.
     if (url.pathname === '/api/top-holding-addresses') {

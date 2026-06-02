@@ -14,6 +14,11 @@ type SendJsonOptions = {
   cacheControl?: string;
 };
 
+type SendTextOptions = {
+  cacheControl?: string;
+  contentType?: string;
+};
+
 export function sendJson(
   res: ServerResponse,
   statusCode: number,
@@ -24,6 +29,18 @@ export function sendJson(
   res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
+}
+
+export function sendText(
+  res: ServerResponse,
+  statusCode: number,
+  body: string,
+  options: SendTextOptions = {},
+): void {
+  res.statusCode = statusCode;
+  res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
+  res.setHeader('Content-Type', options.contentType ?? 'text/plain; charset=utf-8');
+  res.end(body);
 }
 
 export function rootDataJsonFilenameFromPathname(pathname: string): string | null {

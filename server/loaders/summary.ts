@@ -1,0 +1,362 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { loadCapital } from './capital.ts';
+import { loadLpCapital } from './lpCapital.ts';
+import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { loadStakingStats } from './stakingStats.ts';
+import { loadBondMetrics } from './bondMetrics.ts';
+import { PROJECT_ROOT } from '../projectRoot.ts';
+import { readJsonIfExists } from '../../utils/jsonHelper.ts';
+import { parseFaqMarkdown } from '../../utils/faqParser.ts';
+import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
+import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
+import { TIMELINE_COPY_EN } from '../../data/timelineCopy.ts';
+import { TIMELINE_EVENTS_META } from '../../data/timelineEventsMeta.ts';
+import type { BuyDipsJson } from '../../types/buyDips.types.ts';
+import type { PriceChangeSet } from '../../types/performance.ts';
+import type { PricePoint } from '../../types/pricePoint.ts';
+import type { TopHoldingAddressesBuildOutput } from '../../types/types.ts';
+
+const TOTAL_SUPPLY = 10_000_000;
+const SATS_PER_BTC = 100_000_000;
+const NON_CIRCULATING_RANKS = new Set([1, 2, 3, 5]);
+const BUYABLE_LABELS = new Set(['WBTC/PRANA DEX Pool', 'DEX Pool & Bonds Reserve']);
+const DEX_POOL_LABEL = 'WBTC/PRANA DEX Pool';
+const DEX_POOL_WBTC_CAPITAL_ID = 'wbtc-prana-pool';
+
+function toFiniteNumber(value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function formatNumber(value: number, fractionDigits = 0): string {
+  if (!Number.isFinite(value)) return 'N/A';
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
+function formatUsd(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
+  return value.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatVnd(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
+  return `${formatNumber(value)} VND`;
+}
+
+function formatPercent(value: number | null | undefined, fractionDigits = 2): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatNumber(value, fractionDigits)}%`;
+}
+
+function formatSats(value: string | null | undefined): string {
+  const numeric = typeof value === 'string' ? Number(value.replace(/,/g, '')) : NaN;
+  return Number.isFinite(numeric) ? `${formatNumber(numeric)} SAT` : 'N/A';
+}
+
+function formatDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function normalizeOrigin(origin: string): string {
+  return origin.replace(/\/+$/, '');
+}
+
+function mdList(items: string[]): string {
+  return items.map((item) => `- ${item}`).join('\n');
+}
+
+function mdNumbered(items: Array<{ title: string; body: string }>): string {
+  return items.map((item, index) => `${index + 1}. **${item.title}**\n   ${item.body}`).join('\n');
+}
+
+function mdQuestions(items: Array<{ question: string; answer: string }>): string {
+  return items.map((item, index) => `${index + 1}. **${item.question}**\n   ${item.answer}`).join('\n');
+}
+
+async function readMarkdownData(filename: string): Promise<string> {
+  return await fs.readFile(path.join(PROJECT_ROOT, 'data', filename), 'utf8');
+}
+
+async function readPricePointSeries(filename: string): Promise<PricePoint[]> {
+  const data = await readJsonIfExists<unknown>(path.join(PROJECT_ROOT, filename));
+  return (Array.isArray(data) ? data : []) as PricePoint[];
+}
+
+function buildSupplyMetrics(holders: TopHoldingAddressesBuildOutput['holders'], buyBondCapacityDisplay: string | null): {
+  circulatingSupply: number;
+  buyableSupply: number;
+} {
+  const nonCirculating = holders.reduce((sum, holder, index) => {
+    const rank = index + 1;
+    if (!NON_CIRCULATING_RANKS.has(rank)) return sum;
+    return sum + toFiniteNumber(holder.balance);
+  }, 0);
+
+  const poolTotal = holders.reduce((sum, holder) => {
+    if (!BUYABLE_LABELS.has(holder.label)) return sum;
+    return sum + toFiniteNumber(holder.balance);
+  }, 0);
+
+  const capacityPrana = typeof buyBondCapacityDisplay === 'string'
+    ? toFiniteNumber(buyBondCapacityDisplay.replace(/,/g, ''))
+    : 0;
+
+  return {
+    circulatingSupply: Math.max(0, TOTAL_SUPPLY - nonCirculating),
+    buyableSupply: poolTotal + capacityPrana,
+  };
+}
+
+function buildCapitalTotalUsd(capital: Awaited<ReturnType<typeof loadCapital>>, lpCapital: Awaited<ReturnType<typeof loadLpCapital>>): number {
+  const capitalTotal = capital.items.reduce((sum, item) => {
+    if (item.tokenSymbol === 'USDT') return sum + toFiniteNumber(item.amountValue);
+    if (item.tokenSymbol === 'WBTC') return sum + toFiniteNumber(item.usdValueNumber);
+    return sum;
+  }, 0);
+
+  return capitalTotal + toFiniteNumber(lpCapital.usdValueNumber);
+}
+
+function buildLiquidityMetrics(params: {
+  btcPriceUsd: number;
+  latestSatPrice: number;
+  circulatingSupply: number;
+  holders: TopHoldingAddressesBuildOutput['holders'];
+  capital: Awaited<ReturnType<typeof loadCapital>>;
+  protocolCapitalUsd: number;
+}): {
+  liquidityDensityPercent: number | null;
+  protocolCapitalCoveragePercent: number | null;
+} {
+  const pranaUsdPrice = (params.latestSatPrice / SATS_PER_BTC) * params.btcPriceUsd;
+  const circulatingMarketCapUsd = params.circulatingSupply * pranaUsdPrice;
+  const dexPoolPranaAmount = toFiniteNumber(params.holders.find((holder) => holder.label === DEX_POOL_LABEL)?.balance);
+  const dexPoolWbtcUsdValue = toFiniteNumber(
+    params.capital.items.find((item) => item.id === DEX_POOL_WBTC_CAPITAL_ID)?.usdValueNumber,
+  );
+  const liquidityUsd = dexPoolWbtcUsdValue + dexPoolPranaAmount * pranaUsdPrice;
+
+  return {
+    liquidityDensityPercent: circulatingMarketCapUsd > 0 && Number.isFinite(liquidityUsd)
+      ? (liquidityUsd / circulatingMarketCapUsd) * 100
+      : null,
+    protocolCapitalCoveragePercent: circulatingMarketCapUsd > 0 && Number.isFinite(params.protocolCapitalUsd)
+      ? (params.protocolCapitalUsd / circulatingMarketCapUsd) * 100
+      : null,
+  };
+}
+
+function formatPerformanceSet(priceChange: PriceChangeSet): string {
+  return mdList([
+    `1 month: ${formatPercent(priceChange.m1, 0)}`,
+    `3 months: ${formatPercent(priceChange.m3, 0)}`,
+    `6 months: ${formatPercent(priceChange.m6, 0)}`,
+    `1 year: ${formatPercent(priceChange.y1, 0)}`,
+    `From ATL: ${formatPercent(priceChange.atl, 0)}`,
+  ]);
+}
+
+export async function loadSummaryMarkdown(options: { origin?: string } = {}): Promise<string> {
+  const origin = normalizeOrigin(options.origin ?? 'https://prana.triethocduongpho.net');
+  const doublePranaCopy = copyByLocale.en;
+
+  const [
+    prices,
+    stakingStats,
+    capital,
+    lpCapital,
+    bondMetrics,
+    topHoldingAddresses,
+    buyDips,
+    d365,
+    faqMarkdown,
+    covenantsMarkdown,
+  ] = await Promise.all([
+    loadPranaPricesBundle(),
+    loadStakingStats(),
+    loadCapital(),
+    loadLpCapital(),
+    loadBondMetrics(),
+    import('../../scripts/update-top-holding-addresses.ts').then((module) => module.loadTopHoldingAddresses()),
+    readJsonIfExists<BuyDipsJson>(path.join(PROJECT_ROOT, 'buy_dips.json')),
+    readPricePointSeries('data_365_days.json'),
+    readMarkdownData('faq-en.md'),
+    readMarkdownData('covenants-en.md'),
+  ]);
+
+  const pranaUsdPrice = (prices.latestSatPrice / SATS_PER_BTC) * prices.btcPriceUsd;
+  const pranaVndPrice = (prices.latestSatPrice / SATS_PER_BTC) * prices.btcPriceVnd;
+  const marketCapVnd = Math.round(pranaVndPrice * TOTAL_SUPPLY);
+  const protocolCapitalUsd = buildCapitalTotalUsd(capital, lpCapital);
+  const supply = buildSupplyMetrics(topHoldingAddresses.holders, bondMetrics.summary.buyBondCapacityDisplay);
+  const liquidity = buildLiquidityMetrics({
+    btcPriceUsd: prices.btcPriceUsd,
+    latestSatPrice: prices.latestSatPrice,
+    circulatingSupply: supply.circulatingSupply,
+    holders: topHoldingAddresses.holders,
+    capital,
+    protocolCapitalUsd,
+  });
+  const fiatPerformance = buildFiatPriceChangeFrom365({
+    btcPriceUsd: prices.btcPriceUsd,
+    latestSatPrice: prices.latestSatPrice,
+    d365,
+  });
+  const btcPerformance = buildBtcPriceChange(prices.latestSatPrice, prices.satsData);
+  const totalWithdrawnPrana = bondMetrics.summary.sellBondPrana === null
+    ? null
+    : bondMetrics.summary.sellBondPrana + toFiniteNumber(buyDips?.total_prana_bought);
+  const faqItems = parseFaqMarkdown(faqMarkdown);
+  const covenantItems = parseFaqMarkdown(covenantsMarkdown);
+  const timelineEvents = TIMELINE_EVENTS_META.map((meta) => ({
+    ...meta,
+    ...TIMELINE_COPY_EN[meta.id],
+  }));
+
+  return [
+    '# PRANA Stats Summary',
+    '',
+    `Generated at: ${new Date().toISOString()}`,
+    `Canonical site: ${origin}`,
+    '',
+    '## Overview',
+    '',
+    mdList([
+      'PRANA is designed around Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
+      'Hero message: Stake with 15% APR. Simple - Fixed - Transparent. Guaranteed by reserves, not by inflation or future users.',
+      `Primary actions: Stake (${origin}/stake/), Bond (${origin}/bond/), Trade (https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED).`,
+    ]),
+    '',
+    '## Current Market Stats',
+    '',
+    mdList([
+      `BTC price: ${formatUsd(prices.btcPriceUsd)} / ${formatVnd(prices.btcPriceVnd)}`,
+      `USD/VND rate: ${formatNumber(prices.usdToVndRate, 2)}`,
+      `PRANA price: ${formatNumber(prices.latestSatPrice, 2)} SAT / ${formatUsd(pranaUsdPrice)} / ${formatVnd(pranaVndPrice)}`,
+      `Fully diluted valuation: ${formatVnd(marketCapVnd)}`,
+    ]),
+    '',
+    '## Performance',
+    '',
+    'Against Bitcoin:',
+    '',
+    formatPerformanceSet(btcPerformance),
+    '',
+    'Against fiat:',
+    '',
+    formatPerformanceSet(fiatPerformance),
+    '',
+    '## Staking',
+    '',
+    mdList([
+      'Headline APR: 15% fixed APR for the 1-year term.',
+      `Staked PRANA: ${formatNumber(toFiniteNumber(stakingStats.stakedPrana))} PRANA (${formatVnd(stakingStats.stakedVnd)})`,
+      `Interest contract balance: ${formatNumber(toFiniteNumber(stakingStats.interestContractBalancePrana))} PRANA (${formatVnd(stakingStats.interestContractBalanceVnd)})`,
+      `Total interest: ${formatNumber(toFiniteNumber(stakingStats.interestPrana))} PRANA (${formatVnd(stakingStats.interestVnd)})`,
+      `Claimable unclaimed interest: ${formatNumber(toFiniteNumber(stakingStats.claimableUnclaimedInterestPrana))} PRANA`,
+      `Daily interest: ${formatNumber(toFiniteNumber(stakingStats.dailyInterestPrana))} PRANA`,
+      `Surplus runway remaining: ${stakingStats.surplusRunwayRemainingDays === null ? 'N/A' : `${formatNumber(stakingStats.surplusRunwayRemainingDays)} days`}`,
+    ]),
+    '',
+    '## Bonding',
+    '',
+    mdList([
+      `Total Buy Bonds Volume: ${formatNumber(toFiniteNumber(bondMetrics.summary.buyBondPrana))} PRANA (${formatVnd(bondMetrics.summary.buyBondVnd)})`,
+      `Total Sell Bonds Volume: ${formatNumber(toFiniteNumber(bondMetrics.summary.sellBondPrana))} PRANA (${formatVnd(bondMetrics.summary.sellBondVnd)})`,
+      `Buy bond committed: ${bondMetrics.summary.buyBondCommittedDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCommittedPercent)})`,
+      `Buy bond capacity: ${bondMetrics.summary.buyBondCapacityDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCapacityPercent)})`,
+      `Sell bond committed: ${bondMetrics.summary.sellBondCommittedDisplay ?? 'N/A'} WBTC (${formatPercent(bondMetrics.summary.sellBondCommittedPercent)})`,
+      `Sell bond capacity: ${formatSats(bondMetrics.summary.sellBondCapacityDisplay)} (${formatPercent(bondMetrics.summary.sellBondCapacityPercent)})`,
+    ]),
+    '',
+    '## Protocol Controlled Capital',
+    '',
+    mdList([
+      `Total protocol controlled non-native capital: ${formatUsd(protocolCapitalUsd)}`,
+      ...capital.items.map((item) => `${item.network} ${item.tokenSymbol}: ${item.amount} ${item.tokenSymbol} at ${item.address}${item.usdValue ? ` (${item.usdValue})` : ''}`),
+      `Arbitrum WBTC/USDT LP: ${lpCapital.usdValue}; 24h APR: ${lpCapital.apr24hLabel ?? 'N/A'}; active positions: ${lpCapital.activePositionsCount}; position IDs: ${lpCapital.positionIds.join(', ') || 'N/A'}`,
+    ]),
+    '',
+    '## Liquidity And Supply',
+    '',
+    mdList([
+      `Total max supply: ${formatNumber(TOTAL_SUPPLY)} PRANA`,
+      `Circulating supply: ${formatNumber(supply.circulatingSupply)} PRANA`,
+      `Buyable supply: ${formatNumber(supply.buyableSupply)} PRANA`,
+      `Liquidity density: > ${formatPercent(liquidity.liquidityDensityPercent)}`,
+      'Liquidity density means the USD value of WBTC plus PRANA in the WBTC/PRANA DEX Pool, divided by circulating market cap.',
+      `Protocol reserve ratio: > ${formatPercent(liquidity.protocolCapitalCoveragePercent)}`,
+      'Protocol reserve ratio means protocol controlled capital divided by circulating market cap.',
+      'Circulating supply means max supply less PRANA in HODL wallets; lost PRANA is not subtracted.',
+      'Buyable supply means PRANA in the WBTC/PRANA DEX pool, DEX Pool & Bonds Reserve, and BuyBond capacity.',
+    ]),
+    '',
+    '## Top Holding Addresses',
+    '',
+    `Generated at: ${topHoldingAddresses.generatedAt}`,
+    '',
+    mdList(topHoldingAddresses.holders.map((holder, index) => `${index + 1}. ${holder.label}: ${formatNumber(toFiniteNumber(holder.balance))} PRANA at ${holder.address}`)),
+    '',
+    '## Double PRANA Bonding Effect',
+    '',
+    `**${doublePranaCopy.title}**`,
+    '',
+    doublePranaCopy.intro,
+    '',
+    mdNumbered(doublePranaCopy.steps),
+    '',
+    mdList([
+      doublePranaCopy.blackHole.caption,
+      `${doublePranaCopy.blackHole.sellBondPranaLabel}: ${totalWithdrawnPrana === null ? 'N/A' : `${formatNumber(totalWithdrawnPrana)} PRANA`}`,
+      `Buy the Dips volume: ${formatUsd(buyDips?.total_volume_in_usd)}; PRANA bought: ${formatNumber(toFiniteNumber(buyDips?.total_prana_bought))}; transactions: ${formatNumber(toFiniteNumber(buyDips?.total_buy_transactions))}`,
+    ]),
+    '',
+    '## Timeline',
+    '',
+    mdList(timelineEvents.map((event) => {
+      const link = 'link' in event ? event.link : undefined;
+      return `${formatDate(event.timestamp)} - ${event.title}: ${event.description}${link ? ` (${link})` : ''}`;
+    })),
+    '',
+    '## Covenants',
+    '',
+    mdQuestions(covenantItems),
+    '',
+    '## FAQ',
+    '',
+    mdQuestions(faqItems),
+    '',
+    '## Raw Data Endpoints',
+    '',
+    mdList([
+      `${origin}/api/prana-stats`,
+      `${origin}/api/staking-stats`,
+      `${origin}/api/capital`,
+      `${origin}/api/lp-capital`,
+      `${origin}/api/bond-metrics`,
+      `${origin}/api/top-holding-addresses`,
+      `${origin}/data_30_days.json - PRANA USD price history for the last 30 days.`,
+      `${origin}/data_90_days.json - PRANA USD price history for the last 90 days.`,
+      `${origin}/data_180_days.json - PRANA USD price history for the last 180 days.`,
+      `${origin}/data_365_days.json - PRANA USD price history for the last 365 days.`,
+      `${origin}/data_max.json - PRANA USD price history for the full available range.`,
+      `${origin}/data_sats.json - PRANA SAT price history.`,
+      `${origin}/bonds_v2.json`,
+      `${origin}/buy_dips.json`,
+    ]),
+    '',
+  ].join('\n');
+}
