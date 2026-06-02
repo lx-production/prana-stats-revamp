@@ -16,6 +16,7 @@ import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 import type { PricePoint } from '../../types/pricePoint.ts';
 import type { TopHoldingAddressesBuildOutput } from '../../types/types.ts';
+import { formatDate as formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
 
 const TOTAL_SUPPLY = 10_000_000;
 const SATS_PER_BTC = 100_000_000;
@@ -27,47 +28,6 @@ const DEX_POOL_WBTC_CAPITAL_ID = 'wbtc-prana-pool';
 function toFiniteNumber(value: unknown): number {
   const numeric = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function formatNumber(value: number, fractionDigits = 0): string {
-  if (!Number.isFinite(value)) return 'N/A';
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
-}
-
-function formatUsd(value: number | null | undefined): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
-  return value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatVnd(value: number | null | undefined): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
-  return `${formatNumber(value)} VND`;
-}
-
-function formatPercent(value: number | null | undefined, fractionDigits = 2): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${formatNumber(value, fractionDigits)}%`;
-}
-
-function formatSats(value: string | null | undefined): string {
-  const numeric = typeof value === 'string' ? Number(value.replace(/,/g, '')) : NaN;
-  return Number.isFinite(numeric) ? `${formatNumber(numeric)} SAT` : 'N/A';
-}
-
-function formatDate(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
 }
 
 function normalizeOrigin(origin: string): string {
@@ -328,7 +288,7 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
     '',
     mdList(timelineEvents.map((event) => {
       const link = 'link' in event ? event.link : undefined;
-      return `${formatDate(event.timestamp)} - ${event.title}: ${event.description}${link ? ` (${link})` : ''}`;
+      return `${formatUnixDate(event.timestamp)} - ${event.title}: ${event.description}${link ? ` (${link})` : ''}`;
     })),
     '',
     '## Covenants',

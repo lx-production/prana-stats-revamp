@@ -1,6 +1,7 @@
 import type { CapitalApiResponse } from '../../types/api.types.ts';
 import { ethers } from 'ethers';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { formatUsd } from '../../utils/formatters.ts';
 import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
 import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
@@ -136,9 +137,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         address: SELL_BOND_ADDRESS_V2,
         amount: Number.isFinite(wbtcAmount) ? wbtcAmount.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '0',
         amountValue: Number.isFinite(wbtcAmount) ? wbtcAmount : 0,
-        usdValue: Number.isFinite(wbtcUsdValue)
-          ? wbtcUsdValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
-          : null,
+        usdValue: Number.isFinite(wbtcUsdValue) ? formatUsd(wbtcUsdValue) : null,
         usdValueNumber: Number.isFinite(wbtcUsdValue) ? wbtcUsdValue : null,
       },
       {
@@ -151,13 +150,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
           ? wbtcPranaPoolAmount.toLocaleString('en-US', { maximumFractionDigits: 8 })
           : '0',
         amountValue: Number.isFinite(wbtcPranaPoolAmount) ? wbtcPranaPoolAmount : 0,
-        usdValue: Number.isFinite(wbtcPranaPoolUsdValue)
-          ? wbtcPranaPoolUsdValue.toLocaleString('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 2,
-            })
-          : null,
+        usdValue: Number.isFinite(wbtcPranaPoolUsdValue) ? formatUsd(wbtcPranaPoolUsdValue) : null,
         usdValueNumber: Number.isFinite(wbtcPranaPoolUsdValue) ? wbtcPranaPoolUsdValue : null,
       },
     ],

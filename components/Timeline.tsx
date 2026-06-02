@@ -4,6 +4,7 @@ import { Clock, ExternalLink } from "lucide-react";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
+import { formatUnixDate } from "../utils/formatters";
 
 const listVariants = {
   hidden: {},
@@ -48,15 +49,6 @@ const Timeline: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useTimelineAutoScroll(scrollContainerRef, events);
-
-  const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString(locale === "en" ? "en-US" : "vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
@@ -103,7 +95,7 @@ const Timeline: React.FC = () => {
                         {event.icon}
                       </motion.div>
                       <div className="text-xs text-gray-400 bg-[#0b0c27]/90 px-2 py-1 rounded-md border border-white/5">
-                        {formatDate(event.timestamp)}
+                        {formatUnixDate(event.timestamp, locale === "en" ? "en-US" : "vi-VN")}
                       </div>
                     </div>
 
