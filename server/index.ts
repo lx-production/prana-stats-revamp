@@ -1,18 +1,17 @@
 import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
-import { loadCapital } from './loaders/capital.ts';
-import { loadLpCapital } from './loaders/lpCapital.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
-import { loadStakingStats } from './loaders/stakingStats.ts';
 import { loadBondMetrics } from './loaders/bondMetrics.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
+import { loadCachedCapital } from './loaders/capitalCached.ts';
+import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
+import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
+import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
-import { loadTopHoldingAddresses } from '../scripts/update-top-holding-addresses.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
 import { fileExists, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
-import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
@@ -21,11 +20,7 @@ const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
-const stakingStatsCache = createServerCache(SERVER_CACHE_TTL_MS.stakingStatsApiResponse);
-const capitalCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
-const lpCapitalCache = createServerCache(SERVER_CACHE_TTL_MS.lpCapitalApiResponse);
 const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
-const topHoldingAddressesCache = createServerCache<TopHoldingAddressesBuildOutput>(SERVER_CACHE_TTL_MS.topHoldingsRefresh);
 const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
 
 const server = http.createServer(async (req, res) => {
@@ -43,7 +38,7 @@ const server = http.createServer(async (req, res) => {
 
     // Endpoint the frontend can call for top holdings with a short-lived memory cache.
     if (url.pathname === '/api/top-holding-addresses') {
-      const result = await topHoldingAddressesCache(loadTopHoldingAddresses);
+      const result = await loadCachedTopHoldingAddresses();
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
@@ -53,17 +48,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/staking-stats') {
-      const result = await stakingStatsCache(loadStakingStats);
+      const result = await loadCachedStakingStats();
       return sendJson(res, 200, result, { cacheControl: READONLY_STAKING_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/capital') {
-      const result = await capitalCache(loadCapital);
+      const result = await loadCachedCapital();
       return sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
     }
 
     if (url.pathname === '/api/lp-capital') {
-      const result = await lpCapitalCache(loadLpCapital);
+      const result = await loadCachedLpCapital();
       return sendJson(res, 200, result, { cacheControl: READONLY_LP_CAPITAL_API_CACHE_CONTROL });
     }
 

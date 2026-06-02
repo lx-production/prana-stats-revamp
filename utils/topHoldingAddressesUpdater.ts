@@ -1,13 +1,7 @@
 import { ethers, type Provider } from 'ethers';
 import { redactUrl } from './bondsScanUtils.ts';
 import { TOP_HOLDING_ADDRESSES, type TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
-import {
-  MINIMAL_ERC20_ABI,
-  MULTICALL3_ADDRESS,
-  MULTICALL3_ABI,
-  PRANA_ADDRESS,
-  PRANA_DECIMALS,
-} from '../constants/sharedContracts.ts';
+import { MINIMAL_ERC20_ABI, MULTICALL3_ADDRESS, MULTICALL3_ABI, PRANA_ADDRESS, PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 import type { TopHoldingAddressesBuildOutput, TopHoldingAddressesBuildOutputParams } from '../types/types.ts';
 
 type MulticallBalanceResult = {

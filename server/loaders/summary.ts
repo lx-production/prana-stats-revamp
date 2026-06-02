@@ -1,9 +1,10 @@
 import path from 'node:path';
-import { loadCapital } from './capital.ts';
-import { loadLpCapital } from './lpCapital.ts';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { loadStakingStats } from './stakingStats.ts';
 import { loadBondMetrics } from './bondMetrics.ts';
+import { loadCachedCapital } from './capitalCached.ts';
+import { loadCachedLpCapital } from './lpCapitalCached.ts';
+import { loadCachedStakingStats } from './stakingStatsCached.ts';
+import { loadCachedTopHoldingAddresses } from './topHoldingAddresses.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { parseFaqMarkdown } from '../../utils/faqParser.ts';
@@ -46,11 +47,11 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
     covenantsMarkdown,
   ] = await Promise.all([
     loadPranaPricesBundle(),
-    loadStakingStats(),
-    loadCapital(),
-    loadLpCapital(),
+    loadCachedStakingStats(),
+    loadCachedCapital(),
+    loadCachedLpCapital(),
     loadBondMetrics(),
-    import('../../scripts/update-top-holding-addresses.ts').then((module) => module.loadTopHoldingAddresses()),
+    loadCachedTopHoldingAddresses(),
     readJsonIfExists<BuyDipsJson>(path.join(PROJECT_ROOT, 'buy_dips.json')),
     readPricePointSeries('data_365_days.json'),
     readMarkdownData('faq-en.md'),
