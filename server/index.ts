@@ -2,14 +2,14 @@ import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
-import { loadBondMetrics } from './loaders/bondMetrics.ts';
+import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { loadCachedCapital } from './loaders/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
 import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { createServerCache, ensureBondsRefreshed } from './cacheHelpers.ts';
+import { createServerCache } from './cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
 import { fileExists, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 
@@ -20,16 +20,37 @@ const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 
 const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
-const bondMetricsCache = createServerCache(SERVER_CACHE_TTL_MS.bondMetricsApiResponse);
 const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
+
+async function warmApiCaches() {
+  const warmups = [
+    { name: '/api/summary', load: () => summaryCache(() => loadSummaryMarkdown()) },
+    { name: '/api/top-holding-addresses', load: () => loadCachedTopHoldingAddresses() },
+    { name: '/api/prana-stats', load: () => pranaStatsCache(loadPranaStats) },
+    { name: '/api/staking-stats', load: () => loadCachedStakingStats() },
+    { name: '/api/capital', load: () => loadCachedCapital() },
+    { name: '/api/lp-capital', load: () => loadCachedLpCapital() },
+    { name: '/api/bond-metrics', load: () => loadCachedBondMetrics() },
+  ];
+
+  console.log('Warming API caches...');
+
+  const results = await Promise.allSettled(warmups.map((warmup) => warmup.load()));
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.warn(`Failed to warm ${warmups[index].name}:`, result.reason);
+    }
+  });
+
+  console.log('API cache warming finished.');
+}
 
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
     if (url.pathname === '/api/summary') {
-      const origin = `${url.protocol}//${url.host}`;
-      const result = await summaryCache(() => loadSummaryMarkdown({ origin }));
+      const result = await summaryCache(() => loadSummaryMarkdown());
       return sendText(res, 200, result, {
         cacheControl: READONLY_API_CACHE_CONTROL,
         contentType: 'text/markdown; charset=utf-8',
@@ -63,10 +84,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/bond-metrics') {
-      const result = await bondMetricsCache(async () => {
-        await ensureBondsRefreshed();
-        return await loadBondMetrics();
-      });
+      const result = await loadCachedBondMetrics();
       return sendJson(res, 200, result, { cacheControl: READONLY_BOND_METRICS_API_CACHE_CONTROL });
     }
 
@@ -135,4 +153,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
+  void warmApiCaches();
 });

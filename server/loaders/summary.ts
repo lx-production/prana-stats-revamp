@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { loadBondMetrics } from './bondMetrics.ts';
+import { loadCachedBondMetrics } from './bondMetricsCached.ts';
 import { loadCachedCapital } from './capitalCached.ts';
 import { loadCachedLpCapital } from './lpCapitalCached.ts';
 import { loadCachedStakingStats } from './stakingStatsCached.ts';
@@ -16,7 +16,7 @@ import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetr
 import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 import { formatDate as formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
-import { mdList, mdNumbered, mdQuestions, normalizeOrigin, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
+import { mdList, mdNumbered, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 
@@ -30,8 +30,10 @@ function formatPerformanceSet(priceChange: PriceChangeSet): string {
   ]);
 }
 
-export async function loadSummaryMarkdown(options: { origin?: string } = {}): Promise<string> {
-  const origin = normalizeOrigin(options.origin ?? 'https://prana.triethocduongpho.net');
+const CANONICAL_SITE_ORIGIN = 'https://prana.triethocduongpho.net';
+
+export async function loadSummaryMarkdown(): Promise<string> {
+  const origin = CANONICAL_SITE_ORIGIN;
   const doublePranaCopy = copyByLocale.en;
 
   const [
@@ -46,11 +48,11 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
     faqMarkdown,
     covenantsMarkdown,
   ] = await Promise.all([
-    loadPranaPricesBundle(),
+    loadPranaPricesBundle(), // already uses a cache internally
     loadCachedStakingStats(),
     loadCachedCapital(),
     loadCachedLpCapital(),
-    loadBondMetrics(),
+    loadCachedBondMetrics(),
     loadCachedTopHoldingAddresses(),
     readJsonIfExists<BuyDipsJson>(path.join(PROJECT_ROOT, 'buy_dips.json')),
     readPricePointSeries('data_365_days.json'),
@@ -90,15 +92,28 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
   return [
     '# PRANA Stats Summary',
     '',
+    'Extraction source: live UI',
     `Generated at: ${new Date().toISOString()}`,
     `Canonical site: ${origin}`,
     '',
     '## Overview',
     '',
     mdList([
-      'PRANA is designed around Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
+      'PRANA is designed around 100% Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
       'Hero message: Stake with 15% APR. Simple - Fixed - Transparent. Guaranteed by reserves, not by inflation or future users.',
       `Primary actions: Stake (${origin}/stake/), Bond (${origin}/bond/), Trade (https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED).`,
+    ]),
+    '',
+    '## Investment Thesis',
+    '',
+    mdList([
+      'Fixed supply of 10M',
+      '100% Bitcoin denominated',
+      'Protocol controlled liquidity',
+      'Protocol controlled capital',
+      'Buy the Dips accumulation',
+      'Bonding absorbs sell pressure',
+      'Goal: Outperform Bitcoin long term',
     ]),
     '',
     '## Current Market Stats',
@@ -137,10 +152,10 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
     mdList([
       `Total Buy Bonds Volume: ${formatNumber(toFiniteNumber(bondMetrics.summary.buyBondPrana))} PRANA (${formatVnd(bondMetrics.summary.buyBondVnd)})`,
       `Total Sell Bonds Volume: ${formatNumber(toFiniteNumber(bondMetrics.summary.sellBondPrana))} PRANA (${formatVnd(bondMetrics.summary.sellBondVnd)})`,
-      `Buy bond committed: ${bondMetrics.summary.buyBondCommittedDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCommittedPercent)})`,
-      `Buy bond capacity: ${bondMetrics.summary.buyBondCapacityDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCapacityPercent)})`,
-      `Sell bond committed: ${bondMetrics.summary.sellBondCommittedDisplay ?? 'N/A'} WBTC (${formatPercent(bondMetrics.summary.sellBondCommittedPercent)})`,
-      `Sell bond capacity: ${formatSats(bondMetrics.summary.sellBondCapacityDisplay)} (${formatPercent(bondMetrics.summary.sellBondCapacityPercent)})`,
+      `Buy bond committed: ${bondMetrics.summary.buyBondCommittedDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCommittedPercent, 2, false)})`,
+      `Buy bond capacity: ${bondMetrics.summary.buyBondCapacityDisplay ?? 'N/A'} PRANA (${formatPercent(bondMetrics.summary.buyBondCapacityPercent, 2, false)})`,
+      `Sell bond committed: ${bondMetrics.summary.sellBondCommittedDisplay ?? 'N/A'} WBTC (${formatPercent(bondMetrics.summary.sellBondCommittedPercent, 2, false)})`,
+      `Sell bond capacity: ${formatSats(bondMetrics.summary.sellBondCapacityDisplay)} (${formatPercent(bondMetrics.summary.sellBondCapacityPercent, 2, false)})`,
     ]),
     '',
     '## Protocol Controlled Capital',
@@ -157,17 +172,16 @@ export async function loadSummaryMarkdown(options: { origin?: string } = {}): Pr
       `Total max supply: ${formatNumber(PRANA_TOTAL_SUPPLY)} PRANA`,
       `Circulating supply: ${formatNumber(supply.circulatingSupply)} PRANA`,
       `Buyable supply: ${formatNumber(supply.buyableSupply)} PRANA`,
-      `Liquidity density: > ${formatPercent(liquidity.liquidityDensityPercent)}`,
+      `Liquidity density: > ${formatPercent(liquidity.liquidityDensityPercent, 2, false)}`,
       'Liquidity density means the USD value of WBTC plus PRANA in the WBTC/PRANA DEX Pool, divided by circulating market cap.',
-      `Protocol reserve ratio: > ${formatPercent(liquidity.protocolCapitalCoveragePercent)}`,
+      `Protocol reserve ratio: > ${formatPercent(liquidity.protocolCapitalCoveragePercent, 2, false)}`,
       'Protocol reserve ratio means protocol controlled capital divided by circulating market cap.',
       'Circulating supply means max supply less PRANA in HODL wallets; lost PRANA is not subtracted.',
       'Buyable supply means PRANA in the WBTC/PRANA DEX pool, DEX Pool & Bonds Reserve, and BuyBond capacity.',
+      'PRANA has the highest liquidity density and protocol reserve ratio in the entire crypto market.',
     ]),
     '',
     '## Top Holding Addresses',
-    '',
-    `Generated at: ${topHoldingAddresses.generatedAt}`,
     '',
     mdList(topHoldingAddresses.holders.map((holder, index) => `${index + 1}. ${holder.label}: ${formatNumber(toFiniteNumber(holder.balance))} PRANA at ${holder.address}`)),
     '',

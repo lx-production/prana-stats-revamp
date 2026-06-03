@@ -9,10 +9,6 @@ export function toFiniteNumber(value: unknown): number {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
-export function normalizeOrigin(origin: string): string {
-  return origin.replace(/\/+$/, '');
-}
-
 export function mdList(items: string[]): string {
   return items.map((item) => `- ${item}`).join('\n');
 }

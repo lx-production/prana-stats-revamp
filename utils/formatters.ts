@@ -38,9 +38,13 @@ export const formatVnd = (value: number | null | undefined): string => {
 
 export const formatFullVnd = (value: number) => formatNumber(value, 0);
 
-export const formatPercent = (value: number | null | undefined, fractionDigits = 2): string => {
+export const formatPercent = (
+  value: number | null | undefined,
+  fractionDigits = 2,
+  showSign = true,
+): string => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return MISSING_VALUE;
-  const sign = value > 0 ? '+' : '';
+  const sign = showSign && value > 0 ? '+' : '';
   return `${sign}${formatNumber(value, fractionDigits)}%`;
 };
 
