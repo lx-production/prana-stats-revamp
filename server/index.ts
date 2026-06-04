@@ -25,10 +25,7 @@ const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiRes
 async function warmApiCaches() {
   const warmups = [
     { name: '/api/summary', load: () => summaryCache(() => loadSummaryMarkdown()) },
-    { name: '/api/top-holding-addresses', load: () => loadCachedTopHoldingAddresses() },
-    { name: '/api/prana-stats', load: () => pranaStatsCache(loadPranaStats) },
     { name: '/api/staking-stats', load: () => loadCachedStakingStats() },
-    { name: '/api/capital', load: () => loadCachedCapital() },
     { name: '/api/lp-capital', load: () => loadCachedLpCapital() },
     { name: '/api/bond-metrics', load: () => loadCachedBondMetrics() },
   ];
