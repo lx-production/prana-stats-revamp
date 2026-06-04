@@ -12,7 +12,7 @@ The goal is to keep caching:
 
 ### 1. One source of truth per data type
 - Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, and `buy_dips.json`.
-- Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, and `/api/bond-metrics`.
+- Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, `/api/bond-metrics`, and `/api/summary` (markdown for agents and link previews, not the React UI).
 - Bond refresh side effects run inside `/api/bond-metrics`, before the server reads the computed bond snapshot.
 - Top holding addresses are now loaded directly via `/api/top-holding-addresses` with server memory cache (no JSON file handoff).
 
@@ -76,6 +76,8 @@ All shared TTL values live in `constants/cachePolicy.ts`.
 
 ### Millisecond TTLs
 - `apiResponse`: `30_000`
+- `summaryApiResponse`: `3_600_000` (1 hour) — `/api/summary` markdown snapshot
+- `lpCapitalApiResponse`: `3_600_000` (1 hour) — `/api/lp-capital` response snapshot
 - `bondMetricsApiResponse`: `86_400_000` (24 hours)
 - `stakingStatsApiResponse`: `86_400_000` (24 hours)
 - `lpTokenId`: `86_400_000` (24 hours) — see [LP position NFT id cache](#lp-position-nft-id-cache)
@@ -84,7 +86,8 @@ All shared TTL values live in `constants/cachePolicy.ts`.
 `bonds_v2.json` relies on HTTP cache and `fetchJson` dedupe only. `buy_dips.json` uses `createBrowserJsonCache(...)` with the same short TTL as its HTTP cache header.
 
 ### HTTP cache TTLs in seconds
-- `apiResponseBrowserHttp`: `30`
+- `apiResponseBrowserHttp`: `30` — most JSON APIs and `/api/summary`
+- `lpCapitalApiResponseBrowserHttp`: `60 * 60` (1 hour) — `/api/lp-capital`
 - `bondMetricsApiResponseBrowserHttp`: `60 * 60 * 24` (24 hours)
 - `stakingStatsApiResponseBrowserHttp`: `60 * 60 * 24` (24 hours)
 - `rootDataJsonHttp`: `30`
@@ -93,7 +96,8 @@ All shared TTL values live in `constants/cachePolicy.ts`.
 - `staticAssetsHttp`: `31536000`
 
 Rule of thumb:
-- changing protocol/app data: 30 seconds by default
+- changing protocol/app data: 30 seconds by default (including `/api/summary` browser HTTP cache)
+- heavier or slower snapshots may use 1 hour when intentional, such as `/api/summary` server cache and `/api/lp-capital`
 - longer-lived computed API snapshots can use 24 hours when intentional, such as `/api/bond-metrics` and `/api/staking-stats`
 - long-lived hashed assets: 1 year immutable
 
@@ -202,6 +206,14 @@ This endpoint is now the single bond API. It includes:
 
 This avoids duplicating bond summary fields in `/api/prana-stats`.
 
+### Computed API snapshot: markdown summary (`/api/summary`)
+
+- Served from `server/index.ts` as `text/markdown; charset=utf-8` via `sendText(...)`, not JSON.
+- Built by `server/loaders/summary.ts` → `loadSummaryMarkdown()`, which aggregates the same cached loaders the UI uses (prices, staking, capital, LP capital, bond metrics, top holdings, chart JSON, FAQ/covenants markdown, and related computed fields).
+- **Not** loaded by React hooks or `prefetchInitialJson.ts`. Intended for bots, AI agents, and machine-readable discovery (`public/llms.txt`, `public/robots.txt`, `index.html` `<link rel="alternate">`; production nginx may redirect certain user agents from `/` to `/api/summary`).
+- Server memory cache: `summaryCache` in `server/index.ts` with TTL `SERVER_CACHE_TTL_MS.summaryApiResponse` (1 hour).
+- Browser HTTP cache: `Cache-Control: private, max-age=30` (same header constant as most JSON APIs).
+
 ### Raw JSON helpers
 
 **`fetchJson` / `fetchJsonSafe` only (HTTP cache + in-flight GET dedupe, no TTL memory cache):**
@@ -249,9 +261,10 @@ All of these rely on the Node server’s short HTTP cache policy for root JSON (
 Each instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
 
 API response caches:
+- `/api/summary` (TTL = `SERVER_CACHE_TTL_MS.summaryApiResponse`, 1h) — markdown string via `loadSummaryMarkdown()`
 - `/api/prana-stats`
 - `/api/capital`
-- `/api/lp-capital`
+- `/api/lp-capital` (TTL = `SERVER_CACHE_TTL_MS.lpCapitalApiResponse`, 1h)
 - `/api/bond-metrics` (TTL = `SERVER_CACHE_TTL_MS.bondMetricsApiResponse`, 24h)
 
 Staking stats response cache:
@@ -265,7 +278,7 @@ Top holdings in-memory cache (TTL = `SERVER_CACHE_TTL_MS.topHoldingsRefresh`):
 
 ### LP position NFT id cache
 
-`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`SERVER_CACHE_TTL_MS.apiResponse`).
+`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`SERVER_CACHE_TTL_MS.lpCapitalApiResponse`, 1 hour).
 
 - TTL is `LP_TOKEN_ID_CACHE_TTL_MS` from `constants/arbitrumWbtcUsdtLp.ts`, which is set to `SERVER_CACHE_TTL_MS.lpTokenId` (24 hours) in the central registry.
 - Each `loadLpCapital()` call still reads on-chain `positions(tokenId)` and checks the position is still active in the configured pool; if not, the id cache is cleared and the loader rescans wallet NFTs.
@@ -278,6 +291,24 @@ Purpose: avoid repeating `balanceOf` / `tokenOfOwnerByIndex` scans on every requ
 `server/loaders/pranaPrices.ts` uses the same short API TTL model (`SERVER_CACHE_TTL_MS.apiResponse`). The bundle includes BTC prices and `latestSatPrice` from the last point of `data_sats.json` (read from disk). It does **not** load `data_365_days.json`; that file is consumed in the browser for fiat performance and the VND chart’s 1Y range.
 
 That keeps the server-side price snapshot aligned with the rest of the API freshness model while avoiding redundant server reads for series only needed on the client.
+
+### API cache warmup on server start
+
+When the Node server finishes binding (`server.listen` in `server/index.ts`), it runs `warmApiCaches()` in the background (does not block accepting requests).
+
+Warmup loads every major API cache in parallel via `Promise.allSettled`:
+
+- `/api/summary`
+- `/api/top-holding-addresses`
+- `/api/prana-stats`
+- `/api/staking-stats`
+- `/api/capital`
+- `/api/lp-capital`
+- `/api/bond-metrics`
+
+Each entry uses the same loader path as a real HTTP request (for example `summaryCache(() => loadSummaryMarkdown())` for summary). Failures are logged with `console.warn` and do not prevent the server from running; the first client request after a failed warmup will populate that cache normally.
+
+Purpose: avoid a cold-start burst where the first visitors (or bots hitting `/api/summary`) pay the full cost of every loader at once. Restart clears in-memory server caches (including LP token id cache); warmup repopulates the API response caches immediately after listen.
 
 ## HTTP Cache Headers
 
@@ -310,10 +341,11 @@ Longer browser cache (`private`, 24 hours) for intentional snapshot endpoints:
 - `/api/bond-metrics`
 
 Routes (each uses one of the header shapes above, as wired in `server/index.ts`):
+- `/api/summary` — `max-age=30` (`text/markdown`)
 - `/api/prana-stats` — `max-age=30`
 - `/api/staking-stats` — `max-age=24h`
 - `/api/capital` — `max-age=30`
-- `/api/lp-capital` — `max-age=30`
+- `/api/lp-capital` — `max-age=1h`
 - `/api/bond-metrics` — `max-age=24h`
 - `/api/top-holding-addresses` — `max-age=30`
 
@@ -349,6 +381,7 @@ Important development note:
 - when running the frontend in dev, the Node server must also be running for these proxied routes (default API target: port `4173`)
 - if the Node server is stale, new API routes such as `/api/staking-stats` may fall through to `index.html` and surface as JSON parse errors in the browser
 - if `npm run serve` fails with `EADDRINUSE` on `4173`, an **older** `node server/index.ts` may still be listening; that process will keep serving **old** API shapes until you stop it and restart. Vite on `5173` proxies `/api` to whatever is on `4173`, so code changes to loaders are invisible until the Node server restarts.
+- after a Node restart, watch the console for `Warming API caches...` / `API cache warming finished.`; failed warmups are warnings only. Until warmup completes, first requests may still trigger loaders on demand.
 
 ## Force Refresh Rules
 
@@ -392,6 +425,19 @@ Pricing and market cap only. Fiat and BTC performance percentages are computed i
   "dailyInterestPrana": 306.56,
   "runwayDays": 393.91
 }
+```
+
+### `/api/summary`
+
+Markdown document (not JSON). Aggregates live protocol stats, bond/staking/capital/LP summaries, performance ranges, FAQ/covenants excerpts, and links to raw JSON endpoints. Cached on the server for 1 hour; browsers may reuse the response locally for 30 seconds (`private`).
+
+Example opening (truncated):
+
+```markdown
+# PRANA Stats Summary
+
+Canonical site: https://prana.triethocduongpho.net
+...
 ```
 
 ### `/api/bond-metrics`

@@ -2,6 +2,12 @@
 limit_req_zone $binary_remote_addr zone=ip_req_limit:10m rate=35r/s;
 limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
 
+# Redirect common bots/scrapers on / to the markdown summary API
+map $http_user_agent $is_summary_client {
+    default 0;
+    ~*(bot|crawler|spider|scraper|GPTBot|ChatGPT-User|ClaudeBot|anthropic|PerplexityBot|Bytespider|Applebot|facebookexternalhit|Twitterbot|LinkedInBot|Slurp|bingbot|Googlebot|Baiduspider|SemrushBot|AhrefsBot|curl|wget|python-requests|Go-http-client|HeadlessChrome|Puppeteer|Playwright) 1;
+}
+
 # HTTP to HTTPS redirect
 server {
     listen 80;
@@ -94,6 +100,31 @@ server {
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;
+    }
+
+    # Homepage: send bots/scrapers to the markdown summary instead of the React UI
+    location = / {
+        if ($is_summary_client) {
+            return 302 /api/summary;
+        }
+
+        proxy_pass http://127.0.0.1:9000;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_set_header Accept-Encoding "";
+
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+
+        proxy_cache off;
+        proxy_no_cache 1;
+        proxy_cache_bypass 1;
     }
 
     # Everything else:
