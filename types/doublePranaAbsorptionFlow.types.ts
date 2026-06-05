@@ -1,34 +1,31 @@
 import type { SiteLocale } from './locale.types';
 
-export type DoublePranaStepVisual = 'bitcoin' | 'clock' | 'buyback' | 'pranaLock';
+export type DoublePranaStepVisual = 'bitcoin' | 'clock' | 'buyback' | 'pranaLock' | 'sellBond';
 
 export type DoublePranaAltCopy = {
   bitcoin: string;
   prana: string;
 };
 
-export type DoublePranaFlowCopy = {
-  firstAbsorptionTitle: string;
-  secondAbsorptionTitle: string;
-  userLabel: string;
-  wbtcTitle: string;
-  contractLabel: string;
-  contractTitle: string;
-  bondRoute: string;
-  vestingRoute: string;
-  vestingLabel: string;
-  vestingTitle: string;
-  protocolLabel: string;
-  protocolTitle: string;
+export type DoublePranaNodeCopy = {
+  label: string;
+  title: string;
 };
 
-export type DoublePranaBlackHoleCopy = {
-  outOfCirculation: string;
-  sinkTitle: string;
-  accretion: string;
-  eventHorizon: string;
-  caption: string;
-  sellBondPranaLabel: string;
+export type DoublePranaSideCopy = {
+  laneTitle: string;
+  user: DoublePranaNodeCopy;
+  contract: DoublePranaNodeCopy;
+  vesting: DoublePranaNodeCopy;
+  bridgeTitle: string;
+  sinkCaption: string;
+  metricLabel: string;
+  metricTooltip: string;
+};
+
+export type DoublePranaCombinedMetricCopy = {
+  label: string;
+  tooltip: string;
 };
 
 export type DoublePranaStepCopy = {
@@ -44,8 +41,9 @@ export type DoublePranaLocaleCopy = {
   title: string;
   intro: string;
   steps: DoublePranaStepCopy[];
-  flow: DoublePranaFlowCopy;
-  blackHole: DoublePranaBlackHoleCopy;
+  buySide: DoublePranaSideCopy;
+  sellSide: DoublePranaSideCopy;
+  combinedMetric: DoublePranaCombinedMetricCopy;
   alt: DoublePranaAltCopy;
 };
 

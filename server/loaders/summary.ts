@@ -194,8 +194,11 @@ export async function loadSummaryMarkdown(): Promise<string> {
     mdNumbered(doublePranaCopy.steps),
     '',
     mdList([
-      doublePranaCopy.blackHole.caption,
-      `${doublePranaCopy.blackHole.sellBondPranaLabel}: ${totalWithdrawnPrana === null ? 'N/A' : `${formatNumber(totalWithdrawnPrana)} PRANA`}`,
+      doublePranaCopy.buySide.sinkCaption,
+      doublePranaCopy.sellSide.sinkCaption,
+      `${doublePranaCopy.buySide.metricLabel}: ${formatNumber(toFiniteNumber(buyDips?.total_prana_bought))} PRANA`,
+      `${doublePranaCopy.sellSide.metricLabel}: ${bondMetrics.summary.sellBondPrana === null ? 'N/A' : `${formatNumber(bondMetrics.summary.sellBondPrana)} PRANA`}`,
+      `${doublePranaCopy.combinedMetric.label}: ${totalWithdrawnPrana === null ? 'N/A' : `${formatNumber(totalWithdrawnPrana)} PRANA`}`,
       `Buy the Dips volume: ${formatUsd(buyDips?.total_volume_in_usd)}; PRANA bought: ${formatNumber(toFiniteNumber(buyDips?.total_prana_bought))}; transactions: ${formatNumber(toFiniteNumber(buyDips?.total_buy_transactions))}`,
     ]),
     '',

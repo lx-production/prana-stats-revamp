@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock3, LockKeyhole, ShoppingCart } from 'lucide-react';
-import type { DoublePranaAltCopy, DoublePranaStepVisual } from '../types/doublePranaAbsorptionFlow.types';
+import { ArrowDownUp, Clock3, LockKeyhole, ShoppingCart } from 'lucide-react';
+import InfoTooltip from './InfoTooltip';
+import type { DoublePranaAltCopy, DoublePranaSideCopy, DoublePranaStepVisual } from '../types/doublePranaAbsorptionFlow.types';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
@@ -100,6 +101,10 @@ export const StepVisual: React.FC<{
         <LockKeyhole className="absolute -right-1 -top-1 h-3 w-3 text-emerald-200" aria-hidden="true" />
       </span>
     );
+  }
+
+  if (visual === 'sellBond') {
+    return <ArrowDownUp className={`h-4 w-4 ${accent}`} aria-hidden="true" />;
   }
 
   const Icon = visual === 'clock' ? Clock3 : ShoppingCart;
@@ -223,9 +228,23 @@ export const FlowConnector: React.FC<{
 
 export const GravityWell: React.FC<{
   alt: DoublePranaAltCopy;
-}> = ({ alt }) => (
+  variant?: 'buy' | 'sell';
+}> = ({ alt, variant = 'buy' }) => {
+  const phase = variant === 'sell' ? 136 : 0;
+  const haloClassName = variant === 'sell'
+    ? 'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18)_0%,rgba(34,211,238,0.12)_36%,transparent_68%)] blur-xl'
+    : 'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(103,232,249,0.18)_0%,rgba(168,85,247,0.12)_34%,transparent_68%)] blur-xl';
+  const diskClassName = variant === 'sell'
+    ? 'absolute inset-[8%] rounded-full bg-[conic-gradient(from_260deg,transparent_0deg,rgba(34,211,238,0.68)_38deg,rgba(16,185,129,0.5)_96deg,transparent_150deg,rgba(251,191,36,0.48)_224deg,rgba(34,211,238,0.62)_284deg,transparent_330deg)] blur-[0.5px] shadow-[0_0_54px_rgba(16,185,129,0.25)]'
+    : 'absolute inset-[8%] rounded-full bg-[conic-gradient(from_120deg,transparent_0deg,rgba(251,191,36,0.72)_42deg,rgba(217,70,239,0.44)_82deg,transparent_130deg,rgba(34,211,238,0.46)_205deg,rgba(251,191,36,0.64)_255deg,transparent_318deg)] blur-[0.5px] shadow-[0_0_54px_rgba(217,70,239,0.28)]';
+  const streamClassName = variant === 'sell'
+    ? 'absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(34,211,238,0.82),rgba(16,185,129,0.7),rgba(251,191,36,0.72),transparent)] blur-sm'
+    : 'absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(251,191,36,0.92),rgba(34,211,238,0.58),rgba(217,70,239,0.78),transparent)] blur-sm';
+
+  return (
   <div className="relative mx-auto aspect-square w-[min(82vw,22rem)] sm:w-full" aria-hidden="true">
-    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(103,232,249,0.18)_0%,rgba(168,85,247,0.12)_34%,transparent_68%)] blur-xl" />
+    <div className={haloClassName} />
+    <div className="absolute inset-0" style={{ transform: `rotate(${phase}deg)` }}>
 
     <motion.div
       className="absolute inset-[4%] rounded-full border border-cyan-200/10"
@@ -237,7 +256,7 @@ export const GravityWell: React.FC<{
     </motion.div>
 
     <motion.div
-      className="absolute inset-[8%] rounded-full bg-[conic-gradient(from_120deg,transparent_0deg,rgba(251,191,36,0.72)_42deg,rgba(217,70,239,0.44)_82deg,transparent_130deg,rgba(34,211,238,0.46)_205deg,rgba(251,191,36,0.64)_255deg,transparent_318deg)] blur-[0.5px] shadow-[0_0_54px_rgba(217,70,239,0.28)]"
+      className={diskClassName}
       animate={{ rotate: 360, scale: [1, 1.015, 1] }}
       transition={{ duration: 16 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
     />
@@ -247,7 +266,7 @@ export const GravityWell: React.FC<{
       transition={{ duration: 12 * ROTATION_SLOWDOWN, repeat: Infinity, ease: 'linear' }}
     />
     <motion.div
-      className="absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(251,191,36,0.92),rgba(34,211,238,0.58),rgba(217,70,239,0.78),transparent)] blur-sm"
+      className={streamClassName}
       animate={{ opacity: [0.58, 0.95, 0.58], scaleX: [0.94, 1.03, 0.94] }}
       transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
     />
@@ -340,5 +359,102 @@ export const GravityWell: React.FC<{
       </motion.div>
     ))}
 
+    </div>
+  </div>
+  );
+};
+
+const LaneNode: React.FC<{
+  label: string;
+  title: string;
+  visual: React.ReactNode;
+  className?: string;
+}> = ({ label, title, visual, className = '' }) => (
+  <div
+    className={`flex w-full min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 backdrop-blur-md ${className}`}
+  >
+    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/15 bg-white/10">
+      {visual}
+    </div>
+    <div className="min-w-0">
+      <div className="text-[0.6rem] uppercase tracking-[0.2em] text-white/45">{label}</div>
+      <div className="mt-0.5 break-words text-sm font-semibold text-white">{title}</div>
+    </div>
+  </div>
+);
+
+const LaneConnector: React.FC = () => (
+  <div
+    className="relative h-5 w-px bg-gradient-to-b from-cyan-100/10 via-cyan-100/60 to-cyan-100/10 shadow-[0_0_14px_rgba(103,232,249,0.45)]"
+    aria-hidden="true"
+  />
+);
+
+export const LaneMetric: React.FC<{
+  label: string;
+  tooltip: string;
+  ariaLabel: string;
+  value: string;
+  className?: string;
+}> = ({ label, tooltip, ariaLabel, value, className = '' }) => (
+  <div
+    className={`rounded-xl border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-2 text-center ${className}`}
+  >
+    <div className="relative inline-flex items-center justify-center gap-1.5 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70">
+      <span>{label}</span>
+      <InfoTooltip
+        ariaLabel={ariaLabel}
+        text={tooltip}
+        positionClassName="top-full left-1/2 mt-2 -translate-x-1/2"
+        widthClassName="w-[min(18rem,calc(100vw-2rem))]"
+      />
+    </div>
+    <div className="mt-1 text-base font-semibold text-emerald-50">{value}</div>
+  </div>
+);
+
+export const AbsorptionLane: React.FC<{
+  side: DoublePranaSideCopy;
+  alt: DoublePranaAltCopy;
+  headerAccent: string;
+  bridgeAccent: string;
+  entryVisual: React.ReactNode;
+  contractVisual: React.ReactNode;
+  vestingVisual: React.ReactNode;
+  metricValue: string;
+  gravityWellVariant?: 'buy' | 'sell';
+}> = ({ side, alt, headerAccent, bridgeAccent, entryVisual, contractVisual, vestingVisual, metricValue, gravityWellVariant = 'buy' }) => (
+  <div className="relative flex h-full min-w-0 flex-col items-center">
+    <h3 className={`w-full text-center text-sm font-semibold uppercase tracking-[0.2em] ${headerAccent}`}>
+      {side.laneTitle}
+    </h3>
+
+    <div className="mt-4 flex w-full min-w-0 flex-col items-center">
+      <LaneNode label={side.user.label} title={side.user.title} visual={entryVisual} />
+      <LaneConnector />
+      <LaneNode label={side.contract.label} title={side.contract.title} visual={contractVisual} />
+      <LaneConnector />
+      <LaneNode label={side.vesting.label} title={side.vesting.title} visual={vestingVisual} />
+    </div>
+
+    <div className={`mt-3 w-full break-words rounded-xl border px-3 py-2 text-center text-xs font-medium ${bridgeAccent}`}>
+      {side.bridgeTitle}
+    </div>
+
+    <GravityWell alt={alt} variant={gravityWellVariant} />
+
+    <div className="min-h-0 flex-1" aria-hidden="true" />
+
+    <p className="mt-2 min-h-[3.75rem] w-full text-center text-xs leading-5 text-white/62">
+      {side.sinkCaption}
+    </p>
+
+    <LaneMetric
+      label={side.metricLabel}
+      tooltip={side.metricTooltip}
+      ariaLabel={side.metricLabel}
+      value={metricValue}
+      className="mt-2 w-full"
+    />
   </div>
 );

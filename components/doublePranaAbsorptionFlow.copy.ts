@@ -2,62 +2,78 @@ import type { DoublePranaCopyByLocale } from '../types/doublePranaAbsorptionFlow
 
 export const copyByLocale = {
   en: {
-    sectionAria: 'Double PRANA bonding effect visualization',
+    sectionAria: 'Dual PRANA bonding absorption visualization',
     badge: 'Dual PRANA Bonding Effect',
-    title: 'One WBTC payment creates two supply-side effects',
+    title: 'Two bonding routes absorb PRANA supply',
     intro:
-      '1. PRANA is distributed gradually through vesting.\n2. The protocol uses the same paid WBTC to create market buy pressure, then removes the repurchased PRANA from circulation forever.',
+      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and protocol buybacks remove the repurchased PRANA from circulation forever.\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
     steps: [
       {
-        title: '1. Investor buys PRANA bond',
+        title: '1. Buy PRANA bond',
         body:
-          'Investor pays WBTC into BuyPranaBondV2 and receive a claim on PRANA, instead of PRANA being released to the market immediately.',
+          'Investor pays WBTC into BuyPranaBondV2 and receives a claim on PRANA, instead of PRANA being released to the market immediately.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
       {
-        title: '2. Vested release',
+        title: '2. Vested PRANA release',
         body:
-          'Bonded PRANA unlocks gradually across the selected vesting period, turning the first absorption into a paced emission.',
+          'Bonded PRANA unlocks gradually across the selected vesting period, turning the absorption into a paced emission.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },
       {
-        title: '3. Protocol buyback',
-        body: 'Protocol uses the received WBTC to directly buy PRANA from the main Uniswap pool.',
-        visual: 'buyback',
+        title: '3. Buyback into permanent sink',
+        body:
+          'Protocol uses the received WBTC to buy PRANA from the Uniswap pool, then removes it from circulation forever.',
+        visual: 'pranaLock',
         accent: 'text-fuchsia-300',
       },
       {
-        title: '4. Permanent removal',
+        title: '4. Sell PRANA bond',
         body:
-          'Bought-back PRANA crosses the event horizon: out of market circulation forever.',
+          'A holder sells PRANA into SellPranaBondV2, which absorbs the PRANA instead of letting it hit the open market.',
+        visual: 'sellBond',
+        accent: 'text-emerald-300',
+      },
+      {
+        title: '5. Vested WBTC release',
+        body:
+          'The seller receives WBTC gradually across the vesting period, so the payout never dumps liquidity at once.',
+        visual: 'clock',
+        accent: 'text-cyan-300',
+      },
+      {
+        title: '6. Permanent absorption',
+        body:
+          'PRANA accepted by SellPranaBondV2 crosses the event horizon: out of market circulation forever.',
         visual: 'pranaLock',
         accent: 'text-emerald-300',
       },
     ],
-    flow: {
-      firstAbsorptionTitle: 'Effect 1',
-      secondAbsorptionTitle: 'Effect 2',
-      userLabel: 'User',
-      wbtcTitle: 'WBTC enters',
-      contractLabel: 'Contract',
-      contractTitle: 'BuyPranaBondV2',
-      bondRoute: 'bond route',
-      vestingRoute: 'vested PRANA',
-      vestingLabel: 'Vesting',
-      vestingTitle: 'Slow unlock',
-      protocolLabel: 'Protocol',
-      protocolTitle: 'WBTC from the BuyBond contract is used by the Protocol to buy PRANA from the DEX pool',
+    buySide: {
+      laneTitle: 'Buy side',
+      user: { label: 'Buyer', title: 'WBTC enters' },
+      contract: { label: 'Contract', title: 'BuyPranaBondV2' },
+      vesting: { label: 'Vesting', title: 'PRANA slow unlock' },
+      bridgeTitle: 'Protocol buyback buys PRANA from the DEX pool',
+      sinkCaption: 'Bought-back PRANA enters the HODL absorption core and never returns to the market.',
+      metricLabel: 'Buyback PRANA removed',
+      metricTooltip: 'PRANA bought back by the protocol through Buy the Dips.',
     },
-    blackHole: {
-      outOfCirculation: 'Out of circulation',
-      sinkTitle: 'Permanent PRANA sink',
-      accretion: 'Buyback accretion disk',
-      eventHorizon: 'Event horizon',
-      caption:
-        'PRANA is bought by the Protocol from the DEX pool, enters the HODL absorption core, and never return to the market.',
-      sellBondPranaLabel: 'PRANA withdrawn from market',
+    sellSide: {
+      laneTitle: 'Sell side',
+      user: { label: 'Holder', title: 'Sell PRANA' },
+      contract: { label: 'Contract', title: 'SellPranaBondV2' },
+      vesting: { label: 'Vesting', title: 'WBTC slow unlock' },
+      bridgeTitle: 'Accepted PRANA leaves circulation',
+      sinkCaption: 'PRANA accepted by the sell bond enters a second permanent sink and never returns to the market.',
+      metricLabel: 'Sell-bond PRANA absorbed',
+      metricTooltip: 'PRANA absorbed by SellPranaBondV2 from holders selling into the bond.',
+    },
+    combinedMetric: {
+      label: 'Combined PRANA withdrawn from market',
+      tooltip: 'Buyback PRANA plus sell-bond absorbed PRANA.',
     },
     alt: {
       bitcoin: 'Bitcoin token icon',
@@ -65,63 +81,78 @@ export const copyByLocale = {
     },
   },
   vi: {
-    sectionAria: 'Minh họa dòng tác động kép PRANA Bonding',
+    sectionAria: 'Minh họa hấp thụ PRANA từ hai nhánh bonding',
     badge: 'Tác động kép PRANA Bonding',
-    title: 'Một khoản WBTC tạo ra hai tác động lên nguồn cung',
+    title: 'Hai nhánh bonding hấp thụ nguồn cung PRANA',
     intro:
-      '1. PRANA được phân phối chậm qua vesting.\n2. Protocol dùng chính WBTC đã trả để tạo lực mua trên thị trường, rồi đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.',
+      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol mua lại đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
     steps: [
       {
-        title: '1. Nhà đầu tư mua PRANA bond',
+        title: '1. Mua PRANA bond',
         body:
           'Nhà đầu tư trả WBTC vào BuyPranaBondV2 và nhận quyền nhận PRANA, thay vì PRANA được đưa ra thị trường ngay lập tức.',
         visual: 'bitcoin',
         accent: 'text-amber-300',
       },
       {
-        title: '2. Mở khóa theo vesting',
+        title: '2. Mở khóa PRANA theo vesting',
         body:
-          'PRANA từ bond được mở khóa dần theo thời gian đã chọn, biến nhánh hấp thụ đầu tiên thành dòng phát hành có nhịp.',
+          'PRANA từ bond được mở khóa dần theo thời gian đã chọn, biến nhánh hấp thụ thành dòng phát hành có nhịp.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },
       {
-        title: '3. Protocol mua lại',
+        title: '3. Mua lại đưa vào hố vĩnh viễn',
         body:
-          'Protocol dùng WBTC đã nhận để mua trực tiếp PRANA từ pool Uniswap chính.',
-        visual: 'buyback',
+          'Protocol dùng WBTC đã nhận để mua PRANA từ pool Uniswap, rồi đưa số đó ra khỏi lưu thông vĩnh viễn.',
+        visual: 'pranaLock',
         accent: 'text-fuchsia-300',
       },
       {
-        title: '4. Rút khỏi lưu thông',
+        title: '4. Bán PRANA bond',
         body:
-          'PRANA được mua lại đi qua chân trời sự kiện: rời khỏi nguồn cung thị trường vĩnh viễn.',
+          'Người nắm giữ bán PRANA vào SellPranaBondV2, hợp đồng hấp thụ số PRANA đó thay vì để nó ra thị trường mở.',
+        visual: 'sellBond',
+        accent: 'text-emerald-300',
+      },
+      {
+        title: '5. Mở khóa WBTC theo vesting',
+        body:
+          'Người bán nhận WBTC dần theo thời gian vesting, nên khoản chi trả không xả thanh khoản cùng lúc.',
+        visual: 'clock',
+        accent: 'text-cyan-300',
+      },
+      {
+        title: '6. Hấp thụ vĩnh viễn',
+        body:
+          'PRANA được SellPranaBondV2 nhận đi qua chân trời sự kiện: rời khỏi nguồn cung thị trường vĩnh viễn.',
         visual: 'pranaLock',
         accent: 'text-emerald-300',
       },
     ],
-    flow: {
-      firstAbsorptionTitle: 'Tác động lần 1',
-      secondAbsorptionTitle: 'Tác động lần 2',
-      userLabel: 'Người dùng',
-      wbtcTitle: 'WBTC đi vào',
-      contractLabel: 'Hợp đồng',
-      contractTitle: 'BuyPranaBondV2',
-      bondRoute: 'nhánh bond',
-      vestingRoute: 'PRANA vesting',
-      vestingLabel: 'Vesting',
-      vestingTitle: 'Mở khóa chậm',
-      protocolLabel: 'Giao thức',
-      protocolTitle: 'WBTC từ hợp đồng BuyBond được Protocol dùng để mua PRANA từ DEX pool',
+    buySide: {
+      laneTitle: 'Nhánh mua',
+      user: { label: 'Người mua', title: 'WBTC đi vào' },
+      contract: { label: 'Hợp đồng', title: 'BuyPranaBondV2' },
+      vesting: { label: 'Vesting', title: 'PRANA mở khóa chậm' },
+      bridgeTitle: 'Protocol mua lại PRANA từ DEX pool',
+      sinkCaption: 'PRANA mua lại đi vào tâm hấp thụ HODL và không bao giờ quay lại thị trường.',
+      metricLabel: 'Tổng PRANA Buy-the-Dips',
+      metricTooltip: 'PRANA được protocol mua lại qua Buy the Dips.',
     },
-    blackHole: {
-      outOfCirculation: 'Rời khỏi lưu thông',
-      sinkTitle: 'Hố hấp thụ PRANA vĩnh viễn',
-      accretion: 'Đĩa bồi tụ từ buyback',
-      eventHorizon: 'Chân trời sự kiện',
-      caption:
-        'PRANA được Protocol mua khỏi DEX pool, đi vào tâm hấp thụ HODL và không bao giờ quay lại thị trường.',
-      sellBondPranaLabel: 'PRANA đã rút khỏi thị trường',
+    sellSide: {
+      laneTitle: 'Nhánh bán',
+      user: { label: 'Người giữ', title: 'Bán PRANA' },
+      contract: { label: 'Hợp đồng', title: 'SellPranaBondV2' },
+      vesting: { label: 'Vesting', title: 'WBTC mở khóa chậm' },
+      bridgeTitle: 'PRANA được nhận rời khỏi lưu thông',
+      sinkCaption: 'PRANA được sell bond nhận đi vào hố hấp thụ vĩnh viễn thứ hai và không bao giờ quay lại thị trường.',
+      metricLabel: 'Tổng PRANA từ Sell Bonds',
+      metricTooltip: 'PRANA được SellPranaBondV2 hấp thụ từ người bán vào bond.',
+    },
+    combinedMetric: {
+      label: 'Tổng PRANA đã rút khỏi thị trường',
+      tooltip: 'PRANA mua lại cộng PRANA sell-bond đã hấp thụ.',
     },
     alt: {
       bitcoin: 'Biểu tượng Bitcoin',
