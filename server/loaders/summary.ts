@@ -170,7 +170,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     '',
     mdList([
       `Total max supply: ${formatNumber(PRANA_TOTAL_SUPPLY)} PRANA`,
-      `Circulating supply: ${formatNumber(supply.circulatingSupply)} PRANA`,
+      `Circulating supply: < ${formatNumber(supply.circulatingSupply)} PRANA`,
       `Buyable supply: ${formatNumber(supply.buyableSupply)} PRANA`,
       `Liquidity density: > ${formatPercent(liquidity.liquidityDensityPercent, 2, false)}`,
       'Liquidity density means the USD value of WBTC plus PRANA in the WBTC/PRANA DEX Pool, divided by circulating market cap.',

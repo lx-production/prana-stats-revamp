@@ -6,6 +6,7 @@
     "dev": "vite",
     "dev:all": "concurrently \"npm run serve\" \"npm run dev\"",
     "build": "vite build",
+    "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "fetch:staking-stats": "tsx scripts/fetch-staking-stats.ts",

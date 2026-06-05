@@ -73,7 +73,8 @@ export const Supply: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-200 text-center">
-                {isCirculatingSupplyLoading ? 'Loading...' : `${formattedCirculating} PRANA`}
+                {isCirculatingSupplyLoading ? 'Loading...' : `< ${formattedCirculating} PRANA`}
+           
               </div>
             </div>
 
