@@ -102,7 +102,7 @@ export const copyByLocale = {
         accent: 'text-cyan-300',
       },
       {
-        title: '3. Mua lại đưa vào hố đen vĩnh viễn',
+        title: '3. Mua lại đưa vào hố đen HODL',
         body:
           'Protocol dùng WBTC đã nhận để mua PRANA từ pool Uniswap, rồi đưa số đó ra khỏi lưu thông vĩnh viễn.',
         visual: 'pranaLock',
