@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownUp, Clock3, LockKeyhole, ShoppingCart } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
@@ -48,27 +48,114 @@ const sinkParticles = Array.from({ length: 54 }, (_, index) => {
   };
 });
 
-const absorbedPranaTokens = Array.from({ length: 12 }, (_, index) => {
-  const radius = 78 + (index % 5) * 16;
-  const distancePath = [radius, radius * 0.96, radius * 0.88, radius * 0.76, radius * 0.62, radius * 0.46, radius * 0.3, radius * 0.16, radius * 0.08, 0];
-  const tokenTimes = [0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.94, 1];
-  const spin = 720 + (index % 4) * 90;
+const PRANA_TOKEN_TIMES = [0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.94, 1];
+const PRANA_TOKEN_COUNT_MIN = 6;
+const PRANA_TOKEN_COUNT_MAX = 16;
+
+const randomBetween = (min: number, max: number) => min + Math.random() * (max - min);
+const randomInt = (min: number, max: number) => Math.floor(randomBetween(min, max + 1));
+
+type AbsorbedPranaTokenParams = {
+  startAngle: number;
+  endAngle: number;
+  distancePath: number[];
+  opacityPath: number[];
+  scalePath: number[];
+  delay: number;
+  duration: number;
+  spin: number;
+  size: string;
+  spawnYOffset: number;
+  sellStartOffset: number;
+};
+
+const createAbsorbedPranaTokenParams = (variant: 'buy' | 'sell'): AbsorbedPranaTokenParams => {
+  const startRadius = randomBetween(52, 152);
+  const distancePath = [
+    startRadius,
+    startRadius * randomBetween(0.9, 0.98),
+    startRadius * randomBetween(0.76, 0.9),
+    startRadius * randomBetween(0.58, 0.76),
+    startRadius * randomBetween(0.38, 0.6),
+    startRadius * randomBetween(0.2, 0.4),
+    startRadius * randomBetween(0.08, 0.22),
+    startRadius * randomBetween(0.02, 0.1),
+    startRadius * randomBetween(0, 0.05),
+    0,
+  ];
+  const startAngle = randomBetween(0, 360);
+  const rotationAmount = randomBetween(840, 1620);
 
   return {
-    id: `absorbed-prana-${index}`,
-    startAngle: index * 30 + 16,
-    endAngle: index * 30 + 16 + 1320,
+    startAngle,
+    endAngle: startAngle + rotationAmount,
     distancePath,
-    opacityPath: [0, 0.75, 0.96, 0.92, 0.82, 0.65, 0.38, 0.12, 0, 0],
-    scalePath: [0.18, 0.82, 1, 0.92, 0.78, 0.58, 0.36, 0.16, 0, 0],
-    tokenTimes,
-    delay: index * 0.42,
-    duration: (6.6 + (index % 4) * 0.34) * ROTATION_SLOWDOWN,
-    repeatDelay: 0.65 + (index % 3) * 0.28,
-    spin,
-    size: index % 3 === 0 ? 'h-8 w-8' : 'h-7 w-7',
+    opacityPath: [0, randomBetween(0.62, 0.82), 0.96, 0.92, 0.82, 0.65, 0.38, 0.12, 0, 0],
+    scalePath: [randomBetween(0.14, 0.24), 0.82, 1, 0.92, 0.78, 0.58, 0.36, 0.16, 0, 0],
+    delay: randomBetween(0, 5.2),
+    duration: randomBetween(5.2, 8.8) * ROTATION_SLOWDOWN,
+    spin: randomBetween(480, 1140),
+    size: Math.random() > 0.38 ? 'h-8 w-8' : 'h-7 w-7',
+    spawnYOffset: randomBetween(-14, 14),
+    sellStartOffset: variant === 'sell' ? randomBetween(8, 52) : 0,
   };
-});
+};
+
+const createPranaTokenSlots = (count: number) =>
+  Array.from({ length: count }, (_, index) => `prana-slot-${index}-${Math.random().toString(36).slice(2, 8)}`);
+
+const PranaAbsorptionToken: React.FC<{
+  alt: string;
+  variant: 'buy' | 'sell';
+}> = ({ alt, variant }) => {
+  const [cycleKey, setCycleKey] = useState(0);
+  const [token, setToken] = useState(() => createAbsorbedPranaTokenParams(variant));
+
+  const handleCycleComplete = () => {
+    setToken(createAbsorbedPranaTokenParams(variant));
+    setCycleKey((current) => current + 1);
+  };
+
+  return (
+    <motion.div
+      key={cycleKey}
+      className="absolute left-1/2 top-1/2 h-0 w-0"
+      initial={{ rotate: token.startAngle + token.sellStartOffset }}
+      animate={{ rotate: token.endAngle + token.sellStartOffset }}
+      transition={{
+        duration: token.duration,
+        delay: token.delay,
+        ease: 'linear',
+      }}
+      onAnimationComplete={handleCycleComplete}
+    >
+      <motion.div
+        className={`grid ${token.size} place-items-center rounded-full border border-cyan-100/20 bg-black/55 p-1 shadow-[0_0_20px_rgba(34,211,238,0.45)] backdrop-blur-sm`}
+        initial={{
+          x: token.distancePath[0],
+          y: `calc(-50% + ${token.spawnYOffset}px)`,
+          opacity: 0,
+          scale: token.scalePath[0],
+          rotate: 0,
+        }}
+        animate={{
+          x: token.distancePath,
+          opacity: token.opacityPath,
+          scale: token.scalePath,
+          rotate: PRANA_TOKEN_TIMES.map((stop) => -token.spin * stop),
+        }}
+        transition={{
+          duration: token.duration,
+          delay: token.delay,
+          ease: 'linear',
+          times: PRANA_TOKEN_TIMES,
+        }}
+      >
+        <TokenIcon token="prana" alt={alt} className="h-full w-full" />
+      </motion.div>
+    </motion.div>
+  );
+};
 
 export const TokenIcon: React.FC<{
   token: 'bitcoin' | 'prana';
@@ -230,6 +317,43 @@ export const GravityWell: React.FC<{
   alt: DoublePranaAltCopy;
   variant?: 'buy' | 'sell';
 }> = ({ alt, variant = 'buy' }) => {
+  const [pranaTokenSlots, setPranaTokenSlots] = useState(() =>
+    createPranaTokenSlots(randomInt(PRANA_TOKEN_COUNT_MIN, PRANA_TOKEN_COUNT_MAX)),
+  );
+
+  useEffect(() => {
+    let timeoutId = 0;
+
+    const scheduleNextCountShift = () => {
+      timeoutId = window.setTimeout(() => {
+        setPranaTokenSlots((currentSlots) => {
+          const delta = Math.random() > 0.45 ? 1 : -1;
+          const nextCount = Math.min(
+            PRANA_TOKEN_COUNT_MAX,
+            Math.max(PRANA_TOKEN_COUNT_MIN, currentSlots.length + delta),
+          );
+
+          if (nextCount === currentSlots.length) {
+            return currentSlots;
+          }
+
+          if (nextCount > currentSlots.length) {
+            const extraSlots = createPranaTokenSlots(nextCount - currentSlots.length);
+            return [...currentSlots, ...extraSlots];
+          }
+
+          return currentSlots.slice(0, nextCount);
+        });
+
+        scheduleNextCountShift();
+      }, randomBetween(7000, 13000));
+    };
+
+    scheduleNextCountShift();
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   const phase = variant === 'sell' ? 136 : 0;
   const haloClassName = variant === 'sell'
     ? 'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18)_0%,rgba(34,211,238,0.12)_36%,transparent_68%)] blur-xl'
@@ -279,55 +403,19 @@ export const GravityWell: React.FC<{
     <div className="absolute inset-[33%] rounded-full border border-white/10 bg-[radial-gradient(circle_at_center,rgba(0,0,0,1)_0%,rgba(0,0,0,0.98)_54%,rgba(24,9,42,0.92)_70%,rgba(168,85,247,0.32)_100%)] shadow-[0_0_38px_rgba(0,0,0,1),0_0_88px_rgba(168,85,247,0.76),inset_0_0_36px_rgba(0,0,0,1)]" />
     <div className="absolute inset-[42%] rounded-full bg-black shadow-[0_0_24px_rgba(0,0,0,1)]" />
 
-    {absorbedPranaTokens.map((token) => (
-      <motion.div
-        key={token.id}
-        className="absolute left-1/2 top-1/2 h-0 w-0"
-        initial={{ rotate: token.startAngle }}
-        animate={{ rotate: token.endAngle }}
-        transition={{
-          duration: token.duration,
-          delay: token.delay,
-          repeat: Infinity,
-          repeatDelay: token.repeatDelay,
-          ease: 'linear',
-        }}
-      >
-        <motion.div
-          className={`grid ${token.size} place-items-center rounded-full border border-cyan-100/20 bg-black/55 p-1 shadow-[0_0_20px_rgba(34,211,238,0.45)] backdrop-blur-sm`}
-          initial={{
-            x: token.distancePath[0],
-            y: '-50%',
-            opacity: 0,
-            scale: 0.18,
-            rotate: 0,
-          }}
-          animate={{
-            x: token.distancePath,
-            opacity: token.opacityPath,
-            scale: token.scalePath,
-            rotate: token.tokenTimes.map((stop) => -token.spin * stop),
-          }}
-          transition={{
-            duration: token.duration,
-            delay: token.delay,
-            repeat: Infinity,
-            repeatDelay: token.repeatDelay,
-            ease: 'linear',
-            times: token.tokenTimes,
-          }}
-        >
-          <TokenIcon token="prana" alt={alt.prana} className="h-full w-full" />
-        </motion.div>
-      </motion.div>
+    {pranaTokenSlots.map((slotId) => (
+      <PranaAbsorptionToken key={slotId} alt={alt.prana} variant={variant} />
     ))}
 
-    {sinkParticles.map((particle) => (
+    {sinkParticles.map((particle, index) => {
+      const sellStartOffset = variant === 'sell' ? -24 - (index % 6) * 7 : 0;
+
+      return (
       <motion.div
         key={particle.id}
         className="absolute left-1/2 top-1/2 h-0 w-0"
-        initial={{ rotate: particle.startAngle }}
-        animate={{ rotate: particle.endAngle }}
+        initial={{ rotate: particle.startAngle + sellStartOffset }}
+        animate={{ rotate: particle.endAngle + sellStartOffset }}
         transition={{
           duration: particle.duration,
           delay: particle.delay,
@@ -357,7 +445,8 @@ export const GravityWell: React.FC<{
           }}
         />
       </motion.div>
-    ))}
+      );
+    })}
 
     </div>
   </div>

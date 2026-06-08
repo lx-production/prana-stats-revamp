@@ -47,19 +47,23 @@ function App() {
 
       <main className="relative z-10 flex flex-col gap-6 pb-24">
         <PranaHero />
-        <section className="relative z-20 mx-auto mt-12 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-            <BasicStats />
-            <BondingStats />
-            <StakingStats />
-            <PranaPerformanceSection />
-          </div>
-        </section>
-        <PranaConverter />
-        <DoublePranaAbsorptionFlow />
         <TopHoldingAddressesProvider>
-          <Capital />
+          <section className="relative z-20 mx-auto mt-12 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              <BasicStats />
+              <BondingStats />
+              <StakingStats />
+            </div>
+          </section>
           <Liquidity />
+          <section className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              <PranaPerformanceSection />
+            </div>
+          </section>
+          <PranaConverter />
+          <DoublePranaAbsorptionFlow />
+          <Capital />
           <TopHoldingAddresses />
           <Supply />
         </TopHoldingAddressesProvider>

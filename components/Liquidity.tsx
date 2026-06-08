@@ -73,7 +73,7 @@ export const Liquidity: React.FC = () => {
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-green-300 text-center">
+              <div className="mt-2 text-2xl font-semibold text-[#34d96f] text-center">
                 {isLiquidityDensityLoading
                   ? 'Loading...'
                   : formattedLiquidityDensity
@@ -93,7 +93,7 @@ export const Liquidity: React.FC = () => {
                   widthClassName="w-[min(24rem,calc(100vw-2rem))]"
                 />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-green-300 text-center">
+              <div className="mt-2 text-2xl font-semibold text-[#34d96f] text-center">
                 {isProtocolCapitalCoverageLoading
                   ? 'Loading...'
                   : formattedProtocolCapitalCoverage
