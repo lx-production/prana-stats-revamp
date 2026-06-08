@@ -6,7 +6,7 @@ export const copyByLocale = {
     badge: 'Dual PRANA Bonding Effect',
     title: 'Two bonding routes absorb PRANA supply',
     intro:
-      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and protocol buybacks remove the repurchased PRANA from circulation forever.\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
+      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and protocol buybacks remove the repurchased PRANA from circulation forever.\n\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
     steps: [
       {
         title: '1. Buy PRANA bond',
