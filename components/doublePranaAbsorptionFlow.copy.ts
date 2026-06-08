@@ -18,7 +18,7 @@ export const copyByLocale = {
       {
         title: '2. Vested PRANA release',
         body:
-          'Bonded PRANA unlocks gradually across the selected vesting period, turning the absorption into a paced emission.',
+          'Bonded PRANA unlocks gradually across the selected vesting period, turning the absorption into a slow emission.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },
@@ -39,7 +39,7 @@ export const copyByLocale = {
       {
         title: '5. Vested WBTC release',
         body:
-          'The seller receives WBTC gradually across the vesting period, so the payout never dumps liquidity at once.',
+          'The seller receives WBTC gradually across the vesting period.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },
@@ -85,7 +85,7 @@ export const copyByLocale = {
     badge: 'Tác động kép PRANA Bonding',
     title: 'Hai nhánh bonding hấp thụ nguồn cung PRANA',
     intro:
-      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol mua lại đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
+      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol mua lại đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
     steps: [
       {
         title: '1. Mua PRANA bond',
@@ -97,12 +97,12 @@ export const copyByLocale = {
       {
         title: '2. Mở khóa PRANA theo vesting',
         body:
-          'PRANA từ bond được mở khóa dần theo thời gian đã chọn, biến nhánh hấp thụ thành dòng phát hành có nhịp.',
+          'PRANA từ bond được mở khóa dần theo thời gian đã chọn, biến nhánh hấp thụ thành dòng phát hành chậm rãi.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },
       {
-        title: '3. Mua lại đưa vào hố vĩnh viễn',
+        title: '3. Mua lại đưa vào hố đen vĩnh viễn',
         body:
           'Protocol dùng WBTC đã nhận để mua PRANA từ pool Uniswap, rồi đưa số đó ra khỏi lưu thông vĩnh viễn.',
         visual: 'pranaLock',
@@ -118,7 +118,7 @@ export const copyByLocale = {
       {
         title: '5. Mở khóa WBTC theo vesting',
         body:
-          'Người bán nhận WBTC dần theo thời gian vesting, nên khoản chi trả không xả thanh khoản cùng lúc.',
+          'Người bán nhận WBTC dần theo thời gian vesting.',
         visual: 'clock',
         accent: 'text-cyan-300',
       },

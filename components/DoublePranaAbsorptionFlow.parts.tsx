@@ -366,7 +366,8 @@ export const GravityWell: React.FC<{
     : 'absolute left-[9%] right-[9%] top-[39%] h-[22%] rounded-[999px] bg-[linear-gradient(90deg,transparent,rgba(251,191,36,0.92),rgba(34,211,238,0.58),rgba(217,70,239,0.78),transparent)] blur-sm';
 
   return (
-  <div className="relative mx-auto aspect-square w-[min(82vw,22rem)] sm:w-full" aria-hidden="true">
+  <div className="relative mx-auto w-full max-w-[22rem] overflow-hidden" aria-hidden="true">
+    <div className="relative aspect-square w-full">
     <div className={haloClassName} />
     <div className="absolute inset-0" style={{ transform: `rotate(${phase}deg)` }}>
 
@@ -449,6 +450,7 @@ export const GravityWell: React.FC<{
     })}
 
     </div>
+    </div>
   </div>
   );
 };
@@ -530,7 +532,9 @@ export const AbsorptionLane: React.FC<{
       {side.bridgeTitle}
     </div>
 
-    <GravityWell alt={alt} variant={gravityWellVariant} />
+    <div className="w-full min-w-0">
+      <GravityWell alt={alt} variant={gravityWellVariant} />
+    </div>
 
     <div className="min-h-0 flex-1" aria-hidden="true" />
 
