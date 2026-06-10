@@ -12,6 +12,7 @@ import { TIMELINE_COPY_EN } from '../../data/timelineCopy.ts';
 import { TIMELINE_EVENTS_META } from '../../data/timelineEventsMeta.ts';
 import { computeProtocolCapitalUsd } from '../../utils/protocolCapital.ts';
 import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
+import { formatHeroMessage, heroHeadlinesByLocale } from '../../data/heroHeadlines.ts';
 import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetrics.ts';
 import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
@@ -100,7 +101,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     '',
     mdList([
       'PRANA is designed around 100% Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
-      'Hero message: Stake with 15% APR. Simple - Fixed - Transparent. Guaranteed by reserves, not by inflation or future users.',
+      `Hero message: ${formatHeroMessage(heroHeadlinesByLocale.en)}`,
       `Primary actions: Stake (${origin}/stake/), Bond (${origin}/bond/), Trade (https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED).`,
     ]),
     '',

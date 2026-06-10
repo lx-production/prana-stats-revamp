@@ -1,21 +1,8 @@
 import { useMemo } from "react";
+import { heroHeadlinesByLocale } from "../data/heroHeadlines";
 import { useSiteLanguage } from "./useSiteLanguage";
 
 export function useHeroHeadlines() {
   const { locale } = useSiteLanguage();
-  return useMemo(
-    () =>
-      locale === "en"
-        ? {
-            title: "Stake with 15% APR",
-            subtitle: "Simple - Fixed - Transparent.",
-            tagline: "Guaranteed by reserves, not by inflation or future users.",
-          }
-        : {
-            title: "Stake với lãi suất 15%",
-            subtitle: "Đơn Giản - Cố Định - Minh Bạch",
-            tagline: "Lãi suất được đảm bảo bằng quỹ dự trữ đã phân bổ sẵn, không phải bằng lạm phát hay người mới",
-          },
-    [locale],
-  );
+  return useMemo(() => heroHeadlinesByLocale[locale], [locale]);
 }

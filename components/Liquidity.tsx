@@ -40,7 +40,7 @@ export const Liquidity: React.FC = () => {
     locale === 'en' ? 'Liquidity Health explanation' : 'Giải thích Sức Khỏe Thanh Khoản';
   const liquidityHealthTooltipText =
     locale === 'en'
-      ? 'PRANA Protocol has the highest Liquidity Density and Reserve Ratio across the entire crypto market.'
+      ? 'PRANA has the highest Liquidity Density and Protocol Reserve Ratio across the entire crypto market.'
       : 'PRANA Protocol có Độ dày Thanh khoản và Tỉ lệ Dự trữ cao nhất toàn thị trường crypto.';
 
   return (

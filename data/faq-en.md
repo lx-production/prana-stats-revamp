@@ -8,7 +8,7 @@ The maximum supply is 10 million and will never be burned or minted beyond that.
 
 **3. If liquidity is thin, how can large investors enter or exit without severe slippage?**
 
-PRANA does not rely on the DEX pool alone. The bonding/OTC system exists precisely to handle large flows without instantly whipsawing the market. OTC helps trades avoid directly hitting spot price, while the treasury is designed for long-term stability. Liquidity is not just depth on the UI or on the DEX; it is the full capital architecture behind the protocol.
+In fact, PRANA liquidity is very thick, not thin at all. PRANA Protocol has the highest Liquidity Density and Protocol Reserve Ratio across the entire crypto market. PRANA does not rely on the DEX pool alone. The bonding/OTC system exists precisely to handle large flows without instantly whipsawing the market. OTC helps trades avoid directly hitting spot price, while the treasury is designed for long-term stability. Liquidity is not just depth on the UI or on the DEX; it is the full capital architecture behind the protocol.
 
 **4. Where does the fixed 15% staking APR come from? Is it sustainable?**
 
