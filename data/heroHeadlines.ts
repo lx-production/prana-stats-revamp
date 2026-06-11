@@ -5,13 +5,13 @@ export const heroHeadlinesByLocale: HeroHeadlinesByLocale = {
     title: "Strongest Liquidity",
     subtitle: "Highest Protocol Reserve Ratio",
     tagline:
-      "Liquidity Density and Reserves you can verify — Top 1 in the entire market",
+      "Healthiest Liquidity Density and Protocol Reserves in the entire market",
   },
   vi: {
     title: "Thanh Khoản Mạnh Nhất",
     subtitle: "Tỉ Lệ Dự Trữ Cao Nhất",
     tagline:
-      "Sức khỏe thanh khoản và quỹ dự trữ có thể kiểm chứng — Top 1 toàn thị trường",
+      "Sức khỏe thanh khoản và quỹ dự trữ top 1 toàn thị trường",
   },
 };
 
