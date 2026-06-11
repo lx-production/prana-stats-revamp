@@ -5,7 +5,7 @@ export const heroHeadlinesByLocale: HeroHeadlinesByLocale = {
     title: "Strongest Liquidity",
     subtitle: "Highest Protocol Reserve Ratio",
     tagline:
-      "Healthiest Liquidity Density and Protocol Reserves in the entire market",
+      "Healthiest Liquidity Density and Protocol Reserve in the entire market",
   },
   vi: {
     title: "Thanh Khoản Mạnh Nhất",
