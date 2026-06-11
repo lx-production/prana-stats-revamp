@@ -16,7 +16,7 @@ import { formatHeroMessage, heroHeadlinesByLocale } from '../../data/heroHeadlin
 import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetrics.ts';
 import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
-import { formatDate as formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
+import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
 import { mdList, mdNumbered, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';

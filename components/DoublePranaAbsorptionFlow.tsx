@@ -4,7 +4,7 @@ import { useBondStats } from '../hooks/useBondStats';
 import { formatCurrency } from '../utils/formatters';
 import { useBuyDips } from '../hooks/useBuyDips';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { ArrowDownUp, ScrollText, Sparkles } from 'lucide-react';
+import { ScrollText, Sparkles } from 'lucide-react';
 import { copyByLocale } from './doublePranaAbsorptionFlow.copy';
 import { AbsorptionLane, LaneMetric, StepVisual, TokenIcon } from './DoublePranaAbsorptionFlow.parts';
 
@@ -92,7 +92,7 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                   headerAccent="text-cyan-100"
                   bridgeAccent="border-emerald-300/20 bg-emerald-300/[0.06] text-emerald-100"
                   entryVisual={<TokenIcon token="prana" alt={copy.alt.prana} className="h-5 w-5" />}
-                  contractVisual={<ArrowDownUp className="h-5 w-5 text-emerald-200" aria-hidden="true" />}
+                  contractVisual={<ScrollText className="h-5 w-5 text-emerald-200" aria-hidden="true" />}
                   vestingVisual={<TokenIcon token="bitcoin" alt={copy.alt.bitcoin} className="h-5 w-5" />}
                   metricValue={sellBondValue}
                   gravityWellVariant="sell"

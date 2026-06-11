@@ -152,7 +152,7 @@ export default function PranaHero() {
         <h1 className="text-3xl font-medium tracking-wide">
           {heroHeadlines.title}
         </h1><br />
-        <h2 className="text-2xl font-medium tracking-wide">
+        <h2 className="text-3xl font-medium tracking-wide">
           {heroHeadlines.subtitle}
         </h2>
         <p className="mt-6 text-[15px] text-white/70">
