@@ -149,7 +149,7 @@ export default function PranaHero() {
 
       {/* Copy & CTAs */}
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-8">
-        <h1 className="text-4xl font-medium tracking-wide">
+        <h1 className="text-3xl font-medium tracking-wide">
           {heroHeadlines.title}
         </h1><br />
         <h2 className="text-2xl font-medium tracking-wide">
