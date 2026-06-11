@@ -20,6 +20,7 @@ export const getPerformanceCutoffs = (nowUnixSeconds = Math.floor(Date.now() / 1
   m3Cutoff: nowUnixSeconds - (90 * 24 * 60 * 60),
   m6Cutoff: nowUnixSeconds - (180 * 24 * 60 * 60),
   y1Cutoff: nowUnixSeconds - (365 * 24 * 60 * 60),
+  y2Cutoff: nowUnixSeconds - (730 * 24 * 60 * 60),
 });
 
 export const getPriceAtOrAfter = (

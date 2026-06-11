@@ -28,7 +28,7 @@ export const buildFiatPriceChangeFrom365 = ({
 };
 
 export const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint[]): PriceChangeSet => {
-  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs();
+  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, y2Cutoff } = getPerformanceCutoffs();
   const satsAtl = 21.83;
   const safeSatsAtl = Number.isFinite(satsAtl) ? satsAtl : latestSatPrice;
 
@@ -37,6 +37,7 @@ export const buildBtcPriceChange = (latestSatPrice: number, satsData: PricePoint
     m3: calcChange(getPriceAtOrAfter(satsData, m3Cutoff, latestSatPrice), latestSatPrice),
     m6: calcChange(getPriceAtOrAfter(satsData, m6Cutoff, latestSatPrice), latestSatPrice),
     y1: calcChange(getPriceAtOrAfter(satsData, y1Cutoff, latestSatPrice), latestSatPrice),
+    y2: calcChange(getPriceAtOrAfter(satsData, y2Cutoff, latestSatPrice), latestSatPrice),
     atl: calcChange(safeSatsAtl, latestSatPrice),
   };
 };

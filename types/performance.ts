@@ -3,6 +3,7 @@ export type PriceChangeSet = {
   m3: number;
   m6: number;
   y1: number;
+  y2?: number;
   atl: number;
 };
 

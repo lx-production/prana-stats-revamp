@@ -21,14 +21,21 @@ import { mdList, mdNumbered, mdQuestions, readMarkdownData, readPricePointSeries
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 
-function formatPerformanceSet(priceChange: PriceChangeSet): string {
-  return mdList([
+function formatPerformanceSet(priceChange: PriceChangeSet, includeY2 = false): string {
+  const items = [
     `1 month: ${formatPercent(priceChange.m1, 0)}`,
     `3 months: ${formatPercent(priceChange.m3, 0)}`,
     `6 months: ${formatPercent(priceChange.m6, 0)}`,
     `1 year: ${formatPercent(priceChange.y1, 0)}`,
-    `From ATL: ${formatPercent(priceChange.atl, 0)}`,
-  ]);
+  ];
+
+  if (includeY2) {
+    items.push(`2 years: ${formatPercent(priceChange.y2 ?? 0, 0)}`);
+  }
+
+  items.push(`From ATL: ${formatPercent(priceChange.atl, 0)}`);
+
+  return mdList(items);
 }
 
 const CANONICAL_SITE_ORIGIN = 'https://prana.triethocduongpho.net';
@@ -130,7 +137,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     '',
     'Against Bitcoin:',
     '',
-    formatPerformanceSet(btcPerformance),
+    formatPerformanceSet(btcPerformance, true),
     '',
     'Against fiat:',
     '',
