@@ -2,16 +2,16 @@ import type { HeroHeadlines, HeroHeadlinesByLocale } from "../types/heroHeadline
 
 export const heroHeadlinesByLocale: HeroHeadlinesByLocale = {
   en: {
-    title: "Thickest Liquidity Density",
+    title: "Strongest Liquidity",
     subtitle: "Highest Protocol Reserve Ratio",
     tagline:
-      "Liquidity Density and reserves you can verify — Top 1 in the entire market",
+      "Liquidity Density and Reserves you can verify — Top 1 in the entire market",
   },
   vi: {
-    title: "Thanh Khoản Dày Nhất",
+    title: "Thanh Khoản Mạnh Nhất",
     subtitle: "Tỉ Lệ Dự Trữ Cao Nhất",
     tagline:
-      "Độ dày thanh khoản và quỹ dự trữ có thể kiểm chứng — Top 1 toàn thị trường",
+      "Sức khỏe thanh khoản và quỹ dự trữ có thể kiểm chứng — Top 1 toàn thị trường",
   },
 };
 

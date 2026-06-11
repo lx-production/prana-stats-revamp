@@ -44,7 +44,7 @@ const BondProgressBar: React.FC<BondProgressBarProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-2 gap-4 text-[0.8rem]">
         <div className="flex min-w-0 items-start gap-2">
           <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-blue-800/90 shrink-0" />
           <div className="min-w-0 leading-tight">
