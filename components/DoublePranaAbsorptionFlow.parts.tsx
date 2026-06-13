@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDownUp, Clock3, LockKeyhole, ShoppingCart } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
-import type { DoublePranaAltCopy, DoublePranaSideCopy, DoublePranaStepVisual } from '../types/doublePranaAbsorptionFlow.types';
+import type { DoublePranaAltCopy, DoublePranaSideCopy } from '../types/doublePranaAbsorptionFlow.types';
 
 const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
 const PRANA_ICON = '/assets/icons/prana.svg';
@@ -171,32 +170,6 @@ export const TokenIcon: React.FC<{
     draggable={false}
   />
 );
-
-export const StepVisual: React.FC<{
-  visual: DoublePranaStepVisual;
-  accent: string;
-  alt: DoublePranaAltCopy;
-}> = ({ visual, accent, alt }) => {
-  if (visual === 'bitcoin') {
-    return <TokenIcon token="bitcoin" alt={alt.bitcoin} className="h-4 w-4" />;
-  }
-
-  if (visual === 'pranaLock') {
-    return (
-      <span className="relative grid h-5 w-5 place-items-center">
-        <TokenIcon token="prana" alt={alt.prana} className="h-4 w-4" />
-        <LockKeyhole className="absolute -right-1 -top-1 h-3 w-3 text-emerald-200" aria-hidden="true" />
-      </span>
-    );
-  }
-
-  if (visual === 'sellBond') {
-    return <ArrowDownUp className={`h-4 w-4 ${accent}`} aria-hidden="true" />;
-  }
-
-  const Icon = visual === 'clock' ? Clock3 : ShoppingCart;
-  return <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />;
-};
 
 export const VerticalParticleStream: React.FC<{
   particles: StreamParticle[];

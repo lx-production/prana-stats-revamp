@@ -6,7 +6,7 @@ import { useBuyDips } from '../hooks/useBuyDips';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { ScrollText, Sparkles } from 'lucide-react';
 import { copyByLocale } from './doublePranaAbsorptionFlow.copy';
-import { AbsorptionLane, LaneMetric, StepVisual, TokenIcon } from './DoublePranaAbsorptionFlow.parts';
+import { AbsorptionLane, LaneMetric, TokenIcon } from './DoublePranaAbsorptionFlow.parts';
 
 const DoublePranaAbsorptionFlow: React.FC = () => {
   const { locale } = useSiteLanguage();
@@ -42,32 +42,18 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(245,158,11,0.18),transparent_30%),radial-gradient(circle_at_84%_24%,rgba(34,211,238,0.15),transparent_32%),radial-gradient(circle_at_70%_82%,rgba(217,70,239,0.16),transparent_34%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/50 to-transparent" />
 
-        <div className="relative grid gap-8 p-5 sm:p-6 lg:grid-cols-[0.98fr_1.02fr] lg:p-8">
-          <div className="flex min-w-0 flex-col justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-cyan-100">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                {copy.badge}
-              </div>
-              <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-normal text-white sm:text-3xl">
-                {copy.title}
-              </h2>
-              <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-6 text-white/68 sm:text-base">
-                {copy.intro}
-              </p>
+        <div className="relative flex flex-col gap-8 p-5 sm:p-6 lg:p-8">
+          <div className="flex min-w-0 flex-col gap-4">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-cyan-100">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.badge}
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {copy.steps.map((step) => (
-                <div key={step.title} className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                  <div className="flex items-center gap-2">
-                    <StepVisual visual={step.visual} accent={step.accent} alt={copy.alt} />
-                    <h3 className="text-sm font-semibold text-white">{step.title}</h3>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-white/62">{step.body}</p>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-2xl font-semibold tracking-normal text-white sm:text-3xl">
+              {copy.title}
+            </h2>
+            <p className="max-w-3xl whitespace-pre-line text-sm leading-6 text-white/68 sm:text-base">
+              {copy.intro}
+            </p>
           </div>
 
           <div className="relative min-w-0 rounded-2xl border border-white/10 bg-black/30 p-4">

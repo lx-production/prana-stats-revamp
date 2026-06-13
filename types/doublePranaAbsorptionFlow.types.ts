@@ -1,7 +1,5 @@
 import type { SiteLocale } from './locale.types';
 
-export type DoublePranaStepVisual = 'bitcoin' | 'clock' | 'buyback' | 'pranaLock' | 'sellBond';
-
 export type DoublePranaAltCopy = {
   bitcoin: string;
   prana: string;
@@ -28,19 +26,11 @@ export type DoublePranaCombinedMetricCopy = {
   tooltip: string;
 };
 
-export type DoublePranaStepCopy = {
-  title: string;
-  body: string;
-  visual: DoublePranaStepVisual;
-  accent: string;
-};
-
 export type DoublePranaLocaleCopy = {
   sectionAria: string;
   badge: string;
   title: string;
   intro: string;
-  steps: DoublePranaStepCopy[];
   buySide: DoublePranaSideCopy;
   sellSide: DoublePranaSideCopy;
   combinedMetric: DoublePranaCombinedMetricCopy;

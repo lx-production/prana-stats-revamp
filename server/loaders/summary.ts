@@ -17,7 +17,7 @@ import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetr
 import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
-import { mdList, mdNumbered, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
+import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 
@@ -198,8 +198,6 @@ export async function loadSummaryMarkdown(): Promise<string> {
     `**${doublePranaCopy.title}**`,
     '',
     doublePranaCopy.intro,
-    '',
-    mdNumbered(doublePranaCopy.steps),
     '',
     mdList([
       doublePranaCopy.buySide.sinkCaption,
