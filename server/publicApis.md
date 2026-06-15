@@ -8,6 +8,7 @@ https://prana.triethocduongpho.net/data_30_days.json
 https://prana.triethocduongpho.net/data_90_days.json
 https://prana.triethocduongpho.net/data_180_days.json
 https://prana.triethocduongpho.net/data_365_days.json
+https://prana.triethocduongpho.net/data_730_days.json
 https://prana.triethocduongpho.net/data_max.json
 https://prana.triethocduongpho.net/data_sats.json
 https://prana.triethocduongpho.net/bonds_v2.json

@@ -4,25 +4,26 @@ import { calcChange, getPerformanceCutoffs, getPriceAtOrAfter } from './pranaSta
 
 const ATL_PRICE = 0.0017;
 
-type BuildFiatPriceChangeFrom365Params = {
+type BuildFiatPriceChangeParams = {
   btcPriceUsd: number;
   latestSatPrice: number;
-  d365: PricePoint[];
+  usdHistory: PricePoint[];
 };
 
-export const buildFiatPriceChangeFrom365 = ({
+export const buildFiatPriceChange = ({
   btcPriceUsd,
   latestSatPrice, // “live-ish now” performance (more real-time anchor)
-  d365,
-}: BuildFiatPriceChangeFrom365Params): PriceChangeSet => {
+  usdHistory,
+}: BuildFiatPriceChangeParams): PriceChangeSet => {
   const latestSatPriceUsd = (latestSatPrice / 1e8) * btcPriceUsd;
-  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff } = getPerformanceCutoffs();
+  const { m1Cutoff, m3Cutoff, m6Cutoff, y1Cutoff, y2Cutoff } = getPerformanceCutoffs();
 
   return {
-    m1: calcChange(getPriceAtOrAfter(d365, m1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
-    m3: calcChange(getPriceAtOrAfter(d365, m3Cutoff, latestSatPriceUsd), latestSatPriceUsd),
-    m6: calcChange(getPriceAtOrAfter(d365, m6Cutoff, latestSatPriceUsd), latestSatPriceUsd),
-    y1: calcChange(getPriceAtOrAfter(d365, y1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    m1: calcChange(getPriceAtOrAfter(usdHistory, m1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    m3: calcChange(getPriceAtOrAfter(usdHistory, m3Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    m6: calcChange(getPriceAtOrAfter(usdHistory, m6Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    y1: calcChange(getPriceAtOrAfter(usdHistory, y1Cutoff, latestSatPriceUsd), latestSatPriceUsd),
+    y2: calcChange(getPriceAtOrAfter(usdHistory, y2Cutoff, latestSatPriceUsd), latestSatPriceUsd),
     atl: calcChange(ATL_PRICE, latestSatPriceUsd),
   };
 };

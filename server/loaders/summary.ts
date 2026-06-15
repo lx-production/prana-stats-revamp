@@ -14,7 +14,7 @@ import { computeProtocolCapitalUsd } from '../../utils/protocolCapital.ts';
 import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
 import { formatHeroMessage, heroHeadlinesByLocale } from '../../data/heroHeadlines.ts';
 import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetrics.ts';
-import { buildBtcPriceChange, buildFiatPriceChangeFrom365 } from '../../utils/pranaStatsPerformance.ts';
+import { buildBtcPriceChange, buildFiatPriceChange } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
 import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
@@ -52,7 +52,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     bondMetrics,
     topHoldingAddresses,
     buyDips,
-    d365,
+    d730,
     faqMarkdown,
     covenantsMarkdown,
   ] = await Promise.all([
@@ -63,7 +63,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     loadCachedBondMetrics(),
     loadCachedTopHoldingAddresses(),
     readJsonIfExists<BuyDipsJson>(path.join(PROJECT_ROOT, 'buy_dips.json')),
-    readPricePointSeries('data_365_days.json'),
+    readPricePointSeries('data_730_days.json'),
     readMarkdownData('faq-en.md'),
     readMarkdownData('covenants-en.md'),
   ]);
@@ -81,10 +81,10 @@ export async function loadSummaryMarkdown(): Promise<string> {
     dexPoolWbtcUsdValue: getDexPoolWbtcUsdValue(capital.items),
     protocolCapitalUsd,
   });
-  const fiatPerformance = buildFiatPriceChangeFrom365({
+  const fiatPerformance = buildFiatPriceChange({
     btcPriceUsd: prices.btcPriceUsd,
     latestSatPrice: prices.latestSatPrice,
-    d365,
+    usdHistory: d730,
   });
   const btcPerformance = buildBtcPriceChange(prices.latestSatPrice, prices.satsData);
   const totalWithdrawnPrana = bondMetrics.summary.sellBondPrana === null
@@ -141,7 +141,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     '',
     'Against fiat:',
     '',
-    formatPerformanceSet(fiatPerformance),
+    formatPerformanceSet(fiatPerformance, true),
     '',
     '## Staking',
     '',
@@ -236,6 +236,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
       `${origin}/data_90_days.json - PRANA USD price history for the last 90 days.`,
       `${origin}/data_180_days.json - PRANA USD price history for the last 180 days.`,
       `${origin}/data_365_days.json - PRANA USD price history for the last 365 days.`,
+      `${origin}/data_730_days.json - PRANA USD price history for the last 730 days.`,
       `${origin}/data_max.json - PRANA USD price history for the full available range.`,
       `${origin}/data_sats.json - PRANA SAT price history.`,
       `${origin}/bonds_v2.json`,

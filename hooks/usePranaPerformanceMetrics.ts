@@ -6,6 +6,7 @@ const buildFiatPerformanceMetrics = (priceChange: PriceChangeSet): PerformanceMe
   { label: '3 Months', value: priceChange.m3 },
   { label: '6 Months', value: priceChange.m6 },
   { label: '1 Year', value: priceChange.y1 },
+  { label: '2 Years', value: priceChange.y2 ?? 0 },
   { label: 'ATL', value: priceChange.atl },
 ];
 
