@@ -1,7 +1,6 @@
 import SatsPriceChart from './SatsPriceChart';
 import PranaVndPriceChart from './PranaVndPriceChart';
 import React, { useEffect, useMemo, useState } from 'react';
-import { usePrana365Data } from '../hooks/usePrana365Data';
 import { usePranaSatsData } from '../hooks/usePranaSatsData';
 import { usePranaStats } from '../hooks/usePranaStats';
 import { fetchJson } from '../utils/fetchJson';
@@ -14,30 +13,28 @@ const MAX_POINTS = 150;
 // Price/sats series from JSON exports and hooks are already ordered by `t` ascending.
 // Intentionally no `.sort` before downsampling (avoids O(n log n) on large arrays); re-add only if a source breaks that contract.
 
-const RANGE_FILES: Record<Exclude<RangeKey, '365_days'>, string> = {
+const RANGE_FILES: Record<RangeKey, string> = {
   '30_days': '/data_30_days.json',
   '90_days': '/data_90_days.json',
   '180_days': '/data_180_days.json',
+  '365_days': '/data_365_days.json',
   max: '/data_max.json',
 };
 
 const PriceChartsSection: React.FC = () => {
   const { usdToVndRate } = usePranaStats();
-  const { data: d365, isLoading: isPrana365Loading, error: prana365Error } = usePrana365Data();
   const { data: satsData, isLoading: isPranaSatsLoading, error: pranaSatsError } = usePranaSatsData();
-  const [selectedRange, setSelectedRange] = useState<RangeKey>('365_days');
+  const [selectedRange, setSelectedRange] = useState<RangeKey>('180_days');
   const [rangeData, setRangeData] = useState<Partial<Record<RangeKey, PricePoint[]>>>({});
   const [rangeErrors, setRangeErrors] = useState<Partial<Record<RangeKey, string | null>>>({});
 
   useEffect(() => {
-    if (selectedRange === '365_days' || rangeData[selectedRange]) return;
+    if (rangeData[selectedRange]) return;
 
     let isActive = true;
-    const non365Range = selectedRange as Exclude<RangeKey, '365_days'>;
 
     const loadRangeData = async () => {
-      const file = RANGE_FILES[non365Range];
-      if (!file) return;
+      const file = RANGE_FILES[selectedRange];
 
       try {
         const json = await fetchJson<PricePoint[]>(file);
@@ -77,12 +74,9 @@ const PriceChartsSection: React.FC = () => {
     () => resolveUsdToVndRateForChart(usdToVndRate),
     [usdToVndRate]
   );
-  const rawData = selectedRange === '365_days' ? d365 : (rangeData[selectedRange] ?? []);
-  const isLoading =
-    selectedRange === '365_days'
-      ? isPrana365Loading
-      : !rangeData[selectedRange] && rangeErrors[selectedRange] == null;
-  const error = selectedRange === '365_days' ? prana365Error : (rangeErrors[selectedRange] ?? null);
+  const rawData = rangeData[selectedRange] ?? [];
+  const isLoading = !rangeData[selectedRange] && rangeErrors[selectedRange] == null;
+  const error = rangeErrors[selectedRange] ?? null;
   const chartData = useMemo(() => {
     if (rawData.length === 0) {
       return [] as PranaVndChartPoint[];
