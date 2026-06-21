@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-04-24T13:47:48.788 UTC+7",
+  "generatedAt": "2026-06-15T20:25:29.199 UTC+7",
   "rpcUrl": "https://polygon-mainnet.g.alchemy.com/v2/%3Credacted%3E",
   "buy": {
     "address": "0x431030E3A0703f0914bE26026ffDaD693F3a16cf",
-    "pranaAmount": "39838000000000"
+    "pranaAmount": "56896409097595"
   },
   "sell": {
     "address": "0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71",

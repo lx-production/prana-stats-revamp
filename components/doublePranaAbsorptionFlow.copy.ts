@@ -6,7 +6,7 @@ export const copyByLocale = {
     badge: 'Dual PRANA Bonding Effect',
     title: 'Two bonding routes absorb PRANA supply',
     intro:
-      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and protocol buybacks remove the repurchased PRANA from circulation forever.\n\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
+      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and the protocol uses the received WBTC to buy back PRANA from the DEX pool, permanently removing that PRANA from circulation.\n\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
     buySide: {
       laneTitle: 'Buy side',
       user: { label: 'Buyer', title: 'WBTC enters' },
@@ -41,7 +41,7 @@ export const copyByLocale = {
     badge: 'Tác động kép PRANA Bonding',
     title: 'Hai nhánh bonding hấp thụ nguồn cung PRANA',
     intro:
-      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol mua lại đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
+      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol dùng WBTC nhận được để mua lại PRANA từ DEX pool, đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
     buySide: {
       laneTitle: 'Nhánh mua',
       user: { label: 'Người mua', title: 'WBTC đi vào' },
