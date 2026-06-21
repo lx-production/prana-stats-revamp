@@ -1,27 +1,37 @@
 import { useMemo } from 'react';
+import { pranaPerformanceCopy } from '../components/pranaPerformance.copy';
+import type { SiteLocale } from '../types/locale.types';
 import type { PerformanceMetric, PriceChangeSet } from '../types/performance';
 
-const buildFiatPerformanceMetrics = (priceChange: PriceChangeSet): PerformanceMetric[] => [
-  { label: '1 Month', value: priceChange.m1 },
-  { label: '3 Months', value: priceChange.m3 },
-  { label: '6 Months', value: priceChange.m6 },
-  { label: '1 Year', value: priceChange.y1 },
-  { label: '2 Years', value: priceChange.y2 ?? 0 },
-  { label: 'ATL', value: priceChange.atl },
-];
+const buildPerformanceMetrics = (
+  priceChange: PriceChangeSet,
+  locale: SiteLocale,
+): PerformanceMetric[] => {
+  const { periods } = pranaPerformanceCopy[locale];
 
-const buildBtcPerformanceMetrics = (priceChange: PriceChangeSet): PerformanceMetric[] => [
-  { label: '1 Month', value: priceChange.m1 },
-  { label: '3 Months', value: priceChange.m3 },
-  { label: '6 Months', value: priceChange.m6 },
-  { label: '1 Year', value: priceChange.y1 },
-  { label: '2 Years', value: priceChange.y2 ?? 0 },
-  { label: 'ATL', value: priceChange.atl },
-];
+  return [
+    { label: periods.m1, value: priceChange.m1 },
+    { label: periods.m3, value: priceChange.m3 },
+    { label: periods.m6, value: priceChange.m6 },
+    { label: periods.y1, value: priceChange.y1 },
+    { label: periods.y2, value: priceChange.y2 ?? 0 },
+    { label: periods.atl, value: priceChange.atl },
+  ];
+};
 
-export function usePranaPerformanceMetrics(priceChangeFiat: PriceChangeSet, priceChangeBtc: PriceChangeSet) {
-  const fiatPerformance = useMemo(() => buildFiatPerformanceMetrics(priceChangeFiat), [priceChangeFiat]);
-  const btcPerformance = useMemo(() => buildBtcPerformanceMetrics(priceChangeBtc), [priceChangeBtc]);
+export function usePranaPerformanceMetrics(
+  priceChangeFiat: PriceChangeSet,
+  priceChangeBtc: PriceChangeSet,
+  locale: SiteLocale,
+) {
+  const fiatPerformance = useMemo(
+    () => buildPerformanceMetrics(priceChangeFiat, locale),
+    [priceChangeFiat, locale],
+  );
+  const btcPerformance = useMemo(
+    () => buildPerformanceMetrics(priceChangeBtc, locale),
+    [priceChangeBtc, locale],
+  );
 
   return {
     fiatPerformance,

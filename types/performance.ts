@@ -15,6 +15,7 @@ export type PerformanceMetric = {
 export type PerformanceCardProps = {
   performanceMetrics: PerformanceMetric[];
   compareLabel: string;
+  loadingLabel?: string;
   isLoading?: boolean;
   error?: string | null;
 };

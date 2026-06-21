@@ -10,7 +10,13 @@ const getMetricGridClass = (metricCount: number) => {
   return 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3';
 };
 
-const PerformanceCard: React.FC<PerformanceCardProps> = ({ performanceMetrics, compareLabel, isLoading = false, error = null }) => (
+const PerformanceCard: React.FC<PerformanceCardProps> = ({
+  performanceMetrics,
+  compareLabel,
+  loadingLabel = 'Loading...',
+  isLoading = false,
+  error = null,
+}) => (
   <div
     className="group relative z-0 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 transition-all duration-500 hover:border-white/20 hover:bg-white/10 flex flex-col gap-4 lg:col-span-3"
     style={{ animation: 'fadeInUp 0.6s ease-out 0.6s backwards' }}
@@ -25,7 +31,7 @@ const PerformanceCard: React.FC<PerformanceCardProps> = ({ performanceMetrics, c
     {error ? (
       <div className="text-sm text-red-200">{error}</div>
     ) : isLoading ? (
-      <div className="text-sm text-gray-400">Loading...</div>
+      <div className="text-sm text-gray-400">{loadingLabel}</div>
     ) : (
       <div className={getMetricGridClass(performanceMetrics.length)}>
         {performanceMetrics.map((metric) => {
