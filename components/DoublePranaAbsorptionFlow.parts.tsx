@@ -454,28 +454,44 @@ const LaneConnector: React.FC = () => (
   />
 );
 
+const laneMetricStyles = {
+  emerald: {
+    container: 'rounded-xl border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-2 text-center',
+    label: 'relative inline-flex items-center justify-center gap-1.5 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70',
+    value: 'mt-1 text-base font-semibold text-emerald-50',
+  },
+  cyan: {
+    container: 'rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-center',
+    label: 'relative inline-flex items-center justify-center gap-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-cyan-100/70',
+    value: 'mt-1 text-base font-semibold text-cyan-100',
+  },
+} as const;
+
 export const LaneMetric: React.FC<{
   label: string;
   tooltip: string;
   ariaLabel: string;
   value: string;
   className?: string;
-}> = ({ label, tooltip, ariaLabel, value, className = '' }) => (
-  <div
-    className={`rounded-xl border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-2 text-center ${className}`}
-  >
-    <div className="relative inline-flex items-center justify-center gap-1.5 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-emerald-100/70">
-      <span>{label}</span>
-      <InfoTooltip
-        ariaLabel={ariaLabel}
-        text={tooltip}
-        positionClassName="top-full left-1/2 mt-2 -translate-x-1/2"
-        widthClassName="w-[min(18rem,calc(100vw-2rem))]"
-      />
+  variant?: keyof typeof laneMetricStyles;
+}> = ({ label, tooltip, ariaLabel, value, className = '', variant = 'emerald' }) => {
+  const styles = laneMetricStyles[variant];
+
+  return (
+    <div className={`${styles.container} ${className}`}>
+      <div className={styles.label}>
+        <span>{label}</span>
+        <InfoTooltip
+          ariaLabel={ariaLabel}
+          text={tooltip}
+          positionClassName="top-full left-1/2 mt-2 -translate-x-1/2"
+          widthClassName="w-[min(18rem,calc(100vw-2rem))]"
+        />
+      </div>
+      <div className={styles.value}>{value}</div>
     </div>
-    <div className="mt-1 text-base font-semibold text-emerald-50">{value}</div>
-  </div>
-);
+  );
+};
 
 export const AbsorptionLane: React.FC<{
   side: DoublePranaSideCopy;

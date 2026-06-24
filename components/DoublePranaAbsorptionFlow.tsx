@@ -90,6 +90,7 @@ const DoublePranaAbsorptionFlow: React.FC = () => {
                 tooltip={copy.combinedMetric.tooltip}
                 ariaLabel={copy.combinedMetric.label}
                 value={combinedValue}
+                variant="cyan"
                 className="w-full"
               />
             </div>
