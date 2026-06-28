@@ -1,6 +1,8 @@
 import React from "react";
 import "./index.css";
 import ReactDOM from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
 import PranaHero from "./hero3.tsx";
 import Supply from "./components/Supply";
 import Capital from "./components/Capital";
@@ -20,9 +22,12 @@ import PranaPerformanceSection from "./components/PranaPerformanceSection";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
+import { wagmiConfig } from "./utils/wagmiConfig";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 
 prefetchInitialJson();
+
+const queryClient = new QueryClient();
 
 function App() {
   useSpinningFavicon();
@@ -83,5 +88,9 @@ if (!rootElement) {
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <App />,
+  <WagmiProvider config={wagmiConfig}>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </WagmiProvider>,
 );

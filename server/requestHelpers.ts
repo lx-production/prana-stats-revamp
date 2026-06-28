@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import type { ServerResponse } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export async function fileExists(p: string): Promise<boolean> {
   try {
@@ -41,6 +41,22 @@ export function sendText(
   res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
   res.setHeader('Content-Type', options.contentType ?? 'text/plain; charset=utf-8');
   res.end(body);
+}
+
+export async function readJsonBody<T>(req: IncomingMessage): Promise<T> {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  const rawBody = Buffer.concat(chunks).toString('utf8');
+
+  if (!rawBody.trim()) {
+    throw new Error('Request body is required.');
+  }
+
+  return JSON.parse(rawBody) as T;
 }
 
 export function rootDataJsonFilenameFromPathname(pathname: string): string | null {

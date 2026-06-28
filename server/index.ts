@@ -8,10 +8,12 @@ import { loadCachedCapital } from './loaders/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
 import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
+import { loadSwapQuote } from './loaders/swapQuote.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { createServerCache } from './cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
-import { fileExists, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
+import { fileExists, readJsonBody, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
+import type { SwapQuoteRequest } from '../types/swap.types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
@@ -83,6 +85,26 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/bond-metrics') {
       const result = await loadCachedBondMetrics();
       return sendJson(res, 200, result, { cacheControl: READONLY_BOND_METRICS_API_CACHE_CONTROL });
+    }
+
+    if (url.pathname === '/api/swap/quote') {
+      if (req.method !== 'POST') {
+        return sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use POST for swap quotes.',
+        });
+      }
+
+      try {
+        const body = await readJsonBody<SwapQuoteRequest>(req);
+        const result = await loadSwapQuote(body);
+        return sendJson(res, 200, result);
+      } catch (err) {
+        return sendJson(res, 400, {
+          error: 'quote_failed',
+          message: err instanceof Error ? err.message : 'Failed to load swap quote.',
+        });
+      }
     }
 
     // Serve data JSON directly from project root so live updates are visible

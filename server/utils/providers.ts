@@ -35,6 +35,11 @@ export async function getServerPolygonProvider(): Promise<ethers.JsonRpcProvider
   return polygonProvider;
 }
 
+export async function getServerPolygonRpcUrl(): Promise<string> {
+  await ensureServerEnvLoaded();
+  return getPolygonRpcUrl();
+}
+
 export async function getServerArbitrumProvider(): Promise<ethers.JsonRpcProvider> {
   await ensureServerEnvLoaded();
 
