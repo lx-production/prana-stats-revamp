@@ -3,7 +3,7 @@ import type { HexAddress, SwapToken, SwapTokenSymbol } from '../types/swap.types
 
 export const POLYGON_CHAIN_ID = 137;
 export const POLYGON_CHAIN_NAME = 'Polygon';
-export const DEFAULT_SWAP_SLIPPAGE_BPS = 50;
+export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
 export const SWAP_QUOTE_DEBOUNCE_MS = 650;
 export const SWAP_DEADLINE_SECONDS = 20 * 60;
 

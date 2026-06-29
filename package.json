@@ -13,7 +13,7 @@
     "scan:bonds:v2": "tsx scripts/scan-bonds-v2.ts",
     "update:bonds:v2": "tsx scripts/update-bonds-v2.ts",
     "update:top:holders": "tsx scripts/update-top-holding-addresses.ts",
-    "serve": "tsx server/index.ts"
+    "serve": "PORT=4174 tsx server/index.ts"
   },
   "dependencies": {
     "@ethersproject/providers": "^5.8.0",

@@ -9,9 +9,11 @@ import {
   V1_SWAP_TOKENS,
 } from '../constants/swapContracts';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';
 import { useUniswapSwap } from '../hooks/useUniswapSwap';
 import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
+import InfoTooltip from './InfoTooltip';
 import {
   formatCompactAddress,
   formatSwapTokenAmount,
@@ -48,6 +50,7 @@ function getActionLabel(
 }
 
 export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
+  const { locale } = useSiteLanguage();
   const [tokenInSymbol, setTokenInSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_IN_SYMBOL);
   const [tokenOutSymbol, setTokenOutSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_OUT_SYMBOL);
   const [amountIn, setAmountIn] = useState('');
@@ -159,12 +162,23 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const estimatedOutput = quoteState.quote
     ? formatSwapTokenAmount(quoteState.quote.amountOutRaw, tokenOut)
     : '0';
+  
+  const minimumReceivedLabel = locale === 'en' ? 'Minimum received' : 'Tối thiểu nhận được';
+  
   const minimumReceived = quoteState.quote
     ? formatSwapTokenAmount(quoteState.quote.minimumAmountOut, tokenOut)
     : '0';
+  
   const balanceLabel = swapState.balance === null
     ? '...'
     : formatSwapTokenAmount(swapState.balance, tokenIn);
+
+  const slippagePercentLabel = (slippageBps / 100).toFixed(2);
+  const minimumReceivedMultiplierLabel = (100 - slippageBps / 100).toFixed(2);
+  const minimumReceivedTooltipAria = locale === 'en' ? 'Minimum received explanation' : 'Giải thích tối thiểu nhận được';
+  const minimumReceivedTooltipText = locale === 'en'
+    ? `The lowest output amount enforced on-chain. It equals the quoted output minus a fixed ${slippagePercentLabel}% slippage tolerance (quote × ${minimumReceivedMultiplierLabel}%). If execution would deliver less than this, the swap reverts. This mainly matters when your input is converted through WBTC (e.g. USDT, USDC, POL) and those pools move before your transaction confirms. Price impact from your trade size is already included in the quote.`
+    : `Số token đầu ra tối thiểu được áp dụng on-chain. Bằng báo giá trừ slippage cố định ${slippagePercentLabel}% (báo giá × ${minimumReceivedMultiplierLabel}%). Nếu thực thi cho ít hơn mức này, swap sẽ bị hủy. Điều này quan trọng khi token đầu vào được quy đổi qua WBTC (ví dụ USDT, USDC, POL) và các pool đó biến động trước khi giao dịch được xác nhận. Price impact do quy mô lệnh đã được tính trong báo giá.`;
 
   return (
     <AnimatePresence initial={false}>
@@ -193,7 +207,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
           />
 
           <motion.div
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-[#070b1f]/85 shadow-[0_28px_90px_rgba(0,0,0,0.7)] ring-1 ring-[#FCE8A9]/10"
+            className="relative z-10 w-full max-w-lg overflow-visible rounded-3xl border border-white/15 bg-[#070b1f]/85 shadow-[0_28px_90px_rgba(0,0,0,0.7)] ring-1 ring-[#FCE8A9]/10"
             variants={dialogVariants}
             initial="hidden"
             animate="visible"
@@ -291,13 +305,17 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
-                <div className="flex justify-between gap-4">
-                  <span>Slippage</span>
-                  <span>{(slippageBps / 100).toFixed(2)}%</span>
-                </div>
-                <div className="mt-2 flex justify-between gap-4">
-                  <span>Minimum received</span>
+              <div className="overflow-visible rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
+                <div className="relative flex justify-between gap-4">
+                  <span className="inline-flex items-center gap-1.5">
+                    {locale === 'en' ? 'Minimum received' : 'Tối thiểu nhận được'}
+                    <InfoTooltip
+                      ariaLabel={minimumReceivedTooltipAria}
+                      text={minimumReceivedTooltipText}
+                      positionClassName="bottom-full mb-2 left-0"
+                      widthClassName="w-full max-w-[32rem]"
+                    />
+                  </span>
                   <span>{minimumReceived} {tokenOut.symbol}</span>
                 </div>
                 {quoteState.quote?.estimatedGasUsedUsd && (
@@ -348,7 +366,9 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               </button>
 
               <p className="text-center text-xs leading-relaxed text-white/45">
-                Quotes are prepared by PRANA&apos;s backend with Uniswap routing. Your wallet still signs every approval and swap.
+                {locale === 'en'
+                  ? "Quotes are prepared by PRANA's backend with Uniswap routing. Your wallet still signs every approval and swap."
+                  : 'Giá được PRANA backend lấy từ Uniswap routing on-chain. Ví của bạn vẫn ký mọi lệnh approve và swap.'}
               </p>
             </div>
           </motion.div>
