@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { erc20Abi } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import {
   POLYGON_CHAIN_ID,
-  SWAP_ERC20_ABI,
   UNISWAP_SWAP_ROUTER_02_ADDRESS,
 } from '../constants/swapContracts';
 import type {
@@ -58,13 +58,13 @@ export function useUniswapSwap({
       const [nextBalance, nextAllowance] = await Promise.all([
         publicClient.readContract({
           address: tokenIn.address,
-          abi: SWAP_ERC20_ABI,
+          abi: erc20Abi,
           functionName: 'balanceOf',
           args: [ownerAddress],
         } as never),
         publicClient.readContract({
           address: tokenIn.address,
-          abi: SWAP_ERC20_ABI,
+          abi: erc20Abi,
           functionName: 'allowance',
           args: [ownerAddress, UNISWAP_SWAP_ROUTER_02_ADDRESS],
         } as never),
@@ -101,7 +101,7 @@ export function useUniswapSwap({
     const approvalHash = await walletClient.writeContract({
       account: ownerAddress,
       address: tokenIn.address,
-      abi: SWAP_ERC20_ABI,
+      abi: erc20Abi,
       functionName: 'approve',
       args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, amountInRaw],
     });

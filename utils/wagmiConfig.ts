@@ -4,12 +4,7 @@ import { injected } from 'wagmi/connectors';
 
 export const wagmiConfig = createConfig({
   chains: [polygon],
-  connectors: [
-    injected({
-      target: 'metaMask',
-    }),
-    injected(),
-  ],
+  connectors: [injected()],
   transports: {
     [polygon.id]: http(),
   },

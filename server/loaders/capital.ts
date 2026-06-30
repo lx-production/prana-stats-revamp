@@ -1,10 +1,11 @@
 import type { CapitalApiResponse } from '../../types/api.types.ts';
 import { ethers } from 'ethers';
+import { erc20Abi } from 'viem';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { formatUsd } from '../../utils/formatters.ts';
 import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import { MINIMAL_ERC20_ABI, MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
+import { MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
 
 const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';
@@ -14,7 +15,7 @@ const USDT_ARBITRUM_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
 const USDT_DECIMALS = 6;
 const WBTC_DECIMALS = 8;
 
-const ERC20_IFACE = new ethers.Interface(MINIMAL_ERC20_ABI);
+const ERC20_IFACE = new ethers.Interface(erc20Abi);
 
 type MulticallResult = {
   success?: boolean;
@@ -31,7 +32,7 @@ function decodeBalance(result: MulticallResult, label: string): bigint {
 }
 
 async function loadSellBondCapacityRaw(provider: ethers.Provider): Promise<bigint> {
-  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, MINIMAL_ERC20_ABI, provider);
+  const wbtcTokenContract = new ethers.Contract(WBTC_ADDRESS, erc20Abi, provider);
   const sellBondV2Contract = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI, provider);
 
   const [sellCommittedV2, sellBalanceV2] = await Promise.all([
@@ -49,7 +50,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
   ]);
 
   const polygonMulticall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, polygonProvider);
-  const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, MINIMAL_ERC20_ABI, arbitrumProvider);
+  const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, erc20Abi, arbitrumProvider);
 
   const polygonCalls = [
     {

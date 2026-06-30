@@ -1,11 +1,12 @@
 import type { StakingStatsApiResponse } from '../../types/api.types.ts';
 import type { ActiveStakesResult } from '../../types/activeStakes.types.ts';
 import { ethers } from 'ethers';
+import { erc20Abi } from 'viem';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { asBigInt } from '../../utils/pranaStatsUtils.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
-import { MINIMAL_ERC20_ABI, PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
+import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 import { calculateDailyInterestPrana, loadActiveStakesSnapshot } from './activeStakes.ts';
 import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 
@@ -35,7 +36,7 @@ function getLatestMatureTime(activeStakesSnapshot: ActiveStakesResult | null): n
 
 async function loadStakingSnapshot() {
   const provider = await getServerPolygonProvider();
-  const tokenContract = new ethers.Contract(PRANA_ADDRESS, MINIMAL_ERC20_ABI, provider);
+  const tokenContract = new ethers.Contract(PRANA_ADDRESS, erc20Abi, provider);
   const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, provider);
 
   const [stakedBalance, interestContractBalanceRaw, interestNeeded, activeStakesSnapshot] = await Promise.all([

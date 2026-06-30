@@ -72,36 +72,6 @@ export const DEFAULT_SWAP_TOKEN_OUT_SYMBOL: SwapTokenSymbol = 'PRANA';
 
 export const WBTC_PRANA_POOL_ADDRESS = WBTC_PRANA_V3_POOL;
 
-export const SWAP_ERC20_ABI = [
-  {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'owner', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'allowance',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-    ],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'approve',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-  },
-] as const;
-
 export function getSwapToken(symbol: SwapTokenSymbol): SwapToken {
   const token = V1_SWAP_TOKENS.find((item) => item.symbol === symbol);
 
