@@ -1,144 +1,19 @@
 import { createRequire } from 'node:module';
 import { ethers } from 'ethers';
-import {
-  getSwapToken,
-  getSwapTokenByAddress,
-  POLYGON_CHAIN_ID,
-  SWAP_DEADLINE_SECONDS,
-  UNISWAP_SWAP_ROUTER_02_ADDRESS,
-  UNISWAP_V3_QUOTER_V2_ADDRESS,
-  WBTC_PRANA_POOL_ADDRESS,
-} from '../../constants/swapContracts.ts';
-import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapRouteStep, SwapToken } from '../../types/swap.types.ts';
-import { getServerPolygonProvider, getServerPolygonRpcUrl } from '../utils/providers.ts';
+import { getServerPolygonProvider } from '../utils/providers.ts';
+import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
+import { getSwapToken, QUOTER_V2_ABI, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS, UNISWAP_V3_QUOTER_V2_ADDRESS, WBTC_PRANA_POOL_ADDRESS } from '../../constants/swapContracts.ts';
+import { buildRouteSummary, encodeV3Path, formatAmountOut, getCurrency, getMinimumAmountOut, getSwapAddress, getSwapRouter, getV3RoutePathData, getValidatedSlippageBps, selectV3Route } from './swapQuoteUtils.ts';
 
+// Uniswap packages are CommonJS in Node ESM — require() loads their working builds (native import breaks @uniswap/sdk-core).
+// AlphaRouter requires an ethers v5 provider; the rest of this file uses ethers v6 via getServerPolygonProvider().
 const require = createRequire(import.meta.url);
-const { StaticJsonRpcProvider } = require('@ethersproject/providers');
-const { ChainId, CurrencyAmount, Ether, Percent, Token, TradeType } = require('@uniswap/sdk-core');
-const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
+const { CurrencyAmount, Percent, TradeType } = require('@uniswap/sdk-core');
+const { SwapType } = require('@uniswap/smart-order-router');
 
-let routerPromise: Promise<any> | null = null;
+const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 
-const V3_PRANA_POOL_FEE = 10_000;
-const QUOTER_V2_ABI = [
-  'function quoteExactInput(bytes path,uint256 amountIn) returns (uint256 amountOut,uint160[] sqrtPriceX96AfterList,uint32[] initializedTicksCrossedList,uint256 gasEstimate)',
-];
-const SWAP_ROUTER_02_ABI = [
-  'function exactInput(tuple(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum) params) payable returns (uint256 amountOut)',
-  'function multicall(bytes[] data) payable returns (bytes[] results)',
-  'function unwrapWETH9(uint256 amountMinimum,address recipient) payable',
-];
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
-
-function getValidatedSlippageBps(slippageBps: number): number {
-  if (!Number.isFinite(slippageBps)) return 50;
-  return Math.min(Math.max(Math.round(slippageBps), 1), 500);
-}
-
-function getCurrency(token: SwapToken): any {
-  if (token.kind === 'native') {
-    return Ether.onChain(ChainId.POLYGON);
-  }
-
-  if (!token.address) {
-    throw new Error(`${token.symbol} is missing an ERC-20 address.`);
-  }
-
-  return new Token(POLYGON_CHAIN_ID, token.address, token.decimals, token.symbol, token.name);
-}
-
-async function getSwapRouter(): Promise<any> {
-  if (!routerPromise) {
-    routerPromise = getServerPolygonRpcUrl().then((rpcUrl) => {
-      const provider = new StaticJsonRpcProvider(rpcUrl, POLYGON_CHAIN_ID);
-
-      return new AlphaRouter({
-        chainId: ChainId.POLYGON,
-        provider,
-        v4Supported: [],
-      });
-    });
-  }
-
-  return routerPromise;
-}
-
-function currencyToDisplaySymbol(currency: any): string {
-  if (currency.isNative) return 'POL';
-
-  const knownToken = getSwapTokenByAddress(currency.address);
-  return knownToken?.symbol ?? currency.symbol ?? currency.address;
-}
-
-function buildRouteSummary(route: unknown): SwapRouteStep[] {
-  const swapRoute = route as {
-    route?: Array<{
-      protocol?: string;
-      percent?: number;
-      tokenPath?: any[];
-    }>;
-  };
-
-  return (swapRoute.route ?? []).map((step) => ({
-    protocol: String(step.protocol ?? 'Uniswap'),
-    percent: Number(step.percent ?? 100),
-    path: (step.tokenPath ?? []).map(currencyToDisplaySymbol),
-  }));
-}
-
-function getSwapAddress(token: SwapToken): HexAddress {
-  const address = token.kind === 'native' ? token.wrappedAddress : token.address;
-
-  if (!address) {
-    throw new Error(`${token.symbol} is missing a swap address.`);
-  }
-
-  return address;
-}
-
-function selectV3Route(route: any): any | null {
-  const routes = Array.isArray(route?.route) ? route.route : [];
-  return routes.find((item) => item?.protocol === 'V3' && item?.route?.pools?.length && item?.tokenPath?.length) ?? null;
-}
-
-function getV3RoutePathData(v3Route: any): { addresses: HexAddress[]; fees: number[]; pathLabels: string[] } {
-  const tokenPath = v3Route.tokenPath as any[];
-  const pools = v3Route.route.pools as Array<{ fee: number }>;
-  const addresses = tokenPath.map((token) => token.address as HexAddress);
-  const fees = pools.map((pool) => Number(pool.fee));
-  const pathLabels = tokenPath.map(currencyToDisplaySymbol);
-
-  if (addresses.length !== fees.length + 1) {
-    throw new Error('Uniswap returned an invalid V3 route path.');
-  }
-
-  return { addresses, fees, pathLabels };
-}
-
-function encodeV3Path(addresses: HexAddress[], fees: number[]): HexAddress {
-  const types: string[] = [];
-  const values: Array<string | number> = [];
-
-  addresses.forEach((address, index) => {
-    types.push('address');
-    values.push(address);
-
-    if (index < fees.length) {
-      types.push('uint24');
-      values.push(fees[index]);
-    }
-  });
-
-  return ethers.solidityPacked(types, values) as HexAddress;
-}
-
-function getMinimumAmountOut(amountOutRaw: bigint, slippageBps: number): bigint {
-  return (amountOutRaw * BigInt(10_000 - getValidatedSlippageBps(slippageBps))) / 10_000n;
-}
-
-function formatAmountOut(rawAmount: bigint, token: SwapToken): string {
-  return ethers.formatUnits(rawAmount, token.decimals);
-}
 
 async function loadRouteToWbtc(router: any, token: SwapToken, amountInRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
   const wbtc = getSwapToken('WBTC');

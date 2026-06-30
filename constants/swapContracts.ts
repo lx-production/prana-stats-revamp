@@ -9,6 +9,16 @@ export const SWAP_DEADLINE_SECONDS = 20 * 60;
 
 export const UNISWAP_SWAP_ROUTER_02_ADDRESS: HexAddress = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
 export const UNISWAP_V3_QUOTER_V2_ADDRESS: HexAddress = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
+
+export const QUOTER_V2_ABI = [
+  'function quoteExactInput(bytes path,uint256 amountIn) returns (uint256 amountOut,uint160[] sqrtPriceX96AfterList,uint32[] initializedTicksCrossedList,uint256 gasEstimate)',
+];
+
+export const SWAP_ROUTER_02_ABI = [
+  'function exactInput(tuple(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum) params) payable returns (uint256 amountOut)',
+  'function multicall(bytes[] data) payable returns (bytes[] results)',
+  'function unwrapWETH9(uint256 amountMinimum,address recipient) payable',
+];
 export const WMATIC_ADDRESS: HexAddress = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'; // WPOL 
 export const USDC_POLYGON_ADDRESS: HexAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
 export const USDT_POLYGON_ADDRESS: HexAddress = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
