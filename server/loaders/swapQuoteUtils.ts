@@ -1,14 +1,14 @@
 import { createRequire } from 'node:module';
 import { ethers } from 'ethers';
-import { getServerPolygonRpcUrl } from '../utils/providers.ts';
+import { getServerPolygonProvider, getServerPolygonRpcUrl } from '../utils/providers.ts';
 import type { HexAddress, SwapRouteStep, SwapToken } from '../../types/swap.types.ts';
-import { getSwapTokenByAddress, POLYGON_CHAIN_ID } from '../../constants/swapContracts.ts';
+import { getSwapToken, getSwapTokenByAddress, POLYGON_CHAIN_ID, QUOTER_V2_ABI, UNISWAP_V3_QUOTER_V2_ADDRESS, WBTC_PRANA_POOL_ADDRESS } from '../../constants/swapContracts.ts';
 
 // Uniswap packages are CommonJS in Node ESM — require() loads their working builds (native import breaks @uniswap/sdk-core).
 const require = createRequire(import.meta.url);
 const { StaticJsonRpcProvider } = require('@ethersproject/providers');
-const { ChainId, Ether, Token } = require('@uniswap/sdk-core');
-const { AlphaRouter } = require('@uniswap/smart-order-router');
+const { ChainId, CurrencyAmount, Ether, Percent, Token, TradeType } = require('@uniswap/sdk-core');
+const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
 
 let routerPromise: Promise<any> | null = null;
 
@@ -120,4 +120,82 @@ export function getMinimumAmountOut(amountOutRaw: bigint, slippageBps: number): 
 
 export function formatAmountOut(rawAmount: bigint, token: SwapToken): string {
   return ethers.formatUnits(rawAmount, token.decimals);
+}
+
+export function getExactInputAmount(token: SwapToken, amountInRaw: bigint): any {
+  return CurrencyAmount.fromRawAmount(getCurrency(token), amountInRaw.toString());
+}
+
+export function getSlippageTolerance(slippageBps: number): any {
+  return new Percent(getValidatedSlippageBps(slippageBps), 10_000);
+}
+
+export async function loadPrimaryRoute(
+  router: any,
+  tokenIn: SwapToken,
+  tokenOut: SwapToken,
+  amountInRaw: bigint,
+  recipient: HexAddress,
+  slippageTolerance: any,
+  deadline: number,
+): Promise<any> {
+  return router.route(
+    getExactInputAmount(tokenIn, amountInRaw),
+    getCurrency(tokenOut),
+    TradeType.EXACT_INPUT,
+    {
+      type: SwapType.SWAP_ROUTER_02,
+      recipient,
+      slippageTolerance,
+      deadline,
+    },
+    {
+      poolsToManuallyRouteThrough: [WBTC_PRANA_POOL_ADDRESS],
+    },
+  );
+}
+
+export async function loadRouteToWbtc(router: any, token: SwapToken, amountInRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
+  const wbtc = getSwapToken('WBTC');
+  const route = await router.route(
+    CurrencyAmount.fromRawAmount(getCurrency(token), amountInRaw.toString()),
+    getCurrency(wbtc),
+    TradeType.EXACT_INPUT,
+    {
+      type: SwapType.SWAP_ROUTER_02,
+      recipient,
+      slippageTolerance,
+      deadline,
+    },
+  );
+
+  return selectV3Route(route);
+}
+
+export async function loadRouteFromWbtc(router: any, token: SwapToken, wbtcAmountRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
+  const wbtc = getSwapToken('WBTC');
+  const route = await router.route(
+    CurrencyAmount.fromRawAmount(getCurrency(wbtc), wbtcAmountRaw.toString()),
+    getCurrency(token),
+    TradeType.EXACT_INPUT,
+    {
+      type: SwapType.SWAP_ROUTER_02,
+      recipient,
+      slippageTolerance,
+      deadline,
+    },
+  );
+
+  return selectV3Route(route);
+}
+
+export async function quoteV3Path(path: HexAddress, amountInRaw: bigint): Promise<{ amountOutRaw: bigint; gasEstimate: bigint }> {
+  const provider = await getServerPolygonProvider();
+  const quoter = new ethers.Contract(UNISWAP_V3_QUOTER_V2_ADDRESS, QUOTER_V2_ABI, provider);
+  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw);
+
+  return {
+    amountOutRaw: BigInt(quoted[0].toString()),
+    gasEstimate: BigInt(quoted[3].toString()),
+  };
 }

@@ -1,64 +1,11 @@
-import { createRequire } from 'node:module';
 import { ethers } from 'ethers';
-import { getServerPolygonProvider } from '../utils/providers.ts';
 import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
-import { getSwapToken, QUOTER_V2_ABI, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS, UNISWAP_V3_QUOTER_V2_ADDRESS, WBTC_PRANA_POOL_ADDRESS } from '../../constants/swapContracts.ts';
-import { buildRouteSummary, encodeV3Path, formatAmountOut, getCurrency, getMinimumAmountOut, getSwapAddress, getSwapRouter, getV3RoutePathData, getValidatedSlippageBps, selectV3Route } from './swapQuoteUtils.ts';
-
-// Uniswap packages are CommonJS in Node ESM — require() loads their working builds (native import breaks @uniswap/sdk-core).
-// AlphaRouter requires an ethers v5 provider; the rest of this file uses ethers v6 via getServerPolygonProvider().
-const require = createRequire(import.meta.url);
-const { CurrencyAmount, Percent, TradeType } = require('@uniswap/sdk-core');
-const { SwapType } = require('@uniswap/smart-order-router');
+import { getSwapToken, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapAddress, getSwapRouter, getSlippageTolerance, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 
 const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
-
-async function loadRouteToWbtc(router: any, token: SwapToken, amountInRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
-  const wbtc = getSwapToken('WBTC');
-  const route = await router.route(
-    CurrencyAmount.fromRawAmount(getCurrency(token), amountInRaw.toString()),
-    getCurrency(wbtc),
-    TradeType.EXACT_INPUT,
-    {
-      type: SwapType.SWAP_ROUTER_02,
-      recipient,
-      slippageTolerance,
-      deadline,
-    },
-  );
-
-  return selectV3Route(route);
-}
-
-async function loadRouteFromWbtc(router: any, token: SwapToken, wbtcAmountRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
-  const wbtc = getSwapToken('WBTC');
-  const route = await router.route(
-    CurrencyAmount.fromRawAmount(getCurrency(wbtc), wbtcAmountRaw.toString()),
-    getCurrency(token),
-    TradeType.EXACT_INPUT,
-    {
-      type: SwapType.SWAP_ROUTER_02,
-      recipient,
-      slippageTolerance,
-      deadline,
-    },
-  );
-
-  return selectV3Route(route);
-}
-
-async function quoteV3Path(path: HexAddress, amountInRaw: bigint): Promise<{ amountOutRaw: bigint; gasEstimate: bigint }> {
-  const provider = await getServerPolygonProvider();
-  const quoter = new ethers.Contract(UNISWAP_V3_QUOTER_V2_ADDRESS, QUOTER_V2_ABI, provider);
-  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw);
-
-  return {
-    amountOutRaw: BigInt(quoted[0].toString()),
-    gasEstimate: BigInt(quoted[3].toString()),
-  };
-}
 
 async function loadWbtcPranaFallbackQuote(
   request: SwapQuoteRequest,
@@ -161,29 +108,13 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     throw new Error('Enter an amount greater than zero.');
   }
 
-  const currencyIn = getCurrency(tokenIn);
-  const currencyOut = getCurrency(tokenOut);
-  const amount = CurrencyAmount.fromRawAmount(currencyIn, amountInRaw.toString());
-  const slippageTolerance = new Percent(getValidatedSlippageBps(request.slippageBps), 10_000);
+  const slippageTolerance = getSlippageTolerance(request.slippageBps);
   const deadline = Math.floor(Date.now() / 1000) + SWAP_DEADLINE_SECONDS;
   const router = await getSwapRouter();
   let route: any | null = null;
 
   try {
-    route = await router.route(
-      amount,
-      currencyOut,
-      TradeType.EXACT_INPUT,
-      {
-        type: SwapType.SWAP_ROUTER_02,
-        recipient: request.recipient,
-        slippageTolerance,
-        deadline,
-      },
-      {
-        poolsToManuallyRouteThrough: [WBTC_PRANA_POOL_ADDRESS],
-      },
-    );
+    route = await loadPrimaryRoute(router, tokenIn, tokenOut, amountInRaw, request.recipient, slippageTolerance, deadline);
   } catch {
     route = null;
   }
