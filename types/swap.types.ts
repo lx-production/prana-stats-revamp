@@ -55,6 +55,30 @@ export type SwapQuoteErrorResponse = {
   message: string;
 };
 
+export type SwapTransactionLogEvent =
+  | 'approval_submitted'
+  | 'approval_confirmed'
+  | 'approval_failed'
+  | 'swap_submitted'
+  | 'swap_confirmed'
+  | 'swap_failed';
+
+export type SwapTransactionLogRequest = {
+  event: SwapTransactionLogEvent;
+  ownerAddress?: HexAddress;
+  tokenInSymbol?: SwapTokenSymbol;
+  tokenOutSymbol?: SwapTokenSymbol;
+  amountIn?: string;
+  amountOut?: string;
+  amountOutRaw?: string;
+  minimumAmountOut?: string;
+  route?: SwapRouteStep[];
+  routerAddress?: HexAddress;
+  transactionHash?: HexAddress;
+  error?: string;
+  receiptStatus?: string;
+};
+
 export type SwapTransactionStatus =
   | 'idle'
   | 'approving'

@@ -1,94 +1,12 @@
 import { ethers } from 'ethers';
 import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
 import { getSwapToken, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { logSwapQuoteFailure, logSwapQuoteRoute } from './swapLogs.ts';
 import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapAddress, getSwapRouter, getSlippageTolerance, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 
 const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
-
-async function loadWbtcPranaFallbackQuote(
-  request: SwapQuoteRequest,
-  tokenIn: SwapToken,
-  tokenOut: SwapToken,
-  amountInRaw: bigint,
-  slippageTolerance: any,
-  deadline: number,
-  router: any,
-): Promise<SwapQuoteResponse | null> {
-  const wbtc = getSwapToken('WBTC');
-  const prana = getSwapToken('PRANA');
-  const routesToPrana = tokenOut.symbol === 'PRANA' && tokenIn.symbol !== 'WBTC';
-  const routesFromPrana = tokenIn.symbol === 'PRANA' && tokenOut.symbol !== 'WBTC';
-
-  if (!routesToPrana && !routesFromPrana) return null;
-
-  let addresses: HexAddress[];
-  let fees: number[];
-  let pathLabels: string[];
-
-  if (routesToPrana) {
-    const v3Route = await loadRouteToWbtc(router, tokenIn, amountInRaw, request.recipient, slippageTolerance, deadline);
-    if (!v3Route) return null;
-
-    const routePath = getV3RoutePathData(v3Route);
-    addresses = [...routePath.addresses, getSwapAddress(prana)];
-    fees = [...routePath.fees, V3_PRANA_POOL_FEE];
-    pathLabels = [...routePath.pathLabels, 'PRANA'];
-  } else {
-    const pranaToWbtcPath = encodeV3Path(
-      [getSwapAddress(prana), getSwapAddress(wbtc)],
-      [V3_PRANA_POOL_FEE],
-    );
-    const pranaToWbtcQuote = await quoteV3Path(pranaToWbtcPath, amountInRaw);
-    const v3Route = await loadRouteFromWbtc(router, tokenOut, pranaToWbtcQuote.amountOutRaw, request.recipient, slippageTolerance, deadline);
-    if (!v3Route) return null;
-
-    const routePath = getV3RoutePathData(v3Route);
-    addresses = [getSwapAddress(prana), ...routePath.addresses];
-    fees = [V3_PRANA_POOL_FEE, ...routePath.fees];
-    pathLabels = ['PRANA', ...routePath.pathLabels];
-  }
-
-  const path = encodeV3Path(addresses, fees);
-  const quote = await quoteV3Path(path, amountInRaw);
-  const minimumAmountOutRaw = getMinimumAmountOut(quote.amountOutRaw, request.slippageBps);
-  const exactInputRecipient = tokenOut.kind === 'native' ? UNISWAP_SWAP_ROUTER_02_ADDRESS : request.recipient;
-  const exactInputCalldata = SWAP_ROUTER_IFACE.encodeFunctionData('exactInput', [{
-    path,
-    recipient: exactInputRecipient,
-    amountIn: amountInRaw,
-    amountOutMinimum: minimumAmountOutRaw,
-  }]);
-  const calldata = tokenOut.kind === 'native'
-    ? SWAP_ROUTER_IFACE.encodeFunctionData('multicall', [[
-        exactInputCalldata,
-        SWAP_ROUTER_IFACE.encodeFunctionData('unwrapWETH9', [minimumAmountOutRaw, request.recipient]),
-      ]])
-    : exactInputCalldata;
-
-  return {
-    tokenIn,
-    tokenOut,
-    amountIn: request.amountIn,
-    amountOut: formatAmountOut(quote.amountOutRaw, tokenOut),
-    amountOutRaw: quote.amountOutRaw.toString(),
-    minimumAmountOut: minimumAmountOutRaw.toString(),
-    route: [{
-      protocol: 'V3',
-      percent: 100,
-      path: pathLabels,
-    }],
-    estimatedGasUsed: quote.gasEstimate.toString(),
-    routerAddress: UNISWAP_SWAP_ROUTER_02_ADDRESS,
-    transaction: {
-      to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
-      data: calldata as HexAddress,
-      value: tokenIn.kind === 'native' ? amountInRaw.toString() : '0',
-    },
-    quoteUpdatedAt: new Date().toISOString(),
-  };
-}
 
 export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuoteResponse> {
   const tokenIn = getSwapToken(request.tokenInSymbol);
@@ -115,28 +33,72 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
 
   try {
     route = await loadPrimaryRoute(router, tokenIn, tokenOut, amountInRaw, request.recipient, slippageTolerance, deadline);
-  } catch {
-    route = null;
-  }
-
-  if (!route || !route.methodParameters) {
-    const fallbackQuote = await loadWbtcPranaFallbackQuote(
+  } catch (err) {
+    logSwapQuoteFailure({
+      stage: 'alpha_router',
       request,
       tokenIn,
       tokenOut,
       amountInRaw,
-      slippageTolerance,
-      deadline,
-      router,
-    );
+      error: err,
+    });
+    route = null;
+  }
+
+  if (!route || !route.methodParameters) {
+    let fallbackQuote: SwapQuoteResponse | null = null;
+
+    try {
+      fallbackQuote = await loadWbtcPranaFallbackQuote(
+        request,
+        tokenIn,
+        tokenOut,
+        amountInRaw,
+        slippageTolerance,
+        deadline,
+        router,
+      );
+    } catch (err) {
+      logSwapQuoteFailure({
+        stage: 'wbtc_prana_fallback',
+        request,
+        tokenIn,
+        tokenOut,
+        amountInRaw,
+        error: err,
+      });
+      throw err;
+    }
 
     if (fallbackQuote) return fallbackQuote;
 
+    logSwapQuoteFailure({
+      stage: 'no_route',
+      request,
+      tokenIn,
+      tokenOut,
+      amountInRaw,
+    });
     throw new Error('No Uniswap route found for this pair or amount.');
   }
 
   const amountOutRaw = route.quote.quotient.toString();
   const minimumAmountOutRaw = route.trade.minimumAmountOut(slippageTolerance).quotient.toString();
+  const routeSummary = buildRouteSummary(route);
+
+  logSwapQuoteRoute({
+    source: 'alpha_router',
+    request,
+    tokenIn,
+    tokenOut,
+    route: routeSummary,
+    amountInRaw,
+    amountOutRaw,
+    minimumAmountOutRaw,
+    estimatedGasUsed: route.estimatedGasUsed?.toString(),
+    estimatedGasUsedUsd: route.estimatedGasUsedUSD?.toExact(),
+    blockNumber: route.blockNumber?.toString(),
+  });
 
   return {
     tokenIn,
@@ -145,7 +107,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     amountOut: route.quote.toExact(),
     amountOutRaw,
     minimumAmountOut: minimumAmountOutRaw,
-    route: buildRouteSummary(route),
+    route: routeSummary,
     estimatedGasUsed: route.estimatedGasUsed?.toString(),
     estimatedGasUsedUsd: route.estimatedGasUsedUSD?.toExact(),
     gasPriceWei: route.gasPriceWei?.toString(),
@@ -156,6 +118,121 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
       value: route.methodParameters.value,
     },
     blockNumber: route.blockNumber?.toString(),
+    quoteUpdatedAt: new Date().toISOString(),
+  };
+}
+
+async function loadWbtcPranaFallbackQuote(
+  request: SwapQuoteRequest,
+  tokenIn: SwapToken,
+  tokenOut: SwapToken,
+  amountInRaw: bigint,
+  slippageTolerance: any,
+  deadline: number,
+  router: any,
+): Promise<SwapQuoteResponse | null> {
+  const wbtc = getSwapToken('WBTC');
+  const prana = getSwapToken('PRANA');
+  const routesToPrana = tokenOut.symbol === 'PRANA' && tokenIn.symbol !== 'WBTC';
+  const routesFromPrana = tokenIn.symbol === 'PRANA' && tokenOut.symbol !== 'WBTC';
+
+  if (!routesToPrana && !routesFromPrana) return null;
+
+  let addresses: HexAddress[];
+  let fees: number[];
+  let pathLabels: string[];
+
+  if (routesToPrana) {
+    const v3Route = await loadRouteToWbtc(router, tokenIn, amountInRaw, request.recipient, slippageTolerance, deadline);
+    if (!v3Route) {
+      logSwapQuoteFailure({
+        stage: 'wbtc_prana_fallback',
+        request,
+        tokenIn,
+        tokenOut,
+        amountInRaw,
+      });
+      return null;
+    }
+
+    const routePath = getV3RoutePathData(v3Route);
+    addresses = [...routePath.addresses, getSwapAddress(prana)];
+    fees = [...routePath.fees, V3_PRANA_POOL_FEE];
+    pathLabels = [...routePath.pathLabels, 'PRANA'];
+  } else {
+    const pranaToWbtcPath = encodeV3Path(
+      [getSwapAddress(prana), getSwapAddress(wbtc)],
+      [V3_PRANA_POOL_FEE],
+    );
+    const pranaToWbtcQuote = await quoteV3Path(pranaToWbtcPath, amountInRaw);
+    const v3Route = await loadRouteFromWbtc(router, tokenOut, pranaToWbtcQuote.amountOutRaw, request.recipient, slippageTolerance, deadline);
+    if (!v3Route) {
+      logSwapQuoteFailure({
+        stage: 'wbtc_prana_fallback',
+        request,
+        tokenIn,
+        tokenOut,
+        amountInRaw,
+      });
+      return null;
+    }
+
+    const routePath = getV3RoutePathData(v3Route);
+    addresses = [getSwapAddress(prana), ...routePath.addresses];
+    fees = [V3_PRANA_POOL_FEE, ...routePath.fees];
+    pathLabels = ['PRANA', ...routePath.pathLabels];
+  }
+
+  const path = encodeV3Path(addresses, fees);
+  const quote = await quoteV3Path(path, amountInRaw);
+  const minimumAmountOutRaw = getMinimumAmountOut(quote.amountOutRaw, request.slippageBps);
+  const exactInputRecipient = tokenOut.kind === 'native' ? UNISWAP_SWAP_ROUTER_02_ADDRESS : request.recipient;
+  const routeSummary = [{
+    protocol: 'V3',
+    percent: 100,
+    path: pathLabels,
+  }];
+
+  logSwapQuoteRoute({
+    source: 'wbtc_prana_fallback',
+    request,
+    tokenIn,
+    tokenOut,
+    route: routeSummary,
+    amountInRaw,
+    amountOutRaw: quote.amountOutRaw,
+    minimumAmountOutRaw,
+    estimatedGasUsed: quote.gasEstimate,
+  });
+
+  const exactInputCalldata = SWAP_ROUTER_IFACE.encodeFunctionData('exactInput', [{
+    path,
+    recipient: exactInputRecipient,
+    amountIn: amountInRaw,
+    amountOutMinimum: minimumAmountOutRaw,
+  }]);
+  const calldata = tokenOut.kind === 'native'
+    ? SWAP_ROUTER_IFACE.encodeFunctionData('multicall', [[
+        exactInputCalldata,
+        SWAP_ROUTER_IFACE.encodeFunctionData('unwrapWETH9', [minimumAmountOutRaw, request.recipient]),
+      ]])
+    : exactInputCalldata;
+
+  return {
+    tokenIn,
+    tokenOut,
+    amountIn: request.amountIn,
+    amountOut: formatAmountOut(quote.amountOutRaw, tokenOut),
+    amountOutRaw: quote.amountOutRaw.toString(),
+    minimumAmountOut: minimumAmountOutRaw.toString(),
+    route: routeSummary,
+    estimatedGasUsed: quote.gasEstimate.toString(),
+    routerAddress: UNISWAP_SWAP_ROUTER_02_ADDRESS,
+    transaction: {
+      to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
+      data: calldata as HexAddress,
+      value: tokenIn.kind === 'native' ? amountInRaw.toString() : '0',
+    },
     quoteUpdatedAt: new Date().toISOString(),
   };
 }

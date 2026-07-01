@@ -11,6 +11,7 @@ import type {
   UseUniswapSwapInput,
   UseUniswapSwapResult,
 } from '../types/swap.types';
+import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 
 export function useUniswapSwap({
@@ -97,21 +98,54 @@ export function useUniswapSwap({
       throw new Error('Connect your Polygon wallet before approving.');
     }
 
-    setStatus('approving');
-    const approvalHash = await walletClient.writeContract({
-      account: ownerAddress,
-      address: tokenIn.address,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, amountInRaw],
-    });
+    let approvalHash: HexAddress | undefined;
 
-    setTransactionHash(approvalHash);
-    setStatus('approval-confirming');
-    await publicClient?.waitForTransactionReceipt({ hash: approvalHash });
-    setStatus('approved');
-    await refreshBalances();
-  }, [amountInRaw, needsApproval, ownerAddress, publicClient, refreshBalances, tokenIn.address, walletClient]);
+    try {
+      setStatus('approving');
+      approvalHash = await walletClient.writeContract({
+        account: ownerAddress,
+        address: tokenIn.address,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, amountInRaw],
+      });
+
+      logSwapTransactionEvent({
+        event: 'approval_submitted',
+        quote,
+        ownerAddress,
+        transactionHash: approvalHash,
+      });
+
+      setTransactionHash(approvalHash);
+      setStatus('approval-confirming');
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash: approvalHash });
+
+      if (receipt?.status === 'reverted') {
+        throw new Error('Approval transaction reverted.');
+      }
+
+      logSwapTransactionEvent({
+        event: 'approval_confirmed',
+        quote,
+        ownerAddress,
+        transactionHash: approvalHash,
+        receiptStatus: receipt?.status,
+      });
+
+      setStatus('approved');
+      await refreshBalances();
+    } catch (err) {
+      logSwapTransactionEvent({
+        event: 'approval_failed',
+        quote,
+        ownerAddress,
+        transactionHash: approvalHash,
+        error: err,
+      });
+      throw err;
+    }
+  }, [amountInRaw, needsApproval, ownerAddress, publicClient, quote, refreshBalances, tokenIn.address, walletClient]);
 
   const executeSwap = useCallback(async () => {
     if (!quote) {
@@ -131,23 +165,57 @@ export function useUniswapSwap({
 
     setError(null);
 
+    let swapStarted = false;
+    let swapHash: HexAddress | undefined;
+
     try {
       await approveIfNeeded();
 
+      swapStarted = true;
       setStatus('swapping');
-      const swapHash = await walletClient.sendTransaction({
+      swapHash = await walletClient.sendTransaction({
         account: ownerAddress,
         to: quote.transaction.to,
         data: quote.transaction.data,
         value: BigInt(quote.transaction.value || '0'),
       } as never);
 
+      logSwapTransactionEvent({
+        event: 'swap_submitted',
+        quote,
+        ownerAddress,
+        transactionHash: swapHash,
+      });
+
       setTransactionHash(swapHash);
       setStatus('swap-confirming');
-      await publicClient?.waitForTransactionReceipt({ hash: swapHash });
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash: swapHash });
+
+      if (receipt?.status === 'reverted') {
+        throw new Error('Swap transaction reverted.');
+      }
+
+      logSwapTransactionEvent({
+        event: 'swap_confirmed',
+        quote,
+        ownerAddress,
+        transactionHash: swapHash,
+        receiptStatus: receipt?.status,
+      });
+
       setStatus('success');
       await refreshBalances();
     } catch (err) {
+      if (swapStarted) {
+        logSwapTransactionEvent({
+          event: 'swap_failed',
+          quote,
+          ownerAddress,
+          transactionHash: swapHash,
+          error: err,
+        });
+      }
+
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Swap failed.');
     }

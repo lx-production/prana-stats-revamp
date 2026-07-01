@@ -9,6 +9,7 @@ This document is a map of everything added for the in-app Polygon swap feature. 
 - The browser asks the **Node backend** for a quote and unsigned transaction data.
 - The backend uses **Uniswap Smart Order Router** (and a custom fallback for PRANA routes) with the existing **Alchemy RPC** env var — the API key never goes to the browser.
 - The wallet signs **approval** (if needed) and the **swap** transaction locally.
+- The backend writes structured swap logs for selected routes, quote failures, and browser-reported approval/swap transaction outcomes.
 
 ## Architecture (high level)
 
@@ -20,10 +21,13 @@ flowchart TD
   modal --> swapHook["useUniswapSwap"]
   quoteHook --> api["POST /api/swap/quote"]
   api --> loader["server/loaders/swapQuote.ts"]
+  loader --> logs["server/loaders/swapLogs.ts"]
   loader --> alpha["Uniswap AlphaRouter"]
   loader --> fallback["WBTC/PRANA V3 fallback path builder"]
   alpha --> rpc["Alchemy via server/utils/providers.ts"]
   fallback --> rpc
+  swapHook --> logApi["POST /api/swap/log"]
+  logApi --> logs
   swapHook --> router["Uniswap SwapRouter02 on Polygon"]
   walletHook --> userWallet["Injected wallet"]
   swapHook --> userWallet
@@ -53,11 +57,13 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 | `constants/swapContracts.ts` | 123 | V1 token list, router addresses, slippage defaults, ERC-20 ABI |
 | `utils/wagmiConfig.ts` | 17 | wagmi config: Polygon + injected connectors |
 | `utils/swapTokenFormatting.ts` | 33 | Parse/format amounts, compact address, input validation |
+| `utils/swapTransactionLogs.ts` | 39 | Fire-and-forget browser reporting to `/api/swap/log` |
 | `hooks/useInjectedWallet.ts` | 40 | Connect, disconnect, switch to Polygon |
 | `hooks/useUniswapQuote.ts` | 102 | Debounced fetch to `/api/swap/quote` |
 | `hooks/useUniswapSwap.ts` | 179 | Balance, allowance, approve, send swap tx |
 | `components/SwapModal.tsx` | 360 | Modal UI (token pickers, quote, CTA, errors) |
 | `server/loaders/swapQuote.ts` | 356 | Uniswap routing + PRANA fallback + calldata |
+| `server/loaders/swapLogs.ts` | 130 | Structured swap quote/transaction logging helpers |
 
 ### Modified files (integration touchpoints)
 
@@ -65,7 +71,7 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 | --- | --- |
 | `main.tsx` | Wraps app in `WagmiProvider` + `QueryClientProvider` |
 | `hero3.tsx` | TRADE link → button; renders `<SwapModal />` |
-| `server/index.ts` | Adds `POST /api/swap/quote` route |
+| `server/index.ts` | Adds `POST /api/swap/quote` and `POST /api/swap/log` routes |
 | `server/requestHelpers.ts` | Adds `readJsonBody()` for POST bodies |
 | `server/utils/providers.ts` | Adds `getServerPolygonRpcUrl()` export |
 | `package.json` / `package-lock.json` | New dependencies |
@@ -105,6 +111,7 @@ Start here. Everything else imports from this file.
 
 **Look for:**
 - `SwapToken`, `SwapQuoteRequest`, `SwapQuoteResponse` — API contract between frontend and backend
+- `SwapTransactionLogEvent`, `SwapTransactionLogRequest` — browser-to-server transaction log contract
 - `SwapTransactionStatus` — UI state machine for approve/swap
 - Hook input/output types — keeps components thin
 
@@ -143,13 +150,18 @@ This is the core routing logic. Budget the most review time here.
 - Uses `createRequire()` for Uniswap packages (Node ESM compatibility)
 - Alchemy RPC via `getServerPolygonRpcUrl()` — not exposed to browser
 - Native POL output uses `multicall` + `unwrapWETH9` in fallback path
+- Calls `logSwapQuoteRoute()` when a route is selected. Log payload includes source (`alpha_router` or `wbtc_prana_fallback`), token pair, amount in/out, minimum out, slippage, recipient, gas fields, and `routePath`.
+- Calls `logSwapQuoteFailure()` for AlphaRouter failures, fallback failures, and final no-route failures.
 
-### 5. API endpoint — `server/index.ts` (lines ~90–108)
+### 5. API endpoints — `server/index.ts`
 
 **Look for:**
 - `POST` only on `/api/swap/quote`
 - Body parsed via `readJsonBody<SwapQuoteRequest>`
 - Errors return JSON `{ error, message }` with 400 status
+- `POST` only on `/api/swap/log`
+- Log body parsed via `readJsonBody<unknown>` and validated by `parseSwapTransactionLogRequest()`
+- Transaction logs are accepted as fire-and-forget telemetry from the browser; failed log writes should not block the user's swap flow
 
 ### 6. Server helpers — `server/requestHelpers.ts`, `server/utils/providers.ts`
 
@@ -169,6 +181,9 @@ Small changes. Confirm `readJsonBody` is straightforward and `getServerPolygonRp
 - `needsApproval` → `approve` on SwapRouter02 before swap
 - Sends `quote.transaction.to/data/value` from backend unchanged
 - Native POL: `value` field on transaction, no approval needed
+- Reports approval/swap events through `logSwapTransactionEvent()`:
+  `approval_submitted`, `approval_confirmed`, `approval_failed`, `swap_submitted`, `swap_confirmed`, `swap_failed`
+- Checks receipt status and treats `reverted` receipts as failures
 - `as never` casts on viem calls (typing workaround, not logic)
 
 ### 9. Wallet hook — `hooks/useInjectedWallet.ts`
@@ -178,6 +193,10 @@ Thin wrapper over wagmi. Connect, disconnect, `ensurePolygon()`.
 ### 10. Formatting utils — `utils/swapTokenFormatting.ts`
 
 Pure helpers. No side effects.
+
+### 10a. Transaction log helper — `utils/swapTransactionLogs.ts`
+
+Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log`. It includes the wallet address, tx hash, quote pair, raw/display amounts, minimum amount out, router address, route summary, receipt status, and error message when present.
 
 ### 11. UI component — `components/SwapModal.tsx`
 
@@ -237,6 +256,34 @@ Unchanged for swap, but required for local dev: `/api` proxies to `http://localh
 
 The frontend never constructs calldata — it only submits `transaction` from the backend quote.
 
+**POST `/api/swap/log`**
+
+```json
+{
+  "event": "swap_confirmed",
+  "ownerAddress": "0x...",
+  "tokenInSymbol": "USDT",
+  "tokenOutSymbol": "PRANA",
+  "amountIn": "1",
+  "amountOut": "14.601566589",
+  "amountOutRaw": "...",
+  "minimumAmountOut": "...",
+  "route": [{ "protocol": "V3", "path": ["USDT", "WBTC", "PRANA"], "percent": 100 }],
+  "routerAddress": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+  "transactionHash": "0x...",
+  "receiptStatus": "success"
+}
+```
+
+The endpoint returns `{ "ok": true }` when the log event is accepted. Client logging is intentionally non-blocking.
+
+**Structured server log examples**
+
+```json
+{"scope":"swap","event":"quote_route_selected","source":"wbtc_prana_fallback","routePath":"USDT -> WBTC -> PRANA (100% V3)"}
+{"scope":"swap","event":"transaction_event","swapEvent":"swap_confirmed","transactionHash":"0x...","routePath":"USDT -> WBTC -> PRANA (100% V3)"}
+```
+
 ## Manual test checklist
 
 Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh after deploy.
@@ -253,6 +300,8 @@ Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh af
 10. Complete a small swap and confirm on Polygonscan
 11. Wrong network → “Switch to Polygon”
 12. Backend stopped → friendly error, not JSON parse error
+13. Local server terminal shows `"scope":"swap"` logs for quote route selection and transaction events
+14. Production service logs show swap entries with `sudo journalctl -u prana-stats-revamp.service -f | grep '"scope":"swap"'`
 
 ## Known limitations (V1)
 
@@ -261,7 +310,8 @@ Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh af
 - No quote expiry UI warning (backend uses 20-minute deadline for AlphaRouter; fallback path has no deadline in calldata)
 - Bundle size increased (~1.1 MB JS) due to wagmi/viem
 - `swapQuote.ts` uses `any` for Uniswap SDK types (SDK is ethers v5, app is ethers v6)
-- Production deploy requires **rebuild + restart** `prana-stats-revamp.service` so `/api/swap/quote` exists in the running server
+- Transaction result logs depend on the browser successfully posting `/api/swap/log`; route quote logs are server-side and do not depend on the browser after the quote request
+- Production deploy requires **rebuild + restart** `prana-stats-revamp.service` so `/api/swap/quote` and `/api/swap/log` exist in the running server
 
 ## Quick smoke test (terminal)
 
@@ -274,3 +324,15 @@ curl -s -X POST http://localhost:4173/api/swap/quote \
 ```
 
 Expect JSON with `"amountOut"` and transaction `data` starting with `0xb858183f`.
+
+To inspect local logs while testing swaps:
+
+```bash
+npm run serve
+```
+
+For production service logs:
+
+```bash
+sudo journalctl -u prana-stats-revamp.service -f | grep '"scope":"swap"'
+```

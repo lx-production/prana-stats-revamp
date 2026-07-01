@@ -9,6 +9,7 @@ import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
 import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
 import { loadSwapQuote } from './loaders/swapQuote.ts';
+import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { createServerCache } from './cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
@@ -103,6 +104,27 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, {
           error: 'quote_failed',
           message: err instanceof Error ? err.message : 'Failed to load swap quote.',
+        });
+      }
+    }
+
+    if (url.pathname === '/api/swap/log') {
+      if (req.method !== 'POST') {
+        return sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use POST for swap logs.',
+        });
+      }
+
+      try {
+        const body = await readJsonBody<unknown>(req);
+        const payload = parseSwapTransactionLogRequest(body);
+        logSwapTransactionEvent(payload);
+        return sendJson(res, 200, { ok: true });
+      } catch (err) {
+        return sendJson(res, 400, {
+          error: 'log_failed',
+          message: err instanceof Error ? err.message : 'Failed to write swap log.',
         });
       }
     }
