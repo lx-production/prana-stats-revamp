@@ -25,6 +25,7 @@ function getArbitrumRpcUrl(): string {
   return process.env.VITE_ALCHEMY_ARBITRUM_MAIN || process.env.ARBITRUM_RPC_URL || DEFAULT_ARBITRUM_RPC_URL;
 }
 
+// returns a cached ethers.JsonRpcProvider (ethers v6)
 export async function getServerPolygonProvider(): Promise<ethers.JsonRpcProvider> {
   await ensureServerEnvLoaded();
 
@@ -35,6 +36,7 @@ export async function getServerPolygonProvider(): Promise<ethers.JsonRpcProvider
   return polygonProvider;
 }
 
+// returns only the URL string
 export async function getServerPolygonRpcUrl(): Promise<string> {
   await ensureServerEnvLoaded();
   return getPolygonRpcUrl();

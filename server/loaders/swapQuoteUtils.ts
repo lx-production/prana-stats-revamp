@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { ethers } from 'ethers';
 import { getServerPolygonProvider, getServerPolygonRpcUrl } from '../utils/providers.ts';
 import type { HexAddress, SwapRouteStep, SwapToken } from '../../types/swap.types.ts';
-import { getSwapToken, getSwapTokenByAddress, POLYGON_CHAIN_ID, QUOTER_V2_ABI, UNISWAP_V3_QUOTER_V2_ADDRESS, WBTC_PRANA_POOL_ADDRESS } from '../../constants/swapContracts.ts';
+import { getSwapToken, getSwapTokenByAddress, POLYGON_CHAIN_ID, QUOTER_V2_ABI, UNISWAP_V3_QUOTER_V2_ADDRESS } from '../../constants/swapContracts.ts';
 
 // Uniswap packages are CommonJS in Node ESM — require() loads their working builds (native import breaks @uniswap/sdk-core).
 const require = createRequire(import.meta.url);
@@ -29,6 +29,7 @@ export function getCurrency(token: SwapToken): any {
   return new Token(POLYGON_CHAIN_ID, token.address, token.decimals, token.symbol, token.name);
 }
 
+// AlphaRouter expects @ethersproject/providers (ethers v5 style)
 export async function getSwapRouter(): Promise<any> {
   if (!routerPromise) {
     routerPromise = getServerPolygonRpcUrl().then((rpcUrl) => {
@@ -148,9 +149,6 @@ export async function loadPrimaryRoute(
       recipient,
       slippageTolerance,
       deadline,
-    },
-    {
-      poolsToManuallyRouteThrough: [WBTC_PRANA_POOL_ADDRESS],
     },
   );
 }
