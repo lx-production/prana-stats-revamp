@@ -7,16 +7,43 @@ import { getSwapToken, getSwapTokenByAddress, POLYGON_CHAIN_ID, QUOTER_V2_ABI, U
 // Uniswap packages are CommonJS in Node ESM — require() loads their working builds (native import breaks @uniswap/sdk-core).
 const require = createRequire(import.meta.url);
 const { StaticJsonRpcProvider } = require('@ethersproject/providers');
-const { ChainId, CurrencyAmount, Ether, Percent, Token, TradeType } = require('@uniswap/sdk-core');
 const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
+const { ChainId, CurrencyAmount, Ether, Percent, Token, TradeType } = require('@uniswap/sdk-core');
 
 let routerPromise: Promise<any> | null = null;
+
+// AlphaRouter expects @ethersproject/providers (ethers v5 style)
+// AlphaRouter now looks at v3 + v2 pools
+export async function getSwapRouter(): Promise<any> {
+  if (!routerPromise) {
+    routerPromise = getServerPolygonRpcUrl().then((rpcUrl) => {
+      const provider = new StaticJsonRpcProvider(rpcUrl, POLYGON_CHAIN_ID);
+
+      return new AlphaRouter({
+        chainId: ChainId.POLYGON,
+        provider,
+        v4Supported: [], // v4 only works with Universal Router, we're not using it
+      });
+    });
+  }
+
+  return routerPromise;
+}
 
 export function getValidatedSlippageBps(slippageBps: number): number {
   if (!Number.isFinite(slippageBps)) return 50;
   return Math.min(Math.max(Math.round(slippageBps), 1), 500);
 }
 
+export function getSlippageTolerance(slippageBps: number): any {
+  return new Percent(getValidatedSlippageBps(slippageBps), 10_000);
+}
+
+export function getMinimumAmountOut(amountOutRaw: bigint, slippageBps: number): bigint {
+  return (amountOutRaw * BigInt(10_000 - getValidatedSlippageBps(slippageBps))) / 10_000n;
+}
+
+// Uniswap SDK object for routing/amounts
 export function getCurrency(token: SwapToken): any {
   if (token.kind === 'native') {
     return Ether.onChain(ChainId.POLYGON);
@@ -29,21 +56,8 @@ export function getCurrency(token: SwapToken): any {
   return new Token(POLYGON_CHAIN_ID, token.address, token.decimals, token.symbol, token.name);
 }
 
-// AlphaRouter expects @ethersproject/providers (ethers v5 style)
-export async function getSwapRouter(): Promise<any> {
-  if (!routerPromise) {
-    routerPromise = getServerPolygonRpcUrl().then((rpcUrl) => {
-      const provider = new StaticJsonRpcProvider(rpcUrl, POLYGON_CHAIN_ID);
-
-      return new AlphaRouter({
-        chainId: ChainId.POLYGON,
-        provider,
-        v4Supported: [],
-      });
-    });
-  }
-
-  return routerPromise;
+export function getExactInputAmount(token: SwapToken, amountInRaw: bigint): any {
+  return CurrencyAmount.fromRawAmount(getCurrency(token), amountInRaw.toString());
 }
 
 function currencyToDisplaySymbol(currency: any): string {
@@ -53,6 +67,7 @@ function currencyToDisplaySymbol(currency: any): string {
   return knownToken?.symbol ?? currency.symbol ?? currency.address;
 }
 
+// app’s user-facing summary is built from all legs 
 export function buildRouteSummary(route: unknown): SwapRouteStep[] {
   const swapRoute = route as {
     route?: Array<{
@@ -69,21 +84,17 @@ export function buildRouteSummary(route: unknown): SwapRouteStep[] {
   }));
 }
 
-export function getSwapAddress(token: SwapToken): HexAddress {
-  const address = token.kind === 'native' ? token.wrappedAddress : token.address;
-
-  if (!address) {
-    throw new Error(`${token.symbol} is missing a swap address.`);
-  }
-
-  return address;
-}
-
+// takes the raw response from Uniswap’s AlphaRouter (router.route(...)) and pulls out one V3 leg from it 
+// or null if there isn’t a usable one.
+// one leg can cover multiple hops/pools internally
+// the first V3 leg should be the highest-percent V3 leg (from best-swap-route.js)
 export function selectV3Route(route: any): any | null {
+  // route.route is an array of all the legs in the route, so we need to find the first V3 leg.
   const routes = Array.isArray(route?.route) ? route.route : [];
   return routes.find((item) => item?.protocol === 'V3' && item?.route?.pools?.length && item?.tokenPath?.length) ?? null;
 }
 
+// When selectV3Route returns that leg, getV3RoutePathData pulls all tokens and all pool fees
 export function getV3RoutePathData(v3Route: any): { addresses: HexAddress[]; fees: number[]; pathLabels: string[] } {
   const tokenPath = v3Route.tokenPath as any[];
   const pools = v3Route.route.pools as Array<{ fee: number }>;
@@ -98,6 +109,7 @@ export function getV3RoutePathData(v3Route: any): { addresses: HexAddress[]; fee
   return { addresses, fees, pathLabels };
 }
 
+// packs them into one V3 path for use in quoteV3Path
 export function encodeV3Path(addresses: HexAddress[], fees: number[]): HexAddress {
   const types: string[] = [];
   const values: Array<string | number> = [];
@@ -115,20 +127,19 @@ export function encodeV3Path(addresses: HexAddress[], fees: number[]): HexAddres
   return ethers.solidityPacked(types, values) as HexAddress;
 }
 
-export function getMinimumAmountOut(amountOutRaw: bigint, slippageBps: number): bigint {
-  return (amountOutRaw * BigInt(10_000 - getValidatedSlippageBps(slippageBps))) / 10_000n;
+export async function quoteV3Path(path: HexAddress, amountInRaw: bigint): Promise<{ amountOutRaw: bigint; gasEstimate: bigint }> {
+  const provider = await getServerPolygonProvider();
+  const quoter = new ethers.Contract(UNISWAP_V3_QUOTER_V2_ADDRESS, QUOTER_V2_ABI, provider);
+  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw);
+
+  return {
+    amountOutRaw: BigInt(quoted[0].toString()),
+    gasEstimate: BigInt(quoted[3].toString()),
+  };
 }
 
 export function formatAmountOut(rawAmount: bigint, token: SwapToken): string {
   return ethers.formatUnits(rawAmount, token.decimals);
-}
-
-export function getExactInputAmount(token: SwapToken, amountInRaw: bigint): any {
-  return CurrencyAmount.fromRawAmount(getCurrency(token), amountInRaw.toString());
-}
-
-export function getSlippageTolerance(slippageBps: number): any {
-  return new Percent(getValidatedSlippageBps(slippageBps), 10_000);
 }
 
 export async function loadPrimaryRoute(
@@ -185,15 +196,4 @@ export async function loadRouteFromWbtc(router: any, token: SwapToken, wbtcAmoun
   );
 
   return selectV3Route(route);
-}
-
-export async function quoteV3Path(path: HexAddress, amountInRaw: bigint): Promise<{ amountOutRaw: bigint; gasEstimate: bigint }> {
-  const provider = await getServerPolygonProvider();
-  const quoter = new ethers.Contract(UNISWAP_V3_QUOTER_V2_ADDRESS, QUOTER_V2_ABI, provider);
-  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw);
-
-  return {
-    amountOutRaw: BigInt(quoted[0].toString()),
-    gasEstimate: BigInt(quoted[3].toString()),
-  };
 }

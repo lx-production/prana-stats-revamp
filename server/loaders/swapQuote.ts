@@ -1,8 +1,9 @@
 import { ethers } from 'ethers';
 import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
+import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import { getSwapToken, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import { logSwapQuoteFailure, logSwapQuoteRoute } from './swapLogs.ts';
-import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapAddress, getSwapRouter, getSlippageTolerance, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
+import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapRouter, getSlippageTolerance, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 
 const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 
@@ -56,7 +57,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
         amountInRaw,
         slippageTolerance,
         deadline,
-        router,
+        router, // AlphaRouter
       );
     } catch (err) {
       logSwapQuoteFailure({
@@ -122,6 +123,8 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
   };
 }
 
+// v3 pool only fallback quote
+// The fallback doesn't ask for a full tokenIn → tokenOut route. It asks for one leg at a time.
 async function loadWbtcPranaFallbackQuote(
   request: SwapQuoteRequest,
   tokenIn: SwapToken,
@@ -131,8 +134,6 @@ async function loadWbtcPranaFallbackQuote(
   deadline: number,
   router: any,
 ): Promise<SwapQuoteResponse | null> {
-  const wbtc = getSwapToken('WBTC');
-  const prana = getSwapToken('PRANA');
   const routesToPrana = tokenOut.symbol === 'PRANA' && tokenIn.symbol !== 'WBTC';
   const routesFromPrana = tokenIn.symbol === 'PRANA' && tokenOut.symbol !== 'WBTC';
 
@@ -144,6 +145,7 @@ async function loadWbtcPranaFallbackQuote(
 
   if (routesToPrana) {
     const v3Route = await loadRouteToWbtc(router, tokenIn, amountInRaw, request.recipient, slippageTolerance, deadline);
+    
     if (!v3Route) {
       logSwapQuoteFailure({
         stage: 'wbtc_prana_fallback',
@@ -156,16 +158,18 @@ async function loadWbtcPranaFallbackQuote(
     }
 
     const routePath = getV3RoutePathData(v3Route);
-    addresses = [...routePath.addresses, getSwapAddress(prana)];
+    addresses = [...routePath.addresses, PRANA_ADDRESS as HexAddress];
     fees = [...routePath.fees, V3_PRANA_POOL_FEE];
     pathLabels = [...routePath.pathLabels, 'PRANA'];
   } else {
     const pranaToWbtcPath = encodeV3Path(
-      [getSwapAddress(prana), getSwapAddress(wbtc)],
+      [PRANA_ADDRESS as HexAddress, WBTC_ADDRESS as HexAddress],
       [V3_PRANA_POOL_FEE],
     );
+    
     const pranaToWbtcQuote = await quoteV3Path(pranaToWbtcPath, amountInRaw);
     const v3Route = await loadRouteFromWbtc(router, tokenOut, pranaToWbtcQuote.amountOutRaw, request.recipient, slippageTolerance, deadline);
+    
     if (!v3Route) {
       logSwapQuoteFailure({
         stage: 'wbtc_prana_fallback',
@@ -178,7 +182,7 @@ async function loadWbtcPranaFallbackQuote(
     }
 
     const routePath = getV3RoutePathData(v3Route);
-    addresses = [getSwapAddress(prana), ...routePath.addresses];
+    addresses = [PRANA_ADDRESS as HexAddress, ...routePath.addresses];
     fees = [V3_PRANA_POOL_FEE, ...routePath.fees];
     pathLabels = ['PRANA', ...routePath.pathLabels];
   }
@@ -211,6 +215,7 @@ async function loadWbtcPranaFallbackQuote(
     amountIn: amountInRaw,
     amountOutMinimum: minimumAmountOutRaw,
   }]);
+  
   const calldata = tokenOut.kind === 'native'
     ? SWAP_ROUTER_IFACE.encodeFunctionData('multicall', [[
         exactInputCalldata,
