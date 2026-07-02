@@ -134,6 +134,7 @@ async function loadWbtcPranaFallbackQuote(
   deadline: number,
   router: any,
 ): Promise<SwapQuoteResponse | null> {
+  // only runs for swaps involving PRANA where the other token is not WBTC (WBTC↔PRANA is handled directly by the primary router)
   const routesToPrana = tokenOut.symbol === 'PRANA' && tokenIn.symbol !== 'WBTC';
   const routesFromPrana = tokenIn.symbol === 'PRANA' && tokenOut.symbol !== 'WBTC';
 
@@ -142,7 +143,8 @@ async function loadWbtcPranaFallbackQuote(
   let addresses: HexAddress[];
   let fees: number[];
   let pathLabels: string[];
-
+  
+  // buying PRANA (e.g. USDT → PRANA)
   if (routesToPrana) {
     const v3Route = await loadRouteToWbtc(router, tokenIn, amountInRaw, request.recipient, slippageTolerance, deadline);
     
@@ -156,12 +158,15 @@ async function loadWbtcPranaFallbackQuote(
       });
       return null;
     }
-
+    
+    // pulls token addresses, pool fees, and labels from that leg
     const routePath = getV3RoutePathData(v3Route);
+
     addresses = [...routePath.addresses, PRANA_ADDRESS as HexAddress];
     fees = [...routePath.fees, V3_PRANA_POOL_FEE];
     pathLabels = [...routePath.pathLabels, 'PRANA'];
   } else {
+    // selling PRANA (e.g. PRANA → USDT)
     const pranaToWbtcPath = encodeV3Path(
       [PRANA_ADDRESS as HexAddress, WBTC_ADDRESS as HexAddress],
       [V3_PRANA_POOL_FEE],

@@ -1,18 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
-import {
-  POLYGON_CHAIN_ID,
-  UNISWAP_SWAP_ROUTER_02_ADDRESS,
-} from '../constants/swapContracts';
-import type {
-  HexAddress,
-  SwapTransactionStatus,
-  UseUniswapSwapInput,
-  UseUniswapSwapResult,
-} from '../types/swap.types';
-import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
+import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
+import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../constants/swapContracts';
+import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../types/swap.types';
 
 export function useUniswapSwap({
   quote,
@@ -43,6 +35,7 @@ export function useUniswapSwap({
     setIsRefreshingBalances(true);
 
     try {
+      // If swapping native POL, there's no ERC-20 approval.
       if (tokenIn.kind === 'native') {
         const nextBalance = await publicClient.getBalance({ address: ownerAddress });
         setBalance(nextBalance);
@@ -102,6 +95,8 @@ export function useUniswapSwap({
 
     try {
       setStatus('approving');
+      // The approval tx is sent to the token contract (e.g. USDC), not to the router.
+      // The spender is Uniswap’s official Swap Router 02 on Polygon.
       approvalHash = await walletClient.writeContract({
         account: ownerAddress,
         address: tokenIn.address,

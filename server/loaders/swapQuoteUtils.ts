@@ -156,7 +156,7 @@ export async function loadPrimaryRoute(
     getCurrency(tokenOut),
     TradeType.EXACT_INPUT,
     {
-      type: SwapType.SWAP_ROUTER_02,
+      type: SwapType.SWAP_ROUTER_02, // flag telling AlphaRouter: “encode the transaction for Swap Router 02.”
       recipient,
       slippageTolerance,
       deadline,
@@ -164,6 +164,8 @@ export async function loadPrimaryRoute(
   );
 }
 
+// part of the fallback route when Uniswap’s AlphaRouter can’t find a normal tokenIn → tokenOut route.
+// Used when you’re buying PRANA
 export async function loadRouteToWbtc(router: any, token: SwapToken, amountInRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
   const wbtc = getSwapToken('WBTC');
   const route = await router.route(
@@ -181,6 +183,8 @@ export async function loadRouteToWbtc(router: any, token: SwapToken, amountInRaw
   return selectV3Route(route);
 }
 
+// part of the fallback route 
+// Used when you’re selling PRANA
 export async function loadRouteFromWbtc(router: any, token: SwapToken, wbtcAmountRaw: bigint, recipient: HexAddress, slippageTolerance: any, deadline: number): Promise<any | null> {
   const wbtc = getSwapToken('WBTC');
   const route = await router.route(
