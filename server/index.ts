@@ -25,6 +25,16 @@ const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
 const SWAP_LOG_BODY_MAX_BYTES = 8192;
 const SWAP_QUOTE_RATE_LIMIT = { windowMs: 60_000, maxRequests: 30 };
 const SWAP_LOG_RATE_LIMIT = { windowMs: 60_000, maxRequests: 120 };
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
+const TRUSTED_PROXY_ADDRESSES = new Set([
+  '127.0.0.1',
+  '::1',
+  ...(process.env.TRUSTED_PROXY_IPS || '')
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean)
+    .map(normalizeSocketAddress),
+]);
 
 const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
@@ -37,13 +47,41 @@ type RateLimitBucket = {
 const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
 const swapLogRateLimits = new Map<string, RateLimitBucket>();
 
+function normalizeSocketAddress(address: string): string {
+  return address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
+}
+
+function isTrustedProxy(address: string): boolean {
+  return TRUSTED_PROXY_ADDRESSES.has(normalizeSocketAddress(address));
+}
+
 function getRequestIp(req: http.IncomingMessage): string {
+  const socketAddress = req.socket.remoteAddress ?? 'unknown';
   const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
+
+  if (isTrustedProxy(socketAddress) && forwardedFor) {
+    const forwardedHeader = Array.isArray(forwardedFor) ? forwardedFor.join(',') : forwardedFor;
+    const forwardedIps = forwardedHeader.split(',').map((ip) => ip.trim()).filter(Boolean);
+    const proxyAppendedIp = forwardedIps[forwardedIps.length - 1];
+
+    if (proxyAppendedIp) {
+      return proxyAppendedIp;
+    }
   }
 
-  return req.socket.remoteAddress ?? 'unknown';
+  return normalizeSocketAddress(socketAddress);
+}
+
+function sweepRateLimitBuckets(
+  buckets: Map<string, RateLimitBucket>,
+  now: number,
+  windowMs: number,
+): void {
+  for (const [key, bucket] of buckets) {
+    if (now - bucket.windowStartedAt > windowMs) {
+      buckets.delete(key);
+    }
+  }
 }
 
 function isRateLimited(
@@ -63,6 +101,13 @@ function isRateLimited(
   bucket.count += 1;
   return bucket.count > limit.maxRequests;
 }
+
+const rateLimitCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
+  sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
+}, RATE_LIMIT_CLEANUP_INTERVAL_MS);
+rateLimitCleanupTimer.unref();
 
 function sanitizeSwapErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) return fallback;
