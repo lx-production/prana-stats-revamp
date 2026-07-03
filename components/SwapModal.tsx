@@ -5,9 +5,9 @@ import {
   DEFAULT_SWAP_SLIPPAGE_BPS,
   DEFAULT_SWAP_TOKEN_IN_SYMBOL,
   DEFAULT_SWAP_TOKEN_OUT_SYMBOL,
-  getSwapToken,
   V1_SWAP_TOKENS,
 } from '../constants/swapContracts';
+import { getSwapToken } from '../utils/swapTokens';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';

@@ -1,7 +1,8 @@
 import { ethers } from 'ethers';
 import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
-import { getSwapToken, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { getSwapToken } from '../../utils/swapTokens.ts';
 import { logSwapQuoteFailure, logSwapQuoteRoute } from './swapLogs.ts';
 import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapRouter, getSlippageTolerance, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 

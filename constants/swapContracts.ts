@@ -1,5 +1,5 @@
-import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_V3_POOL } from './sharedContracts.ts';
 import type { HexAddress, SwapToken, SwapTokenSymbol } from '../types/swap.types.ts';
+import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_V3_POOL } from './sharedContracts.ts';
 
 export const POLYGON_CHAIN_ID = 137;
 export const POLYGON_CHAIN_NAME = 'Polygon';
@@ -84,22 +84,3 @@ export const DEFAULT_SWAP_TOKEN_IN_SYMBOL: SwapTokenSymbol = 'WBTC';
 export const DEFAULT_SWAP_TOKEN_OUT_SYMBOL: SwapTokenSymbol = 'PRANA';
 
 export const WBTC_PRANA_POOL_ADDRESS = WBTC_PRANA_V3_POOL;
-
-export function getSwapToken(symbol: SwapTokenSymbol): SwapToken {
-  const token = V1_SWAP_TOKENS.find((item) => item.symbol === symbol);
-
-  if (!token) {
-    throw new Error(`Unsupported swap token: ${symbol}`);
-  }
-
-  return token;
-}
-
-export function getSwapTokenByAddress(address: string): SwapToken | undefined {
-  const normalizedAddress = address.toLowerCase();
-
-  return V1_SWAP_TOKENS.find((token) => {
-    if (token.address?.toLowerCase() === normalizedAddress) return true;
-    return token.wrappedAddress?.toLowerCase() === normalizedAddress;
-  });
-}
