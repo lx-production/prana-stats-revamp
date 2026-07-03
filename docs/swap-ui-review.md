@@ -11,6 +11,34 @@ This document is a map of everything added for the in-app Polygon swap feature. 
 - The wallet signs **approval** (no need for native POL) and the **swap** transaction locally.
 - The backend writes structured swap logs for selected routes, quote failures, and browser-reported approval/swap transaction outcomes.
 
+## Security fixes (applied)
+
+Five hardening changes were added after the initial V1 implementation. Review these before the rest of the swap flow.
+
+1. **Backend calldata validation** (`server/loaders/swapQuote.ts`)
+   - Before any quote is returned, `validateSwapTransaction()` decodes router calldata and walks nested `multicall` batches.
+   - Checks: router `to` address, native `value`, allowed recipients (user wallet or router custody), input/min-out amounts, V3 path endpoints (strict on fallback), multicall deadline, nesting depth, and only whitelisted router functions (`exactInput`, `exactInputSingle`, `swapExactTokensForTokens`, `unwrapWETH9`, `sweepToken`, `wrapETH`, `refundETH`).
+   - Malformed or unexpected calldata from AlphaRouter is rejected with a generic API error (internal message is not leaked).
+
+2. **Frontend quote staleness guard** (`hooks/useUniswapSwap.ts`, `types/swap.types.ts`)
+   - Quote responses now echo `request` metadata (`tokenInSymbol`, `tokenOutSymbol`, `amountInRaw`, `recipient`, `slippageBps`, `chainId`) plus a `deadline`.
+   - `isQuoteCurrent` must pass before approve or swap; otherwise the user sees “Refresh the quote before swapping.”
+   - `useUniswapQuote` clears the previous quote as soon as inputs change (not only after debounce), so a stale quote cannot sit on screen while the user edits the amount.
+
+3. **Swap API rate limiting** (`server/index.ts`)
+   - Per-IP sliding window: **30** `POST /api/swap/quote` requests / minute, **120** `POST /api/swap/log` / minute.
+   - Over limit → `429` with `{ error: "rate_limited", message: "..." }`.
+
+4. **Request body size caps** (`server/requestHelpers.ts`, `server/index.ts`)
+   - `readJsonBody()` enforces a byte limit while streaming (default 16 KB).
+   - Swap routes use stricter caps: quote **2 KB**, log **8 KB**. Oversized bodies throw before JSON parse.
+
+5. **Error and log sanitization** (`server/index.ts`, `server/loaders/swapLogs.ts`)
+   - `sanitizeSwapErrorMessage()` only forwards a small allowlist of user-facing validation messages; everything else becomes a generic fallback (prevents RPC URLs, stack traces, or Uniswap internals from reaching the browser).
+   - `sanitizeLogString()` truncates fields and redacts `http(s)://` URLs and Alchemy API key segments before writing structured logs.
+
+**Also fixed with the security pass:** the WBTC/PRANA fallback now wraps calldata in `multicall(uint256 deadline, bytes[])` (with `unwrapWETH9` for native POL output) so the fallback path carries an on-chain deadline like AlphaRouter quotes.
+
 ## Architecture (high level)
 
 ```mermaid
@@ -53,16 +81,16 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 
 | File | Lines (approx) | Purpose |
 | --- | --- | --- |
-| `types/swap.types.ts` | 119 | All swap-related TypeScript types |
-| `constants/swapContracts.ts` | 123 | V1 token list, router addresses, slippage defaults, ERC-20 ABI |
+| `types/swap.types.ts` | 152 | All swap-related TypeScript types |
+| `constants/swapContracts.ts` | 94 | V1 token list, router addresses, slippage defaults, ERC-20 ABI |
 | `utils/wagmiConfig.ts` | 17 | wagmi config: Polygon + injected connectors |
 | `utils/swapTokenFormatting.ts` | 33 | Parse/format amounts, compact address, input validation |
 | `utils/swapTransactionLogs.ts` | 39 | Fire-and-forget browser reporting to `/api/swap/log` |
 | `hooks/useInjectedWallet.ts` | 40 | Connect, disconnect, switch to Polygon |
 | `hooks/useUniswapQuote.ts` | 102 | Debounced fetch to `/api/swap/quote` |
-| `hooks/useUniswapSwap.ts` | 179 | Balance, allowance, approve, send swap tx |
+| `hooks/useUniswapSwap.ts` | 270 | Balance, allowance, approve, send swap tx; quote staleness guard |
 | `components/SwapModal.tsx` | 360 | Modal UI (token pickers, quote, CTA, errors) |
-| `server/loaders/swapQuote.ts` | 356 | Uniswap routing + PRANA fallback + calldata |
+| `server/loaders/swapQuote.ts` | 474 | Uniswap routing + PRANA fallback + calldata validation |
 | `server/loaders/swapLogs.ts` | 130 | Structured swap quote/transaction logging helpers |
 
 ### Modified files (integration touchpoints)
@@ -103,14 +131,14 @@ Default pair when modal opens: **WBTC → PRANA** (`DEFAULT_SWAP_TOKEN_IN_SYMBOL
 
 ## Recommended review order
 
-Read in this order so each layer builds on the last.
+Read in this order so each layer builds on the last. Start with **Security fixes (applied)** above for the five hardening changes, then follow the numbered sections below.
 
 ### 1. Types — `types/swap.types.ts`
 
 Start here. Everything else imports from this file.
 
 **Look for:**
-- `SwapToken`, `SwapQuoteRequest`, `SwapQuoteResponse` — API contract between frontend and backend
+- `SwapToken`, `SwapQuoteRequest`, `SwapQuoteResponse`, `SwapQuoteRequestMetadata` — API contract between frontend and backend
 - `SwapTransactionLogEvent`, `SwapTransactionLogRequest` — browser-to-server transaction log contract
 - `SwapTransactionStatus` — UI state machine for approve/swap
 - Hook input/output types — keeps components thin
@@ -123,6 +151,7 @@ Start here. Everything else imports from this file.
 - `WBTC_PRANA_POOL_ADDRESS` matches existing `sharedContracts.ts`
 - `DEFAULT_SWAP_SLIPPAGE_BPS` = 50 (0.5%)
 - `SWAP_ERC20_ABI` — minimal approve/allowance/balanceOf for frontend
+- `SWAP_ROUTER_02_ABI` — expanded function list used server-side to decode and validate router calldata
 
 ### 3. App wiring — `utils/wagmiConfig.ts` + `main.tsx`
 
@@ -146,10 +175,12 @@ This is the core routing logic. Budget the most review time here.
 
 **Critical detail (already fixed once):** SwapRouter02 on Polygon uses `exactInput` **without** a `deadline` in the tuple. Correct selector: `0xb858183f`. Wrong (reverts immediately): `0xc04b8d59`.
 
+**Security (fix #1):** `validateSwapTransaction()` / `validateRouterCall()` run on both AlphaRouter and fallback quotes before the response is sent. Budget review time on the allowlist of router functions and recipient/amount checks.
+
 **Also note:**
 - Uses `createRequire()` for Uniswap packages (Node ESM compatibility)
 - Alchemy RPC via `getServerPolygonRpcUrl()` — not exposed to browser
-- Native POL output uses `multicall` + `unwrapWETH9` in fallback path
+- Native POL output uses `multicall(uint256 deadline, bytes[])` + `unwrapWETH9` in fallback path
 - Calls `logSwapQuoteRoute()` when a route is selected. Log payload includes source (`alpha_router` or `wbtc_prana_fallback`), token pair, amount in/out, minimum out, slippage, recipient, gas fields, and `routePath`.
 - Calls `logSwapQuoteFailure()` for AlphaRouter failures, fallback failures, and final no-route failures.
 
@@ -157,28 +188,32 @@ This is the core routing logic. Budget the most review time here.
 
 **Look for:**
 - `POST` only on `/api/swap/quote`
-- Body parsed via `readJsonBody<SwapQuoteRequest>`
-- Errors return JSON `{ error, message }` with 400 status
+- Body parsed via `readJsonBody<SwapQuoteRequest>` with **2 KB** cap
+- Per-IP rate limit: 30 quote requests / minute → `429 rate_limited`
+- Quote errors return JSON `{ error, message }` with 400 status; message passed through `sanitizeSwapErrorMessage()` (fix #5)
 - `POST` only on `/api/swap/log`
-- Log body parsed via `readJsonBody<unknown>` and validated by `parseSwapTransactionLogRequest()`
+- Log body parsed via `readJsonBody<unknown>` (**8 KB** cap) and validated by `parseSwapTransactionLogRequest()`
+- Per-IP rate limit: 120 log requests / minute
 - Transaction logs are accepted as fire-and-forget telemetry from the browser; failed log writes should not block the user's swap flow
 
 ### 6. Server helpers — `server/requestHelpers.ts`, `server/utils/providers.ts`
 
-Small changes. Confirm `readJsonBody` is straightforward and `getServerPolygonRpcUrl` reads the same env vars as the rest of the app (`VITE_ALCHEMY_POLYGON_MAIN` / `POLYGON_RPC_URL`).
+Small changes. Confirm `readJsonBody` streams with a byte cap (default 16 KB; swap routes pass lower limits) and `getServerPolygonRpcUrl` reads the same env vars as the rest of the app (`VITE_ALCHEMY_POLYGON_MAIN` / `POLYGON_RPC_URL`).
 
 ### 7. Quote hook — `hooks/useUniswapQuote.ts`
 
 **Look for:**
 - Debounce (`SWAP_QUOTE_DEBOUNCE_MS` = 650ms)
+- Clears `quote` immediately when inputs change, then debounces the fetch (fix #2 — avoids showing a stale quote while typing)
 - Only fetches when wallet connected, on Polygon, amount > 0
 - Non-JSON response → clear “restart backend” error (avoids `Unexpected token '<'`)
 
 ### 8. Swap execution hook — `hooks/useUniswapSwap.ts`
 
 **Look for:**
+- `isQuoteCurrent` compares live modal inputs to `quote.request` + router `to` address before approve/swap (fix #2)
 - Reads balance + allowance for ERC-20 input
-- `needsApproval` → `approve` on SwapRouter02 before swap
+- `needsApproval` → `approve` on SwapRouter02 before swap (only when quote is current)
 - Sends `quote.transaction.to/data/value` from backend unchanged
 - Native POL: `value` field on transaction, no approval needed
 - Reports approval/swap events through `logSwapTransactionEvent()`:
@@ -196,7 +231,7 @@ Pure helpers. No side effects.
 
 ### 10a. Transaction log helper — `utils/swapTransactionLogs.ts`
 
-Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log`. It includes the wallet address, tx hash, quote pair, raw/display amounts, minimum amount out, router address, route summary, receipt status, and error message when present.
+Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log`. It includes the wallet address, tx hash, quote pair, raw/display amounts, minimum amount out, router address, route summary, receipt status, and error message when present. Server-side `parseSwapTransactionLogRequest()` sanitizes string fields and redacts URLs/API keys before logging (fix #5).
 
 ### 11. UI component — `components/SwapModal.tsx`
 
@@ -239,6 +274,15 @@ Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on 
 
 ```json
 {
+  "request": {
+    "tokenInSymbol": "USDT",
+    "tokenOutSymbol": "PRANA",
+    "amountIn": "1",
+    "recipient": "0x...",
+    "slippageBps": 50,
+    "amountInRaw": "...",
+    "chainId": 137
+  },
   "tokenIn": { "symbol": "USDT", ... },
   "tokenOut": { "symbol": "PRANA", ... },
   "amountIn": "1",
@@ -252,11 +296,12 @@ Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on 
     "data": "0xb858183f...",
     "value": "0"
   },
+  "deadline": 1710000000,
   "quoteUpdatedAt": "..."
 }
 ```
 
-The frontend never constructs calldata — it only submits `transaction` from the backend quote.
+The frontend never constructs calldata — it only submits `transaction` from the backend quote. It uses `request` + `deadline` to detect stale quotes before signing.
 
 **POST `/api/swap/log`**
 
@@ -302,14 +347,16 @@ Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh af
 10. Complete a small swap and confirm on Polygonscan
 11. Wrong network → “Switch to Polygon”
 12. Backend stopped → friendly error, not JSON parse error
-13. Local server terminal shows `"scope":"swap"` logs for quote route selection and transaction events
-14. Production service logs show swap entries with `sudo journalctl -u prana-stats-revamp.service -f | grep '"scope":"swap"'`
+13. Change amount after quote loads → quote clears immediately; swap blocked until new quote arrives
+14. Spam quote endpoint → eventually `429 rate_limited`
+15. Local server terminal shows `"scope":"swap"` logs for quote route selection and transaction events
+16. Production service logs show swap entries with `sudo journalctl -u prana-stats-revamp.service -f | grep '"scope":"swap"'`
 
 ## Known limitations (V1)
 
 - Fixed 7-token list only; no custom token import
 - Slippage hardcoded to 0.5% in UI (not user-adjustable yet)
-- No quote expiry UI warning (backend uses 20-minute deadline for AlphaRouter; fallback path has no deadline in calldata)
+- No quote expiry UI warning (backend sets a 20-minute `deadline` on both AlphaRouter and fallback multicall calldata; frontend checks input match but not deadline age yet)
 - Bundle size increased (~1.1 MB JS) due to wagmi/viem
 - `swapQuote.ts` uses `any` for Uniswap SDK types (SDK is ethers v5, app is ethers v6)
 - Transaction result logs depend on the browser successfully posting `/api/swap/log`; route quote logs are server-side and do not depend on the browser after the quote request
