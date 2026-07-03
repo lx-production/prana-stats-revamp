@@ -130,7 +130,7 @@ export function encodeV3Path(addresses: HexAddress[], fees: number[]): HexAddres
 export async function quoteV3Path(path: HexAddress, amountInRaw: bigint): Promise<{ amountOutRaw: bigint; gasEstimate: bigint }> {
   const provider = await getServerPolygonProvider();
   const quoter = new ethers.Contract(UNISWAP_V3_QUOTER_V2_ADDRESS, QUOTER_V2_ABI, provider);
-  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw);
+  const quoted = await quoter.quoteExactInput.staticCall(path, amountInRaw); // read-only simulation over RPC
 
   return {
     amountOutRaw: BigInt(quoted[0].toString()),
@@ -142,6 +142,7 @@ export function formatAmountOut(rawAmount: bigint, token: SwapToken): string {
   return ethers.formatUnits(rawAmount, token.decimals);
 }
 
+// AlphaRouter uses its own internal NEW_QUOTER_V2_ADDRESSES mapping for V3 quote calls.
 export async function loadPrimaryRoute(
   router: any,
   tokenIn: SwapToken,

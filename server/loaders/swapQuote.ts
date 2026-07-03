@@ -135,6 +135,7 @@ async function loadWbtcPranaFallbackQuote(
   router: any,
 ): Promise<SwapQuoteResponse | null> {
   // only runs for swaps involving PRANA where the other token is not WBTC (WBTC↔PRANA is handled directly by the primary router)
+  // for swaps between the remaining supported non-PRANA tokens, the app only uses the primary route
   const routesToPrana = tokenOut.symbol === 'PRANA' && tokenIn.symbol !== 'WBTC';
   const routesFromPrana = tokenIn.symbol === 'PRANA' && tokenOut.symbol !== 'WBTC';
 

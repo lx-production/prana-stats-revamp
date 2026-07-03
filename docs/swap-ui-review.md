@@ -8,7 +8,7 @@ This document is a map of everything added for the in-app Polygon swap feature. 
 - Users connect an injected wallet (MetaMask, Rabby, etc.) on **Polygon only**.
 - The browser asks the **Node backend** for a quote and unsigned transaction data.
 - The backend uses **Uniswap Smart Order Router** (and a custom fallback for PRANA routes) with the existing **Alchemy RPC** env var — the API key never goes to the browser.
-- The wallet signs **approval** (if needed) and the **swap** transaction locally.
+- The wallet signs **approval** (no need for native POL) and the **swap** transaction locally.
 - The backend writes structured swap logs for selected routes, quote failures, and browser-reported approval/swap transaction outcomes.
 
 ## Architecture (high level)
