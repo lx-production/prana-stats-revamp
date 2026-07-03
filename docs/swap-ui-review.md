@@ -26,7 +26,7 @@ Five hardening changes were added after the initial V1 implementation. Review th
    - `useUniswapQuote` clears the previous quote as soon as inputs change (not only after debounce), so a stale quote cannot sit on screen while the user edits the amount.
 
 3. **Swap API rate limiting** (`server/index.ts`)
-   - Per-IP sliding window: **30** `POST /api/swap/quote` requests / minute, **120** `POST /api/swap/log` / minute.
+   - Per-IP sliding window: **10** `POST /api/swap/quote` requests / minute, **120** `POST /api/swap/log` / minute.
    - Over limit → `429` with `{ error: "rate_limited", message: "..." }`.
 
 4. **Request body size caps** (`server/requestHelpers.ts`, `server/index.ts`)
@@ -189,7 +189,7 @@ This is the core routing logic. Budget the most review time here.
 **Look for:**
 - `POST` only on `/api/swap/quote`
 - Body parsed via `readJsonBody<SwapQuoteRequest>` with **2 KB** cap
-- Per-IP rate limit: 30 quote requests / minute → `429 rate_limited`
+- Per-IP rate limit: 10 quote requests / minute → `429 rate_limited`
 - Quote errors return JSON `{ error, message }` with 400 status; message passed through `sanitizeSwapErrorMessage()` (fix #5)
 - `POST` only on `/api/swap/log`
 - Log body parsed via `readJsonBody<unknown>` (**8 KB** cap) and validated by `parseSwapTransactionLogRequest()`

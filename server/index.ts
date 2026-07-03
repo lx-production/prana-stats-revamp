@@ -23,7 +23,7 @@ const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
 const SWAP_LOG_BODY_MAX_BYTES = 8192;
-const SWAP_QUOTE_RATE_LIMIT = { windowMs: 60_000, maxRequests: 30 };
+const SWAP_QUOTE_RATE_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 const SWAP_LOG_RATE_LIMIT = { windowMs: 60_000, maxRequests: 120 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
 const TRUSTED_PROXY_ADDRESSES = new Set([
