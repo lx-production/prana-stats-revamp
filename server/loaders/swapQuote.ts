@@ -221,7 +221,7 @@ async function loadWbtcPranaFallbackQuote(
     recipient: exactInputRecipient,
     amountIn: amountInRaw,
     amountOutMinimum: minimumAmountOutRaw,
-  }]);
+  }]); // SwapRouter02’s exactInput takes a 4-field struct, no deadline field (only the old router uses a 5-field struct)
   
   const calldata = tokenOut.kind === 'native'
     ? SWAP_ROUTER_IFACE.encodeFunctionData('multicall', [[
