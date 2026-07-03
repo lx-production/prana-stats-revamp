@@ -16,6 +16,14 @@ const VALID_SWAP_LOG_EVENTS = new Set<SwapTransactionLogEvent>([
   'swap_failed',
 ]);
 
+function sanitizeLogString(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return value
+    .replace(/https?:\/\/[^\s"']+/gi, '[redacted-url]')
+    .replace(/(alchemyapi\.io\/v2\/|alchemy\.com\/v2\/)[A-Za-z0-9_-]+/gi, '$1[redacted]')
+    .slice(0, maxLength);
+}
+
 function routeToString(route?: SwapRouteStep[]): string | undefined {
   if (!route?.length) return undefined;
   return route.map((step) => `${step.path.join(' -> ')} (${step.percent}% ${step.protocol})`).join(' | ');
@@ -23,8 +31,7 @@ function routeToString(route?: SwapRouteStep[]): string | undefined {
 
 function getErrorMessage(error: unknown): string | undefined {
   if (!error) return undefined;
-  if (error instanceof Error) return error.message;
-  return String(error);
+  return sanitizeLogString(error instanceof Error ? error.message : String(error), 1000);
 }
 
 function writeSwapLog(event: string, payload: Record<string, unknown>): void {
@@ -113,19 +120,32 @@ export function parseSwapTransactionLogRequest(body: unknown): SwapTransactionLo
     throw new Error('Invalid swap log event.');
   }
 
+  const route = Array.isArray(payload.route)
+    ? payload.route.slice(0, 8).map((step) => ({
+        protocol: sanitizeLogString(step?.protocol, 32) ?? 'unknown',
+        percent: Number.isFinite(Number(step?.percent)) ? Number(step.percent) : 0,
+        path: Array.isArray(step?.path)
+          ? step.path
+              .slice(0, 8)
+              .map((label: unknown) => sanitizeLogString(label, 32))
+              .filter((label): label is string => Boolean(label))
+          : [],
+      }))
+    : undefined;
+
   return {
     event: payload.event as SwapTransactionLogEvent,
-    ownerAddress: payload.ownerAddress as HexAddress | undefined,
+    ownerAddress: sanitizeLogString(payload.ownerAddress, 80) as HexAddress | undefined,
     tokenInSymbol: payload.tokenInSymbol,
     tokenOutSymbol: payload.tokenOutSymbol,
-    amountIn: payload.amountIn,
-    amountOut: payload.amountOut,
-    amountOutRaw: payload.amountOutRaw,
-    minimumAmountOut: payload.minimumAmountOut,
-    route: Array.isArray(payload.route) ? payload.route : undefined,
-    routerAddress: payload.routerAddress as HexAddress | undefined,
-    transactionHash: payload.transactionHash as HexAddress | undefined,
-    error: typeof payload.error === 'string' ? payload.error.slice(0, 1000) : undefined,
-    receiptStatus: typeof payload.receiptStatus === 'string' ? payload.receiptStatus : undefined,
+    amountIn: sanitizeLogString(payload.amountIn, 80),
+    amountOut: sanitizeLogString(payload.amountOut, 80),
+    amountOutRaw: sanitizeLogString(payload.amountOutRaw, 120),
+    minimumAmountOut: sanitizeLogString(payload.minimumAmountOut, 120),
+    route,
+    routerAddress: sanitizeLogString(payload.routerAddress, 80) as HexAddress | undefined,
+    transactionHash: sanitizeLogString(payload.transactionHash, 80) as HexAddress | undefined,
+    error: sanitizeLogString(payload.error, 1000),
+    receiptStatus: sanitizeLogString(payload.receiptStatus, 32),
   };
 }

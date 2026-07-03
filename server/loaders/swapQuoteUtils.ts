@@ -162,6 +162,8 @@ export async function loadPrimaryRoute(
       recipient,
       slippageTolerance,
       deadline,
+      // deadline is used — but on the outer multicall(uint256 deadline, bytes[] data) wrapper
+      // not inside the exactInput struct.
     },
   );
 }

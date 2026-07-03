@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { SWAP_QUOTE_DEBOUNCE_MS } from '../constants/swapContracts';
-import type {
-  SwapQuoteErrorResponse,
-  SwapQuoteResponse,
-  UseUniswapQuoteInput,
-  UseUniswapQuoteResult,
-} from '../types/swap.types';
+import type { SwapQuoteErrorResponse, SwapQuoteResponse, UseUniswapQuoteInput, UseUniswapQuoteResult } from '../types/swap.types';
 
 async function requestSwapQuote(input: UseUniswapQuoteInput, signal: AbortSignal): Promise<SwapQuoteResponse> {
   const response = await fetch('/api/swap/quote', {
@@ -60,10 +55,11 @@ export function useUniswapQuote(input: UseUniswapQuoteInput): UseUniswapQuoteRes
     }
 
     const abortController = new AbortController();
-    const timeoutId = window.setTimeout(() => {
-      setIsLoading(true);
-      setError(null);
+    setQuote(null);
+    setIsLoading(true);
+    setError(null);
 
+    const timeoutId = window.setTimeout(() => {
       requestSwapQuote(input, abortController.signal)
         .then((nextQuote) => {
           setQuote(nextQuote);
@@ -76,7 +72,7 @@ export function useUniswapQuote(input: UseUniswapQuoteInput): UseUniswapQuoteRes
         .finally(() => {
           if (!abortController.signal.aborted) setIsLoading(false);
         });
-    }, SWAP_QUOTE_DEBOUNCE_MS);
+    }, SWAP_QUOTE_DEBOUNCE_MS); // waits 650ms until the user stops typing
 
     return () => {
       window.clearTimeout(timeoutId);

@@ -1,17 +1,17 @@
 import http from 'node:http';
 import path from 'node:path';
 import { serveFile } from './serveFile.ts';
+import { createServerCache } from './cacheHelpers.ts';
+import { loadSwapQuote } from './loaders/swapQuote.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
-import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { loadCachedCapital } from './loaders/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
+import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
-import { loadSwapQuote } from './loaders/swapQuote.ts';
 import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { createServerCache } from './cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS, BROWSER_CACHE_TTL_SECONDS } from '../constants/cachePolicy.ts';
 import { fileExists, readJsonBody, sendJson, sendText, rootDataJsonFilenameFromPathname, rootBondsJsonFilenameFromPathname, rootBuyDipsFilenameFromPathname } from './requestHelpers.ts';
 import type { SwapQuoteRequest } from '../types/swap.types.ts';
@@ -21,9 +21,65 @@ const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS
 const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
+const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
+const SWAP_LOG_BODY_MAX_BYTES = 8192;
+const SWAP_QUOTE_RATE_LIMIT = { windowMs: 60_000, maxRequests: 30 };
+const SWAP_LOG_RATE_LIMIT = { windowMs: 60_000, maxRequests: 120 };
 
 const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
+
+type RateLimitBucket = {
+  windowStartedAt: number;
+  count: number;
+};
+
+const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
+const swapLogRateLimits = new Map<string, RateLimitBucket>();
+
+function getRequestIp(req: http.IncomingMessage): string {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  return req.socket.remoteAddress ?? 'unknown';
+}
+
+function isRateLimited(
+  req: http.IncomingMessage,
+  buckets: Map<string, RateLimitBucket>,
+  limit: { windowMs: number; maxRequests: number },
+): boolean {
+  const now = Date.now();
+  const key = getRequestIp(req);
+  const bucket = buckets.get(key);
+
+  if (!bucket || now - bucket.windowStartedAt > limit.windowMs) {
+    buckets.set(key, { windowStartedAt: now, count: 1 });
+    return false;
+  }
+
+  bucket.count += 1;
+  return bucket.count > limit.maxRequests;
+}
+
+function sanitizeSwapErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof Error)) return fallback;
+
+  const allowedMessages = [
+    'Choose two different tokens.',
+    'Connect a valid wallet address.',
+    'Enter an amount greater than zero.',
+    'No Uniswap route found for this pair or amount.',
+    'Request body is required.',
+    'Request body is too large.',
+  ];
+
+  if (allowedMessages.includes(error.message)) return error.message;
+  if (error instanceof SyntaxError) return 'Invalid JSON request body.';
+  return fallback;
+}
 
 async function warmApiCaches() {
   const warmups = [
@@ -96,14 +152,21 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
+      if (isRateLimited(req, swapQuoteRateLimits, SWAP_QUOTE_RATE_LIMIT)) {
+        return sendJson(res, 429, {
+          error: 'rate_limited',
+          message: 'Too many swap quote requests. Please wait a moment and try again.',
+        });
+      }
+
       try {
-        const body = await readJsonBody<SwapQuoteRequest>(req);
+        const body = await readJsonBody<SwapQuoteRequest>(req, SWAP_QUOTE_BODY_MAX_BYTES);
         const result = await loadSwapQuote(body);
         return sendJson(res, 200, result);
       } catch (err) {
         return sendJson(res, 400, {
           error: 'quote_failed',
-          message: err instanceof Error ? err.message : 'Failed to load swap quote.',
+          message: sanitizeSwapErrorMessage(err, 'Failed to load swap quote.'),
         });
       }
     }
@@ -116,15 +179,22 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
+      if (isRateLimited(req, swapLogRateLimits, SWAP_LOG_RATE_LIMIT)) {
+        return sendJson(res, 429, {
+          error: 'rate_limited',
+          message: 'Too many swap log requests.',
+        });
+      }
+
       try {
-        const body = await readJsonBody<unknown>(req);
+        const body = await readJsonBody<unknown>(req, SWAP_LOG_BODY_MAX_BYTES);
         const payload = parseSwapTransactionLogRequest(body);
         logSwapTransactionEvent(payload);
         return sendJson(res, 200, { ok: true });
       } catch (err) {
         return sendJson(res, 400, {
           error: 'log_failed',
-          message: err instanceof Error ? err.message : 'Failed to write swap log.',
+          message: sanitizeSwapErrorMessage(err, 'Failed to write swap log.'),
         });
       }
     }

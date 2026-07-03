@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../constants/swapContracts';
@@ -9,6 +9,9 @@ import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswap
 export function useUniswapSwap({
   quote,
   tokenIn,
+  tokenOut,
+  amountIn,
+  slippageBps,
   ownerAddress,
 }: UseUniswapSwapInput): UseUniswapSwapResult {
   const publicClient = usePublicClient({ chainId: POLYGON_CHAIN_ID });
@@ -21,9 +24,29 @@ export function useUniswapSwap({
   const [error, setError] = useState<string | null>(null);
 
   const amountInRaw = useMemo(() => {
+    if (!amountIn) return 0n;
+    return parseSwapTokenAmount(amountIn, tokenIn);
+  }, [amountIn, tokenIn]);
+
+  const quoteAmountInRaw = useMemo(() => {
     if (!quote) return 0n;
     return parseSwapTokenAmount(quote.amountIn, tokenIn);
   }, [quote, tokenIn]);
+
+  const isQuoteCurrent = useMemo(() => {
+    if (!quote || !ownerAddress) return false;
+
+    return (
+      quote.request.chainId === POLYGON_CHAIN_ID &&
+      quote.request.tokenInSymbol === tokenIn.symbol &&
+      quote.request.tokenOutSymbol === tokenOut.symbol &&
+      quote.request.amountInRaw === amountInRaw.toString() &&
+      quote.request.recipient.toLowerCase() === ownerAddress.toLowerCase() &&
+      quote.request.slippageBps === slippageBps &&
+      quote.routerAddress.toLowerCase() === UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase() &&
+      quote.transaction.to.toLowerCase() === UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase()
+    );
+  }, [amountInRaw, ownerAddress, quote, slippageBps, tokenIn.symbol, tokenOut.symbol]);
 
   const refreshBalances = useCallback(async () => {
     if (!publicClient || !ownerAddress) {
@@ -37,8 +60,8 @@ export function useUniswapSwap({
     try {
       // If swapping native POL, there's no ERC-20 approval.
       if (tokenIn.kind === 'native') {
-        const nextBalance = await publicClient.getBalance({ address: ownerAddress });
-        setBalance(nextBalance);
+        const fetchedBalance = await publicClient.getBalance({ address: ownerAddress });
+        setBalance(fetchedBalance);
         setAllowance(null);
         return;
       }
@@ -49,7 +72,7 @@ export function useUniswapSwap({
         return;
       }
 
-      const [nextBalance, nextAllowance] = await Promise.all([
+      const [fetchedBalance, fetchedAllowance] = await Promise.all([
         publicClient.readContract({
           address: tokenIn.address,
           abi: erc20Abi,
@@ -64,8 +87,8 @@ export function useUniswapSwap({
         } as never),
       ]);
 
-      setBalance(nextBalance as bigint);
-      setAllowance(nextAllowance as bigint);
+      setBalance(fetchedBalance as bigint);
+      setAllowance(fetchedAllowance as bigint);
     } finally {
       setIsRefreshingBalances(false);
     }
@@ -75,7 +98,7 @@ export function useUniswapSwap({
     void refreshBalances();
   }, [refreshBalances]);
 
-  const needsApproval = tokenIn.kind === 'erc20' && amountInRaw > 0n && (allowance ?? 0n) < amountInRaw;
+  const needsApproval = isQuoteCurrent && tokenIn.kind === 'erc20' && quoteAmountInRaw > 0n && (allowance ?? 0n) < quoteAmountInRaw;
   const hasInsufficientBalance = amountInRaw > 0n && balance !== null && balance < amountInRaw;
 
   const resetSwapState = useCallback(() => {
@@ -102,7 +125,7 @@ export function useUniswapSwap({
         address: tokenIn.address,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, amountInRaw],
+        args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, quoteAmountInRaw],
       });
 
       logSwapTransactionEvent({
@@ -140,11 +163,16 @@ export function useUniswapSwap({
       });
       throw err;
     }
-  }, [amountInRaw, needsApproval, ownerAddress, publicClient, quote, refreshBalances, tokenIn.address, walletClient]);
+  }, [needsApproval, ownerAddress, publicClient, quote, quoteAmountInRaw, refreshBalances, tokenIn.address, walletClient]);
 
   const executeSwap = useCallback(async () => {
     if (!quote) {
       setError('Load a quote before swapping.');
+      return;
+    }
+
+    if (!isQuoteCurrent) {
+      setError('Refresh the quote before swapping.');
       return;
     }
 
@@ -217,6 +245,7 @@ export function useUniswapSwap({
   }, [
     approveIfNeeded,
     hasInsufficientBalance,
+    isQuoteCurrent,
     ownerAddress,
     publicClient,
     quote,

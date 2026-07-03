@@ -217,7 +217,9 @@ Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log
 
 ### 13. Dev proxy — `vite.config.js`
 
-Unchanged for swap, but required for local dev: `/api` proxies to `http://localhost:4173`. Run backend with `npm run serve` or `npm run dev:all`.
+Unchanged for swap, but required for local dev: `/api` (and root JSON paths) proxy to `http://localhost:4174`. `npm run serve` sets `PORT=4174` so the API does not collide with port **4173**, which production uses and Cursor preview often binds — hitting the wrong process returns HTML instead of JSON.
+
+Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on **4174**). Production/nginx still targets **4173** (`server/index.ts` default when `PORT` is unset).
 
 ## Request/response shape
 
@@ -316,8 +318,14 @@ Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh af
 ## Quick smoke test (terminal)
 
 ```bash
-# After npm run serve is running:
-curl -s -X POST http://localhost:4173/api/swap/quote \
+# After npm run serve is running (listens on 4174):
+curl -s -X POST http://localhost:4174/api/swap/quote \
+  -H 'content-type: application/json' \
+  -d '{"tokenInSymbol":"USDT","tokenOutSymbol":"PRANA","amountIn":"1","recipient":"0x000000000000000000000000000000000000dEaD","slippageBps":50}' \
+  | head -c 200
+
+# Or through the Vite dev proxy (npm run dev:all):
+curl -s -X POST http://localhost:5173/api/swap/quote \
   -H 'content-type: application/json' \
   -d '{"tokenInSymbol":"USDT","tokenOutSymbol":"PRANA","amountIn":"1","recipient":"0x000000000000000000000000000000000000dEaD","slippageBps":50}' \
   | head -c 200

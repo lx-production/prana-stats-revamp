@@ -1,5 +1,5 @@
-import { V1_SWAP_TOKENS } from '../constants/swapContracts';
-import type { SwapToken, SwapTokenSymbol } from '../types/swap.types';
+import { V1_SWAP_TOKENS } from '../constants/swapContracts.ts';
+import type { SwapToken, SwapTokenSymbol } from '../types/swap.types.ts';
 
 export function getSwapToken(symbol: SwapTokenSymbol): SwapToken {
   const token = V1_SWAP_TOKENS.find((item) => item.symbol === symbol);

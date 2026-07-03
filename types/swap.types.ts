@@ -21,6 +21,11 @@ export type SwapQuoteRequest = {
   slippageBps: number;
 };
 
+export type SwapQuoteRequestMetadata = SwapQuoteRequest & {
+  amountInRaw: string;
+  chainId: number;
+};
+
 export type SwapQuoteTransaction = {
   to: HexAddress;
   data: HexAddress;
@@ -34,6 +39,7 @@ export type SwapRouteStep = {
 };
 
 export type SwapQuoteResponse = {
+  request: SwapQuoteRequestMetadata;
   tokenIn: SwapToken;
   tokenOut: SwapToken;
   amountIn: string;
@@ -47,6 +53,7 @@ export type SwapQuoteResponse = {
   routerAddress: HexAddress;
   transaction: SwapQuoteTransaction;
   blockNumber?: string;
+  deadline: number;
   quoteUpdatedAt: string;
 };
 
@@ -124,6 +131,9 @@ export type UseUniswapQuoteResult = {
 export type UseUniswapSwapInput = {
   quote: SwapQuoteResponse | null;
   tokenIn: SwapToken;
+  tokenOut: SwapToken;
+  amountIn: string;
+  slippageBps: number;
   ownerAddress?: HexAddress;
 };
 

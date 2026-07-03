@@ -8,9 +8,8 @@ export default defineConfig({
     // Use 4174 in dev: Cursor's preview often binds localhost:4173 and returns HTML for /api/swap/quote.
     proxy: {
       '/api': 'http://localhost:4174',
-      '^/data_.*\\.json$': 'http://localhost:4174',
-      '/bonds_v2.json': 'http://localhost:4174',
-      '/buy_dips.json': 'http://localhost:4174',
+      // Root data JSON (price history, bonds, buy dips) — served from project root by Node.
+      '^/[^/]+\\.json$': 'http://localhost:4174',
     },
   },
 })

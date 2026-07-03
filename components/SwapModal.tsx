@@ -1,24 +1,15 @@
+import InfoTooltip from './InfoTooltip';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownUp, Loader2, RefreshCw, X } from 'lucide-react';
-import {
-  DEFAULT_SWAP_SLIPPAGE_BPS,
-  DEFAULT_SWAP_TOKEN_IN_SYMBOL,
-  DEFAULT_SWAP_TOKEN_OUT_SYMBOL,
-  V1_SWAP_TOKENS,
-} from '../constants/swapContracts';
 import { getSwapToken } from '../utils/swapTokens';
-import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { useUniswapSwap } from '../hooks/useUniswapSwap';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';
-import { useUniswapSwap } from '../hooks/useUniswapSwap';
+import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { ArrowDownUp, Loader2, RefreshCw, X } from 'lucide-react';
 import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
-import InfoTooltip from './InfoTooltip';
-import {
-  formatCompactAddress,
-  formatSwapTokenAmount,
-  isPositiveDecimalInput,
-} from '../utils/swapTokenFormatting';
+import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
+import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, V1_SWAP_TOKENS } from '../constants/swapContracts';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -55,11 +46,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const [tokenOutSymbol, setTokenOutSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_OUT_SYMBOL);
   const [amountIn, setAmountIn] = useState('');
   const [slippageBps] = useState(DEFAULT_SWAP_SLIPPAGE_BPS);
+
   const wallet = useInjectedWallet();
   const tokenIn = useMemo(() => getSwapToken(tokenInSymbol), [tokenInSymbol]);
   const tokenOut = useMemo(() => getSwapToken(tokenOutSymbol), [tokenOutSymbol]);
   const amountNumber = Number(amountIn);
   const hasAmount = Number.isFinite(amountNumber) && amountNumber > 0;
+
   const quoteState = useUniswapQuote({
     tokenInSymbol,
     tokenOutSymbol,
@@ -68,18 +61,25 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     slippageBps,
     enabled: wallet.isConnected && wallet.isPolygon && hasAmount,
   });
+
   const swapState = useUniswapSwap({
     quote: quoteState.quote,
     tokenIn,
+    tokenOut,
+    amountIn,
+    slippageBps,
     ownerAddress: wallet.address,
   });
+
   const { resetSwapState } = swapState;
+
   const isBusy = [
     'approving',
     'approval-confirming',
     'swapping',
     'swap-confirming',
   ].includes(swapState.status);
+
   const actionLabel = getActionLabel(
     wallet.isConnected,
     wallet.isPolygon,
@@ -87,6 +87,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     swapState.needsApproval,
     swapState.status,
   );
+
   const canSwap = Boolean(
     wallet.isConnected &&
       wallet.isPolygon &&

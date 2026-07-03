@@ -4,7 +4,7 @@ import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_
 export const POLYGON_CHAIN_ID = 137;
 export const POLYGON_CHAIN_NAME = 'Polygon';
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
-export const SWAP_QUOTE_DEBOUNCE_MS = 650;
+export const SWAP_QUOTE_DEBOUNCE_MS = 650; // waits 650ms after the last change before fetching
 export const SWAP_DEADLINE_SECONDS = 20 * 60; // 20 minutes
 
 export const UNISWAP_SWAP_ROUTER_02_ADDRESS: HexAddress = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
@@ -17,9 +17,17 @@ export const QUOTER_V2_ABI = [
 ];
 
 export const SWAP_ROUTER_02_ABI = [
+  'function multicall(uint256 deadline,bytes[] data) payable returns (bytes[] results)',
   'function exactInput(tuple(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum) params) payable returns (uint256 amountOut)',
+  'function exactInputSingle(tuple(address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)',
+  'function swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,address[] path,address to) payable returns (uint256 amountOut)',
   'function multicall(bytes[] data) payable returns (bytes[] results)',
+  'function wrapETH(uint256 value) payable',
   'function unwrapWETH9(uint256 amountMinimum,address recipient) payable',
+  'function unwrapWETH9(uint256 amountMinimum) payable',
+  'function sweepToken(address token,uint256 amountMinimum,address recipient) payable',
+  'function sweepToken(address token,uint256 amountMinimum) payable',
+  'function refundETH() payable',
 ];
 
 export const WMATIC_ADDRESS: HexAddress = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'; // WPOL 
