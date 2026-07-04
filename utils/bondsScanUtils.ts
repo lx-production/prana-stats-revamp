@@ -167,8 +167,6 @@ function getErrorMessageRaw(error: unknown): string {
   return String(error);
 }
 
-let didLogOutOfRange = false;
-
 function getRevertDataHex(error: unknown): string | null {
   if (!error || typeof error !== 'object') return null;
   const errObj = error as ErrorLike;
@@ -212,17 +210,6 @@ function isOutOfRangeError(error: unknown): boolean {
   const isRequireFalseNoData = isCallException && noRevertData && reason === 'require(false)';
 
   const isOutOfRange = isArrayOutOfBounds || isRequireFalseNoData;
-
-  if (isOutOfRange && !didLogOutOfRange) {
-    didLogOutOfRange = true;
-    console.warn('OutOfRangeError sample (first seen):', {
-      message: getErrorMessageRaw(error),
-      code: errObj?.code,
-      reason,
-      revertData,
-      panicCode: panicCode?.toString(16),
-    });
-  }
 
   return isOutOfRange;
 }

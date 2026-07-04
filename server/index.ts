@@ -17,6 +17,7 @@ import { fileExists, readJsonBody, sendJson, sendText, rootDataJsonFilenameFromP
 import type { SwapQuoteRequest } from '../types/swap.types.ts';
 
 const PORT = Number(process.env.PORT || 4173);
+const HOST = process.env.HOST || '127.0.0.1';
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
@@ -307,7 +308,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Server listening on http://${HOST}:${PORT}`);
   void warmApiCaches();
 });

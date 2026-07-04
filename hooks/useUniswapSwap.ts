@@ -126,7 +126,7 @@ export function useUniswapSwap({
         abi: erc20Abi,
         functionName: 'approve',
         args: [UNISWAP_SWAP_ROUTER_02_ADDRESS, quoteAmountInRaw],
-      });
+      } as never);
 
       logSwapTransactionEvent({
         event: 'approval_submitted',

@@ -46,6 +46,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const [tokenOutSymbol, setTokenOutSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_OUT_SYMBOL);
   const [amountIn, setAmountIn] = useState('');
   const [slippageBps] = useState(DEFAULT_SWAP_SLIPPAGE_BPS);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const wallet = useInjectedWallet();
   const tokenIn = useMemo(() => getSwapToken(tokenInSymbol), [tokenInSymbol]);
@@ -111,11 +112,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   useEffect(() => {
     if (!isOpen) {
       resetSwapState();
+      setActionError(null);
     }
   }, [isOpen, resetSwapState]);
 
   const updateTokenIn = (nextSymbol: SwapTokenSymbol) => {
     swapState.resetSwapState();
+    setActionError(null);
     if (nextSymbol === tokenOutSymbol) {
       setTokenOutSymbol(tokenInSymbol);
     }
@@ -124,6 +127,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
   const updateTokenOut = (nextSymbol: SwapTokenSymbol) => {
     swapState.resetSwapState();
+    setActionError(null);
     if (nextSymbol === tokenInSymbol) {
       setTokenInSymbol(tokenOutSymbol);
     }
@@ -132,6 +136,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
   const reverseTokens = () => {
     swapState.resetSwapState();
+    setActionError(null);
     setTokenInSymbol(tokenOutSymbol);
     setTokenOutSymbol(tokenInSymbol);
     setAmountIn('');
@@ -143,21 +148,28 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     if (!isPositiveDecimalInput(nextValue)) return;
 
     swapState.resetSwapState();
+    setActionError(null);
     setAmountIn(nextValue);
   };
 
   const handleAction = async () => {
-    if (!wallet.isConnected) {
-      await wallet.connectWallet();
-      return;
-    }
+    setActionError(null);
 
-    if (!wallet.isPolygon) {
-      await wallet.ensurePolygon();
-      return;
-    }
+    try {
+      if (!wallet.isConnected) {
+        await wallet.connectWallet();
+        return;
+      }
 
-    await swapState.executeSwap();
+      if (!wallet.isPolygon) {
+        await wallet.ensurePolygon();
+        return;
+      }
+
+      await swapState.executeSwap();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Wallet action failed.');
+    }
   };
 
   const estimatedOutput = quoteState.quote
@@ -381,11 +393,11 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 ) : null}
               </div>
 
-              {(quoteState.error || swapState.error || swapState.hasInsufficientBalance) && (
+              {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance) && (
                 <div className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
                   {swapState.hasInsufficientBalance
                     ? `Insufficient ${tokenIn.symbol} balance.`
-                    : swapState.error ?? quoteState.error}
+                    : actionError ?? swapState.error ?? quoteState.error}
                 </div>
               )}
 
