@@ -44,9 +44,9 @@ function App() {
         speed={0.08}
         flow={4.5}
         spin={0.04}
-        iterations={64}
+        iterations={32}
         maxDpr={1.15}
-        targetFps={60}
+        targetFps={30}
         renderScale={0.9}
       />
 

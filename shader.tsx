@@ -59,7 +59,6 @@ export function NeuralShaderBackground({
       antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: "high-performance",
     });
     if (!gl) return;
     glRef.current = gl;

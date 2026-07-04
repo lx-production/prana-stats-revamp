@@ -1,9 +1,30 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const rootDataJsonFiles = [
+  'active_stakes.json',
+  'bonds_v2.json',
+  'bonds_v2_details.json',
+  'buy_dips.json',
+  'data_7_days.json',
+  'data_30_days.json',
+  'data_90_days.json',
+  'data_180_days.json',
+  'data_365_days.json',
+  'data_730_days.json',
+  'data_max.json',
+  'data_sats.json',
+  'top_holding_addresses.json',
+];
+
 export default defineConfig({
   plugins: [react()],
   server: {
+    watch: {
+      ignored: rootDataJsonFiles.map((filename) => `**/${filename}`),
+      usePolling: true,
+      interval: 1000,
+    },
     // Proxy API + root JSON to the Node server so dev and prod share the same cache behavior.
     // Use 4174 in dev: Cursor's preview often binds localhost:4173 and returns HTML for /api/swap/quote.
     proxy: {
