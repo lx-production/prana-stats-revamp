@@ -3,6 +3,7 @@ import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_
 
 export const POLYGON_CHAIN_ID = 137;
 export const POLYGON_CHAIN_NAME = 'Polygon';
+export const POLYGONSCAN_TX_BASE_URL = 'https://polygonscan.com/tx';
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
 export const SWAP_QUOTE_DEBOUNCE_MS = 650; // waits 650ms after the last change before fetching
 export const SWAP_DEADLINE_SECONDS = 20 * 60; // 20 minutes

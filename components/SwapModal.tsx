@@ -6,10 +6,10 @@ import { useUniswapSwap } from '../hooks/useUniswapSwap';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
-import { ArrowDownUp, Loader2, RefreshCw, X } from 'lucide-react';
+import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
 import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
 import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
-import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, V1_SWAP_TOKENS } from '../constants/swapContracts';
+import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -180,6 +180,9 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const minimumReceivedTooltipText = locale === 'en'
     ? `The lowest output amount enforced on-chain. It equals the quoted output minus a fixed ${slippagePercentLabel}% slippage tolerance (quote × ${minimumReceivedMultiplierLabel}%). If execution would deliver less than this, the swap reverts. This mainly matters when your input is converted through WBTC (e.g. USDT, USDC, POL) and those pools move before your transaction confirms. Price impact from your trade size is already included in the quote.`
     : `Số token đầu ra tối thiểu được áp dụng on-chain. Bằng báo giá trừ slippage cố định ${slippagePercentLabel}% (báo giá × ${minimumReceivedMultiplierLabel}%). Nếu thực thi cho ít hơn mức này, swap sẽ bị hủy. Điều này quan trọng khi token đầu vào được quy đổi qua WBTC (ví dụ USDT, USDC, POL) và các pool đó biến động trước khi giao dịch được xác nhận. Price impact do quy mô lệnh đã được tính trong báo giá.`;
+  const polygonscanTxUrl = swapState.transactionHash
+    ? `${POLYGONSCAN_TX_BASE_URL}/${swapState.transactionHash}`
+    : null;
 
   return (
     <AnimatePresence initial={false}>
@@ -206,6 +209,44 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             exit="hidden"
             transition={{ duration: 0.2 }}
           />
+
+          <AnimatePresence>
+            {swapState.status === 'success' && swapState.transactionHash && polygonscanTxUrl && (
+              <motion.div
+                role="status"
+                aria-live="polite"
+                className="absolute left-4 right-4 top-4 z-20 mx-auto max-w-lg rounded-2xl border border-emerald-300/30 bg-[#071f18]/95 p-4 text-sm text-emerald-50 shadow-[0_18px_55px_rgba(0,0,0,0.45)] ring-1 ring-emerald-200/10 backdrop-blur-xl"
+                initial={{ opacity: 0, y: -24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -24 }}
+                transition={{ duration: 0.24 }}
+              >
+                <div className="flex gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-emerald-300" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-white">Swap confirmed</p>
+                    <a
+                      href={polygonscanTxUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 block break-all rounded-xl border border-white/10 bg-black/20 px-3 py-2 font-mono text-xs text-emerald-100 transition hover:border-emerald-200/40 hover:bg-emerald-300/10"
+                    >
+                      {swapState.transactionHash}
+                    </a>
+                    <a
+                      href={polygonscanTxUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-200 transition hover:text-white"
+                    >
+                      View on Polygonscan
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.div
             className="relative z-10 w-full max-w-lg overflow-visible rounded-3xl border border-white/15 bg-[#070b1f]/85 shadow-[0_28px_90px_rgba(0,0,0,0.7)] ring-1 ring-[#FCE8A9]/10"
