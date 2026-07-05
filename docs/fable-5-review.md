@@ -55,8 +55,7 @@ One remaining optional hardening layer would be a small global quote budget, sep
 
 - **No security headers on served pages.** `serveFile` and `sendJson` set no `Content-Security-Policy`, `X-Frame-Options`, or `X-Content-Type-Options`. For a page where users sign transactions, a CSP is meaningful hardening: if any XSS ever slips in, a script could swap the calldata the wallet is asked to sign. React's escaping protects you today, so this is belt-and-braces, not urgent.
 - **The log endpoint accepts anything.** It's properly sanitized and size-capped, but any client (even cross-site via a `no-cors` POST, since `readJsonBody` never checks Content-Type) can write fake `swap_confirmed` events. Treat these logs as untrusted telemetry only — never as evidence a swap actually happened. If you ever want trustworthy swap records, derive them server-side from the transaction hash (look the receipt up over your own RPC) instead of trusting the browser's claim.
-- **Frontend reads go through a public RPC.** `wagmiConfig` uses `http()` with no URL, so balance, allowance, and receipt confirmation use the default public Polygon RPC. Worst case a bad public RPC lies about a receipt status — that only affects what the UI shows and the telemetry, not funds, but it's also a reliability concern under load.
-- **The inherent trust model is fine to accept, just be aware of it.** Users sign calldata your backend produced. All the validation in fix #1 protects against Uniswap SDK bugs or a bad RPC response — it cannot protect users from your own server being compromised, because the validator lives on the same server. That's normal for this architecture; it just means server hygiene (env file with the Alchemy key, deploy access) is part of the swap's security perimeter.
+
 
 ### Update: fixed with shared security headers
 
