@@ -255,9 +255,9 @@ Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log
 
 ### 13. Dev proxy — `vite.config.js`
 
-Unchanged for swap, but required for local dev: `/api` (and root JSON paths) proxy to `http://localhost:4174`. `npm run serve` sets `PORT=4174` so the API does not collide with port **4173**, which production uses and Cursor preview often binds — hitting the wrong process returns HTML instead of JSON.
+Unchanged for swap, but required for local dev: `/api` (and root JSON paths) proxy to `http://localhost:4174`. `npm run serve:dev` sets `PORT=4174` so the API does not collide with port **4173**, which production uses and Cursor preview often binds — hitting the wrong process returns HTML instead of JSON.
 
-Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on **4174**). Production/nginx still targets **4173** (`server/index.ts` default when `PORT` is unset). The API handler is now split into `server/apiRoutes.ts`; `server/index.ts` remains the process entrypoint.
+Run the local backend with `npm run serve:dev` or `npm run dev:all` (Vite on **5173**, API on **4174**). Production/nginx still targets **4173** via `npm run serve` and `server/index.ts` defaults to **4173** when `PORT` is unset. The API handler is now split into `server/apiRoutes.ts`; `server/index.ts` remains the process entrypoint.
 
 ## Request/response shape
 
@@ -336,7 +336,7 @@ The endpoint returns `{ "ok": true }` when the log event is accepted. Client log
 
 ## Manual test checklist
 
-Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh after deploy.
+Run with `npm run dev:all` (or `npm run serve:dev` + `npm run dev`), hard-refresh after deploy.
 
 1. Click **TRADE** → modal opens, default WBTC → PRANA
 2. **Connect wallet** on Polygon
@@ -368,7 +368,7 @@ Run with `npm run dev:all` (or `npm run serve` + `npm run dev`), hard-refresh af
 ## Quick smoke test (terminal)
 
 ```bash
-# After npm run serve is running (listens on 4174):
+# After npm run serve:dev is running (listens on 4174):
 curl -s -X POST http://localhost:4174/api/swap/quote \
   -H 'content-type: application/json' \
   -d '{"tokenInSymbol":"USDT","tokenOutSymbol":"PRANA","amountIn":"1","recipient":"0x000000000000000000000000000000000000dEaD","slippageBps":50}' \
@@ -386,7 +386,7 @@ Expect JSON with `"amountOut"` and transaction `data` starting with `0xb858183f`
 To inspect local logs while testing swaps:
 
 ```bash
-npm run serve
+npm run serve:dev
 ```
 
 For production service logs:
