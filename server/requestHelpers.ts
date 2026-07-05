@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { setSecurityHeaders } from './securityHeaders.ts';
 
 export async function fileExists(p: string): Promise<boolean> {
   try {
@@ -26,6 +27,7 @@ export function sendJson(
   options: SendJsonOptions = {},
 ): void {
   res.statusCode = statusCode;
+  setSecurityHeaders(res);
   res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
@@ -38,6 +40,7 @@ export function sendText(
   options: SendTextOptions = {},
 ): void {
   res.statusCode = statusCode;
+  setSecurityHeaders(res);
   res.setHeader('Cache-Control', options.cacheControl ?? 'no-cache');
   res.setHeader('Content-Type', options.contentType ?? 'text/plain; charset=utf-8');
   res.end(body);

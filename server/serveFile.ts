@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cacheControlFor } from './cacheControl.ts';
+import { setSecurityHeaders } from './securityHeaders.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CachedStaticFile, StaticFileCache } from './types/serveFileTypes.ts';
 
@@ -31,6 +32,7 @@ export async function serveFile(
 ): Promise<void> {
   const stat = await fs.stat(filePath);
 
+  setSecurityHeaders(res);
   const etag = `W/"${stat.size}-${stat.mtimeMs}"`;
   res.setHeader('ETag', etag);
   res.setHeader('Last-Modified', stat.mtime.toUTCString());

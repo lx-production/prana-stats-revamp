@@ -36,16 +36,16 @@ This trusts the `X-Forwarded-For` header and takes the **first** entry. That hea
 
 Fixes are small: take the **last** entry of `X-Forwarded-For` (the one your own proxy appended) or only trust the header when `remoteAddress` is your proxy; and add a periodic sweep that deletes buckets older than the window (or cap the map size). A global rate limit across all IPs would also cap the worst-case Alchemy spend regardless of spoofing.
 
-### Update: fixed in `server/index.ts`
+### Update: fixed in `server/rateLimit.ts`
 
-This issue has now been addressed in the server rate-limit path. The fix keeps the original per-IP limits, but changes how the key is chosen and how stale keys are cleaned up:
+The spoofed-IP issue is addressed. Rate limiting now lives in `server/rateLimit.ts` as `createSwapRateLimiters()`, wired from `server/index.ts` (which calls `startCleanupTimer()` once at startup) and enforced in `server/apiRoutes.ts` on `/api/swap/quote` and `/api/swap/log`. The per-IP limits are unchanged (10 quote requests/min, 120 log requests/min), but IP key selection and stale-key cleanup were fixed:
 
-- `X-Forwarded-For` is no longer trusted from arbitrary clients. The server first checks the immediate socket peer with `isTrustedProxy`. By default, only local proxy addresses are trusted: `127.0.0.1` and `::1`.
-- If the app is deployed behind a non-local trusted proxy, extra trusted proxy IPs can be configured with `TRUSTED_PROXY_IPS`, as a comma-separated list.
-- When the immediate peer is trusted and `X-Forwarded-For` is present, `getRequestIp` now uses the **last** forwarded IP entry, which is the value appended by the trusted nginx hop when using `$proxy_add_x_forwarded_for`.
-- If the immediate peer is not trusted, the server ignores `X-Forwarded-For` completely and uses `req.socket.remoteAddress`. This prevents direct clients from choosing their own rate-limit identity.
+- `X-Forwarded-For` is no longer trusted from arbitrary clients. `getRequestIp` first checks the immediate socket peer with `isTrustedProxy`. By default, only local proxy addresses are trusted: `127.0.0.1` and `::1`.
+- If the app is deployed behind a non-local trusted proxy, extra trusted proxy IPs can be configured with `TRUSTED_PROXY_IPS` (comma-separated); those entries are normalized the same way as socket addresses.
+- When the immediate peer is trusted and `X-Forwarded-For` is present (string or repeated header array), the server uses the **last** forwarded IP entry — the value appended by a trusted nginx hop using `$proxy_add_x_forwarded_for`.
+- If the immediate peer is not trusted, the server ignores `X-Forwarded-For` and keys rate limiting on `req.socket.remoteAddress`. This prevents direct clients from choosing their own rate-limit identity.
 - IPv4-mapped IPv6 socket addresses like `::ffff:127.0.0.1` are normalized before trusted-proxy checks and before being used as fallback rate-limit keys.
-- A periodic cleanup timer now sweeps both `swapQuoteRateLimits` and `swapLogRateLimits` every 60 seconds, deleting buckets whose windows have expired. This prevents stale per-IP entries from accumulating forever.
+- A periodic cleanup timer (`startCleanupTimer`, interval 60s, `unref()`ed) sweeps both quote and log bucket maps, deleting entries whose windows have expired. This prevents stale per-IP entries from accumulating forever.
 
 The practical result is that a spoofed header such as `X-Forwarded-For: 1.1.1.1, 2.2.2.2` no longer lets a direct client rotate fake identities. Behind the known nginx proxy, the backend keys rate limiting on the proxy-appended client IP instead of the client-controlled first value.
 
@@ -58,4 +58,15 @@ One remaining optional hardening layer would be a small global quote budget, sep
 - **Frontend reads go through a public RPC.** `wagmiConfig` uses `http()` with no URL, so balance, allowance, and receipt confirmation use the default public Polygon RPC. Worst case a bad public RPC lies about a receipt status — that only affects what the UI shows and the telemetry, not funds, but it's also a reliability concern under load.
 - **The inherent trust model is fine to accept, just be aware of it.** Users sign calldata your backend produced. All the validation in fix #1 protects against Uniswap SDK bugs or a bad RPC response — it cannot protect users from your own server being compromised, because the validator lives on the same server. That's normal for this architecture; it just means server hygiene (env file with the Alchemy key, deploy access) is part of the swap's security perimeter.
 
-If you want, I can implement the `getRequestIp` fix plus the rate-limit map cleanup — that's the one change I'd consider a must before this sees more traffic.
+### Update: fixed with shared security headers
+
+The missing-header issue is addressed with `server/securityHeaders.ts`, which defines one shared `setSecurityHeaders()` helper used by both `sendJson` / `sendText` in `server/requestHelpers.ts` and static file responses in `server/serveFile.ts`.
+
+Every server response path now receives:
+
+- `Content-Security-Policy` with a default same-origin policy, blocked object embeds, blocked framing via `frame-ancestors 'none'`, the existing Google-hosted `model-viewer` script allowlist, same-origin model assets, same-origin API calls, and the default public Polygon RPC used by `wagmiConfig`.
+- `X-Frame-Options: DENY`, matching the CSP framing restriction for older browsers.
+- `X-Content-Type-Options: nosniff`, so browsers do not reinterpret JSON, scripts, or static assets as a different content type.
+- `Referrer-Policy: strict-origin-when-cross-origin`, limiting cross-origin referrer leakage while preserving useful same-origin referrers.
+
+The helper is called before `serveFile`'s conditional request early returns, so cached `304 Not Modified` responses carry the same hardening headers as normal `200` static responses.
