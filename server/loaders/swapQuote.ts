@@ -4,6 +4,7 @@ import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts'
 import { POLYGON_CHAIN_ID, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
 import { logSwapQuoteFailure, logSwapQuoteRoute } from './swapLogs.ts';
+import { attachSwapQuoteVerification } from './swapQuoteVerification.ts';
 import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapRouter, getSlippageTolerance, getValidatedSlippageBps, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 
 const V3_PRANA_POOL_FEE = 10_000; // 1% fee
@@ -314,7 +315,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     blockNumber: route.blockNumber?.toString(),
   });
 
-  return {
+  return attachSwapQuoteVerification({
     request: buildQuoteRequestMetadata(request, amountInRaw),
     tokenIn,
     tokenOut,
@@ -331,7 +332,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     blockNumber: route.blockNumber?.toString(),
     deadline,
     quoteUpdatedAt: new Date().toISOString(),
-  };
+  });
 }
 
 // v3 pool only fallback quote
@@ -456,7 +457,7 @@ async function loadWbtcPranaFallbackQuote(
     strictPath: true,
   });
 
-  return {
+  return attachSwapQuoteVerification({
     request: buildQuoteRequestMetadata(request, amountInRaw),
     tokenIn,
     tokenOut,
@@ -470,5 +471,5 @@ async function loadWbtcPranaFallbackQuote(
     transaction,
     deadline,
     quoteUpdatedAt: new Date().toISOString(),
-  };
+  });
 }

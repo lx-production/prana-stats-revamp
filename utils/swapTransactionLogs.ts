@@ -3,6 +3,7 @@ import type {
   SwapQuoteResponse,
   SwapTransactionLogEvent,
   SwapTransactionLogRequest,
+  SwapTransactionVerificationRequest,
 } from '../types/swap.types';
 
 function getErrorMessage(error: unknown): string | undefined {
@@ -19,6 +20,28 @@ export function logSwapTransactionEvent(input: {
   error?: unknown;
   receiptStatus?: string;
 }): void {
+  if (
+    input.event === 'swap_confirmed' &&
+    input.quote &&
+    input.ownerAddress &&
+    input.transactionHash
+  ) {
+    const payload: SwapTransactionVerificationRequest = {
+      ownerAddress: input.ownerAddress,
+      transactionHash: input.transactionHash,
+      quote: input.quote,
+    };
+
+    void fetch('/api/swap/verify-transaction', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => undefined);
+    return;
+  }
+
   const payload: SwapTransactionLogRequest = {
     event: input.event,
     ownerAddress: input.ownerAddress,

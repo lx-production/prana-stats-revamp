@@ -32,6 +32,13 @@ export type SwapQuoteTransaction = {
   value: string;
 };
 
+export type SwapQuoteVerification = {
+  version: 1;
+  issuedAt: string;
+  expiresAt: string;
+  token: string;
+};
+
 export type SwapRouteStep = {
   protocol: string;
   path: string[];
@@ -55,6 +62,7 @@ export type SwapQuoteResponse = {
   blockNumber?: string;
   deadline: number;
   quoteUpdatedAt: string;
+  verification: SwapQuoteVerification;
 };
 
 export type SwapQuoteErrorResponse = {
@@ -84,6 +92,12 @@ export type SwapTransactionLogRequest = {
   transactionHash?: HexAddress;
   error?: string;
   receiptStatus?: string;
+};
+
+export type SwapTransactionVerificationRequest = {
+  ownerAddress: HexAddress;
+  transactionHash: HexAddress;
+  quote: SwapQuoteResponse;
 };
 
 export type SwapTransactionStatus =

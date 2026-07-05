@@ -394,3 +394,52 @@ For production service logs:
 ```bash
 sudo journalctl -u prana-stats-revamp.service -f | grep '"scope":"swap"'
 ```
+
+## Latest hardening updates from follow-up review
+
+The original V1 notes above are useful for understanding the initial swap implementation, but a few security hardening changes have since been applied.
+
+### Security headers on all served responses
+
+`server/securityHeaders.ts` now defines a shared `setSecurityHeaders()` helper used by:
+
+- `server/requestHelpers.ts` for `sendJson()` and `sendText()`;
+- `server/serveFile.ts` for static assets and HTML, including `304 Not Modified` responses.
+
+Every server response now includes:
+
+- `Content-Security-Policy`;
+- `X-Frame-Options: DENY`;
+- `X-Content-Type-Options: nosniff`;
+- `Referrer-Policy: strict-origin-when-cross-origin`.
+
+The CSP is scoped to the current app shape: same-origin app/API/assets, Google-hosted `model-viewer`, same-origin GLB model files, inline style attributes used by the UI layer, and the public Polygon RPC used by the frontend wagmi config.
+
+### Swap logs split into telemetry vs verified confirmation
+
+The old V1 statement that browser transaction logs include `swap_confirmed` should now be read as historical. `/api/swap/log` is treated as untrusted telemetry only and no longer accepts `swap_confirmed` as a normal client-submitted event.
+
+Current flow:
+
+1. `/api/swap/quote` returns the normal quote plus `verification`, a short-lived HMAC token over the quote metadata and exact transaction fields (`to`, `data`, `value`).
+2. The browser still logs untrusted lifecycle telemetry such as `approval_submitted`, `approval_confirmed`, `approval_failed`, `swap_submitted`, and `swap_failed`.
+3. When the browser sees a successful swap receipt, `utils/swapTransactionLogs.ts` sends the transaction hash and signed quote to `/api/swap/verify-transaction` instead of `/api/swap/log`.
+4. `server/loaders/swapTransactionVerification.ts` verifies the quote token, fetches the Polygon transaction/receipt through the server RPC, and checks sender, router target, successful receipt status, calldata, and native value.
+5. Only after those checks pass does the server write `transaction_event_verified` with `swapEvent: "swap_confirmed"`.
+
+This means fake browser posts can still attempt to send telemetry, but they cannot create a trusted confirmed-swap record without a real successful Polygon transaction that exactly matches a server-issued quote.
+
+### Swap API request hardening
+
+The swap JSON endpoints now reject invalid browser requests before body parsing:
+
+- missing or non-JSON `Content-Type` returns `415 unsupported_media_type`;
+- cross-origin browser requests return `403 forbidden_origin`;
+- localhost dev proxy traffic is allowed;
+- forwarded hosts are considered so the check works behind a normal reverse proxy.
+
+This closes the easy `no-cors` log-spam path. It is defense-in-depth; trusted swap confirmation still comes from on-chain verification, not from browser claims.
+
+### Operational note
+
+Set `SWAP_QUOTE_SIGNING_SECRET` in production, especially if the app runs more than one server process. Without it, the server uses a random in-memory fallback secret; that is fine for a single process, but in-flight quote verification tokens are invalidated on process restart and cannot be verified across multiple workers.

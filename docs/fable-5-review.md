@@ -70,3 +70,20 @@ Every server response path now receives:
 - `Referrer-Policy: strict-origin-when-cross-origin`, limiting cross-origin referrer leakage while preserving useful same-origin referrers.
 
 The helper is called before `serveFile`'s conditional request early returns, so cached `304 Not Modified` responses carry the same hardening headers as normal `200` static responses.
+
+### Update: fixed with server-side swap confirmation verification
+
+The generic `/api/swap/log` endpoint is now treated as untrusted telemetry only. It still accepts sanitized client events such as approvals, submitted swaps, failed swaps, and UI errors, but it no longer accepts `swap_confirmed` as a normal browser-submitted log event.
+
+Confirmed swaps now use a separate `/api/swap/verify-transaction` endpoint. Each quote returned by `/api/swap/quote` includes a short-lived HMAC verification token over the quote metadata and exact transaction fields (`to`, `data`, and `value`). When the frontend sees a successful swap receipt, it submits the transaction hash plus the signed quote to the verification endpoint. The server then checks that:
+
+- the quote verification token is valid and unexpired;
+- the quote recipient matches the reported owner address;
+- the transaction exists on Polygon and has a successful receipt;
+- the transaction sender matches the owner address;
+- the transaction target is the known Uniswap Swap Router 02 address;
+- the on-chain calldata and native value exactly match the signed quote transaction.
+
+Only after those checks pass does the server write a `transaction_event_verified` log with `swapEvent: "swap_confirmed"`. This means fake browser posts can still attempt to send telemetry, but they cannot create a trusted confirmed-swap record without a real successful Polygon transaction that matches a server-issued quote.
+
+The swap JSON endpoints also now reject non-JSON bodies and cross-origin browser requests before parsing. That closes the easy `no-cors` log-spam path, while the on-chain verification handles the actual trust issue.

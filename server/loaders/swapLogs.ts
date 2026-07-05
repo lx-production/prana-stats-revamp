@@ -12,7 +12,6 @@ const VALID_SWAP_LOG_EVENTS = new Set<SwapTransactionLogEvent>([
   'approval_confirmed',
   'approval_failed',
   'swap_submitted',
-  'swap_confirmed',
   'swap_failed',
 ]);
 
@@ -110,6 +109,24 @@ export function logSwapTransactionEvent(payload: SwapTransactionLogRequest): voi
     route: payload.route,
     routePath: routeToString(payload.route),
     error: payload.error,
+  });
+}
+
+export function logVerifiedSwapTransactionEvent(payload: SwapTransactionLogRequest): void {
+  writeSwapLog('transaction_event_verified', {
+    swapEvent: 'swap_confirmed',
+    ownerAddress: payload.ownerAddress,
+    tokenIn: payload.tokenInSymbol,
+    tokenOut: payload.tokenOutSymbol,
+    amountIn: payload.amountIn,
+    amountOut: payload.amountOut,
+    amountOutRaw: payload.amountOutRaw,
+    minimumAmountOut: payload.minimumAmountOut,
+    routerAddress: payload.routerAddress,
+    transactionHash: payload.transactionHash,
+    receiptStatus: payload.receiptStatus,
+    route: payload.route,
+    routePath: routeToString(payload.route),
   });
 }
 
