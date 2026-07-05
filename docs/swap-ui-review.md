@@ -25,15 +25,15 @@ Five hardening changes were added after the initial V1 implementation. Review th
    - `isQuoteCurrent` must pass before approve or swap; otherwise the user sees “Refresh the quote before swapping.”
    - `useUniswapQuote` clears the previous quote as soon as inputs change (not only after debounce), so a stale quote cannot sit on screen while the user edits the amount.
 
-3. **Swap API rate limiting** (`server/index.ts`)
-   - Per-IP sliding window: **10** `POST /api/swap/quote` requests / minute, **120** `POST /api/swap/log` / minute.
+3. **Swap API rate limiting** (`server/rateLimit.ts`, wired through `server/apiRoutes.ts`)
+   - Per-IP fixed window: **10** `POST /api/swap/quote` requests / minute, **120** `POST /api/swap/log` / minute.
    - Over limit → `429` with `{ error: "rate_limited", message: "..." }`.
 
-4. **Request body size caps** (`server/requestHelpers.ts`, `server/index.ts`)
+4. **Request body size caps** (`server/requestHelpers.ts`, `server/apiRoutes.ts`)
    - `readJsonBody()` enforces a byte limit while streaming (default 16 KB).
    - Swap routes use stricter caps: quote **2 KB**, log **8 KB**. Oversized bodies throw before JSON parse.
 
-5. **Error and log sanitization** (`server/index.ts`, `server/loaders/swapLogs.ts`)
+5. **Error and log sanitization** (`server/apiRoutes.ts`, `server/loaders/swapLogs.ts`)
    - `sanitizeSwapErrorMessage()` only forwards a small allowlist of user-facing validation messages; everything else becomes a generic fallback (prevents RPC URLs, stack traces, or Uniswap internals from reaching the browser).
    - `sanitizeLogString()` truncates fields and redacts `http(s)://` URLs and Alchemy API key segments before writing structured logs.
 
@@ -77,7 +77,7 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 
 ## File inventory
 
-### New files (swap-specific)
+### New and relevant files
 
 | File | Lines (approx) | Purpose |
 | --- | --- | --- |
@@ -92,6 +92,8 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 | `components/SwapModal.tsx` | 360 | Modal UI (token pickers, quote, CTA, errors) |
 | `server/loaders/swapQuote.ts` | 474 | Uniswap routing + PRANA fallback + calldata validation |
 | `server/loaders/swapLogs.ts` | 130 | Structured swap quote/transaction logging helpers |
+| `server/apiRoutes.ts` | 157 | API route handler including swap quote/log endpoints |
+| `server/rateLimit.ts` | 115 | Swap quote/log per-IP rate limiting |
 
 ### Modified files (integration touchpoints)
 
@@ -99,7 +101,7 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 | --- | --- |
 | `main.tsx` | Wraps app in `WagmiProvider` + `QueryClientProvider` |
 | `hero3.tsx` | TRADE link → button; renders `<SwapModal />` |
-| `server/index.ts` | Adds `POST /api/swap/quote` and `POST /api/swap/log` routes |
+| `server/index.ts` | Composes API/static handlers; swap endpoints now live in `server/apiRoutes.ts` |
 | `server/requestHelpers.ts` | Adds `readJsonBody()` for POST bodies |
 | `server/utils/providers.ts` | Adds `getServerPolygonRpcUrl()` export |
 | `package.json` / `package-lock.json` | New dependencies |
@@ -184,7 +186,7 @@ This is the core routing logic. Budget the most review time here.
 - Calls `logSwapQuoteRoute()` when a route is selected. Log payload includes source (`alpha_router` or `wbtc_prana_fallback`), token pair, amount in/out, minimum out, slippage, recipient, gas fields, and `routePath`.
 - Calls `logSwapQuoteFailure()` for AlphaRouter failures, fallback failures, and final no-route failures.
 
-### 5. API endpoints — `server/index.ts`
+### 5. API endpoints — `server/apiRoutes.ts` + `server/rateLimit.ts`
 
 **Look for:**
 - `POST` only on `/api/swap/quote`
@@ -195,6 +197,7 @@ This is the core routing logic. Budget the most review time here.
 - Log body parsed via `readJsonBody<unknown>` (**8 KB** cap) and validated by `parseSwapTransactionLogRequest()`
 - Per-IP rate limit: 120 log requests / minute
 - Transaction logs are accepted as fire-and-forget telemetry from the browser; failed log writes should not block the user's swap flow
+- `server/index.ts` should only compose `createApiRouteHandler(...)` and `handleStaticRequest(...)`; endpoint behavior should not be duplicated there
 
 ### 6. Server helpers — `server/requestHelpers.ts`, `server/utils/providers.ts`
 
@@ -254,7 +257,7 @@ Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log
 
 Unchanged for swap, but required for local dev: `/api` (and root JSON paths) proxy to `http://localhost:4174`. `npm run serve` sets `PORT=4174` so the API does not collide with port **4173**, which production uses and Cursor preview often binds — hitting the wrong process returns HTML instead of JSON.
 
-Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on **4174**). Production/nginx still targets **4173** (`server/index.ts` default when `PORT` is unset).
+Run backend with `npm run serve` or `npm run dev:all` (Vite on **5173**, API on **4174**). Production/nginx still targets **4173** (`server/index.ts` default when `PORT` is unset). The API handler is now split into `server/apiRoutes.ts`; `server/index.ts` remains the process entrypoint.
 
 ## Request/response shape
 

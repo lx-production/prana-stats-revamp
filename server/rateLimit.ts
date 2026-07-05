@@ -1,0 +1,115 @@
+import type { IncomingMessage } from 'node:http';
+
+type RateLimitBucket = {
+  windowStartedAt: number;
+  count: number;
+};
+
+type RateLimit = {
+  windowMs: number;
+  maxRequests: number;
+};
+
+const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
+const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
+
+function normalizeSocketAddress(address: string): string {
+  return address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
+}
+
+function createTrustedProxyAddresses(): Set<string> {
+  return new Set([
+    '127.0.0.1',
+    '::1',
+    ...(process.env.TRUSTED_PROXY_IPS || '')
+      .split(',')
+      .map((ip) => ip.trim())
+      .filter(Boolean)
+      .map(normalizeSocketAddress),
+  ]);
+}
+
+function isTrustedProxy(address: string, trustedProxyAddresses: Set<string>): boolean {
+  return trustedProxyAddresses.has(normalizeSocketAddress(address));
+}
+
+function getRequestIp(req: IncomingMessage, trustedProxyAddresses: Set<string>): string {
+  const socketAddress = req.socket.remoteAddress ?? 'unknown';
+  const forwardedFor = req.headers['x-forwarded-for'];
+
+  if (isTrustedProxy(socketAddress, trustedProxyAddresses) && forwardedFor) {
+    const forwardedHeader = Array.isArray(forwardedFor) ? forwardedFor.join(',') : forwardedFor;
+    const forwardedIps = forwardedHeader.split(',').map((ip) => ip.trim()).filter(Boolean);
+    const proxyAppendedIp = forwardedIps[forwardedIps.length - 1];
+
+    if (proxyAppendedIp) {
+      return proxyAppendedIp;
+    }
+  }
+
+  return normalizeSocketAddress(socketAddress);
+}
+
+function sweepRateLimitBuckets(
+  buckets: Map<string, RateLimitBucket>,
+  now: number,
+  windowMs: number,
+): void {
+  for (const [key, bucket] of buckets) {
+    if (now - bucket.windowStartedAt > windowMs) {
+      buckets.delete(key);
+    }
+  }
+}
+
+function isRateLimited(
+  req: IncomingMessage,
+  buckets: Map<string, RateLimitBucket>,
+  limit: RateLimit,
+  trustedProxyAddresses: Set<string>,
+): boolean {
+  const now = Date.now();
+  const key = getRequestIp(req, trustedProxyAddresses);
+  const bucket = buckets.get(key);
+
+  if (!bucket || now - bucket.windowStartedAt > limit.windowMs) {
+    buckets.set(key, { windowStartedAt: now, count: 1 });
+    return false;
+  }
+
+  bucket.count += 1;
+  return bucket.count > limit.maxRequests;
+}
+
+export function createSwapRateLimiters() {
+  const trustedProxyAddresses = createTrustedProxyAddresses();
+  const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
+  const swapLogRateLimits = new Map<string, RateLimitBucket>();
+
+  return {
+    isSwapQuoteRateLimited(req: IncomingMessage): boolean {
+      return isRateLimited(
+        req,
+        swapQuoteRateLimits,
+        SWAP_QUOTE_RATE_LIMIT,
+        trustedProxyAddresses,
+      );
+    },
+
+    isSwapLogRateLimited(req: IncomingMessage): boolean {
+      return isRateLimited(req, swapLogRateLimits, SWAP_LOG_RATE_LIMIT, trustedProxyAddresses);
+    },
+
+    startCleanupTimer(): void {
+      const rateLimitCleanupTimer = setInterval(() => {
+        const now = Date.now();
+        sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
+      }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
+      rateLimitCleanupTimer.unref();
+    },
+  };
+}
+
+export type SwapRateLimiters = ReturnType<typeof createSwapRateLimiters>;
