@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently -k -s first \"npm run serve:dev\" \"node scripts/wait-for-api.mjs 4174 && npm run dev\"",
+    "dev:all": "concurrently -k -s first \"npm run serve:dev\" \"tsx scripts/wait-for-api.ts 4174 && npm run dev\"",
     "build": "vite build",
     "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
     "preview": "vite preview",
