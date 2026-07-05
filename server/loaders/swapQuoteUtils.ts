@@ -92,7 +92,7 @@ export function buildRouteSummary(route: unknown): SwapRouteStep[] {
 export function selectV3Route(route: any): any | null {
   // route.route is an array of all the legs in the route, so we need to find the first V3 leg.
   const routes = Array.isArray(route?.route) ? route.route : [];
-  return routes.find((item) => item?.protocol === 'V3' && item?.route?.pools?.length && item?.tokenPath?.length) ?? null;
+  return routes.find((item: any) => item?.protocol === 'V3' && item?.route?.pools?.length && item?.tokenPath?.length) ?? null;
 }
 
 // When selectV3Route returns that leg, getV3RoutePathData pulls all tokens and all pool fees

@@ -1,19 +1,20 @@
-import http from 'node:http';
+import { createServer } from 'http';
+import { env } from 'process';
 import { createApiRouteHandler } from './apiRoutes.ts';
 import { createSwapRateLimiters } from './rateLimit.ts';
 import { sendJson } from './requestHelpers.ts';
 import { warmApiCaches } from './serverStartup.ts';
 import { handleStaticRequest } from './staticRoutes.ts';
 
-const PORT = Number(process.env.PORT || 4173);
-const HOST = process.env.HOST || '127.0.0.1';
+const PORT = Number(env.PORT ?? 4173);
+const HOST = env.HOST ?? '127.0.0.1';
 
 const rateLimiters = createSwapRateLimiters();
 const handleApiRequest = createApiRouteHandler(rateLimiters);
 
 rateLimiters.startCleanupTimer();
 
-const server = http.createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
