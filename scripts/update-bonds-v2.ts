@@ -115,7 +115,7 @@ export async function updateBondsV2(): Promise<UpdateBondsV2Result> {
 
   if (!existingDetails || !existingDetails.buy?.bonds || !existingDetails.sell?.bonds) {
     console.log(
-      'No existing bonds_v2_details.json found; run `node --experimental-strip-types scripts/scan-bonds-v2.ts` first.',
+      'No existing bonds_v2_details.json found; run `tsx scripts/scan-bonds-v2.ts` first.',
     );
     return { updated: false };
   }
