@@ -379,3 +379,27 @@ Operationally, this means local and one-proxy setups keep the old default behavi
 change, while the two-hop VPS → Pi deployment must set `TRUSTED_PROXY_HOP_COUNT=2` in the Node
 service environment before restart. The regression test for this lives in `server/rateLimit.test.ts`
 and can be run with `npm run test:rate-limit`.
+
+---
+
+## Refactor note — NEW-2 implementation
+
+The NEW-2 fix pins the browser-side Polygon RPC host and makes the production CSP match that exact
+host. The frontend no longer depends on viem's chain default for Polygon, so a future viem/wagmi
+upgrade cannot silently move browser RPC traffic to a different origin that the CSP does not allow.
+
+The shared source of truth is `FRONTEND_POLYGON_RPC_URL` in `constants/network.ts`, currently set to
+`https://polygon.drpc.org`. `utils/wagmiConfig.ts` now passes that value to `http(...)` for the
+Polygon transport instead of calling `http()` with no URL. `server/securityHeaders.ts` imports the
+same constant and builds `connect-src 'self' https://polygon.drpc.org`, replacing the stale
+`https://polygon-rpc.com` entry that did not match the actual frontend RPC traffic.
+
+This refactor intentionally does not change server-side paid/private RPC configuration. The backend
+quote, verification, and data-loading code can continue to use its existing environment-driven RPC
+provider selection; the new constant is only for browser-originated wagmi reads and receipt polling.
+
+The regression test for this lives in `server/securityHeaders.test.ts`. It asserts that the CSP
+`connect-src` includes the pinned `https://polygon.drpc.org` host and does not include the stale
+`https://polygon-rpc.com` host. The focused test can be run with
+`node --import tsx --test server/securityHeaders.test.ts`; the implementation was also verified
+with `npm run typecheck` and `npm run build`.

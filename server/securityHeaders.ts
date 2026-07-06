@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { FRONTEND_POLYGON_RPC_URL } from '../constants/network.ts';
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -9,7 +10,7 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://polygon-rpc.com",
+  `connect-src 'self' ${FRONTEND_POLYGON_RPC_URL}`,
   "model-src 'self'",
   "form-action 'self'",
 ].join('; ');
