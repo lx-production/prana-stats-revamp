@@ -11,6 +11,7 @@ type RateLimit = {
 };
 
 const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
+const SWAP_GLOBAL_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
 const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
 const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
@@ -99,22 +100,49 @@ function isRateLimited(
   return bucket.count > limit.maxRequests;
 }
 
+function isGlobalRateLimited(
+  bucket: RateLimitBucket | null,
+  limit: RateLimit,
+): { bucket: RateLimitBucket; limited: boolean } {
+  const now = Date.now();
+
+  if (!bucket || now - bucket.windowStartedAt > limit.windowMs) {
+    return {
+      bucket: { windowStartedAt: now, count: 1 },
+      limited: false,
+    };
+  }
+
+  bucket.count += 1;
+  return {
+    bucket,
+    limited: bucket.count > limit.maxRequests,
+  };
+}
+
 export function createSwapRateLimiters() {
   const trustedProxyAddresses = createTrustedProxyAddresses();
   const trustedProxyHopCount = createTrustedProxyHopCount();
   const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
+  let globalSwapQuoteRateLimit: RateLimitBucket | null = null;
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
 
   return {
     isSwapQuoteRateLimited(req: IncomingMessage): boolean {
-      return isRateLimited(
+      if (isRateLimited(
         req,
         swapQuoteRateLimits,
         SWAP_QUOTE_RATE_LIMIT,
         trustedProxyAddresses,
         trustedProxyHopCount,
-      );
+      )) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(globalSwapQuoteRateLimit, SWAP_GLOBAL_QUOTE_RATE_LIMIT);
+      globalSwapQuoteRateLimit = globalResult.bucket;
+      return globalResult.limited;
     },
 
     isSwapLogRateLimited(req: IncomingMessage): boolean {
@@ -141,6 +169,12 @@ export function createSwapRateLimiters() {
       const rateLimitCleanupTimer = setInterval(() => {
         const now = Date.now();
         sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
+        if (
+          globalSwapQuoteRateLimit &&
+          now - globalSwapQuoteRateLimit.windowStartedAt > SWAP_GLOBAL_QUOTE_RATE_LIMIT.windowMs
+        ) {
+          globalSwapQuoteRateLimit = null;
+        }
         sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
       }, RATE_LIMIT_CLEANUP_INTERVAL_MS);

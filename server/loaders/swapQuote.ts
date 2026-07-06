@@ -12,13 +12,13 @@ const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
 const ROUTER_ADDRESS_LOWER = UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase();
 
-type SwapTransactionCandidate = {
+export type SwapTransactionCandidate = {
   to: HexAddress;
   data: HexAddress;
   value: string;
 };
 
-type SwapValidationContext = {
+export type SwapValidationContext = {
   request: SwapQuoteRequest;
   tokenIn: SwapToken;
   tokenOut: SwapToken;
@@ -26,6 +26,10 @@ type SwapValidationContext = {
   minimumAmountOutRaw: bigint;
   deadline: number;
   strictPath: boolean;
+};
+
+type SwapInputBudget = {
+  spentRaw: bigint;
 };
 
 function tokenExecutionAddress(token: SwapToken): string {
@@ -71,27 +75,42 @@ function validatePathEndpoints(pathAddresses: string[], context: SwapValidationC
   }
 }
 
-function validateRouterCall(data: HexAddress, context: SwapValidationContext, depth = 0): void {
+function spendInputBudget(amountIn: bigint, context: SwapValidationContext, inputBudget: SwapInputBudget): void {
+  inputBudget.spentRaw += amountIn;
+
+  if (inputBudget.spentRaw > context.amountInRaw) {
+    throw new Error('Uniswap returned calldata with too much cumulative input.');
+  }
+}
+
+function validateRouterCall(
+  data: HexAddress,
+  context: SwapValidationContext,
+  inputBudget: SwapInputBudget,
+  depth = 0,
+): void {
   if (depth > 4) throw new Error('Uniswap returned nested calldata that is too deep.');
 
   const parsed = SWAP_ROUTER_IFACE.parseTransaction({ data });
   if (!parsed) throw new Error('Uniswap returned unsupported router calldata.');
 
   if (parsed.name === 'multicall') {
-    const calls = Array.from(parsed.args.length === 2 ? parsed.args[1] : parsed.args[0]);
+    if (parsed.args.length !== 2) {
+      throw new Error('Uniswap returned multicall calldata without a deadline.');
+    }
 
-    if (parsed.args.length === 2) {
-      const txDeadline = BigInt(parsed.args[0].toString());
-      if (txDeadline !== BigInt(context.deadline)) {
-        throw new Error('Uniswap returned calldata with an unexpected deadline.');
-      }
+    const calls = Array.from(parsed.args[1]);
+
+    const txDeadline = BigInt(parsed.args[0].toString());
+    if (txDeadline !== BigInt(context.deadline)) {
+      throw new Error('Uniswap returned calldata with an unexpected deadline.');
     }
 
     if (!calls.length) {
       throw new Error('Uniswap returned an empty multicall.');
     }
 
-    calls.forEach((call) => validateRouterCall(call as HexAddress, context, depth + 1));
+    calls.forEach((call) => validateRouterCall(call as HexAddress, context, inputBudget, depth + 1));
     return;
   }
 
@@ -114,6 +133,7 @@ function validateRouterCall(data: HexAddress, context: SwapValidationContext, de
       throw new Error('Uniswap returned calldata with too much input.');
     }
 
+    spendInputBudget(amountIn, context, inputBudget);
     return;
   }
 
@@ -139,6 +159,7 @@ function validateRouterCall(data: HexAddress, context: SwapValidationContext, de
       throw new Error('Uniswap returned calldata with too much input.');
     }
 
+    spendInputBudget(amountIn, context, inputBudget);
     return;
   }
 
@@ -165,6 +186,7 @@ function validateRouterCall(data: HexAddress, context: SwapValidationContext, de
       throw new Error('Uniswap returned calldata with too much input.');
     }
 
+    spendInputBudget(inputAmount, context, inputBudget);
     return;
   }
 
@@ -193,8 +215,12 @@ function validateSwapTransaction(transaction: SwapTransactionCandidate, context:
     throw new Error('Uniswap returned an unexpected transaction value.');
   }
 
-  validateRouterCall(transaction.data, context);
+  validateRouterCall(transaction.data, context, { spentRaw: 0n });
 }
+
+export const swapQuoteValidationTestUtils = {
+  validateSwapTransaction,
+};
 
 function buildQuoteRequestMetadata(request: SwapQuoteRequest, amountInRaw: bigint) {
   return {

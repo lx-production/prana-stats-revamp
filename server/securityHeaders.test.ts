@@ -27,3 +27,14 @@ test('CSP connect-src matches the pinned frontend Polygon RPC host', () => {
   assert.match(csp, new RegExp(`(?:^|; )connect-src 'self' ${FRONTEND_POLYGON_RPC_URL}(?:;|$)`));
   assert.doesNotMatch(csp, /connect-src[^;]*https:\/\/polygon-rpc\.com/);
 });
+
+test('CSP img-src only allows same-origin and data images', () => {
+  const res = mockResponse();
+
+  setSecurityHeaders(res);
+
+  const csp = res.headers.get('Content-Security-Policy');
+  assert.equal(typeof csp, 'string');
+  assert.match(csp, /(?:^|; )img-src 'self' data:(?:;|$)/);
+  assert.doesNotMatch(csp, /img-src[^;]*https:/);
+});

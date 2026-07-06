@@ -140,6 +140,41 @@ test('different real clients behind the two-hop deployment do not share the quot
   );
 });
 
+test('swap quote limiter has a global all-clients budget', () => {
+  const limiter = createSwapRateLimiters();
+
+  for (let index = 0; index < 60; index += 1) {
+    assert.equal(
+      limiter.isSwapQuoteRateLimited(mockRequest(`198.51.100.${index}`)),
+      false,
+    );
+  }
+
+  assert.equal(
+    limiter.isSwapQuoteRateLimited(mockRequest('203.0.113.61')),
+    true,
+  );
+});
+
+test('per-IP quote rejections do not spend the global quote budget', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendQuoteBudget(limiter, mockRequest('198.51.100.80'));
+  assert.equal(limiter.isSwapQuoteRateLimited(mockRequest('198.51.100.80')), true);
+
+  for (let index = 0; index < 50; index += 1) {
+    assert.equal(
+      limiter.isSwapQuoteRateLimited(mockRequest(`203.0.113.${index}`)),
+      false,
+    );
+  }
+
+  assert.equal(
+    limiter.isSwapQuoteRateLimited(mockRequest('203.0.113.60')),
+    true,
+  );
+});
+
 test('invalid trusted proxy hop counts fall back to single-proxy behavior', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = 'many';
   const limiter = createSwapRateLimiters();

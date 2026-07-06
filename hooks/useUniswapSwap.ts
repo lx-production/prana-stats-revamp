@@ -6,6 +6,8 @@ import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../constants/swapContracts';
 import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../types/swap.types';
 
+const QUOTE_EXPIRY_BUFFER_SECONDS = 5;
+
 export function useUniswapSwap({
   quote,
   tokenIn,
@@ -22,6 +24,7 @@ export function useUniswapSwap({
   const [status, setStatus] = useState<SwapTransactionStatus>('idle');
   const [transactionHash, setTransactionHash] = useState<HexAddress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [nowSeconds, setNowSeconds] = useState(() => Math.floor(Date.now() / 1000));
 
   const amountInRaw = useMemo(() => {
     if (!amountIn) return 0n;
@@ -33,8 +36,24 @@ export function useUniswapSwap({
     return parseSwapTokenAmount(quote.amountIn, tokenIn);
   }, [quote, tokenIn]);
 
+  useEffect(() => {
+    if (!quote) return;
+
+    setNowSeconds(Math.floor(Date.now() / 1000));
+    const intervalId = window.setInterval(() => {
+      setNowSeconds(Math.floor(Date.now() / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [quote]);
+
+  const isQuoteExpired = Boolean(
+    quote && quote.deadline <= nowSeconds + QUOTE_EXPIRY_BUFFER_SECONDS,
+  );
+
   const isQuoteCurrent = useMemo(() => {
     if (!quote || !ownerAddress) return false;
+    if (isQuoteExpired) return false;
 
     return (
       quote.request.chainId === POLYGON_CHAIN_ID &&
@@ -46,7 +65,7 @@ export function useUniswapSwap({
       quote.routerAddress.toLowerCase() === UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase() &&
       quote.transaction.to.toLowerCase() === UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase()
     );
-  }, [amountInRaw, ownerAddress, quote, slippageBps, tokenIn.symbol, tokenOut.symbol]);
+  }, [amountInRaw, isQuoteExpired, ownerAddress, quote, slippageBps, tokenIn.symbol, tokenOut.symbol]);
 
   const refreshBalances = useCallback(async () => {
     if (!publicClient || !ownerAddress) {
@@ -172,7 +191,7 @@ export function useUniswapSwap({
     }
 
     if (!isQuoteCurrent) {
-      setError('Refresh the quote before swapping.');
+      setError(isQuoteExpired ? 'Quote expired. Refresh to continue.' : 'Refresh the quote before swapping.');
       return;
     }
 
@@ -246,6 +265,7 @@ export function useUniswapSwap({
     approveIfNeeded,
     hasInsufficientBalance,
     isQuoteCurrent,
+    isQuoteExpired,
     ownerAddress,
     publicClient,
     quote,
@@ -258,6 +278,7 @@ export function useUniswapSwap({
     balance,
     allowance,
     isRefreshingBalances,
+    isQuoteExpired,
     needsApproval,
     hasInsufficientBalance,
     status,

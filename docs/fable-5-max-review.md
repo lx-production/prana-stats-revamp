@@ -478,3 +478,56 @@ tampering with either `amountOut` or `route` rejects the verification before any
 and does not consume the quote token. The focused test can be run with
 `node --import tsx --test server/loaders/swapTransactionVerification.test.ts`; the implementation
 was also verified with `npm run typecheck` and `npm run build`.
+
+---
+
+## Refactor note — NEW-5 implementation
+
+The NEW-5 optional hardening items are now implemented across the swap validator, quote UI, CSP,
+and quote rate limiter.
+
+`server/loaders/swapQuote.ts` now tracks a cumulative input budget while recursively validating
+router calldata. Each input-consuming swap call (`exactInput`, `exactInputSingle`, and
+`swapExactTokensForTokens`) still has its individual amount checked, but it also spends from a
+shared `context.amountInRaw` budget across nested multicalls. This keeps legitimate split
+AlphaRouter routes working when their total input is within the quote amount, while rejecting a
+multicall whose individual calls each look acceptable but whose combined input exceeds the quoted
+input.
+
+The deadline-less `multicall(bytes[])` variant was removed from `SWAP_ROUTER_02_ABI` in
+`constants/swapContracts.ts`. Since both the AlphaRouter calls and the WBTC/PRANA fallback are
+requested/encoded with `multicall(uint256 deadline,bytes[])`, the validator now rejects wrappers
+that do not carry the expected on-chain deadline instead of accepting them as another allowed router
+shape.
+
+The backend deadline was already shortened to `SWAP_DEADLINE_SECONDS = 3 * 60`. The frontend now
+also enforces quote age in `hooks/useUniswapSwap.ts`: a quote is considered expired five seconds
+before its on-chain deadline, `isQuoteCurrent` returns false for expired quotes, approval/swap is
+blocked, and `components/SwapModal.tsx` lets the primary button refresh the expired quote with the
+visible message `Quote expired. Refresh to continue.`
+
+`server/securityHeaders.ts` now tightens image loading from `img-src 'self' data: https:` to
+`img-src 'self' data:`. The page's runtime image assets are local (`public/assets/...`), while the
+absolute Open Graph/Twitter image URLs in `index.html` are for crawlers and are not runtime page
+loads governed by this CSP.
+
+`server/rateLimit.ts` now adds a global quote budget on top of the existing per-IP quote budget:
+`/api/swap/quote` still allows 10 requests per minute per derived client IP, but all clients
+combined are capped at 60 accepted quote requests per minute. Per-IP rejections return before
+spending the global bucket, so a single noisy IP does not consume the shared budget after it has
+already exhausted its own.
+
+Regression coverage was added in three places:
+
+- `server/loaders/swapQuote.test.ts` checks that split input within budget passes, cumulative input
+  above budget fails, and the deadline-less multicall variant is rejected.
+- `server/rateLimit.test.ts` checks the global quote budget and confirms per-IP rejections do not
+  spend that global budget.
+- `server/securityHeaders.test.ts` checks that `img-src` allows only same-origin and `data:` image
+  loads.
+
+The focused tests can be run with `node --import tsx --test server/loaders/swapQuote.test.ts`,
+`npm run test:rate-limit`, and `node --import tsx --test server/securityHeaders.test.ts`; the
+implementation was also verified with
+`node --import tsx --test server/loaders/swapTransactionVerification.test.ts`, `npm run typecheck`,
+and `npm run build`.

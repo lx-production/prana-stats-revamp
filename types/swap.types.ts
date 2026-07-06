@@ -155,6 +155,7 @@ export type UseUniswapSwapResult = {
   balance: bigint | null;
   allowance: bigint | null;
   isRefreshingBalances: boolean;
+  isQuoteExpired: boolean;
   needsApproval: boolean;
   hasInsufficientBalance: boolean;
   status: SwapTransactionStatus;

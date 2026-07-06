@@ -8,7 +8,7 @@ const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "script-src 'self' https://ajax.googleapis.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  "img-src 'self' data:",
   "font-src 'self' data:",
   `connect-src 'self' ${FRONTEND_POLYGON_RPC_URL}`,
   "model-src 'self'",

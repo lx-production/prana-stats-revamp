@@ -25,6 +25,7 @@ function getActionLabel(
   isConnected: boolean,
   isPolygon: boolean,
   isQuoteLoading: boolean,
+  isQuoteExpired: boolean,
   needsApproval: boolean,
   status: string,
 ): string {
@@ -36,6 +37,7 @@ function getActionLabel(
   if (status === 'swap-confirming') return 'Confirming Swap';
   if (status === 'success') return 'Swap Complete';
   if (isQuoteLoading) return 'Finding Best Route';
+  if (isQuoteExpired) return 'Refresh Quote';
   if (needsApproval) return 'Approve & Swap';
   return 'Swap';
 }
@@ -85,6 +87,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     wallet.isConnected,
     wallet.isPolygon,
     quoteState.isLoading,
+    swapState.isQuoteExpired,
     swapState.needsApproval,
     swapState.status,
   );
@@ -94,6 +97,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
       wallet.isPolygon &&
       quoteState.quote &&
       !quoteState.isLoading &&
+      !swapState.isQuoteExpired &&
       !swapState.hasInsufficientBalance &&
       !isBusy,
   );
@@ -163,6 +167,11 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
       if (!wallet.isPolygon) {
         await wallet.ensurePolygon();
+        return;
+      }
+
+      if (swapState.isQuoteExpired) {
+        quoteState.refetch();
         return;
       }
 
@@ -393,11 +402,11 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 ) : null}
               </div>
 
-              {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance) && (
+              {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance || swapState.isQuoteExpired) && (
                 <div className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
                   {swapState.hasInsufficientBalance
                     ? `Insufficient ${tokenIn.symbol} balance.`
-                    : actionError ?? swapState.error ?? quoteState.error}
+                    : actionError ?? swapState.error ?? quoteState.error ?? 'Quote expired. Refresh to continue.'}
                 </div>
               )}
 
@@ -410,7 +419,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               <button
                 type="button"
                 onClick={handleAction}
-                disabled={wallet.isConnected && wallet.isPolygon && (!canSwap || !hasAmount)}
+                disabled={wallet.isConnected && wallet.isPolygon && (isBusy || ((!canSwap && !swapState.isQuoteExpired) || !hasAmount))}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] px-6 py-4 font-semibold text-[#2B1B05] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-10px_18px_rgba(120,73,0,0.45),0_16px_36px_rgba(0,0,0,0.38)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 {(quoteState.isLoading || isBusy || wallet.isConnecting) && (

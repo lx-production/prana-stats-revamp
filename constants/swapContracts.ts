@@ -22,7 +22,6 @@ export const SWAP_ROUTER_02_ABI = [
   'function exactInput(tuple(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum) params) payable returns (uint256 amountOut)',
   'function exactInputSingle(tuple(address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)',
   'function swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,address[] path,address to) payable returns (uint256 amountOut)',
-  'function multicall(bytes[] data) payable returns (bytes[] results)',
   'function wrapETH(uint256 value) payable',
   'function unwrapWETH9(uint256 amountMinimum,address recipient) payable',
   'function unwrapWETH9(uint256 amountMinimum) payable',
