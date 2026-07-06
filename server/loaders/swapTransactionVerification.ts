@@ -7,9 +7,30 @@ import type {
 } from '../../types/swap.types.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { logVerifiedSwapTransactionEvent } from './swapLogs.ts';
-import { verifySwapQuoteToken } from './swapQuoteVerification.ts';
+import {
+  assertSwapQuoteTokenUnused,
+  markSwapQuoteTokenUsed,
+  verifySwapQuoteToken,
+} from './swapQuoteVerification.ts';
 
 const ROUTER_ADDRESS_LOWER = UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase();
+
+type SwapTransactionLookupProvider = {
+  getTransaction(hash: string): Promise<{
+    from: string;
+    to?: string | null;
+    data: string;
+    value: { toString(): string };
+  } | null>;
+  getTransactionReceipt(hash: string): Promise<{
+    status: number | null;
+  } | null>;
+};
+
+type SwapTransactionVerificationDependencies = {
+  getProvider?: () => Promise<SwapTransactionLookupProvider>;
+  logVerifiedSwapTransactionEvent?: typeof logVerifiedSwapTransactionEvent;
+};
 
 function asVerificationRequest(body: unknown): SwapTransactionVerificationRequest {
   const payload = body as Partial<SwapTransactionVerificationRequest>;
@@ -55,15 +76,21 @@ function validateQuoteShape(quote: SwapQuoteResponse, ownerAddress: HexAddress):
   }
 }
 
-export async function verifyAndLogSwapTransaction(body: unknown): Promise<void> {
+export async function verifyAndLogSwapTransaction(
+  body: unknown,
+  dependencies: SwapTransactionVerificationDependencies = {},
+): Promise<void> {
   const request = asVerificationRequest(body);
   const ownerAddressLower = request.ownerAddress.toLowerCase();
   const quote = request.quote;
-  const provider = await getServerPolygonProvider();
+  const loadProvider = dependencies.getProvider ?? getServerPolygonProvider;
+  const writeVerifiedLog = dependencies.logVerifiedSwapTransactionEvent ?? logVerifiedSwapTransactionEvent;
 
   verifySwapQuoteToken(quote);
   validateQuoteShape(quote, request.ownerAddress);
+  assertSwapQuoteTokenUnused(quote);
 
+  const provider = await loadProvider();
   const [transaction, receipt] = await Promise.all([
     provider.getTransaction(request.transactionHash),
     provider.getTransactionReceipt(request.transactionHash),
@@ -93,7 +120,7 @@ export async function verifyAndLogSwapTransaction(body: unknown): Promise<void> 
     throw new Error('Swap transaction value does not match the signed quote.');
   }
 
-  logVerifiedSwapTransactionEvent({
+  writeVerifiedLog({
     event: 'swap_confirmed',
     ownerAddress: request.ownerAddress,
     tokenInSymbol: quote.tokenIn.symbol,
@@ -107,4 +134,5 @@ export async function verifyAndLogSwapTransaction(body: unknown): Promise<void> 
     transactionHash: request.transactionHash,
     receiptStatus: 'success',
   });
+  markSwapQuoteTokenUsed(quote);
 }

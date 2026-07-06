@@ -403,3 +403,52 @@ The regression test for this lives in `server/securityHeaders.test.ts`. It asser
 `https://polygon-rpc.com` host. The focused test can be run with
 `node --import tsx --test server/securityHeaders.test.ts`; the implementation was also verified
 with `npm run typecheck` and `npm run build`.
+
+---
+
+## Refactor note — NEW-3 implementation
+
+The NEW-3 fix now caps swap verification amplification in two layers: a dedicated verify endpoint
+rate limit and a successful-verification replay guard for signed quote tokens. This is still
+cost/quota hardening only; it does not change the swap trust model or the browser request/response
+shape.
+
+First, `/api/swap/verify-transaction` no longer shares the broad 120/min swap-log bucket. The
+rate limiter in `server/rateLimit.ts` now has a separate `SWAP_VERIFY_RATE_LIMIT` of 10 requests
+per minute per derived client IP, with its own bucket map and cleanup sweep. `server/apiRoutes.ts`
+uses `isSwapVerifyRateLimited(req)` for only the verification endpoint, while `/api/swap/log`
+continues to use the existing 120/min budget. Quote and log budgets are otherwise unchanged, and
+the verify limiter uses the same trusted-proxy client-IP derivation fixed in NEW-1.
+
+Second, `server/loaders/swapQuoteVerification.ts` now remembers quote verification tokens that have
+already produced a successful verified swap log. The cache stores a SHA-256 hash of the token, not
+the raw HMAC token, and each entry expires at the quote token's own `verification.expiresAt`
+timestamp. Cleanup is opportunistic: each replay check or mark operation sweeps expired entries, so
+the in-memory map stays bounded without a new timer.
+
+The ordering is important. `verifyAndLogSwapTransaction` still validates the HMAC quote token and
+quote shape first, then checks whether the token was already used **before** loading the server
+provider or making `getTransaction` / `getTransactionReceipt` RPC calls. If the token is a replay,
+the request fails locally and does not spend paid RPC quota. The token is marked used only after
+all on-chain checks pass and the `transaction_event_verified` log is written. Pending receipts,
+malformed requests, reverted transactions, mismatched calldata/value, and failed log writes do not
+consume the quote token, so a legitimate delayed confirmation can still be retried later.
+
+This is intentionally an in-memory guard. Restarting the Node process clears the used-token cache,
+which is acceptable for this finding because the goal is to reduce routine paid-RPC amplification
+during the 30-minute quote-token lifetime, not to create durable swap state. A persistent store
+would only be necessary if replay suppression had to survive process restarts or multiple Node
+instances.
+
+Regression coverage was added in two places:
+
+- `server/rateLimit.test.ts` checks that verification has an independent 10/min bucket, spending
+  log budget does not spend verify budget, and the verify limiter follows the same trusted-proxy
+  identity logic as quote/log limiting.
+- `server/loaders/swapTransactionVerification.test.ts` checks that successful verification marks a
+  token used, replay is rejected before provider/RPC calls, pending verification attempts do not
+  consume the token, and expired replay entries are swept.
+
+The focused tests can be run with `npm run test:rate-limit` and
+`node --import tsx --test server/loaders/swapTransactionVerification.test.ts`; the implementation
+was also verified with `npm run typecheck` and `npm run build`.

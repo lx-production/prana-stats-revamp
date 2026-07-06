@@ -41,6 +41,26 @@ function spendQuoteBudget(
   }
 }
 
+function spendLogBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 120,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isSwapLogRateLimited(req), false);
+  }
+}
+
+function spendVerifyBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 10,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isSwapVerifyRateLimited(req), false);
+  }
+}
+
 test('direct untrusted sockets ignore spoofed X-Forwarded-For values', () => {
   const limiter = createSwapRateLimiters();
 
@@ -129,5 +149,41 @@ test('invalid trusted proxy hop counts fall back to single-proxy behavior', () =
   assert.equal(
     limiter.isSwapQuoteRateLimited(mockRequest('127.0.0.1', '198.51.100.51, 127.0.0.1')),
     true,
+  );
+});
+
+test('swap verification has an independent 10 request per minute bucket', () => {
+  const limiter = createSwapRateLimiters();
+  const req = mockRequest('198.51.100.60');
+
+  spendVerifyBudget(limiter, req);
+
+  assert.equal(limiter.isSwapVerifyRateLimited(req), true);
+  assert.equal(limiter.isSwapLogRateLimited(req), false);
+});
+
+test('spending the swap log budget does not spend the verification budget', () => {
+  const limiter = createSwapRateLimiters();
+  const req = mockRequest('198.51.100.61');
+
+  spendLogBudget(limiter, req);
+
+  assert.equal(limiter.isSwapLogRateLimited(req), true);
+  assert.equal(limiter.isSwapVerifyRateLimited(req), false);
+});
+
+test('verification limiter uses the same trusted proxy client identity logic', () => {
+  process.env.TRUSTED_PROXY_HOP_COUNT = '2';
+  const limiter = createSwapRateLimiters();
+
+  spendVerifyBudget(limiter, mockRequest('127.0.0.1', '198.51.100.70, 127.0.0.1'));
+
+  assert.equal(
+    limiter.isSwapVerifyRateLimited(mockRequest('127.0.0.1', '198.51.100.70, 127.0.0.1')),
+    true,
+  );
+  assert.equal(
+    limiter.isSwapVerifyRateLimited(mockRequest('127.0.0.1', '198.51.100.71, 127.0.0.1')),
+    false,
   );
 });

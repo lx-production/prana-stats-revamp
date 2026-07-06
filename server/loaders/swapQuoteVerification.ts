@@ -1,9 +1,10 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SwapQuoteResponse, SwapQuoteVerification } from '../../types/swap.types.ts';
 
 const TOKEN_VERSION = 1;
 const FALLBACK_SIGNING_SECRET = randomBytes(32).toString('hex');
 const QUOTE_VERIFICATION_TTL_SECONDS = 30 * 60;
+const usedSwapQuoteTokenHashes = new Map<string, number>();
 
 type SignableSwapQuote = Omit<SwapQuoteResponse, 'verification'>;
 
@@ -55,6 +56,39 @@ function signPayload(payload: Record<string, unknown>, issuedAt: string, expires
     .digest('hex');
 }
 
+function getQuoteVerification(quote: SwapQuoteResponse): { verification: SwapQuoteVerification; expiresAt: number } {
+  const { verification } = quote;
+
+  if (
+    !verification ||
+    verification.version !== TOKEN_VERSION ||
+    typeof verification.issuedAt !== 'string' ||
+    typeof verification.expiresAt !== 'string' ||
+    typeof verification.token !== 'string'
+  ) {
+    throw new Error('Swap quote verification is missing.');
+  }
+
+  const expiresAt = Date.parse(verification.expiresAt);
+  if (!Number.isFinite(expiresAt)) {
+    throw new Error('Swap quote verification has expired.');
+  }
+
+  return { verification, expiresAt };
+}
+
+function hashSwapQuoteToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function sweepUsedSwapQuoteTokens(now = Date.now()): void {
+  for (const [tokenHash, expiresAt] of usedSwapQuoteTokenHashes) {
+    if (expiresAt <= now) {
+      usedSwapQuoteTokenHashes.delete(tokenHash);
+    }
+  }
+}
+
 export function attachSwapQuoteVerification(quote: SignableSwapQuote): SwapQuoteResponse {
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + QUOTE_VERIFICATION_TTL_SECONDS * 1000);
@@ -74,17 +108,7 @@ export function attachSwapQuoteVerification(quote: SignableSwapQuote): SwapQuote
 export function verifySwapQuoteToken(quote: SwapQuoteResponse): void {
   const { verification, ...signableQuote } = quote;
 
-  if (
-    !verification ||
-    verification.version !== TOKEN_VERSION ||
-    typeof verification.issuedAt !== 'string' ||
-    typeof verification.expiresAt !== 'string' ||
-    typeof verification.token !== 'string'
-  ) {
-    throw new Error('Swap quote verification is missing.');
-  }
-
-  const expiresAt = Date.parse(verification.expiresAt);
+  const { expiresAt } = getQuoteVerification(quote);
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) {
     throw new Error('Swap quote verification has expired.');
   }
@@ -105,3 +129,28 @@ export function verifySwapQuoteToken(quote: SwapQuoteResponse): void {
     throw new Error('Swap quote verification is invalid.');
   }
 }
+
+export function assertSwapQuoteTokenUnused(quote: SwapQuoteResponse): void {
+  const { verification } = getQuoteVerification(quote);
+  sweepUsedSwapQuoteTokens();
+
+  if (usedSwapQuoteTokenHashes.has(hashSwapQuoteToken(verification.token))) {
+    throw new Error('Swap quote verification has already been used.');
+  }
+}
+
+export function markSwapQuoteTokenUsed(quote: SwapQuoteResponse): void {
+  const { verification, expiresAt } = getQuoteVerification(quote);
+  sweepUsedSwapQuoteTokens();
+  usedSwapQuoteTokenHashes.set(hashSwapQuoteToken(verification.token), expiresAt);
+}
+
+export const swapQuoteVerificationTestUtils = {
+  clearUsedSwapQuoteTokens(): void {
+    usedSwapQuoteTokenHashes.clear();
+  },
+  getUsedSwapQuoteTokenCount(): number {
+    return usedSwapQuoteTokenHashes.size;
+  },
+  sweepUsedSwapQuoteTokens,
+};

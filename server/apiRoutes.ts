@@ -242,7 +242,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
         return true;
       }
 
-      if (rateLimiters.isSwapLogRateLimited(req)) {
+      if (rateLimiters.isSwapVerifyRateLimited(req)) {
         sendJson(res, 429, {
           error: 'rate_limited',
           message: 'Too many swap verification requests.',

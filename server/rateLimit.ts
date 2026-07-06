@@ -12,6 +12,7 @@ type RateLimit = {
 
 const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
 const DEFAULT_TRUSTED_PROXY_HOP_COUNT = 1;
 
@@ -103,6 +104,7 @@ export function createSwapRateLimiters() {
   const trustedProxyHopCount = createTrustedProxyHopCount();
   const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
+  const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
 
   return {
     isSwapQuoteRateLimited(req: IncomingMessage): boolean {
@@ -125,11 +127,22 @@ export function createSwapRateLimiters() {
       );
     },
 
+    isSwapVerifyRateLimited(req: IncomingMessage): boolean {
+      return isRateLimited(
+        req,
+        swapVerifyRateLimits,
+        SWAP_VERIFY_RATE_LIMIT,
+        trustedProxyAddresses,
+        trustedProxyHopCount,
+      );
+    },
+
     startCleanupTimer(): void {
       const rateLimitCleanupTimer = setInterval(() => {
         const now = Date.now();
         sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
       }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
       rateLimitCleanupTimer.unref();
     },
