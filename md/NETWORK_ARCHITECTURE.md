@@ -49,6 +49,11 @@ Internet
   • Serves HTML, API, and JSON data for the main stats app
 ```
 
+**Node rate-limit identity:** because both the VPS nginx and Pi nginx append to
+`X-Forwarded-For`, the production Node service must run with
+`TRUSTED_PROXY_HOP_COUNT=2`. This makes the app's per-IP swap rate limiter select the real client
+IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
+
 ---
 
 ## 1. VPS (public edge)

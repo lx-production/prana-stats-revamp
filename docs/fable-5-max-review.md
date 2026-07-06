@@ -152,6 +152,10 @@ With `TRUSTED_PROXY_HOP_COUNT=2` in production, `"evil, <real client>, 127.0.0.1
 resolves to `<real client>` (attacker-prepended junk shifts everything left but the offset from the
 end is unchanged, so it can't be gamed).
 
+Deployment note: the repo-contained fix depends on the production Node service setting
+`TRUSTED_PROXY_HOP_COUNT=2` for the documented VPS nginx → Pi nginx chain. Leaving it unset keeps
+the single-proxy default for local/dev setups.
+
 Alternative (infra-only) fix: stop overwriting a dedicated header at the second hop. On the VPS you
 already set `X-Real-IP $remote_addr`; on the Pi, change it to pass the value through
 (`proxy_set_header X-Real-IP $http_x_real_ip;`) and have Node read `x-real-ip` when the peer is
@@ -351,3 +355,27 @@ complete.
 None of these are fund-loss bugs. Items 1 and 2 are the ones I'd fix before the next production
 deploy, because each breaks a security/robustness guarantee that the earlier reviews recorded as
 "done" — and both are invisible in local dev.
+
+---
+
+## Refactor note — NEW-1 implementation
+
+The NEW-1 fix is a small behavior refactor in `server/rateLimit.ts`, not a change to the rate-limit
+budgets themselves. The limiter still creates one bucket per derived client identity, still allows
+10 quote requests per minute and 120 log/verify requests per minute, and still ignores
+`X-Forwarded-For` unless the immediate socket peer is trusted. What changed is only how the trusted
+proxy chain is interpreted after that trust check passes.
+
+Previously, trusted proxy traffic always used the last `X-Forwarded-For` entry. That was correct for
+a single nginx hop, but wrong for production because the documented path has two appending proxies:
+VPS nginx appends the real client IP, then Pi nginx appends the tunnel-local peer (`127.0.0.1`).
+Taking the last entry therefore keyed everyone to the Pi hop. The refactor adds
+`TRUSTED_PROXY_HOP_COUNT`, defaulting to `1`, and selects the entry that many positions from the
+right side of the header. In production, `TRUSTED_PROXY_HOP_COUNT=2` makes
+`"<real client>, 127.0.0.1"` resolve to `<real client>`; if a caller prepends spoofed values, the
+right-side offset still lands on the proxy-appended real client entry.
+
+Operationally, this means local and one-proxy setups keep the old default behavior with no env
+change, while the two-hop VPS → Pi deployment must set `TRUSTED_PROXY_HOP_COUNT=2` in the Node
+service environment before restart. The regression test for this lives in `server/rateLimit.test.ts`
+and can be run with `npm run test:rate-limit`.

@@ -13,6 +13,7 @@ type RateLimit = {
 const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
+const DEFAULT_TRUSTED_PROXY_HOP_COUNT = 1;
 
 function normalizeSocketAddress(address: string): string {
   return address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
@@ -34,17 +35,31 @@ function isTrustedProxy(address: string, trustedProxyAddresses: Set<string>): bo
   return trustedProxyAddresses.has(normalizeSocketAddress(address));
 }
 
-function getRequestIp(req: IncomingMessage, trustedProxyAddresses: Set<string>): string {
+function createTrustedProxyHopCount(): number {
+  const parsedHopCount = Number(process.env.TRUSTED_PROXY_HOP_COUNT);
+
+  if (!Number.isInteger(parsedHopCount) || parsedHopCount < 1) {
+    return DEFAULT_TRUSTED_PROXY_HOP_COUNT;
+  }
+
+  return parsedHopCount;
+}
+
+function getRequestIp(
+  req: IncomingMessage,
+  trustedProxyAddresses: Set<string>,
+  trustedProxyHopCount: number,
+): string {
   const socketAddress = req.socket.remoteAddress ?? 'unknown';
   const forwardedFor = req.headers['x-forwarded-for'];
 
   if (isTrustedProxy(socketAddress, trustedProxyAddresses) && forwardedFor) {
     const forwardedHeader = Array.isArray(forwardedFor) ? forwardedFor.join(',') : forwardedFor;
     const forwardedIps = forwardedHeader.split(',').map((ip) => ip.trim()).filter(Boolean);
-    const proxyAppendedIp = forwardedIps[forwardedIps.length - 1];
+    const clientIp = forwardedIps[Math.max(0, forwardedIps.length - trustedProxyHopCount)];
 
-    if (proxyAppendedIp) {
-      return proxyAppendedIp;
+    if (clientIp) {
+      return clientIp;
     }
   }
 
@@ -68,9 +83,10 @@ function isRateLimited(
   buckets: Map<string, RateLimitBucket>,
   limit: RateLimit,
   trustedProxyAddresses: Set<string>,
+  trustedProxyHopCount: number,
 ): boolean {
   const now = Date.now();
-  const key = getRequestIp(req, trustedProxyAddresses);
+  const key = getRequestIp(req, trustedProxyAddresses, trustedProxyHopCount);
   const bucket = buckets.get(key);
 
   if (!bucket || now - bucket.windowStartedAt > limit.windowMs) {
@@ -84,6 +100,7 @@ function isRateLimited(
 
 export function createSwapRateLimiters() {
   const trustedProxyAddresses = createTrustedProxyAddresses();
+  const trustedProxyHopCount = createTrustedProxyHopCount();
   const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
 
@@ -94,11 +111,18 @@ export function createSwapRateLimiters() {
         swapQuoteRateLimits,
         SWAP_QUOTE_RATE_LIMIT,
         trustedProxyAddresses,
+        trustedProxyHopCount,
       );
     },
 
     isSwapLogRateLimited(req: IncomingMessage): boolean {
-      return isRateLimited(req, swapLogRateLimits, SWAP_LOG_RATE_LIMIT, trustedProxyAddresses);
+      return isRateLimited(
+        req,
+        swapLogRateLimits,
+        SWAP_LOG_RATE_LIMIT,
+        trustedProxyAddresses,
+        trustedProxyHopCount,
+      );
     },
 
     startCleanupTimer(): void {
