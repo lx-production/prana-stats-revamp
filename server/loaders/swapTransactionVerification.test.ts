@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { POLYGON_CHAIN_ID, SWAP_DEADLINE_SECONDS, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import type {
   HexAddress,
   SwapQuoteResponse,
@@ -48,7 +48,7 @@ function buildQuote(): SwapQuoteResponse {
       data: TRANSACTION_DATA,
       value: '0',
     },
-    deadline: Math.floor(Date.now() / 1000) + 20 * 60,
+    deadline: Math.floor(Date.now() / 1000) + SWAP_DEADLINE_SECONDS,
     quoteUpdatedAt: new Date().toISOString(),
   });
 }
