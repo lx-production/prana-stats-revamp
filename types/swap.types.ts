@@ -139,6 +139,8 @@ export type UseUniswapQuoteResult = {
   quote: SwapQuoteResponse | null;
   isLoading: boolean;
   error: string | null;
+  isRefreshCoolingDown: boolean;
+  refreshCooldownSeconds: number;
   refetch: () => void;
 };
 

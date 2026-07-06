@@ -101,6 +101,11 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
       !swapState.hasInsufficientBalance &&
       !isBusy,
   );
+  const isActionDisabled = wallet.isConnected && wallet.isPolygon && (
+    isBusy ||
+    (swapState.isQuoteExpired && quoteState.isRefreshCoolingDown) ||
+    ((!canSwap && !swapState.isQuoteExpired) || !hasAmount)
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -201,6 +206,9 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const minimumReceivedTooltipText = locale === 'en'
     ? `The lowest output amount enforced on-chain. It equals the quoted output minus a fixed ${slippagePercentLabel}% slippage tolerance (quote × ${minimumReceivedMultiplierLabel}%). If execution would deliver less than this, the swap reverts. This mainly matters when your input is converted through WBTC (e.g. USDT, USDC, POL) and those pools move before your transaction confirms. Price impact from your trade size is already included in the quote.`
     : `Số token đầu ra tối thiểu được áp dụng on-chain. Bằng báo giá trừ slippage cố định ${slippagePercentLabel}% (báo giá × ${minimumReceivedMultiplierLabel}%). Nếu thực thi cho ít hơn mức này, swap sẽ bị hủy. Điều này quan trọng khi token đầu vào được quy đổi qua WBTC (ví dụ USDT, USDC, POL) và các pool đó biến động trước khi giao dịch được xác nhận. Price impact do quy mô lệnh đã được tính trong báo giá.`;
+  const refreshQuoteLabel = quoteState.isRefreshCoolingDown
+    ? `${locale === 'en' ? 'Refresh' : 'Refresh'} ${quoteState.refreshCooldownSeconds}s`
+    : 'Refresh';
   const polygonscanTxUrl = swapState.transactionHash
     ? `${POLYGONSCAN_TX_BASE_URL}/${swapState.transactionHash}`
     : null;
@@ -339,11 +347,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   <button
                     type="button"
                     onClick={quoteState.refetch}
-                    className="inline-flex items-center gap-1 transition hover:text-white"
-                    disabled={!hasAmount || quoteState.isLoading}
+                    className="inline-flex min-w-[5.5rem] items-center justify-end gap-1 transition hover:text-white disabled:cursor-not-allowed disabled:text-white/30 disabled:hover:text-white/30"
+                    disabled={!hasAmount || quoteState.isLoading || quoteState.isRefreshCoolingDown}
+                    aria-label={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds} seconds` : 'Refresh quote'}
+                    title={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds}s` : 'Refresh quote'}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${quoteState.isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
+                    {refreshQuoteLabel}
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
@@ -419,7 +429,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               <button
                 type="button"
                 onClick={handleAction}
-                disabled={wallet.isConnected && wallet.isPolygon && (isBusy || ((!canSwap && !swapState.isQuoteExpired) || !hasAmount))}
+                disabled={isActionDisabled}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] px-6 py-4 font-semibold text-[#2B1B05] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-10px_18px_rgba(120,73,0,0.45),0_16px_36px_rgba(0,0,0,0.38)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 {(quoteState.isLoading || isBusy || wallet.isConnecting) && (

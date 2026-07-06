@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { SWAP_QUOTE_DEBOUNCE_MS } from '../constants/swapContracts';
+import { SWAP_QUOTE_DEBOUNCE_MS, SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS } from '../constants/swapContracts';
 import type { SwapQuoteErrorResponse, SwapQuoteResponse, UseUniswapQuoteInput, UseUniswapQuoteResult } from '../types/swap.types';
 
 async function requestSwapQuote(input: UseUniswapQuoteInput, signal: AbortSignal): Promise<SwapQuoteResponse> {
@@ -39,10 +39,44 @@ export function useUniswapQuote(input: UseUniswapQuoteInput): UseUniswapQuoteRes
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [manualRefreshCooldownUntil, setManualRefreshCooldownUntil] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  const refreshCooldownMs = Math.max(0, manualRefreshCooldownUntil - nowMs);
+  const isRefreshCoolingDown = refreshCooldownMs > 0;
+  const refreshCooldownSeconds = Math.ceil(refreshCooldownMs / 1000);
 
   const refetch = useCallback(() => {
+    const amount = Number(input.amountIn);
+
+    if (!input.enabled || !input.recipient || !Number.isFinite(amount) || amount <= 0) return;
+
+    const now = Date.now();
+
+    if (manualRefreshCooldownUntil > now) return;
+
+    setNowMs(now);
+    setManualRefreshCooldownUntil(now + SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS);
     setRefreshKey((current) => current + 1);
-  }, []);
+  }, [input.amountIn, input.enabled, input.recipient, manualRefreshCooldownUntil]);
+
+  useEffect(() => {
+    if (manualRefreshCooldownUntil <= Date.now()) return;
+
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1_000);
+
+    const timeoutId = window.setTimeout(() => {
+      setNowMs(Date.now());
+      setManualRefreshCooldownUntil(0);
+    }, manualRefreshCooldownUntil - Date.now());
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [manualRefreshCooldownUntil]);
 
   useEffect(() => {
     const amount = Number(input.amountIn);
@@ -92,6 +126,8 @@ export function useUniswapQuote(input: UseUniswapQuoteInput): UseUniswapQuoteRes
     quote,
     isLoading,
     error,
+    isRefreshCoolingDown,
+    refreshCooldownSeconds,
     refetch,
   };
 }

@@ -348,6 +348,9 @@ Review `hooks/useUniswapQuote.ts`.
 - [ ] Non-JSON responses produce the backend-unavailable message rather than `Unexpected token '<'`.
 - [ ] Failed quote clears quote state.
 - [ ] Manual `refetch` increments `refreshKey`.
+- [ ] Manual `refetch` is gated by `SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS`, currently `60_000`, and no-ops while cooling down.
+- [ ] Manual refresh cooldown starts only for valid quote inputs: enabled, recipient present, and amount greater than zero.
+- [ ] Hook exposes `isRefreshCoolingDown` and `refreshCooldownSeconds` for UI state instead of duplicating timer logic in the modal.
 
 Minor refactor candidates:
 
@@ -378,6 +381,7 @@ Manual wallet smoke test:
 - [ ] Confirm non-Polygon wallet prompts network switch.
 - [ ] Enter WBTC -> PRANA amount and wait for quote.
 - [ ] Change amount and confirm old quote disappears immediately.
+- [ ] Click Refresh once, confirm it refetches, then confirm the Refresh control is disabled with a countdown for 60 seconds.
 - [ ] Wait for quote expiry and confirm CTA asks to refresh.
 - [ ] For an ERC-20 route, confirm approval amount equals quote input amount.
 - [ ] Execute a small swap only if intentionally testing on mainnet.
@@ -416,6 +420,9 @@ Review `components/SwapModal.tsx` and `hero3.tsx`.
 - [ ] Amount input handles empty, zero, and invalid values.
 - [ ] Slippage is fixed at V1 default unless intentionally changed.
 - [ ] CTA flow is Connect -> Switch network -> Approve and Swap -> Swap -> Refresh expired quote.
+- [ ] Manual Refresh button is disabled while loading, without a valid amount, or during the 60-second manual refresh cooldown.
+- [ ] Manual Refresh button displays the remaining cooldown seconds without resizing or shifting the token output row.
+- [ ] Expired-quote CTA does not bypass the manual refresh cooldown.
 - [ ] Quote loading, quote error, swap error, insufficient balance, route, min received, and gas estimate states are visible.
 - [ ] Long addresses, long route strings, and error text do not overflow on mobile.
 - [ ] Modal design matches existing site style without introducing nested card clutter.

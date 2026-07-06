@@ -6,6 +6,7 @@ export const POLYGON_CHAIN_NAME = 'Polygon';
 export const POLYGONSCAN_TX_BASE_URL = 'https://polygonscan.com/tx';
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
 export const SWAP_QUOTE_DEBOUNCE_MS = 650; // waits 650ms after the last change before fetching
+export const SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS = 60_000;
 export const SWAP_DEADLINE_SECONDS = 3 * 60; // 3 minutes
 
 export const UNISWAP_SWAP_ROUTER_02_ADDRESS: HexAddress = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
