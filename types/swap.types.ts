@@ -33,7 +33,7 @@ export type SwapQuoteTransaction = {
 };
 
 export type SwapQuoteVerification = {
-  version: 1;
+  version: 2;
   issuedAt: string;
   expiresAt: string;
   token: string;

@@ -125,6 +125,52 @@ test('replayed quote token is rejected before provider RPC calls', async () => {
   assert.equal(providerLoaded, false);
 });
 
+test('tampered verified log amount is rejected before provider RPC calls', async () => {
+  const quote = buildQuote();
+  const tamperedQuote = {
+    ...quote,
+    amountOut: '999999999',
+  };
+
+  let providerLoaded = false;
+  await assert.rejects(
+    verifyAndLogSwapTransaction(buildRequest(tamperedQuote), {
+      getProvider: async () => {
+        providerLoaded = true;
+        return createProvider({ calls: { getTransaction: 0, getTransactionReceipt: 0 } });
+      },
+      logVerifiedSwapTransactionEvent: () => undefined,
+    }),
+    /verification is invalid/,
+  );
+
+  assert.equal(providerLoaded, false);
+  assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 0);
+});
+
+test('tampered verified log route is rejected before provider RPC calls', async () => {
+  const quote = buildQuote();
+  const tamperedQuote = {
+    ...quote,
+    route: [{ protocol: 'Uniswap V2', path: ['WBTC', 'USDC', 'PRANA'], percent: 100 }],
+  };
+
+  let providerLoaded = false;
+  await assert.rejects(
+    verifyAndLogSwapTransaction(buildRequest(tamperedQuote), {
+      getProvider: async () => {
+        providerLoaded = true;
+        return createProvider({ calls: { getTransaction: 0, getTransactionReceipt: 0 } });
+      },
+      logVerifiedSwapTransactionEvent: () => undefined,
+    }),
+    /verification is invalid/,
+  );
+
+  assert.equal(providerLoaded, false);
+  assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 0);
+});
+
 test('pending verification attempts do not consume the quote token', async () => {
   const quote = buildQuote();
   const pendingCalls = { getTransaction: 0, getTransactionReceipt: 0 };

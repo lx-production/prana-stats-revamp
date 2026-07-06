@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SwapQuoteResponse, SwapQuoteVerification } from '../../types/swap.types.ts';
 
-const TOKEN_VERSION = 1;
+const TOKEN_VERSION = 2;
 const FALLBACK_SIGNING_SECRET = randomBytes(32).toString('hex');
 const QUOTE_VERIFICATION_TTL_SECONDS = 30 * 60;
 const usedSwapQuoteTokenHashes = new Map<string, number>();
@@ -33,8 +33,10 @@ function normalizeQuoteForSigning(quote: SignableSwapQuote): Record<string, unkn
     tokenInSymbol: quote.tokenIn.symbol,
     tokenOutSymbol: quote.tokenOut.symbol,
     amountIn: quote.amountIn,
+    amountOut: quote.amountOut,
     amountOutRaw: quote.amountOutRaw,
     minimumAmountOut: quote.minimumAmountOut,
+    route: quote.route,
     routerAddress: quote.routerAddress.toLowerCase(),
     transaction: {
       to: quote.transaction.to.toLowerCase(),

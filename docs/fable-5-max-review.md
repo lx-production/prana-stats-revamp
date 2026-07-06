@@ -452,3 +452,29 @@ Regression coverage was added in two places:
 The focused tests can be run with `npm run test:rate-limit` and
 `node --import tsx --test server/loaders/swapTransactionVerification.test.ts`; the implementation
 was also verified with `npm run typecheck` and `npm run build`.
+
+---
+
+## Refactor note — NEW-4 implementation
+
+The NEW-4 fix makes the verified swap log's display fields part of the same server-issued HMAC
+quote token that already protects the executable swap details. `server/loaders/swapQuoteVerification.ts`
+now signs `amountOut` and `route` in addition to `amountOutRaw`, `minimumAmountOut`, router address,
+deadline, and calldata. Because `verifyAndLogSwapTransaction` validates that token before loading
+the provider or writing `transaction_event_verified`, a caller can no longer take a real matching
+swap and submit a falsified human-readable output amount or route for the verified log.
+
+The quote verification token version was bumped from `1` to `2`. That intentionally makes any
+already-issued v1 quote tokens invalid after deploy; the practical impact is only that an in-flight
+quote may need to refresh, and quote tokens already expire after 30 minutes.
+
+This chose the "sign the fields" path rather than deriving route/output from the receipt. Receipt
+decoding would require reconstructing multi-hop token transfer behavior across V2/V3 paths, while
+the server already knows the expected route and output at quote time. Signing those fields keeps
+the fix small and aligned with the existing quote trust model.
+
+Regression coverage in `server/loaders/swapTransactionVerification.test.ts` now checks that
+tampering with either `amountOut` or `route` rejects the verification before any provider/RPC calls
+and does not consume the quote token. The focused test can be run with
+`node --import tsx --test server/loaders/swapTransactionVerification.test.ts`; the implementation
+was also verified with `npm run typecheck` and `npm run build`.
