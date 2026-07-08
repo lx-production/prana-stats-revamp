@@ -6,7 +6,9 @@ import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts'
 import {
   POLYGON_CHAIN_ID,
   SWAP_ROUTER_02_ABI,
+  USDT_POLYGON_ADDRESS,
   UNISWAP_SWAP_ROUTER_02_ADDRESS,
+  WMATIC_ADDRESS,
 } from '../../constants/swapContracts.ts';
 import type { HexAddress } from '../../types/swap.types.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
@@ -18,6 +20,7 @@ import {
 } from './swapQuote.ts';
 
 const OWNER_ADDRESS = '0x0000000000000000000000000000000000000001' as HexAddress;
+const SWAP_ROUTER_ADDRESS_THIS_RECIPIENT = '0x0000000000000000000000000000000000000002';
 const DEADLINE = 1_800_000_000;
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
 const DEADLINELESS_MULTICALL_IFACE = new ethers.Interface([
@@ -35,6 +38,24 @@ function buildContext(amountInRaw: bigint): SwapValidationContext {
     },
     tokenIn: getSwapToken('WBTC'),
     tokenOut: getSwapToken('PRANA'),
+    amountInRaw,
+    minimumAmountOutRaw: 1n,
+    deadline: DEADLINE,
+    strictPath: false,
+  };
+}
+
+function buildNativeOutputContext(amountInRaw: bigint): SwapValidationContext {
+  return {
+    request: {
+      tokenInSymbol: 'USDT',
+      tokenOutSymbol: 'POL',
+      amountIn: '100',
+      recipient: OWNER_ADDRESS,
+      slippageBps: 50,
+    },
+    tokenIn: getSwapToken('USDT'),
+    tokenOut: getSwapToken('POL'),
     amountInRaw,
     minimumAmountOutRaw: 1n,
     deadline: DEADLINE,
@@ -104,4 +125,31 @@ test('swap validation rejects the deadline-less multicall variant', () => {
     },
     /unsupported router calldata|without a deadline/,
   );
+});
+
+test('swap validation allows SwapRouter02 address(this) recipient before native unwrap', () => {
+  const exactInputSingle = SWAP_ROUTER_IFACE.encodeFunctionData('exactInputSingle', [{
+    tokenIn: USDT_POLYGON_ADDRESS,
+    tokenOut: WMATIC_ADDRESS,
+    fee: 500,
+    recipient: SWAP_ROUTER_ADDRESS_THIS_RECIPIENT,
+    amountIn: 100n,
+    amountOutMinimum: 1n,
+    sqrtPriceLimitX96: 0n,
+  }]) as HexAddress;
+  const unwrap = SWAP_ROUTER_IFACE.encodeFunctionData('unwrapWETH9(uint256,address)', [
+    1n,
+    OWNER_ADDRESS,
+  ]) as HexAddress;
+  const calldata = SWAP_ROUTER_IFACE.encodeFunctionData('multicall(uint256,bytes[])', [
+    DEADLINE,
+    [exactInputSingle, unwrap],
+  ]) as HexAddress;
+
+  assert.doesNotThrow(() => {
+    swapQuoteValidationTestUtils.validateSwapTransaction(
+      buildTransaction(calldata),
+      buildNativeOutputContext(100n),
+    );
+  });
 });

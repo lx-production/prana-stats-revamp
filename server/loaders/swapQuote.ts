@@ -11,6 +11,8 @@ const V3_PRANA_POOL_FEE = 10_000; // 1% fee
 
 const SWAP_ROUTER_IFACE = new ethers.Interface(SWAP_ROUTER_02_ABI);
 const ROUTER_ADDRESS_LOWER = UNISWAP_SWAP_ROUTER_02_ADDRESS.toLowerCase();
+const SWAP_ROUTER_MSG_SENDER_RECIPIENT = '0x0000000000000000000000000000000000000001';
+const SWAP_ROUTER_ADDRESS_THIS_RECIPIENT = '0x0000000000000000000000000000000000000002';
 
 export type SwapTransactionCandidate = {
   to: HexAddress;
@@ -40,7 +42,12 @@ function tokenExecutionAddress(token: SwapToken): string {
 
 function isAllowedRecipient(address: string, request: SwapQuoteRequest): boolean {
   const normalized = address.toLowerCase();
-  return normalized === request.recipient.toLowerCase() || normalized === ROUTER_ADDRESS_LOWER;
+  return (
+    normalized === request.recipient.toLowerCase() ||
+    normalized === ROUTER_ADDRESS_LOWER ||
+    normalized === SWAP_ROUTER_MSG_SENDER_RECIPIENT ||
+    normalized === SWAP_ROUTER_ADDRESS_THIS_RECIPIENT
+  );
 }
 
 function decodeV3PathAddresses(path: string): string[] {
@@ -317,15 +324,27 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     value: route.methodParameters.value,
   };
 
-  validateSwapTransaction(transaction, {
-    request,
-    tokenIn,
-    tokenOut,
-    amountInRaw,
-    minimumAmountOutRaw: BigInt(minimumAmountOutRaw),
-    deadline,
-    strictPath: false,
-  });
+  try {
+    validateSwapTransaction(transaction, {
+      request,
+      tokenIn,
+      tokenOut,
+      amountInRaw,
+      minimumAmountOutRaw: BigInt(minimumAmountOutRaw),
+      deadline,
+      strictPath: false,
+    });
+  } catch (err) {
+    logSwapQuoteFailure({
+      stage: 'alpha_router_validation',
+      request,
+      tokenIn,
+      tokenOut,
+      amountInRaw,
+      error: err,
+    });
+    throw err;
+  }
 
   logSwapQuoteRoute({
     source: 'alpha_router',

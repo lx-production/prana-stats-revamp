@@ -74,7 +74,7 @@ export function logSwapQuoteRoute(params: {
 }
 
 export function logSwapQuoteFailure(params: {
-  stage: 'alpha_router' | 'wbtc_prana_fallback' | 'no_route';
+  stage: 'alpha_router' | 'alpha_router_validation' | 'wbtc_prana_fallback' | 'no_route';
   request: SwapQuoteRequest;
   tokenIn?: SwapToken;
   tokenOut?: SwapToken;
