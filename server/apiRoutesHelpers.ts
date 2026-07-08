@@ -2,6 +2,7 @@ import { sendJson } from './requestHelpers.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
 
+/** Returns a safe user-facing error message for swap API failures. Only known validation errors are passed through; everything else uses the fallback so internal details are not leaked. */
 export function sanitizeSwapErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) return fallback;
 
@@ -21,6 +22,7 @@ export function sanitizeSwapErrorMessage(error: unknown, fallback: string): stri
   return fallback;
 }
 
+/** Returns true when the request Content-Type header indicates a JSON body (e.g. application/json or application/vnd.api+json). */
 function isJsonRequest(req: Parameters<RequestHandler>[0]): boolean {
   const contentType = req.headers['content-type'];
   const raw = Array.isArray(contentType) ? contentType[0] : contentType;
@@ -28,6 +30,7 @@ function isJsonRequest(req: Parameters<RequestHandler>[0]): boolean {
   return /^application\/(?:json|[\w!#$&^.-]+\+json)\b/i.test(raw);
 }
 
+/** Extracts the hostname from a Host header value, stripping the port and handling IPv6 bracket notation. */
 function hostnameFromHostHeader(host: string): string {
   if (host.startsWith('[')) {
     const end = host.indexOf(']');
@@ -37,10 +40,12 @@ function hostnameFromHostHeader(host: string): string {
   return host.split(':')[0]?.toLowerCase() ?? host.toLowerCase();
 }
 
+/** Returns true for loopback hostnames (localhost, 127.0.0.1, ::1). */
 function isLocalHostname(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
+/** Collects host values from the Host and X-Forwarded-Host headers, used to compare against the request Origin. */
 function requestHostCandidates(req: Parameters<RequestHandler>[0]): string[] {
   const hosts = [req.headers.host];
   const forwardedHost = req.headers['x-forwarded-host'];
@@ -54,6 +59,7 @@ function requestHostCandidates(req: Parameters<RequestHandler>[0]): string[] {
   return hosts.filter((host): host is string => Boolean(host));
 }
 
+/** Returns true when the Origin header is absent (non-browser) or matches the request host. Blocks cross-origin browser calls to swap endpoints. */
 function isAllowedBrowserOrigin(req: Parameters<RequestHandler>[0]): boolean {
   const origin = req.headers.origin;
   if (!origin) return true;
@@ -74,6 +80,7 @@ function isAllowedBrowserOrigin(req: Parameters<RequestHandler>[0]): boolean {
   }
 }
 
+/** Validates swap API requests for JSON content type and same-origin policy. Sends an error response and returns true when the request should be rejected. */
 export function rejectInvalidSwapApiRequest(
   req: Parameters<RequestHandler>[0],
   res: Parameters<RequestHandler>[1],
