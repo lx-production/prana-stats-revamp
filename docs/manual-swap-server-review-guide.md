@@ -153,6 +153,7 @@ Review `server/apiRoutes.ts` and `server/requestHelpers.ts`.
   - verify-transaction: `32768` bytes
 - [ ] `readJsonBody()` enforces size while streaming, before JSON parse completes.
 - [ ] `sanitizeSwapErrorMessage()` only exposes the intended allowlist plus `SyntaxError` mapped to `Invalid JSON request body.`
+- [ ] Backend quote failures that are intentionally hidden from the browser still leave enough structured server log context to debug.
 
 Manual boundary checks:
 
@@ -247,6 +248,7 @@ Primary route:
 - [ ] Alchemy/private RPC keys are never returned to the browser.
 - [ ] Returned `methodParameters` exist before building a response.
 - [ ] AlphaRouter errors are logged internally but exposed generically.
+- [ ] AlphaRouter calldata validation failures are logged as `stage: "alpha_router_validation"` before returning the generic quote failure to the browser.
 
 WBTC/PRANA fallback:
 
@@ -264,7 +266,8 @@ Validation:
 - [ ] `validateSwapTransaction()` runs on every quote path before response.
 - [ ] Transaction `to` is exactly SwapRouter02.
 - [ ] Native `value` is correct for token-in kind.
-- [ ] Allowed recipients are user wallet or router custody only.
+- [ ] Allowed recipients are user wallet, router custody, or SwapRouter02 sentinel recipients `address(1)` / `address(2)`.
+- [ ] Native POL output allows the expected `address(2)` temporary recipient followed by `unwrapWETH9(..., user)`.
 - [ ] Router function allowlist is narrow.
 - [ ] Nested multicall depth is capped.
 - [ ] Empty multicalls are rejected.
@@ -275,6 +278,7 @@ Validation:
 - [ ] Cumulative input across nested multicalls is checked.
 - [ ] Returned `minimumAmountOut` matches or is protected by calldata min-out checks.
 - [ ] Route logs do not contain secrets.
+- [ ] Route failure logs redact URLs/API keys but keep token pair, raw amount, recipient, stage, and sanitized error text.
 
 Minor refactor candidates:
 
@@ -380,6 +384,7 @@ Manual wallet smoke test:
 - [ ] Connect injected wallet.
 - [ ] Confirm non-Polygon wallet prompts network switch.
 - [ ] Enter WBTC -> PRANA amount and wait for quote.
+- [ ] Quote USDT -> POL and confirm native POL output works through SwapRouter02 unwrap behavior.
 - [ ] Change amount and confirm old quote disappears immediately.
 - [ ] Click Refresh once, confirm it refetches, then confirm the Refresh control is disabled with a countdown for 60 seconds.
 - [ ] Wait for quote expiry and confirm CTA asks to refresh.
@@ -424,6 +429,9 @@ Review `components/SwapModal.tsx` and `hero3.tsx`.
 - [ ] Manual Refresh button displays the remaining cooldown seconds without resizing or shifting the token output row.
 - [ ] Expired-quote CTA does not bypass the manual refresh cooldown.
 - [ ] Quote loading, quote error, swap error, insufficient balance, route, min received, and gas estimate states are visible.
+- [ ] Estimated gas is shown in native POL when `estimatedGasUsed` and `gasPriceWei` are available, with USD in parentheses when available.
+- [ ] Route rows show token path plus percent allocation, but do not expose protocol/version labels such as `V3`.
+- [ ] Split routes with two or more rows remain readable on mobile.
 - [ ] Long addresses, long route strings, and error text do not overflow on mobile.
 - [ ] Modal design matches existing site style without introducing nested card clutter.
 - [ ] Escape/click outside/focus behavior is acceptable for the current modal implementation.
@@ -434,7 +442,27 @@ Minor refactor candidates:
 - [ ] Keep copy terse. Do not add instructional text that duplicates obvious controls.
 - [ ] Preserve stable dimensions for token controls and CTA to avoid layout jumps.
 
-## Phase 14: Production Deployment Checks
+## Phase 14: Recent Swap Fixes To Re-Verify
+
+These are focused checks for recent swap quote and UI changes.
+
+- [ ] Native POL output quotes do not fail validation when AlphaRouter encodes swap output to SwapRouter02 `address(2)` before `unwrapWETH9`.
+- [ ] If primary-route calldata validation fails, the server writes `quote_route_failed` with `stage: "alpha_router_validation"` before returning the generic browser error.
+- [ ] `server/loaders/swapQuote.test.ts` includes a regression case for `exactInputSingle(... recipient = address(2))` followed by `unwrapWETH9(uint256,address)`.
+- [ ] Swap modal gas display prefers `~<amount> POL ($<amount>)` over USD-only display when both `estimatedGasUsed` and `gasPriceWei` are present.
+- [ ] Swap modal route display keeps percent allocation visible and omits protocol/version text.
+- [ ] Fallback PRANA routes that only have unreliable/zero quoter gas do not show a misleading POL gas amount.
+
+Optional live quote smoke test, using production-like RPC env vars:
+
+```bash
+set -a; source .env; set +a
+node --import tsx -e "import { loadSwapQuote } from './server/loaders/swapQuote.ts'; const q = await loadSwapQuote({ tokenInSymbol: 'USDT', tokenOutSymbol: 'POL', amountIn: '100', recipient: '0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC', slippageBps: 50 }); console.log(JSON.stringify({ amountOut: q.amountOut, route: q.route, estimatedGasUsed: q.estimatedGasUsed, gasPriceWei: q.gasPriceWei }, null, 2));"
+```
+
+Expected result: the command returns a quote, writes a `quote_route_selected` log, and includes one or more routes whose paths end in `POL`.
+
+## Phase 15: Production Deployment Checks
 
 Check these before deploying swap/server changes:
 
