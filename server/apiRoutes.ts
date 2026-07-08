@@ -10,8 +10,8 @@ import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
+import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './apiRoutesHelpers.ts';
 import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
-import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './swapApiRequestHelpers.ts';
 
 import type { SwapRateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
