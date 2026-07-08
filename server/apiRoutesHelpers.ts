@@ -31,12 +31,14 @@ function isJsonRequest(req: Parameters<RequestHandler>[0]): boolean {
 }
 
 /** Extracts the hostname from a Host header value, stripping the port and handling IPv6 bracket notation. */
+/** IPv6 addresses use colons, so the port is written like: [::1]:3000 */
 function hostnameFromHostHeader(host: string): string {
-  if (host.startsWith('[')) {
-    const end = host.indexOf(']');
+  if (host.startsWith('[')) { // treat as IPv6 address
+    const end = host.indexOf(']'); // find the closing bracket
+    // Takes what’s between the brackets → ::1 and lowercases it
     return end >= 0 ? host.slice(1, end).toLowerCase() : host.toLowerCase();
   }
-
+  // If it’s not an IPv6 address, split on colon and take the first part, lowercasing it
   return host.split(':')[0]?.toLowerCase() ?? host.toLowerCase();
 }
 
@@ -59,7 +61,8 @@ function requestHostCandidates(req: Parameters<RequestHandler>[0]): string[] {
   return hosts.filter((host): host is string => Boolean(host));
 }
 
-/** Returns true when the Origin header is absent (non-browser) or matches the request host. Blocks cross-origin browser calls to swap endpoints. */
+/** Returns true when the Origin header is absent (non-browser) or matches the request host. 
+ * Blocks cross-origin browser calls to swap endpoints. */
 function isAllowedBrowserOrigin(req: Parameters<RequestHandler>[0]): boolean {
   const origin = req.headers.origin;
   if (!origin) return true;
