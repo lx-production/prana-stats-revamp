@@ -1,6 +1,7 @@
 import InfoTooltip from './InfoTooltip';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { formatUnits } from 'viem';
 import { getSwapToken } from '../utils/swapTokens';
 import { useUniswapSwap } from '../hooks/useUniswapSwap';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
@@ -40,6 +41,41 @@ function getActionLabel(
   if (isQuoteExpired) return 'Refresh Quote';
   if (needsApproval) return 'Approve & Swap';
   return 'Swap';
+}
+
+function formatCompactDecimal(value: number, maximumFractionDigits: number): string {
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits,
+  });
+}
+
+function formatEstimatedGasLabel(estimatedGasUsed?: string, gasPriceWei?: string, estimatedGasUsedUsd?: string): string | null {
+  let polLabel: string | null = null;
+
+  if (estimatedGasUsed && gasPriceWei) {
+    try {
+      const gasCostWei = BigInt(estimatedGasUsed) * BigInt(gasPriceWei);
+      const gasCostPol = Number(formatUnits(gasCostWei, 18));
+
+      if (Number.isFinite(gasCostPol) && gasCostPol > 0) {
+        polLabel = gasCostPol < 0.000001
+          ? '<0.000001 POL'
+          : `${formatCompactDecimal(gasCostPol, 6)} POL`;
+      }
+    } catch {
+      polLabel = null;
+    }
+  }
+
+  const usdValue = estimatedGasUsedUsd ? Number(estimatedGasUsedUsd) : NaN;
+  const usdLabel = Number.isFinite(usdValue) && usdValue > 0
+    ? `$${usdValue.toFixed(4)}`
+    : null;
+
+  if (polLabel && usdLabel) return `~${polLabel} (${usdLabel})`;
+  if (polLabel) return `~${polLabel}`;
+  if (usdLabel) return usdLabel;
+  return null;
 }
 
 export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
@@ -195,6 +231,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const minimumReceived = quoteState.quote
     ? formatSwapTokenAmount(quoteState.quote.minimumAmountOut, tokenOut)
     : '0';
+  const estimatedGasLabel = quoteState.quote
+    ? formatEstimatedGasLabel(
+        quoteState.quote.estimatedGasUsed,
+        quoteState.quote.gasPriceWei,
+        quoteState.quote.estimatedGasUsedUsd,
+      )
+    : null;
   
   const balanceLabel = swapState.balance === null
     ? '...'
@@ -391,10 +434,10 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   </span>
                   <span>{minimumReceived} {tokenOut.symbol}</span>
                 </div>
-                {quoteState.quote?.estimatedGasUsedUsd && (
+                {estimatedGasLabel && (
                   <div className="mt-2 flex justify-between gap-4">
                     <span>Estimated gas</span>
-                    <span>${Number(quoteState.quote.estimatedGasUsedUsd).toFixed(4)}</span>
+                    <span>{estimatedGasLabel}</span>
                   </div>
                 )}
                 {quoteState.quote?.route.length ? (
@@ -402,9 +445,9 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                     <p className="text-xs uppercase tracking-[0.2em] text-white/40">Route</p>
                     <div className="mt-2 space-y-1">
                       {quoteState.quote.route.map((route, index) => (
-                        <div key={`${route.protocol}-${index}`} className="flex justify-between gap-3 text-xs">
+                        <div key={`${route.path.join('-')}-${index}`} className="flex justify-between gap-3 text-xs">
                           <span>{route.path.join(' -> ')}</span>
-                          <span>{route.percent}% {route.protocol}</span>
+                          <span>{route.percent}%</span>
                         </div>
                       ))}
                     </div>

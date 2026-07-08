@@ -1,10 +1,10 @@
-import { createServer } from 'http';
 import { env } from 'process';
-import { createApiRouteHandler } from './apiRoutes.ts';
-import { createSwapRateLimiters } from './rateLimit.ts';
+import { createServer } from 'http';
 import { sendJson } from './requestHelpers.ts';
 import { warmApiCaches } from './serverStartup.ts';
 import { handleStaticRequest } from './staticRoutes.ts';
+import { createApiRouteHandler } from './apiRoutes.ts';
+import { createSwapRateLimiters } from './rateLimit.ts';
 
 const PORT = Number(env.PORT ?? 4173);
 const HOST = env.HOST ?? '127.0.0.1';
