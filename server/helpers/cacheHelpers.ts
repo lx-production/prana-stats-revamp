@@ -25,34 +25,6 @@ export function createServerCache<T>(ttlMs: number) {
   };
 }
 
-export function createKeyedServerCache<TKey, TValue>(ttlMs: number) {
-  const cached = new Map<TKey, { value: TValue; timestamp: number }>();
-  const inFlight = new Map<TKey, Promise<TValue>>();
-
-  return async function get(key: TKey, loader: () => Promise<TValue>): Promise<TValue> {
-    const current = cached.get(key);
-    if (current && Date.now() - current.timestamp < ttlMs) {
-      return current.value;
-    }
-
-    const running = inFlight.get(key);
-    if (running) return await running;
-
-    const promise = (async () => {
-      try {
-        const value = await loader();
-        cached.set(key, { value, timestamp: Date.now() });
-        return value;
-      } finally {
-        inFlight.delete(key);
-      }
-    })();
-
-    inFlight.set(key, promise);
-    return await promise;
-  };
-}
-
 let bondsRefreshInFlight: Promise<Awaited<ReturnType<typeof updateBondsV2>>> | null = null;
 
 export async function ensureBondsRefreshed() {

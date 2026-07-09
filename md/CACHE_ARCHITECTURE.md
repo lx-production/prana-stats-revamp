@@ -55,7 +55,7 @@ The diagram is simplified: only code paths that call `createBrowserJsonCache` la
 
 ### Browser in-memory cache
 - Used by small client helpers created with `createBrowserJsonCache(...)`:
-  - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`)
+  - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`, `utils/stakingStatsApi.ts` → `/api/staking-stats`)
   - Shared generated JSON helpers (e.g. `utils/buyDipsJson.ts` → `/buy_dips.json`)
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
@@ -165,9 +165,8 @@ These use:
 - `/api/staking-stats`
 
 Browser behavior:
-- fetches `/api/staking-stats` directly with `fetchJson(...)`
-- relies on browser HTTP cache and concurrent GET dedupe
-- does not keep a TTL in-memory browser snapshot
+- `utils/stakingStatsApi.ts` uses `createBrowserJsonCache(...)` with TTL `SERVER_CACHE_TTL_MS.stakingStatsApiResponse` (24 hours)
+- also relies on browser HTTP cache (`private, max-age=24h`) and concurrent GET dedupe under the hood
 
 This endpoint owns the staking card payload:
 - `stakedPrana`
@@ -208,10 +207,10 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 ### Computed API snapshot: markdown summary (`/api/summary`)
 
-- Served from `server/index.ts` as `text/markdown; charset=utf-8` via `sendText(...)`, not JSON.
+- Served from `server/apiRoutes.ts` as `text/markdown; charset=utf-8` via `sendText(...)`, not JSON.
 - Built by `server/loaders/summary.ts` → `loadSummaryMarkdown()`, which aggregates the same cached loaders the UI uses (prices, staking, capital, LP capital, bond metrics, top holdings, chart JSON, FAQ/covenants markdown, and related computed fields).
 - **Not** loaded by React hooks or `prefetchInitialJson.ts`. Intended for bots, AI agents, and machine-readable discovery (`public/llms.txt`, `public/robots.txt`, `index.html` `<link rel="alternate">`; production nginx may redirect certain user agents from `/` to `/api/summary`).
-- Server memory cache: `summaryCache` in `server/index.ts` with TTL `SERVER_CACHE_TTL_MS.summaryApiResponse` (1 hour).
+- Server memory cache: `summaryCache` in `server/apiRoutes.ts` with TTL `SERVER_CACHE_TTL_MS.summaryApiResponse` (1 hour).
 - Browser HTTP cache: `Cache-Control: private, max-age=30` (same header constant as most JSON APIs).
 
 ### Raw JSON helpers
@@ -220,7 +219,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - `utils/bondsV2Json.ts` → `/bonds_v2.json`
 - `utils/prana365Data.ts` → `/data_365_days.json`
 - `utils/pranaSatsData.ts` → `/data_sats.json`
-- `utils/stakingStatsApi.ts` → `/api/staking-stats`
+- `utils/bondMetricsApi.ts` → `/api/bond-metrics`
 
 ### Top holding addresses API path
 
@@ -230,6 +229,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force):**
 - `utils/pranaStatsApi.ts` → `/api/prana-stats`
+- `utils/stakingStatsApi.ts` → `/api/staking-stats` (24h TTL)
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
 
 ### Chart JSON and performance
@@ -256,9 +256,9 @@ All of these rely on the Node server’s short HTTP cache policy for root JSON (
 
 ### Server cache factory
 
-`server/cacheHelpers.ts` exports shared cache factories (`createServerCache(ttlMs)` and `createKeyedServerCache(ttlMs)`) used by API response caching and keyed short-lived caches.
+`server/helpers/cacheHelpers.ts` exports `createServerCache(ttlMs)` for single-value API response caching, plus `ensureBondsRefreshed()` for bond refresh request dedupe.
 
-Each instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
+Each `createServerCache` instance holds its own TTL-checked value and in-flight promise. Callers pass a loader function; the cache returns the cached value when fresh, shares an in-flight promise when one is already running, or invokes the loader otherwise.
 
 API response caches:
 - `/api/summary` (TTL = `SERVER_CACHE_TTL_MS.summaryApiResponse`, 1h) — markdown string via `loadSummaryMarkdown()`
@@ -294,21 +294,20 @@ That keeps the server-side price snapshot aligned with the rest of the API fresh
 
 ### API cache warmup on server start
 
-When the Node server finishes binding (`server.listen` in `server/index.ts`), it runs `warmApiCaches()` in the background (does not block accepting requests).
+When the Node server finishes binding (`server.listen` in `server/index.ts`), it runs `warmApiCaches()` from `server/serverStartup.ts` in the background (does not block accepting requests).
 
-Warmup loads every major API cache in parallel via `Promise.allSettled`:
+Warmup loads these API caches in parallel via `Promise.allSettled`:
 
 - `/api/summary`
-- `/api/top-holding-addresses`
-- `/api/prana-stats`
 - `/api/staking-stats`
-- `/api/capital`
 - `/api/lp-capital`
 - `/api/bond-metrics`
 
 Each entry uses the same loader path as a real HTTP request (for example `summaryCache(() => loadSummaryMarkdown())` for summary). Failures are logged with `console.warn` and do not prevent the server from running; the first client request after a failed warmup will populate that cache normally.
 
-Purpose: avoid a cold-start burst where the first visitors (or bots hitting `/api/summary`) pay the full cost of every loader at once. Restart clears in-memory server caches (including LP token id cache); warmup repopulates the API response caches immediately after listen.
+Other endpoints (`/api/prana-stats`, `/api/capital`, `/api/top-holding-addresses`) populate on first request.
+
+Purpose: avoid a cold-start burst where the first visitors (or bots hitting `/api/summary`) pay the full cost of the heavier loaders at once. Restart clears in-memory server caches (including LP token id cache); warmup repopulates the warmed API response caches immediately after listen.
 
 ## HTTP Cache Headers
 
@@ -331,16 +330,17 @@ This means:
 
 ### API headers
 
-Defined via `sendJson(...)` in `server/requestHelpers.ts`.
+Defined via `sendJson(...)` / `sendText(...)` in `server/helpers/requestHelpers.ts`.
 
 Most JSON API routes send:
 - `Cache-Control: private, max-age=30`
 
-Longer browser cache (`private`, 24 hours) for intentional snapshot endpoints:
-- `/api/staking-stats`
-- `/api/bond-metrics`
+Longer browser cache (`private`) for intentional snapshot endpoints:
+- `/api/lp-capital` — 1 hour
+- `/api/staking-stats` — 24 hours
+- `/api/bond-metrics` — 24 hours
 
-Routes (each uses one of the header shapes above, as wired in `server/index.ts`):
+Routes (each uses one of the header shapes above, as wired in `server/apiRoutes.ts`):
 - `/api/summary` — `max-age=30` (`text/markdown`)
 - `/api/prana-stats` — `max-age=30`
 - `/api/staking-stats` — `max-age=24h`
@@ -350,9 +350,9 @@ Routes (each uses one of the header shapes above, as wired in `server/index.ts`)
 - `/api/top-holding-addresses` — `max-age=30`
 
 This means:
-- browsers can reuse a response locally until that route’s `max-age` expires (30 seconds for most APIs above, 24 hours for `/api/staking-stats` and `/api/bond-metrics`)
+- browsers can reuse a response locally until that route’s `max-age` expires (30 seconds for most APIs above, 1 hour for `/api/lp-capital`, 24 hours for `/api/staking-stats` and `/api/bond-metrics`)
 - shared caches should not store it because the response is marked `private`
-- after the browser’s `max-age` window, the next request hits the network; the server may still return a cached payload from its own TTL (including 24h server caches for staking and bond metrics)
+- after the browser’s `max-age` window, the next request hits the network; the server may still return a cached payload from its own TTL (including 1h for LP capital and 24h for staking and bond metrics)
 
 Error responses still send:
 - `Cache-Control: no-cache`
@@ -387,8 +387,7 @@ Important development note:
 
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
-Current examples:
-- `fetchStakingStatsApi` (in `utils/stakingStatsApi.ts`) normally requests `/api/staking-stats` without force. If the cached browser response shape is invalid (for example after an API shape change), it retries once with `force: true` (`?_=` cache-buster).
+Helpers that accept `{ force?: boolean }` (for example `fetchStakingStatsApi`, `fetchPranaStatsApi`, `fetchBondMetricsApi`) pass that through to either `createBrowserJsonCache` or `fetchJson` dedupe bypass. Normal page loads should omit `force`.
 
 Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
 
