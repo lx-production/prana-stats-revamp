@@ -6,7 +6,7 @@ import type {
   SwapTransactionVerificationRequest,
 } from '../../types/swap.types.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
-import { logVerifiedSwapTransactionEvent } from './swapLogs.ts';
+import { logVerifiedSwapTransactionEvent, type SwapRequestLogMetadata } from './swapLogs.ts';
 import {
   assertSwapQuoteTokenUnused,
   markSwapQuoteTokenUsed,
@@ -30,6 +30,7 @@ type SwapTransactionLookupProvider = {
 type SwapTransactionVerificationDependencies = {
   getProvider?: () => Promise<SwapTransactionLookupProvider>;
   logVerifiedSwapTransactionEvent?: typeof logVerifiedSwapTransactionEvent;
+  logMetadata?: SwapRequestLogMetadata;
 };
 
 function asVerificationRequest(body: unknown): SwapTransactionVerificationRequest {
@@ -133,6 +134,6 @@ export async function verifyAndLogSwapTransaction(
     routerAddress: quote.routerAddress,
     transactionHash: request.transactionHash,
     receiptStatus: 'success',
-  });
+  }, dependencies.logMetadata);
   markSwapQuoteTokenUsed(quote);
 }

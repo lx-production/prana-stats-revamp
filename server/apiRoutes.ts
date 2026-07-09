@@ -11,7 +11,11 @@ import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts'
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './apiRoutesHelpers.ts';
-import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
+import {
+  logSwapTransactionEvent,
+  parseSwapTransactionLogRequest,
+  type SwapRequestLogMetadata,
+} from './loaders/swapLogs.ts';
 
 import type { SwapRateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
@@ -28,6 +32,22 @@ const SWAP_VERIFY_BODY_MAX_BYTES = 32768;
 
 export const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 export const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
+
+function singleHeaderValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function createSwapRequestLogMetadata(
+  req: Parameters<RequestHandler>[0],
+  rateLimiters: SwapRateLimiters,
+): SwapRequestLogMetadata {
+  return {
+    clientIp: rateLimiters.getClientIp(req),
+    requestHost: singleHeaderValue(req.headers.host),
+    requestOrigin: singleHeaderValue(req.headers.origin),
+    userAgent: singleHeaderValue(req.headers['user-agent']),
+  };
+}
 
 export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHandler {
   return async function handleApiRequest(req, res, url): Promise<boolean> {
@@ -98,7 +118,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
 
       try {
         const body = await readJsonBody<SwapQuoteRequest>(req, SWAP_QUOTE_BODY_MAX_BYTES);
-        const result = await loadSwapQuote(body);
+        const result = await loadSwapQuote(body, createSwapRequestLogMetadata(req, rateLimiters));
         sendJson(res, 200, result);
         return true;
       } catch (err) {
@@ -132,7 +152,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
       try {
         const body = await readJsonBody<unknown>(req, SWAP_LOG_BODY_MAX_BYTES);
         const payload = parseSwapTransactionLogRequest(body);
-        logSwapTransactionEvent(payload);
+        logSwapTransactionEvent(payload, createSwapRequestLogMetadata(req, rateLimiters));
         sendJson(res, 200, { ok: true });
         return true;
       } catch (err) {
@@ -165,7 +185,9 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
 
       try {
         const body = await readJsonBody<unknown>(req, SWAP_VERIFY_BODY_MAX_BYTES);
-        await verifyAndLogSwapTransaction(body);
+        await verifyAndLogSwapTransaction(body, {
+          logMetadata: createSwapRequestLogMetadata(req, rateLimiters),
+        });
         sendJson(res, 200, { ok: true, verified: true });
         return true;
       } catch (err) {

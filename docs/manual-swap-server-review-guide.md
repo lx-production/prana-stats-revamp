@@ -70,6 +70,7 @@ This matters for the documented VPS nginx -> Pi nginx -> Node chain.
 ```bash
 npm run test:rate-limit
 node --import tsx --test server/loaders/swapQuote.test.ts
+node --import tsx --test server/loaders/swapLogs.test.ts
 node --import tsx --test server/loaders/swapTransactionVerification.test.ts
 node --import tsx --test server/securityHeaders.test.ts
 npm run typecheck
@@ -154,6 +155,9 @@ Review `server/apiRoutes.ts` and `server/requestHelpers.ts`.
 - [ ] `readJsonBody()` enforces size while streaming, before JSON parse completes.
 - [ ] `sanitizeSwapErrorMessage()` only exposes the intended allowlist plus `SyntaxError` mapped to `Invalid JSON request body.`
 - [ ] Backend quote failures that are intentionally hidden from the browser still leave enough structured server log context to debug.
+- [ ] Swap route handlers build server-only log metadata through `createSwapRequestLogMetadata()`, not from browser-submitted JSON.
+- [ ] `/api/swap/quote`, `/api/swap/log`, and `/api/swap/verify-transaction` all pass request metadata into their swap log path.
+- [ ] Request metadata includes derived `clientIp`, request host, origin, and user agent.
 
 Manual boundary checks:
 
@@ -179,6 +183,7 @@ Review `server/rateLimit.ts` and `server/rateLimit.test.ts`.
 - [ ] `X-Forwarded-For` is trusted only when the immediate socket address is trusted.
 - [ ] Trusted proxy addresses include localhost and `TRUSTED_PROXY_IPS`.
 - [ ] IPv4-mapped IPv6 addresses are normalized.
+- [ ] `getClientIp(req)` exposes the same trusted-proxy identity used by the rate-limit buckets.
 - [ ] `TRUSTED_PROXY_HOP_COUNT` defaults to `1`.
 - [ ] With `TRUSTED_PROXY_HOP_COUNT=2`, `"<real client>, 127.0.0.1"` resolves to the real client.
 - [ ] Spoofed prepended XFF values do not shift the two-hop result.
@@ -279,6 +284,7 @@ Validation:
 - [ ] Returned `minimumAmountOut` matches or is protected by calldata min-out checks.
 - [ ] Route logs do not contain secrets.
 - [ ] Route failure logs redact URLs/API keys but keep token pair, raw amount, recipient, stage, and sanitized error text.
+- [ ] Quote route and quote failure logs include server-derived request metadata when called through `/api/swap/quote`.
 
 Minor refactor candidates:
 
@@ -293,7 +299,7 @@ Review `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactio
 Quote signing:
 
 - [ ] Token version is current, currently `2`.
-- [ ] HMAC covers request metadata, token symbols, `amountIn`, `amountOut`, `amountOutRaw`, `minimumAmountOut`, `route`, router address, exact transaction `to/data/value`, and `deadline`.
+- [ ] HMAC covers quote request metadata, token symbols, `amountIn`, `amountOut`, `amountOutRaw`, `minimumAmountOut`, `route`, router address, exact transaction `to/data/value`, and `deadline`.
 - [ ] Stable stringify sorts object keys.
 - [ ] Verification uses `timingSafeEqual`.
 - [ ] Verification token expires after the intended TTL.
@@ -330,6 +336,10 @@ Browser telemetry:
 
 - [ ] Generic `/api/swap/log` remains untrusted telemetry.
 - [ ] Browser cannot write a trusted `swap_confirmed` record through the generic log path.
+- [ ] Browser cannot spoof logged `clientIp`, request host, origin, or user agent through the swap log payload.
+- [ ] Server-derived swap log metadata is optional in lower-level helpers but always supplied by the API routes.
+- [ ] Loopback client IPs are written as `clientIp: "localhost"` for local development logs.
+- [ ] Browser origins are normalized to origin-only form before logging.
 - [ ] Log string fields are truncated and sanitized.
 - [ ] URLs and Alchemy key segments are redacted.
 - [ ] Logs are written with `JSON.stringify` to neutralize newline injection.
@@ -392,6 +402,7 @@ Manual wallet smoke test:
 - [ ] Execute a small swap only if intentionally testing on mainnet.
 - [ ] Confirm the transaction hash opens on PolygonScan.
 - [ ] Confirm the server writes a verified swap log only after receipt success.
+- [ ] Confirm swap logs include the expected `clientIp` value; local dev should show `localhost`, production should show the real client IP after trusted proxy resolution.
 
 Minor refactor candidates:
 
@@ -452,6 +463,7 @@ These are focused checks for recent swap quote and UI changes.
 - [ ] Swap modal gas display prefers `~<amount> POL ($<amount>)` over USD-only display when both `estimatedGasUsed` and `gasPriceWei` are present.
 - [ ] Swap modal route display keeps percent allocation visible and omits protocol/version text.
 - [ ] Fallback PRANA routes that only have unreliable/zero quoter gas do not show a misleading POL gas amount.
+- [ ] Swap log request metadata is present on `quote_route_selected`, `quote_route_failed`, `transaction_event`, and `transaction_event_verified` logs.
 
 Optional live quote smoke test, using production-like RPC env vars:
 
@@ -460,7 +472,7 @@ set -a; source .env; set +a
 node --import tsx -e "import { loadSwapQuote } from './server/loaders/swapQuote.ts'; const q = await loadSwapQuote({ tokenInSymbol: 'USDT', tokenOutSymbol: 'POL', amountIn: '100', recipient: '0x1d791aCa381C844c4e497FCa9429dBe5D36FF1bC', slippageBps: 50 }); console.log(JSON.stringify({ amountOut: q.amountOut, route: q.route, estimatedGasUsed: q.estimatedGasUsed, gasPriceWei: q.gasPriceWei }, null, 2));"
 ```
 
-Expected result: the command returns a quote, writes a `quote_route_selected` log, and includes one or more routes whose paths end in `POL`.
+Expected result: the command returns a quote, writes a `quote_route_selected` log, and includes one or more routes whose paths end in `POL`. Direct loader calls do not include request metadata unless a test supplies it; API-route calls should.
 
 ## Phase 15: Production Deployment Checks
 
@@ -470,6 +482,7 @@ Check these before deploying swap/server changes:
 - [ ] Production service has `SWAP_QUOTE_SIGNING_SECRET` set.
 - [ ] Production service has `TRUSTED_PROXY_HOP_COUNT=2` for VPS -> Pi.
 - [ ] Production service has any needed `TRUSTED_PROXY_IPS` if the immediate proxy is not localhost.
+- [ ] Production swap logs show real client IPs, not only `127.0.0.1` or the immediate proxy address.
 - [ ] Server/private RPC env vars are present for backend quote and verification work.
 - [ ] Browser CSP `connect-src` matches `FRONTEND_POLYGON_RPC_URL`.
 - [ ] Nginx still proxies API/static traffic to the intended port, normally `4173`.

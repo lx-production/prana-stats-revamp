@@ -15,12 +15,44 @@ const VALID_SWAP_LOG_EVENTS = new Set<SwapTransactionLogEvent>([
   'swap_failed',
 ]);
 
+export type SwapRequestLogMetadata = {
+  clientIp?: string;
+  requestHost?: string;
+  requestOrigin?: string;
+  userAgent?: string;
+};
+
 function sanitizeLogString(value: unknown, maxLength: number): string | undefined {
   if (typeof value !== 'string') return undefined;
   return value
     .replace(/https?:\/\/[^\s"']+/gi, '[redacted-url]')
     .replace(/(alchemyapi\.io\/v2\/|alchemy\.com\/v2\/)[A-Za-z0-9_-]+/gi, '$1[redacted]')
     .slice(0, maxLength);
+}
+
+function normalizeLoggedClientIp(ip: string | undefined): string | undefined {
+  if (!ip) return undefined;
+  if (ip === '127.0.0.1' || ip === '::1') return 'localhost';
+  return sanitizeLogString(ip, 120);
+}
+
+function sanitizeLogOrigin(origin: string | undefined): string | undefined {
+  if (!origin) return undefined;
+
+  try {
+    return new URL(origin).origin.slice(0, 255);
+  } catch {
+    return sanitizeLogString(origin, 255);
+  }
+}
+
+function sanitizeRequestLogMetadata(metadata?: SwapRequestLogMetadata): SwapRequestLogMetadata {
+  return {
+    clientIp: normalizeLoggedClientIp(metadata?.clientIp),
+    requestHost: sanitizeLogString(metadata?.requestHost, 255),
+    requestOrigin: sanitizeLogOrigin(metadata?.requestOrigin),
+    userAgent: sanitizeLogString(metadata?.userAgent, 500),
+  };
 }
 
 function routeToString(route?: SwapRouteStep[]): string | undefined {
@@ -33,12 +65,17 @@ function getErrorMessage(error: unknown): string | undefined {
   return sanitizeLogString(error instanceof Error ? error.message : String(error), 1000);
 }
 
-function writeSwapLog(event: string, payload: Record<string, unknown>): void {
+function writeSwapLog(
+  event: string,
+  payload: Record<string, unknown>,
+  metadata?: SwapRequestLogMetadata,
+): void {
   console.info(JSON.stringify({
     scope: 'swap',
     event,
     loggedAt: new Date().toISOString(),
     ...payload,
+    ...sanitizeRequestLogMetadata(metadata),
   }));
 }
 
@@ -54,7 +91,7 @@ export function logSwapQuoteRoute(params: {
   estimatedGasUsed?: bigint | string;
   estimatedGasUsedUsd?: string;
   blockNumber?: bigint | string;
-}): void {
+}, metadata?: SwapRequestLogMetadata): void {
   writeSwapLog('quote_route_selected', {
     source: params.source,
     tokenIn: params.tokenIn.symbol,
@@ -70,7 +107,7 @@ export function logSwapQuoteRoute(params: {
     estimatedGasUsed: params.estimatedGasUsed?.toString(),
     estimatedGasUsedUsd: params.estimatedGasUsedUsd,
     blockNumber: params.blockNumber?.toString(),
-  });
+  }, metadata);
 }
 
 export function logSwapQuoteFailure(params: {
@@ -80,7 +117,7 @@ export function logSwapQuoteFailure(params: {
   tokenOut?: SwapToken;
   amountInRaw?: bigint | string;
   error?: unknown;
-}): void {
+}, metadata?: SwapRequestLogMetadata): void {
   writeSwapLog('quote_route_failed', {
     stage: params.stage,
     tokenIn: params.tokenIn?.symbol ?? params.request.tokenInSymbol,
@@ -90,10 +127,13 @@ export function logSwapQuoteFailure(params: {
     slippageBps: params.request.slippageBps,
     recipient: params.request.recipient,
     error: getErrorMessage(params.error),
-  });
+  }, metadata);
 }
 
-export function logSwapTransactionEvent(payload: SwapTransactionLogRequest): void {
+export function logSwapTransactionEvent(
+  payload: SwapTransactionLogRequest,
+  metadata?: SwapRequestLogMetadata,
+): void {
   writeSwapLog('transaction_event', {
     swapEvent: payload.event,
     ownerAddress: payload.ownerAddress,
@@ -109,10 +149,13 @@ export function logSwapTransactionEvent(payload: SwapTransactionLogRequest): voi
     route: payload.route,
     routePath: routeToString(payload.route),
     error: payload.error,
-  });
+  }, metadata);
 }
 
-export function logVerifiedSwapTransactionEvent(payload: SwapTransactionLogRequest): void {
+export function logVerifiedSwapTransactionEvent(
+  payload: SwapTransactionLogRequest,
+  metadata?: SwapRequestLogMetadata,
+): void {
   writeSwapLog('transaction_event_verified', {
     swapEvent: 'swap_confirmed',
     ownerAddress: payload.ownerAddress,
@@ -127,7 +170,7 @@ export function logVerifiedSwapTransactionEvent(payload: SwapTransactionLogReque
     receiptStatus: payload.receiptStatus,
     route: payload.route,
     routePath: routeToString(payload.route),
-  });
+  }, metadata);
 }
 
 export function parseSwapTransactionLogRequest(body: unknown): SwapTransactionLogRequest {

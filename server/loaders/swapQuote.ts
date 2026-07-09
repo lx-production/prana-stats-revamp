@@ -3,7 +3,7 @@ import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from 
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import { POLYGON_CHAIN_ID, SWAP_DEADLINE_SECONDS, SWAP_ROUTER_02_ABI, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
-import { logSwapQuoteFailure, logSwapQuoteRoute } from './swapLogs.ts';
+import { logSwapQuoteFailure, logSwapQuoteRoute, type SwapRequestLogMetadata } from './swapLogs.ts';
 import { attachSwapQuoteVerification } from './swapQuoteVerification.ts';
 import { buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSwapRouter, getSlippageTolerance, getValidatedSlippageBps, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path } from './swapQuoteUtils.ts';
 
@@ -241,7 +241,10 @@ function buildQuoteRequestMetadata(request: SwapQuoteRequest, amountInRaw: bigin
   };
 }
 
-export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuoteResponse> {
+export async function loadSwapQuote(
+  request: SwapQuoteRequest,
+  logMetadata?: SwapRequestLogMetadata,
+): Promise<SwapQuoteResponse> {
   const tokenIn = getSwapToken(request.tokenInSymbol);
   const tokenOut = getSwapToken(request.tokenOutSymbol);
 
@@ -274,7 +277,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
       tokenOut,
       amountInRaw,
       error: err,
-    });
+    }, logMetadata);
     route = null;
   }
 
@@ -290,6 +293,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
         slippageTolerance,
         deadline,
         router, // AlphaRouter
+        logMetadata,
       );
     } catch (err) {
       logSwapQuoteFailure({
@@ -299,7 +303,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
         tokenOut,
         amountInRaw,
         error: err,
-      });
+      }, logMetadata);
       throw err;
     }
 
@@ -311,7 +315,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
       tokenIn,
       tokenOut,
       amountInRaw,
-    });
+    }, logMetadata);
     throw new Error('No Uniswap route found for this pair or amount.');
   }
 
@@ -342,7 +346,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
       tokenOut,
       amountInRaw,
       error: err,
-    });
+    }, logMetadata);
     throw err;
   }
 
@@ -358,7 +362,7 @@ export async function loadSwapQuote(request: SwapQuoteRequest): Promise<SwapQuot
     estimatedGasUsed: route.estimatedGasUsed?.toString(),
     estimatedGasUsedUsd: route.estimatedGasUsedUSD?.toExact(),
     blockNumber: route.blockNumber?.toString(),
-  });
+  }, logMetadata);
 
   return attachSwapQuoteVerification({
     request: buildQuoteRequestMetadata(request, amountInRaw),
@@ -390,6 +394,7 @@ async function loadWbtcPranaFallbackQuote(
   slippageTolerance: any,
   deadline: number,
   router: any,
+  logMetadata?: SwapRequestLogMetadata,
 ): Promise<SwapQuoteResponse | null> {
   // only runs for swaps involving PRANA where the other token is not WBTC (WBTC↔PRANA is handled directly by the primary router)
   // for swaps between the remaining supported non-PRANA tokens, the app only uses the primary route
@@ -413,7 +418,7 @@ async function loadWbtcPranaFallbackQuote(
         tokenIn,
         tokenOut,
         amountInRaw,
-      });
+      }, logMetadata);
       return null;
     }
     
@@ -440,7 +445,7 @@ async function loadWbtcPranaFallbackQuote(
         tokenIn,
         tokenOut,
         amountInRaw,
-      });
+      }, logMetadata);
       return null;
     }
 
@@ -470,7 +475,7 @@ async function loadWbtcPranaFallbackQuote(
     amountOutRaw: quote.amountOutRaw,
     minimumAmountOutRaw,
     estimatedGasUsed: quote.gasEstimate,
-  });
+  }, logMetadata);
 
   const exactInputCalldata = SWAP_ROUTER_IFACE.encodeFunctionData('exactInput', [{
     path,

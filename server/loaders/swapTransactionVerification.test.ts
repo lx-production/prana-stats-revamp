@@ -90,15 +90,30 @@ function createProvider(options: {
 
 test('successful swap verification marks the quote token as used', async () => {
   const calls = { getTransaction: 0, getTransactionReceipt: 0 };
+  let capturedMetadata: unknown;
 
   await verifyAndLogSwapTransaction(buildRequest(), {
     getProvider: async () => createProvider({ calls }),
-    logVerifiedSwapTransactionEvent: () => undefined,
+    logVerifiedSwapTransactionEvent: (_payload, metadata) => {
+      capturedMetadata = metadata;
+    },
+    logMetadata: {
+      clientIp: '198.51.100.100',
+      requestHost: 'example.test',
+      requestOrigin: 'https://example.test',
+      userAgent: 'swap-test',
+    },
   });
 
   assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 1);
   assert.equal(calls.getTransaction, 1);
   assert.equal(calls.getTransactionReceipt, 1);
+  assert.deepEqual(capturedMetadata, {
+    clientIp: '198.51.100.100',
+    requestHost: 'example.test',
+    requestOrigin: 'https://example.test',
+    userAgent: 'swap-test',
+  });
 });
 
 test('replayed quote token is rejected before provider RPC calls', async () => {

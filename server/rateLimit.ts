@@ -165,6 +165,10 @@ export function createSwapRateLimiters() {
       );
     },
 
+    getClientIp(req: IncomingMessage): string {
+      return getRequestIp(req, trustedProxyAddresses, trustedProxyHopCount);
+    },
+
     startCleanupTimer(): void {
       const rateLimitCleanupTimer = setInterval(() => {
         const now = Date.now();

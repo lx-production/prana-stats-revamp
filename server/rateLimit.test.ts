@@ -222,3 +222,20 @@ test('verification limiter uses the same trusted proxy client identity logic', (
     false,
   );
 });
+
+test('getClientIp returns normalized direct socket addresses', () => {
+  const limiter = createSwapRateLimiters();
+
+  assert.equal(limiter.getClientIp(mockRequest('::ffff:198.51.100.90')), '198.51.100.90');
+  assert.equal(limiter.getClientIp(mockRequest('127.0.0.1')), '127.0.0.1');
+});
+
+test('getClientIp uses the same trusted proxy hop logic as rate limits', () => {
+  process.env.TRUSTED_PROXY_HOP_COUNT = '2';
+  const limiter = createSwapRateLimiters();
+
+  assert.equal(
+    limiter.getClientIp(mockRequest('127.0.0.1', '192.0.2.250, 198.51.100.91, 127.0.0.1')),
+    '198.51.100.91',
+  );
+});
