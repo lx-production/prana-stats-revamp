@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { createSwapRateLimiters } from './rateLimit.ts';
+import { createSwapRateLimiters } from '../rateLimit.ts';
 
 const ORIGINAL_TRUSTED_PROXY_HOP_COUNT = process.env.TRUSTED_PROXY_HOP_COUNT;
 const ORIGINAL_TRUSTED_PROXY_IPS = process.env.TRUSTED_PROXY_IPS;

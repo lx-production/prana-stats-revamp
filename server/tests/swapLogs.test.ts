@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { logSwapTransactionEvent } from './swapLogs.ts';
+import { logSwapTransactionEvent } from '../loaders/swapLogs.ts';
 
 test('swap transaction logs include sanitized server request metadata', () => {
   const originalInfo = console.info;

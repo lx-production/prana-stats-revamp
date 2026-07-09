@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { setSecurityHeaders } from './securityHeaders.ts';
+import { setSecurityHeaders } from '../securityHeaders.ts';
 
 export async function fileExists(p: string): Promise<boolean> {
   try {

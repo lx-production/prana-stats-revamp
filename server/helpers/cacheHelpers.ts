@@ -1,4 +1,4 @@
-import { updateBondsV2 } from '../scripts/update-bonds-v2.ts';
+import { updateBondsV2 } from '../../scripts/update-bonds-v2.ts';
 
 export function createServerCache<T>(ttlMs: number) {
   let cached: { value: T; timestamp: number } | null = null;

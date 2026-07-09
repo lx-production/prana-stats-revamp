@@ -1,6 +1,6 @@
 import { sendJson } from './requestHelpers.ts';
 
-import type { RequestHandler } from './types/httpTypes.ts';
+import type { RequestHandler } from '../types/httpTypes.ts';
 
 /** Returns a safe user-facing error message for swap API failures. Only known validation errors are passed through; everything else uses the fallback so internal details are not leaked. */
 export function sanitizeSwapErrorMessage(error: unknown, fallback: string): string {

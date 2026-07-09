@@ -2,8 +2,8 @@ import type { ServerResponse } from 'node:http';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { FRONTEND_POLYGON_RPC_URL } from '../constants/network.ts';
-import { setSecurityHeaders } from './securityHeaders.ts';
+import { FRONTEND_POLYGON_RPC_URL } from '../../constants/network.ts';
+import { setSecurityHeaders } from '../securityHeaders.ts';
 
 type MockHeaderValue = number | string | string[];
 type MockResponse = ServerResponse & { headers: Map<string, MockHeaderValue> };

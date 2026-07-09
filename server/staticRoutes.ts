@@ -6,7 +6,7 @@ import {
   rootBuyDipsFilenameFromPathname,
   rootDataJsonFilenameFromPathname,
   sendJson,
-} from './requestHelpers.ts';
+} from './helpers/requestHelpers.ts';
 import { serveFile } from './serveFile.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
 

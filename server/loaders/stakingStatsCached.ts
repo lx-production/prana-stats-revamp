@@ -1,4 +1,4 @@
-import { createServerCache } from '../cacheHelpers.ts';
+import { createServerCache } from '../helpers/cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
 import { loadStakingStats } from './stakingStats.ts';
 import type { StakingStatsApiResponse } from '../../types/api.types.ts';

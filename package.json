@@ -9,7 +9,7 @@
     "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:rate-limit": "node --import tsx --test server/rateLimit.test.ts",
+    "test:rate-limit": "node --import tsx --test server/tests/rateLimit.test.ts",
     "fetch:staking-stats": "tsx scripts/fetch-staking-stats.ts",
     "scan:bonds:v2": "tsx scripts/scan-bonds-v2.ts",
     "update:bonds:v2": "tsx scripts/update-bonds-v2.ts",

@@ -1,6 +1,6 @@
 import { env } from 'process';
 import { createServer } from 'http';
-import { sendJson } from './requestHelpers.ts';
+import { sendJson } from './helpers/requestHelpers.ts';
 import { warmApiCaches } from './serverStartup.ts';
 import { handleStaticRequest } from './staticRoutes.ts';
 import { createApiRouteHandler } from './apiRoutes.ts';

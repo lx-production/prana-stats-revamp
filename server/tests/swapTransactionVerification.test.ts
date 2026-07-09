@@ -12,8 +12,8 @@ import {
   attachSwapQuoteVerification,
   markSwapQuoteTokenUsed,
   swapQuoteVerificationTestUtils,
-} from './swapQuoteVerification.ts';
-import { verifyAndLogSwapTransaction } from './swapTransactionVerification.ts';
+} from '../loaders/swapQuoteVerification.ts';
+import { verifyAndLogSwapTransaction } from '../loaders/swapTransactionVerification.ts';
 
 const OWNER_ADDRESS = '0x0000000000000000000000000000000000000001' as HexAddress;
 const TRANSACTION_HASH = `0x${'1'.repeat(64)}` as HexAddress;
