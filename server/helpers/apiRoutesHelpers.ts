@@ -48,6 +48,7 @@ function isLocalHostname(hostname: string): boolean {
 }
 
 /** Collects host values from the Host and X-Forwarded-Host headers, used to compare against the request Origin. */
+// builds a list of possible hostnames for the incoming HTTP request  
 function requestHostCandidates(req: Parameters<RequestHandler>[0]): string[] {
   const hosts = [req.headers.host];
   const forwardedHost = req.headers['x-forwarded-host'];
@@ -72,7 +73,7 @@ function isAllowedBrowserOrigin(req: Parameters<RequestHandler>[0]): boolean {
   if (!hosts.length) return false;
 
   try {
-    const originUrl = new URL(origin);
+    const originUrl = new URL(origin); // creates a URL object from the origin header
     const originHost = originUrl.host.toLowerCase();
     if (hosts.some((host) => originHost === host.toLowerCase())) return true;
 

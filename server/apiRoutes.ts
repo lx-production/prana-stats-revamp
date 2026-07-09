@@ -116,6 +116,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
 
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
+      // these lines run only when the inner if conditions were false
       try {
         const body = await readJsonBody<SwapQuoteRequest>(req, SWAP_QUOTE_BODY_MAX_BYTES);
         const result = await loadSwapQuote(body, createSwapRequestLogMetadata(req, rateLimiters));
