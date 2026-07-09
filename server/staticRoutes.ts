@@ -2,8 +2,6 @@ import path from 'node:path';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import {
   fileExists,
-  rootBondsJsonFilenameFromPathname,
-  rootBuyDipsFilenameFromPathname,
   rootDataJsonFilenameFromPathname,
   sendJson,
 } from './helpers/requestHelpers.ts';
@@ -28,9 +26,8 @@ export const handleStaticRequest: RequestHandler = async function handleStaticRe
     return true;
   }
 
-  const rootBondsFilename = rootBondsJsonFilenameFromPathname(url.pathname);
-  if (rootBondsFilename) {
-    const rootBondsPath = path.join(PROJECT_ROOT, rootBondsFilename);
+  if (url.pathname === '/bonds_v2.json') {
+    const rootBondsPath = path.join(PROJECT_ROOT, 'bonds_v2.json');
     if (await fileExists(rootBondsPath)) {
       await serveFile(req, res, rootBondsPath);
       return true;
@@ -39,9 +36,8 @@ export const handleStaticRequest: RequestHandler = async function handleStaticRe
     return true;
   }
 
-  const rootBuyDipsFilename = rootBuyDipsFilenameFromPathname(url.pathname);
-  if (rootBuyDipsFilename) {
-    const rootBuyDipsPath = path.join(PROJECT_ROOT, rootBuyDipsFilename);
+  if (url.pathname === '/buy_dips.json') {
+    const rootBuyDipsPath = path.join(PROJECT_ROOT, 'buy_dips.json');
     if (await fileExists(rootBuyDipsPath)) {
       await serveFile(req, res, rootBuyDipsPath);
       return true;

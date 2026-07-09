@@ -1,15 +1,6 @@
 import fs from 'node:fs/promises';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { setSecurityHeaders } from '../securityHeaders.ts';
-
-export async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 type SendJsonOptions = {
   cacheControl?: string;
@@ -19,6 +10,15 @@ type SendTextOptions = {
   cacheControl?: string;
   contentType?: string;
 };
+
+export async function fileExists(p: string): Promise<boolean> {
+  try {
+    await fs.stat(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function sendJson(
   res: ServerResponse,
@@ -46,11 +46,15 @@ export function sendText(
   res.end(body);
 }
 
+// Used in apiRoutes.ts for POST endpoints (swap quote, swap log, swap verify), each with its own maxBytes constant
+// req is a readable stream. Data arrives in pieces (“chunks”)
 export async function readJsonBody<T>(req: IncomingMessage, maxBytes = 16 * 1024): Promise<T> {
-  const chunks: Buffer[] = [];
+  const chunks: Buffer[] = []; // Buffer is built into Node.js
   let receivedBytes = 0;
 
   for await (const chunk of req) {
+    // Usually each chunk is already a Node Buffer (raw bytes)
+    // Sometimes it can be a string or Uint8Array
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     receivedBytes += buffer.length;
 
@@ -70,19 +74,11 @@ export async function readJsonBody<T>(req: IncomingMessage, maxBytes = 16 * 1024
   return JSON.parse(rawBody) as T;
 }
 
+// gatekeeper for serving price history JSON files from the project root
+// One pattern-matching helper is cleaner than listing every file separately
 export function rootDataJsonFilenameFromPathname(pathname: string): string | null {
   if (!pathname.startsWith('/data_') || !pathname.endsWith('.json')) return null;
   const filename = pathname.slice(1); // remove the leading slash
   if (filename.includes('/')) return null; // only allow direct files in project root (no nested paths)
   return filename;
-}
-
-export function rootBondsJsonFilenameFromPathname(pathname: string): string | null {
-  if (pathname !== '/bonds_v2.json') return null;
-  return 'bonds_v2.json';
-}
-
-export function rootBuyDipsFilenameFromPathname(pathname: string): string | null {
-  if (pathname !== '/buy_dips.json') return null;
-  return 'buy_dips.json';
 }
