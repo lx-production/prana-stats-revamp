@@ -12,12 +12,12 @@ import {
 } from '../../constants/swapContracts.ts';
 import type { HexAddress } from '../../types/swap.types.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
-import { encodeV3Path } from '../loaders/swapQuoteUtils.ts';
 import {
+  encodeV3Path,
   swapQuoteValidationTestUtils,
   type SwapTransactionCandidate,
   type SwapValidationContext,
-} from '../loaders/swapQuote.ts';
+} from '../loaders/swapQuoteUtils.ts';
 
 const OWNER_ADDRESS = '0x0000000000000000000000000000000000000001' as HexAddress;
 const SWAP_ROUTER_ADDRESS_THIS_RECIPIENT = '0x0000000000000000000000000000000000000002';

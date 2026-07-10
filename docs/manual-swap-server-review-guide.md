@@ -286,8 +286,7 @@ Validation:
 
 Minor refactor candidates:
 
-- [ ] Split validation helpers into a separate `swapQuoteValidation.ts` only if the loader becomes hard to navigate.
-- [ ] Keep path encoding/decoding helpers in `swapQuoteUtils.ts`.
+- [ ] Calldata validation helpers live in `swapQuoteUtils.ts` (with path encoding/routing helpers); keep `swapQuote.ts` as orchestration only.
 - [ ] Add focused tests for any new router function before adding it to the allowlist.
 
 ## Phase 9: Quote Signing And Verified Swap Logging
@@ -496,7 +495,7 @@ Use this to verify the later `fable-5-max-review.md` findings stayed fixed.
 | NEW-2: CSP missing frontend RPC host | Fixed with `FRONTEND_POLYGON_RPC_URL` | `constants/network.ts`, `utils/wagmiConfig.ts`, `server/securityHeaders.ts`, `server/securityHeaders.test.ts` |
 | NEW-3: verify endpoint RPC amplification | Fixed with separate verify limit and replay guard | `server/rateLimit.ts`, `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.ts`, tests |
 | NEW-4: verified log trusted unsigned fields | Fixed by signing `amountOut` and `route` | `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.test.ts` |
-| NEW-5: optional hardening | Fixed: cumulative input, no deadline-less multicall, shorter deadline, UI expiry, tight img-src, global quote cap | `server/loaders/swapQuote.ts`, `constants/swapContracts.ts`, `hooks/useUniswapSwap.ts`, `server/securityHeaders.ts`, `server/rateLimit.ts`, tests |
+| NEW-5: optional hardening | Fixed: cumulative input, no deadline-less multicall, shorter deadline, UI expiry, tight img-src, global quote cap | `server/loaders/swapQuoteUtils.ts`, `constants/swapContracts.ts`, `hooks/useUniswapSwap.ts`, `server/securityHeaders.ts`, `server/rateLimit.ts`, tests |
 
 ## Review Worksheet
 

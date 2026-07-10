@@ -15,7 +15,7 @@ This document is a map of everything added for the in-app Polygon swap feature. 
 
 Five hardening changes were added after the initial V1 implementation. Review these before the rest of the swap flow.
 
-1. **Backend calldata validation** (`server/loaders/swapQuote.ts`)
+1. **Backend calldata validation** (`server/loaders/swapQuoteUtils.ts`, called from `server/loaders/swapQuote.ts`)
    - Before any quote is returned, `validateSwapTransaction()` decodes router calldata and walks nested `multicall` batches.
    - Checks: router `to` address, native `value`, allowed recipients (user wallet or router custody), input/min-out amounts, V3 path endpoints (strict on fallback), multicall deadline, nesting depth, and only whitelisted router functions (`exactInput`, `exactInputSingle`, `swapExactTokensForTokens`, `unwrapWETH9`, `sweepToken`, `wrapETH`, `refundETH`).
    - Malformed or unexpected calldata from AlphaRouter is rejected with a generic API error (internal message is not leaked).
@@ -90,7 +90,8 @@ Existing packages reused: `ethers`, `framer-motion`, `lucide-react`.
 | `hooks/useUniswapQuote.ts` | 102 | Debounced fetch to `/api/swap/quote` |
 | `hooks/useUniswapSwap.ts` | 270 | Balance, allowance, approve, send swap tx; quote staleness guard |
 | `components/SwapModal.tsx` | 360 | Modal UI (token pickers, quote, CTA, errors) |
-| `server/loaders/swapQuote.ts` | 474 | Uniswap routing + PRANA fallback + calldata validation |
+| `server/loaders/swapQuote.ts` | — | Uniswap routing + PRANA fallback orchestration |
+| `server/loaders/swapQuoteUtils.ts` | — | Route helpers, path encoding, calldata validation |
 | `server/loaders/swapLogs.ts` | 130 | Structured swap quote/transaction logging helpers |
 | `server/getApiRoutes.ts` | — | Readonly GET API routes (stats, capital, summary, etc.) |
 | `server/postApiRoutes.ts` | — | POST-only swap quote/log/verify endpoints |
@@ -163,9 +164,9 @@ Start here. Everything else imports from this file.
 - `injected()` connectors for browser wallets
 - `WagmiProvider` wraps the whole app (required for hooks anywhere)
 
-### 4. Backend quote loader — `server/loaders/swapQuote.ts` (most complex file)
+### 4. Backend quote loader — `server/loaders/swapQuote.ts` + `swapQuoteUtils.ts`
 
-This is the core routing logic. Budget the most review time here.
+`swapQuote.ts` orchestrates routing; helpers and calldata validation live in `swapQuoteUtils.ts`. Budget the most review time here.
 
 **Two paths:**
 
@@ -178,10 +179,10 @@ This is the core routing logic. Budget the most review time here.
 
 **Critical detail (already fixed once):** SwapRouter02 on Polygon uses `exactInput` **without** a `deadline` in the tuple. Correct selector: `0xb858183f`. Wrong (reverts immediately): `0xc04b8d59`.
 
-**Security (fix #1):** `validateSwapTransaction()` / `validateRouterCall()` run on both AlphaRouter and fallback quotes before the response is sent. Budget review time on the allowlist of router functions and recipient/amount checks.
+**Security (fix #1):** `validateSwapTransaction()` / `validateRouterCall()` in `swapQuoteUtils.ts` run on both AlphaRouter and fallback quotes before the response is sent. Budget review time on the allowlist of router functions and recipient/amount checks.
 
 **Also note:**
-- Uses `createRequire()` for Uniswap packages (Node ESM compatibility)
+- `swapQuoteUtils.ts` uses `createRequire()` for Uniswap packages (Node ESM compatibility)
 - Alchemy RPC via `getServerPolygonRpcUrl()` — not exposed to browser
 - Native POL output uses `multicall(uint256 deadline, bytes[])` + `unwrapWETH9` in fallback path
 - Calls `logSwapQuoteRoute()` when a route is selected. Log payload includes source (`alpha_router` or `wbtc_prana_fallback`), token pair, amount in/out, minimum out, slippage, recipient, gas fields, and `routePath`.
