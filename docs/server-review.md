@@ -71,7 +71,7 @@ Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live
   - verify-transaction: `32768` bytes
 - Rate limits (per derived IP unless noted):
   - quote: `5` requests per minute, plus a global quote budget of `30` requests per minute across all clients
-  - log: `120` requests per minute
+  - log: `30` requests per minute
   - verify-transaction: `10` requests per minute (independent bucket from log)
 - All three swap POST endpoints reject non-JSON bodies with `415 unsupported_media_type` and cross-origin browser requests with `403 forbidden_origin`.
 - `sanitizeSwapErrorMessage()` still only passes through the same small allowlist and maps `SyntaxError` to `Invalid JSON request body.`:

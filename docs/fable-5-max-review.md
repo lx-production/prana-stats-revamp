@@ -55,7 +55,7 @@ still-open limitation from the earlier doc (the frontend never checks the quote 
 unchanged.
 
 **Fix #3 — rate limiting (`server/rateLimit.ts`).** Present and wired through `server/postApiRoutes.ts`
-for `/api/swap/quote` (5/min per IP, 30/min global), `/api/swap/log` and `/api/swap/verify-transaction` (120/min). The
+for `/api/swap/quote` (5/min per IP, 30/min global), `/api/swap/log` (30/min), and `/api/swap/verify-transaction` (10/min). The
 spoofing fix from fable-5-review is here (only trust `X-Forwarded-For` when the socket peer is a
 trusted proxy; otherwise key on the socket address; sweep stale buckets on a timer). **However,
 the IP-selection logic is wrong for this specific deployment — see NEW-1.**
@@ -417,7 +417,7 @@ First, `/api/swap/verify-transaction` no longer shares the broad 120/min swap-lo
 rate limiter in `server/rateLimit.ts` now has a separate `SWAP_VERIFY_RATE_LIMIT` of 10 requests
 per minute per derived client IP, with its own bucket map and cleanup sweep. `server/postApiRoutes.ts`
 uses `isSwapVerifyRateLimited(req)` for only the verification endpoint, while `/api/swap/log`
-continues to use the existing 120/min budget. Quote and log budgets are otherwise unchanged, and
+continues to use the existing 30/min budget. Quote and log budgets are otherwise unchanged, and
 the verify limiter uses the same trusted-proxy client-IP derivation fixed in NEW-1.
 
 Second, `server/loaders/swapQuoteVerification.ts` now remembers quote verification tokens that have

@@ -189,7 +189,7 @@ Review `server/rateLimit.ts` and `server/rateLimit.test.ts`.
 - [ ] Spoofed prepended XFF values do not shift the two-hop result.
 - [ ] Per-IP quote limit is `5/min`.
 - [ ] Global quote limit is `30/min`.
-- [ ] Log limit is `120/min`.
+- [ ] Log limit is `30/min`.
 - [ ] Verify limit is independent and `10/min`.
 - [ ] Per-IP quote rejections do not spend the global quote budget.
 - [ ] Cleanup timer sweeps quote, global quote, log, and verify buckets.

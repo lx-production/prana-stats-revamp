@@ -44,7 +44,7 @@ function spendQuoteBudget(
 function spendLogBudget(
   limiter: ReturnType<typeof createSwapRateLimiters>,
   req: IncomingMessage,
-  count = 120,
+  count = 30,
 ): void {
   for (let index = 0; index < count; index += 1) {
     assert.equal(limiter.isSwapLogRateLimited(req), false);
