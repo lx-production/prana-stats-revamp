@@ -55,7 +55,7 @@ still-open limitation from the earlier doc (the frontend never checks the quote 
 unchanged.
 
 **Fix #3 — rate limiting (`server/rateLimit.ts`).** Present and wired through `server/postApiRoutes.ts`
-for `/api/swap/quote` (10/min), `/api/swap/log` and `/api/swap/verify-transaction` (120/min). The
+for `/api/swap/quote` (5/min per IP, 30/min global), `/api/swap/log` and `/api/swap/verify-transaction` (120/min). The
 spoofing fix from fable-5-review is here (only trust `X-Forwarded-For` when the socket peer is a
 trusted proxy; otherwise key on the socket address; sweep stale buckets on a timer). **However,
 the IP-selection logic is wrong for this specific deployment — see NEW-1.**
@@ -512,8 +512,8 @@ absolute Open Graph/Twitter image URLs in `index.html` are for crawlers and are 
 loads governed by this CSP.
 
 `server/rateLimit.ts` now adds a global quote budget on top of the existing per-IP quote budget:
-`/api/swap/quote` still allows 10 requests per minute per derived client IP, but all clients
-combined are capped at 60 accepted quote requests per minute. Per-IP rejections return before
+`/api/swap/quote` still allows 5 requests per minute per derived client IP, but all clients
+combined are capped at 30 accepted quote requests per minute. Per-IP rejections return before
 spending the global bucket, so a single noisy IP does not consume the shared budget after it has
 already exhausted its own.
 

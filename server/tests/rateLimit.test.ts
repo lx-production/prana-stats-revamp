@@ -34,7 +34,7 @@ function mockRequest(
 function spendQuoteBudget(
   limiter: ReturnType<typeof createSwapRateLimiters>,
   req: IncomingMessage,
-  count = 10,
+  count = 5,
 ): void {
   for (let index = 0; index < count; index += 1) {
     assert.equal(limiter.isSwapQuoteRateLimited(req), false);
@@ -64,7 +64,7 @@ function spendVerifyBudget(
 test('direct untrusted sockets ignore spoofed X-Forwarded-For values', () => {
   const limiter = createSwapRateLimiters();
 
-  for (let index = 0; index < 10; index += 1) {
+  for (let index = 0; index < 5; index += 1) {
     assert.equal(
       limiter.isSwapQuoteRateLimited(mockRequest('203.0.113.10', `198.51.100.${index}`)),
       false,
@@ -143,7 +143,7 @@ test('different real clients behind the two-hop deployment do not share the quot
 test('swap quote limiter has a global all-clients budget', () => {
   const limiter = createSwapRateLimiters();
 
-  for (let index = 0; index < 60; index += 1) {
+  for (let index = 0; index < 30; index += 1) {
     assert.equal(
       limiter.isSwapQuoteRateLimited(mockRequest(`198.51.100.${index}`)),
       false,
@@ -162,7 +162,7 @@ test('per-IP quote rejections do not spend the global quote budget', () => {
   spendQuoteBudget(limiter, mockRequest('198.51.100.80'));
   assert.equal(limiter.isSwapQuoteRateLimited(mockRequest('198.51.100.80')), true);
 
-  for (let index = 0; index < 50; index += 1) {
+  for (let index = 0; index < 25; index += 1) {
     assert.equal(
       limiter.isSwapQuoteRateLimited(mockRequest(`203.0.113.${index}`)),
       false,

@@ -10,8 +10,8 @@ type RateLimit = {
   maxRequests: number;
 };
 
-const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
-const SWAP_GLOBAL_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
+const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 5 };
+const SWAP_GLOBAL_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
 const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
 const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000; // 1 minute

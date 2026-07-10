@@ -70,7 +70,7 @@ Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live
   - log: `8192` bytes
   - verify-transaction: `32768` bytes
 - Rate limits (per derived IP unless noted):
-  - quote: `10` requests per minute, plus a global quote budget of `60` requests per minute across all clients
+  - quote: `5` requests per minute, plus a global quote budget of `30` requests per minute across all clients
   - log: `120` requests per minute
   - verify-transaction: `10` requests per minute (independent bucket from log)
 - All three swap POST endpoints reject non-JSON bodies with `415 unsupported_media_type` and cross-origin browser requests with `403 forbidden_origin`.
