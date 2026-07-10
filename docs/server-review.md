@@ -89,7 +89,7 @@ Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live
 ### 4. Rate Limit Trust Boundary
 
 - Direct clients use `req.socket.remoteAddress`; they cannot choose their rate-limit key with `X-Forwarded-For`.
-- `X-Forwarded-For` is trusted only when the immediate socket address is localhost or in `TRUSTED_PROXY_IPS`.
+- `X-Forwarded-For` is trusted only when the immediate socket address is localhost (`127.0.0.1` or `::1`).
 - IPv4-mapped IPv6 addresses are normalized before trusted-proxy checks and as fallback keys.
 - For trusted proxy requests, the client IP is taken from `X-Forwarded-For` using `TRUSTED_PROXY_HOP_COUNT` (default `1`). With the default, that is the last entry, matching nginx `$proxy_add_x_forwarded_for` behind a single proxy.
 - Bucket cleanup still removes entries older than the relevant window and the cleanup timer is `unref()`ed.

@@ -5,11 +5,9 @@ import { afterEach, test } from 'node:test';
 import { createSwapRateLimiters } from '../rateLimit.ts';
 
 const ORIGINAL_TRUSTED_PROXY_HOP_COUNT = process.env.TRUSTED_PROXY_HOP_COUNT;
-const ORIGINAL_TRUSTED_PROXY_IPS = process.env.TRUSTED_PROXY_IPS;
 
 afterEach(() => {
   restoreEnv('TRUSTED_PROXY_HOP_COUNT', ORIGINAL_TRUSTED_PROXY_HOP_COUNT);
-  restoreEnv('TRUSTED_PROXY_IPS', ORIGINAL_TRUSTED_PROXY_IPS);
 });
 
 function restoreEnv(key: string, value: string | undefined): void {

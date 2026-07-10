@@ -40,8 +40,7 @@ Fixes are small: take the **last** entry of `X-Forwarded-For` (the one your own 
 
 The spoofed-IP issue is addressed. Rate limiting now lives in `server/rateLimit.ts` as `createSwapRateLimiters()`, wired from `server/index.ts` (which calls `startCleanupTimer()` once at startup) and enforced in `server/postApiRoutes.ts` on `/api/swap/quote` and `/api/swap/log`. The per-IP limits are unchanged (10 quote requests/min, 120 log requests/min), but IP key selection and stale-key cleanup were fixed:
 
-- `X-Forwarded-For` is no longer trusted from arbitrary clients. `getRequestIp` first checks the immediate socket peer with `isTrustedProxy`. By default, only local proxy addresses are trusted: `127.0.0.1` and `::1`.
-- If the app is deployed behind a non-local trusted proxy, extra trusted proxy IPs can be configured with `TRUSTED_PROXY_IPS` (comma-separated); those entries are normalized the same way as socket addresses.
+- `X-Forwarded-For` is no longer trusted from arbitrary clients. `getRequestIp` first checks the immediate socket peer with `isTrustedProxy`. Only local proxy addresses are trusted: `127.0.0.1` and `::1` (Vite in dev, Pi nginx in prod).
 - When the immediate peer is trusted and `X-Forwarded-For` is present (string or repeated header array), the server uses the **last** forwarded IP entry — the value appended by a trusted nginx hop using `$proxy_add_x_forwarded_for`.
 - If the immediate peer is not trusted, the server ignores `X-Forwarded-For` and keys rate limiting on `req.socket.remoteAddress`. This prevents direct clients from choosing their own rate-limit identity.
 - IPv4-mapped IPv6 socket addresses like `::ffff:127.0.0.1` are normalized before trusted-proxy checks and before being used as fallback rate-limit keys.

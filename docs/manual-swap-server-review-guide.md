@@ -180,8 +180,7 @@ Review `server/rateLimit.ts` and `server/rateLimit.test.ts`.
 
 - [ ] Direct clients use `req.socket.remoteAddress`.
 - [ ] Direct clients cannot choose a bucket with `X-Forwarded-For`.
-- [ ] `X-Forwarded-For` is trusted only when the immediate socket address is trusted.
-- [ ] Trusted proxy addresses include localhost and `TRUSTED_PROXY_IPS`.
+- [ ] `X-Forwarded-For` is trusted only when the immediate socket address is localhost (`127.0.0.1` or `::1`).
 - [ ] IPv4-mapped IPv6 addresses are normalized.
 - [ ] `getClientIp(req)` exposes the same trusted-proxy identity used by the rate-limit buckets.
 - [ ] `TRUSTED_PROXY_HOP_COUNT` defaults to `1`.
@@ -198,7 +197,6 @@ Review `server/rateLimit.ts` and `server/rateLimit.test.ts`.
 Deployment check:
 
 - [ ] Confirm the production Node service sets `TRUSTED_PROXY_HOP_COUNT=2`.
-- [ ] If a non-local immediate proxy reaches Node, confirm `TRUSTED_PROXY_IPS` includes that immediate proxy address.
 
 Minor refactor candidates:
 
@@ -481,7 +479,6 @@ Check these before deploying swap/server changes:
 - [ ] `npm run build` succeeds on the deployment Node version.
 - [ ] Production service has `SWAP_QUOTE_SIGNING_SECRET` set.
 - [ ] Production service has `TRUSTED_PROXY_HOP_COUNT=2` for VPS -> Pi.
-- [ ] Production service has any needed `TRUSTED_PROXY_IPS` if the immediate proxy is not localhost.
 - [ ] Production swap logs show real client IPs, not only `127.0.0.1` or the immediate proxy address.
 - [ ] Server/private RPC env vars are present for backend quote and verification work.
 - [ ] Browser CSP `connect-src` matches `FRONTEND_POLYGON_RPC_URL`.
