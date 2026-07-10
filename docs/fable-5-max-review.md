@@ -54,16 +54,16 @@ approve or swap. `useUniswapQuote` still clears the previous quote the moment in
 still-open limitation from the earlier doc (the frontend never checks the quote `deadline` age) is
 unchanged.
 
-**Fix #3 — rate limiting (`server/rateLimit.ts`).** Present and wired through `server/apiRoutes.ts`
+**Fix #3 — rate limiting (`server/rateLimit.ts`).** Present and wired through `server/postApiRoutes.ts`
 for `/api/swap/quote` (10/min), `/api/swap/log` and `/api/swap/verify-transaction` (120/min). The
 spoofing fix from fable-5-review is here (only trust `X-Forwarded-For` when the socket peer is a
 trusted proxy; otherwise key on the socket address; sweep stale buckets on a timer). **However,
 the IP-selection logic is wrong for this specific deployment — see NEW-1.**
 
-**Fix #4 — body size caps (`server/requestHelpers.ts`).** `readJsonBody` still counts bytes while
+**Fix #4 — body size caps (`server/helpers/requestHelpers.ts`).** `readJsonBody` still counts bytes while
 streaming and throws before parsing. Quote 2 KB, log 8 KB, verify 32 KB.
 
-**Fix #5 — error/log sanitization (`server/apiRoutes.ts`, `server/loaders/swapLogs.ts`).** The
+**Fix #5 — error/log sanitization (`server/postApiRoutes.ts`, `server/loaders/swapLogs.ts`).** The
 user-facing error allowlist is intact, and `sanitizeLogString` still redacts URLs and Alchemy key
 segments and truncates. Logs are written with `JSON.stringify`, so newline log-injection is still
 neutralized.
@@ -71,7 +71,7 @@ neutralized.
 **Follow-up fixes still in place:** shared security headers via `server/securityHeaders.ts` (but
 see NEW-2 for a policy gap), on-chain swap confirmation via
 `server/loaders/swapTransactionVerification.ts` (but see NEW-4 for a coverage gap), and the
-`415`/`403` request hardening (JSON-only, same-origin) in `server/apiRoutes.ts`.
+`415`/`403` request hardening (JSON-only, same-origin) in `server/postApiRoutes.ts`.
 
 ---
 
@@ -241,7 +241,7 @@ The confirmation endpoint is good for its purpose (it stops fake browser `swap_c
 but it's a cheap way to make the server do paid upstream work.
 
 - It shares the 120/min "log" limiter (`rateLimiters.isSwapLogRateLimited` in
-  `server/apiRoutes.ts`), and each accepted call performs **two** RPC lookups against the server's
+  `server/postApiRoutes.ts`), and each accepted call performs **two** RPC lookups against the server's
   Alchemy provider (`getTransaction` + `getTransactionReceipt` in
   `server/loaders/swapTransactionVerification.ts`).
 - The gate to reach that RPC work is a valid HMAC quote token — but a token is valid for **30
@@ -415,7 +415,7 @@ shape.
 
 First, `/api/swap/verify-transaction` no longer shares the broad 120/min swap-log bucket. The
 rate limiter in `server/rateLimit.ts` now has a separate `SWAP_VERIFY_RATE_LIMIT` of 10 requests
-per minute per derived client IP, with its own bucket map and cleanup sweep. `server/apiRoutes.ts`
+per minute per derived client IP, with its own bucket map and cleanup sweep. `server/postApiRoutes.ts`
 uses `isSwapVerifyRateLimited(req)` for only the verification endpoint, while `/api/swap/log`
 continues to use the existing 120/min budget. Quote and log budgets are otherwise unchanged, and
 the verify limiter uses the same trusted-proxy client-IP derivation fixed in NEW-1.

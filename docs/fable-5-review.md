@@ -38,7 +38,7 @@ Fixes are small: take the **last** entry of `X-Forwarded-For` (the one your own 
 
 ### Update: fixed in `server/rateLimit.ts`
 
-The spoofed-IP issue is addressed. Rate limiting now lives in `server/rateLimit.ts` as `createSwapRateLimiters()`, wired from `server/index.ts` (which calls `startCleanupTimer()` once at startup) and enforced in `server/apiRoutes.ts` on `/api/swap/quote` and `/api/swap/log`. The per-IP limits are unchanged (10 quote requests/min, 120 log requests/min), but IP key selection and stale-key cleanup were fixed:
+The spoofed-IP issue is addressed. Rate limiting now lives in `server/rateLimit.ts` as `createSwapRateLimiters()`, wired from `server/index.ts` (which calls `startCleanupTimer()` once at startup) and enforced in `server/postApiRoutes.ts` on `/api/swap/quote` and `/api/swap/log`. The per-IP limits are unchanged (10 quote requests/min, 120 log requests/min), but IP key selection and stale-key cleanup were fixed:
 
 - `X-Forwarded-For` is no longer trusted from arbitrary clients. `getRequestIp` first checks the immediate socket peer with `isTrustedProxy`. By default, only local proxy addresses are trusted: `127.0.0.1` and `::1`.
 - If the app is deployed behind a non-local trusted proxy, extra trusted proxy IPs can be configured with `TRUSTED_PROXY_IPS` (comma-separated); those entries are normalized the same way as socket addresses.

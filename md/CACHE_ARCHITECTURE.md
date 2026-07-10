@@ -207,10 +207,10 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 ### Computed API snapshot: markdown summary (`/api/summary`)
 
-- Served from `server/apiRoutes.ts` as `text/markdown; charset=utf-8` via `sendText(...)`, not JSON.
+- Served from `server/getApiRoutes.ts` as `text/markdown; charset=utf-8` via `sendText(...)`, not JSON.
 - Built by `server/loaders/summary.ts` → `loadSummaryMarkdown()`, which aggregates the same cached loaders the UI uses (prices, staking, capital, LP capital, bond metrics, top holdings, chart JSON, FAQ/covenants markdown, and related computed fields).
 - **Not** loaded by React hooks or `prefetchInitialJson.ts`. Intended for bots, AI agents, and machine-readable discovery (`public/llms.txt`, `public/robots.txt`, `index.html` `<link rel="alternate">`; production nginx may redirect certain user agents from `/` to `/api/summary`).
-- Server memory cache: `summaryCache` in `server/apiRoutes.ts` with TTL `SERVER_CACHE_TTL_MS.summaryApiResponse` (1 hour).
+- Server memory cache: `summaryCache` in `server/getApiRoutes.ts` with TTL `SERVER_CACHE_TTL_MS.summaryApiResponse` (1 hour).
 - Browser HTTP cache: `Cache-Control: private, max-age=30` (same header constant as most JSON APIs).
 
 ### Raw JSON helpers
@@ -340,7 +340,7 @@ Longer browser cache (`private`) for intentional snapshot endpoints:
 - `/api/staking-stats` — 24 hours
 - `/api/bond-metrics` — 24 hours
 
-Routes (each uses one of the header shapes above, as wired in `server/apiRoutes.ts`):
+Routes (each uses one of the header shapes above, as wired in `server/getApiRoutes.ts`):
 - `/api/summary` — `max-age=30` (`text/markdown`)
 - `/api/prana-stats` — `max-age=30`
 - `/api/staking-stats` — `max-age=24h`

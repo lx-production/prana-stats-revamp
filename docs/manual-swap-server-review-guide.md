@@ -28,7 +28,7 @@ The current code appears to include the later refactor notes from `fable-5-max-r
 | Quote backend | `server/loaders/swapQuote.ts`, `server/loaders/swapQuoteUtils.ts` |
 | Quote signing and verification | `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.ts` |
 | Logs | `server/loaders/swapLogs.ts` |
-| API boundary | `server/apiRoutes.ts`, `server/requestHelpers.ts` |
+| API boundary | `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, `server/helpers/requestHelpers.ts` |
 | Rate limits | `server/rateLimit.ts`, `server/rateLimit.test.ts` |
 | Server split | `server/index.ts`, `server/staticRoutes.ts`, `server/serverStartup.ts` |
 | Static and cache behavior | `server/serveFile.ts`, `server/cacheControl.ts`, `constants/cachePolicy.ts` |
@@ -96,7 +96,7 @@ Minor refactor candidates:
 
 - [ ] Keep `server/index.ts` composition-only. Move behavior into route/helper modules.
 - [ ] Avoid adding endpoint-specific logic to `server/index.ts`.
-- [ ] Consider a route table only if `server/apiRoutes.ts` grows further; do not abstract just for symmetry.
+- [ ] Consider a route table only if `server/getApiRoutes.ts` or `server/postApiRoutes.ts` grows further; do not abstract just for symmetry.
 
 ## Phase 3: Static Files, Root JSON, And Cache Headers
 
@@ -129,9 +129,9 @@ curl -i http://127.0.0.1:4174/prana-coin-fallback.png | head
 
 ## Phase 4: API Boundary
 
-Review `server/apiRoutes.ts` and `server/requestHelpers.ts`.
+Review `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, and `server/helpers/requestHelpers.ts`.
 
-- [ ] All read-only API paths still exist:
+- [ ] All read-only API paths still exist (in `getApiRoutes.ts`):
   - `/api/summary`
   - `/api/top-holding-addresses`
   - `/api/prana-stats`
@@ -139,7 +139,7 @@ Review `server/apiRoutes.ts` and `server/requestHelpers.ts`.
   - `/api/capital`
   - `/api/lp-capital`
   - `/api/bond-metrics`
-- [ ] Swap POST paths still exist:
+- [ ] Swap POST paths still exist (in `postApiRoutes.ts`):
   - `/api/swap/quote`
   - `/api/swap/log`
   - `/api/swap/verify-transaction`

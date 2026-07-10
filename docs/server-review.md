@@ -4,8 +4,8 @@ Use this guide to review the dependency-free server split. The intended change i
 
 ## Review Goal
 
-- Confirm `server/index.ts` is now composition only: create rate limiters, create API handler, run static handler, send final `404`/`500`, listen, and warm caches.
-- Confirm `server/apiRoutes.ts`, `server/staticRoutes.ts`, `server/rateLimit.ts`, and `server/serverStartup.ts` preserve the behavior that used to live in `server/index.ts`.
+- Confirm `server/index.ts` is now composition only: create rate limiters, create GET/POST API handlers, run static handler, send final `404`/`500`, listen, and warm caches.
+- Confirm `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, `server/staticRoutes.ts`, `server/rateLimit.ts`, and `server/serverStartup.ts` preserve the behavior that used to live in `server/index.ts`.
 - Confirm supporting modules (`requestHelpers.ts`, `serveFile.ts`, `cacheControl.ts`, `securityHeaders.ts`, `cacheHelpers.ts`, `projectRoot.ts`) keep response shaping and static serving consistent.
 - Treat behavior changes as suspicious unless they are explicitly called out in a separate PR or note.
 
@@ -13,9 +13,10 @@ Use this guide to review the dependency-free server split. The intended change i
 
 | File | Review focus |
 | --- | --- |
-| `server/index.ts` | Entry point, handler order, final errors, listen defaults |
+| `server/index.ts` | Entry point, handler order (GET API → POST API → static → 404), final errors, listen defaults |
 | `server/types/httpTypes.ts` | Shared `RequestHandler` fallthrough contract |
-| `server/apiRoutes.ts` | API routes, cache headers, swap body caps, swap errors |
+| `server/getApiRoutes.ts` | Readonly GET API routes, cache headers, `summaryCache` / `pranaStatsCache` |
+| `server/postApiRoutes.ts` | POST-only swap routes, body caps, rate limits, swap errors |
 | `server/rateLimit.ts` | Per-IP swap limits, global quote limit, trusted proxy handling, cleanup timer |
 | `server/staticRoutes.ts` | Root JSON, legacy asset, dist/public serving, SPA fallback |
 | `server/serverStartup.ts` | Cache warmup list and failure logging |
@@ -33,12 +34,14 @@ Use this guide to review the dependency-free server split. The intended change i
 
 - `PORT` still defaults to `4173`; `HOST` still defaults to `127.0.0.1`.
 - `npm run serve:dev` and `npm run dev:all` override `PORT` to `4174`.
-- Request order is API first, static second, final JSON `404` last.
+- Request order is GET API first, POST API second, static third, final JSON `404` last.
 - Top-level errors still log `Server error:` and return `{ "error": "internal_error" }`.
 - `warmApiCaches()` still runs after `server.listen(...)` and does not block accepting requests.
 - `rateLimiters.startCleanupTimer()` is called exactly once during process startup.
 
 ### 2. API Routes
+
+Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live in `server/postApiRoutes.ts`.
 
 - All existing API paths still exist:
   - `/api/summary`
