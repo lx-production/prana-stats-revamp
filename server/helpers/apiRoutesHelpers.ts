@@ -87,8 +87,8 @@ function isAllowedBrowserOrigin(req: Parameters<RequestHandler>[0]): boolean {
 /** Validates swap API requests for JSON content type and same-origin policy. 
  * Sends an error response and returns true when the request should be rejected. */
 export function rejectInvalidSwapApiRequest(
-  req: Parameters<RequestHandler>[0],
-  res: Parameters<RequestHandler>[1],
+  req: Parameters<RequestHandler>[0], // IncomingMessage type
+  res: Parameters<RequestHandler>[1], // ServerResponse type
 ): boolean {
   if (!isJsonRequest(req)) {
     sendJson(res, 415, {
