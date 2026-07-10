@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { tryServeFile } from './helpers/tryServeFile.ts';
+import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
 import { rootDataJsonFilenameFromPathname, sendJson } from './helpers/requestHelpers.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';

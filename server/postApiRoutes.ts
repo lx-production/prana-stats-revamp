@@ -1,15 +1,6 @@
-import { createServerCache } from './helpers/cacheHelpers.ts';
 import { loadSwapQuote } from './loaders/swapQuote.ts';
-import { loadPranaStats } from './loaders/pranaStats.ts';
-import { loadSummaryMarkdown } from './loaders/summary.ts';
-import { loadCachedCapital } from './loaders/capitalCached.ts';
-import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
-import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
-import { readJsonBody, sendJson, sendText } from './helpers/requestHelpers.ts';
-import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
-import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
+import { readJsonBody, sendJson } from './helpers/requestHelpers.ts';
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
-import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './helpers/apiRoutesHelpers.ts';
 import { logSwapTransactionEvent, parseSwapTransactionLogRequest, type SwapRequestLogMetadata } from './loaders/swapLogs.ts';
 
@@ -17,22 +8,17 @@ import type { SwapRateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
 import type { SwapQuoteRequest } from '../types/swap.types.ts';
 
-const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
-const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
-const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
-const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
-
+// Max request body sizes for each POST endpoint
 const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
 const SWAP_LOG_BODY_MAX_BYTES = 8192;
 const SWAP_VERIFY_BODY_MAX_BYTES = 32768;
 
-export const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
-export const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
-
+// Headers can be string | string[]; pick the first value when it's an array
 function singleHeaderValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+// Builds metadata attached to swap logs (IP, host, origin, user-agent)
 function createSwapRequestLogMetadata(
   req: Parameters<RequestHandler>[0],
   rateLimiters: SwapRateLimiters,
@@ -45,55 +31,11 @@ function createSwapRequestLogMetadata(
   };
 }
 
-export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHandler {
-  return async function handleApiRequest(req, res, url): Promise<boolean> {
-    if (url.pathname === '/api/summary') {
-      const result = await summaryCache(() => loadSummaryMarkdown());
-      sendText(res, 200, result, {
-        cacheControl: READONLY_API_CACHE_CONTROL,
-        contentType: 'text/markdown; charset=utf-8',
-      });
-      return true;
-    }
-
-    // Endpoint the frontend can call for top holdings with a short-lived memory cache.
-    if (url.pathname === '/api/top-holding-addresses') {
-      const result = await loadCachedTopHoldingAddresses();
-      sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
-      return true;
-    }
-
-    if (url.pathname === '/api/prana-stats') {
-      const result = await pranaStatsCache(loadPranaStats);
-      sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
-      return true;
-    }
-
-    if (url.pathname === '/api/staking-stats') {
-      const result = await loadCachedStakingStats();
-      sendJson(res, 200, result, { cacheControl: READONLY_STAKING_API_CACHE_CONTROL });
-      return true;
-    }
-
-    if (url.pathname === '/api/capital') {
-      const result = await loadCachedCapital();
-      sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
-      return true;
-    }
-
-    if (url.pathname === '/api/lp-capital') {
-      const result = await loadCachedLpCapital();
-      sendJson(res, 200, result, { cacheControl: READONLY_LP_CAPITAL_API_CACHE_CONTROL });
-      return true;
-    }
-
-    if (url.pathname === '/api/bond-metrics') {
-      const result = await loadCachedBondMetrics();
-      sendJson(res, 200, result, { cacheControl: READONLY_BOND_METRICS_API_CACHE_CONTROL });
-      return true;
-    }
-
+// Handles POST-only swap API routes (quote, log, verify-transaction)
+export function createPostApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHandler {
+  return async function handlePostApiRequest(req, res, url): Promise<boolean> {
     if (url.pathname === '/api/swap/quote') {
+      // Reject anything that isn't POST
       if (req.method !== 'POST') {
         sendJson(res, 405, {
           error: 'method_not_allowed',
@@ -110,6 +52,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
         return true;
       }
 
+      // Origin / content-type checks for swap APIs
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       // these lines run only when the inner if conditions were false
@@ -196,6 +139,7 @@ export function createApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHa
       }
     }
 
+    // Not a POST API route — let the next handler try
     return false;
   };
 }

@@ -2,7 +2,7 @@ import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
 import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
 import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
-import { summaryCache } from './apiRoutes.ts';
+import { summaryCache } from './getApiRoutes.ts';
 
 export async function warmApiCaches() {
   const warmups = [
