@@ -18,6 +18,8 @@ export const QUOTER_V2_ABI = [
   'function quoteExactInput(bytes path,uint256 amountIn) returns (uint256 amountOut,uint160[] sqrtPriceX96AfterList,uint32[] initializedTicksCrossedList,uint256 gasEstimate)',
 ];
 
+// we don’t “use” every function here to build swaps, but validation treats them as allowed 
+// so a real AlphaRouter tx isn’t rejected just because it includes wrap/unwrap/sweep/refund or a V2 leg
 export const SWAP_ROUTER_02_ABI = [
   'function multicall(uint256 deadline,bytes[] data) payable returns (bytes[] results)',
   'function exactInput(tuple(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum) params) payable returns (uint256 amountOut)',

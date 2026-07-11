@@ -54,7 +54,7 @@ export type SwapValidationContext = {
   amountInRaw: bigint;
   minimumAmountOutRaw: bigint;
   deadline: number;
-  strictPath: boolean;
+  strictPath: boolean; // false for AlphaRouter, true for our fallback path
 };
 
 /** Tracks how much input has been spent across nested multicall legs. */
@@ -154,7 +154,7 @@ export function buildRouteSummary(route: unknown): SwapRouteStep[] {
 /**
  * Pull the first usable V3 leg out of AlphaRouter’s response (or null).
  * One leg can cover multiple hops/pools internally.
- * The first V3 leg is usually the highest-percent V3 leg (best-swap-route ordering).
+ * AlphaRouter’s amount-sorted route list (for exact-input, that’s typically the largest / highest-% V3 split)
  */
 export function selectV3Route(route: any): any | null {
   // route.route is an array of all legs — find the first V3 leg with pools + tokenPath.
@@ -344,6 +344,7 @@ function decodeV3PathAddresses(path: string): string[] {
 
 /** In strict mode, first/last path tokens must match the requested pair. */
 function validatePathEndpoints(pathAddresses: string[], context: SwapValidationContext): void {
+  // In non-strict mode, we don’t care about the first/last path tokens matching the requested pair
   if (!context.strictPath) return;
 
   const first = pathAddresses[0]?.toLowerCase();
