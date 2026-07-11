@@ -4,22 +4,7 @@ import { attachSwapQuoteVerification } from './swapQuoteVerification.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import { SWAP_DEADLINE_SECONDS, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import { logSwapQuoteFailure, logSwapQuoteRoute, type SwapRequestLogMetadata } from './swapLogs.ts';
-import {
-  SWAP_ROUTER_IFACE,
-  buildQuoteRequestMetadata,
-  buildRouteSummary,
-  encodeV3Path,
-  formatAmountOut,
-  getMinimumAmountOut,
-  getSlippageTolerance,
-  getSwapRouter,
-  getV3RoutePathData,
-  loadPrimaryRoute,
-  loadRouteFromWbtc,
-  loadRouteToWbtc,
-  quoteV3Path,
-  validateSwapTransaction,
-} from './swapQuoteUtils.ts';
+import { SWAP_ROUTER_IFACE, buildQuoteRequestMetadata, buildRouteSummary, encodeV3Path, formatAmountOut, getMinimumAmountOut, getSlippageTolerance, getSwapRouter, getV3RoutePathData, loadPrimaryRoute, loadRouteFromWbtc, loadRouteToWbtc, quoteV3Path, validateSwapTransaction } from './swapQuoteUtils.ts';
 
 import type { HexAddress, SwapQuoteRequest, SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
 
@@ -274,7 +259,9 @@ async function loadWbtcPranaFallbackQuote(
         SWAP_ROUTER_IFACE.encodeFunctionData('unwrapWETH9(uint256,address)', [minimumAmountOutRaw, request.recipient]),
       ]
     : [exactInputCalldata];
+
   const calldata = SWAP_ROUTER_IFACE.encodeFunctionData('multicall(uint256,bytes[])', [deadline, calls]);
+  
   const transaction = {
     to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
     data: calldata as HexAddress,

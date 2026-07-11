@@ -78,7 +78,7 @@ npm run build
 ```
 
 - [ ] If a command fails, record whether it is a real code issue, a missing env var, a Node version issue, or a local dependency issue.
-- [ ] Note that `tsconfig.json` may not fully typecheck server files if server paths are excluded. The focused `node --import tsx --test ...` commands catch server import/type mistakes better than `npm run typecheck` alone.
+- [ ] Note that root `tsconfig.json` excludes server paths (`npm run typecheck` is frontend-only). Use `tsc -p server --noEmit` for server types, or the focused `node --import tsx --test ...` commands for runtime import checks.
 
 ## Phase 2: Server Shape And Route Order
 

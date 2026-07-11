@@ -157,7 +157,7 @@ Expected checks:
 
 ## Verification Notes
 
-- `tsconfig.json` explicitly excludes `server/**/*.ts` and `scripts/**/*.ts`, so `npm run typecheck` is not a complete server type check.
+- Root `tsconfig.json` excludes `server/**/*.ts` and `scripts/**/*.ts`, so `npm run typecheck` only covers the frontend. Server files use `server/tsconfig.json` (Node types) for IDE/editor checking; run `tsc -p server --noEmit` to typecheck the server.
 - `npm run build` requires a Node version compatible with the installed Vite version.
 - `npm run test:rate-limit` runs `server/rateLimit.test.ts` (proxy trust, per-IP limits, global quote budget, verify/log bucket isolation).
 - A direct import check with `tsx` is useful for catching broken server imports after this refactor.
