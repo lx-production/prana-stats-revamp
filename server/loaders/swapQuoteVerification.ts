@@ -99,6 +99,7 @@ function signPayload(payload: Record<string, unknown>, issuedAt: string, expires
  * Does not check HMAC yet — callers use verifySwapQuoteToken for that.
  */
 function getQuoteVerification(quote: SwapQuoteResponse): { verification: SwapQuoteVerification; expiresAt: number } {
+  // destructuring, “take the verification field off quote
   const { verification } = quote;
 
   if (

@@ -1,11 +1,11 @@
 import { createServerCache } from './helpers/cacheHelpers.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
-import { loadCachedCapital } from './loaders/capitalCached.ts';
 import { sendJson, sendText } from './helpers/requestHelpers.ts';
-import { loadCachedLpCapital } from './loaders/lpCapitalCached.ts';
-import { loadCachedBondMetrics } from './loaders/bondMetricsCached.ts';
-import { loadCachedStakingStats } from './loaders/stakingStatsCached.ts';
+import { loadCachedCapital } from './loaders/cached/capitalCached.ts';
+import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
+import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
+import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 

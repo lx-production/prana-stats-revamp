@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
-import { loadCachedBondMetrics } from './bondMetricsCached.ts';
-import { loadCachedCapital } from './capitalCached.ts';
-import { loadCachedLpCapital } from './lpCapitalCached.ts';
-import { loadCachedStakingStats } from './stakingStatsCached.ts';
+import { loadCachedCapital } from './cached/capitalCached.ts';
+import { loadCachedLpCapital } from './cached/lpCapitalCached.ts';
+import { loadCachedBondMetrics } from './cached/bondMetricsCached.ts';
+import { loadCachedStakingStats } from './cached/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './topHoldingAddresses.ts';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
