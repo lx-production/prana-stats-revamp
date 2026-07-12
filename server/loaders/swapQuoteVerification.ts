@@ -20,9 +20,9 @@ import type { SwapQuoteResponse, SwapQuoteVerification } from '../../types/swap.
 // Bump this when the signed payload shape changes (old tokens become invalid).
 const TOKEN_VERSION = 2;
 
-// Dev/fallback only: random secret per process. Production should set SWAP_QUOTE_SIGNING_SECRET
-// so tokens stay valid across restarts and multiple server instances share one key.
-const FALLBACK_SIGNING_SECRET = randomBytes(32).toString('hex');
+// Random HMAC key for this Node process. Tokens are invalid after restart
+// (and across different workers) — same tradeoff as the in-memory replay cache.
+const SIGNING_SECRET = randomBytes(32).toString('hex');
 
 // How long a signed quote stays usable for verify-transaction (30 minutes).
 const QUOTE_VERIFICATION_TTL_SECONDS = 30 * 60;
@@ -33,11 +33,6 @@ const usedSwapQuoteTokenHashes = new Map<string, number>();
 
 /** Quote fields we sign — everything except the verification blob itself. */
 type SignableSwapQuote = Omit<SwapQuoteResponse, 'verification'>;
-
-/** HMAC key: env secret in prod, ephemeral fallback otherwise. */
-function getSigningSecret(): string {
-  return process.env.SWAP_QUOTE_SIGNING_SECRET || FALLBACK_SIGNING_SECRET;
-}
 
 /**
  * Deterministic JSON-ish string so the same object always signs the same way.
@@ -84,7 +79,7 @@ function normalizeQuoteForSigning(quote: SignableSwapQuote): Record<string, unkn
 
 /** HMAC-SHA256 over version + timestamps + normalized quote → hex token. */
 function signPayload(payload: Record<string, unknown>, issuedAt: string, expiresAt: string): string {
-  return createHmac('sha256', getSigningSecret())
+  return createHmac('sha256', SIGNING_SECRET)
     .update(stableStringify({
       version: TOKEN_VERSION,
       issuedAt,

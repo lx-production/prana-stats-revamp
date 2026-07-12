@@ -301,7 +301,7 @@ Quote signing:
 - [ ] Verification uses `timingSafeEqual`.
 - [ ] Verification token expires after the intended TTL.
 - [ ] Missing or malformed verification data is rejected.
-- [ ] `SWAP_QUOTE_SIGNING_SECRET` should be configured in production. The random fallback invalidates tokens on restart and is only acceptable as a local/dev fallback.
+- [ ] HMAC signing uses a random per-process `SIGNING_SECRET` (tokens invalid after restart / across workers; same tradeoff as the in-memory replay cache).
 
 Replay guard:
 
@@ -343,7 +343,6 @@ Browser telemetry:
 
 Minor refactor candidates:
 
-- [ ] Consider requiring `SWAP_QUOTE_SIGNING_SECRET` outside development mode.
 - [ ] If verified logs become product data, move from append-only logs to durable storage with unique transaction hash constraints.
 
 ## Phase 10: Frontend Quote Hook
@@ -476,7 +475,6 @@ Expected result: the command returns a quote, writes a `quote_route_selected` lo
 Check these before deploying swap/server changes:
 
 - [ ] `npm run build` succeeds on the deployment Node version.
-- [ ] Production service has `SWAP_QUOTE_SIGNING_SECRET` set.
 - [ ] Production service has `TRUSTED_PROXY_HOP_COUNT=2` for VPS -> Pi.
 - [ ] Production swap logs show real client IPs, not only `127.0.0.1` or the immediate proxy address.
 - [ ] Server/private RPC env vars are present for backend quote and verification work.

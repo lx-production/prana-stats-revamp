@@ -445,4 +445,4 @@ This closes the easy `no-cors` log-spam path. It is defense-in-depth; trusted sw
 
 ### Operational note
 
-Set `SWAP_QUOTE_SIGNING_SECRET` in production, especially if the app runs more than one server process. Without it, the server uses a random in-memory fallback secret; that is fine for a single process, but in-flight quote verification tokens are invalidated on process restart and cannot be verified across multiple workers.
+Quote verification uses a random per-process HMAC secret (`SIGNING_SECRET`). Tokens are invalid after a process restart and cannot be verified across multiple workers — the same tradeoff as the in-memory replay cache. Fine for a single Node process; revisit if you run multiple instances.
