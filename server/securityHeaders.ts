@@ -10,7 +10,7 @@ const MODEL_VIEWER_DRACO_HOST = 'https://www.gstatic.com';
 
 // Content-Security-Policy tells the browser what resources the page is allowed to load.
 // Each directive limits a specific resource type; 'self' means same-origin only.
-// Note: there is no standard `model-src` directive — .glb loads use connect-src/'self'.
+// Note: there is no standard `model-src` directive — .glb and blob texture loads use connect-src.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'", // fallback for any directive not listed below
   "base-uri 'self'", // <base> tags can only point to our own domain
@@ -21,8 +21,9 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'", // our CSS + inline <style> tags (needed by some libs)
   "img-src 'self' data:", // images from our domain or base64 data: URLs only
   "font-src 'self' data:", // fonts from our domain or base64 data: URLs only
-  // fetch/XHR: our API, Polygon RPC (must match wagmiConfig), model-viewer/Draco CDNs
-  `connect-src 'self' ${FRONTEND_POLYGON_RPC_URL} ${MODEL_VIEWER_SCRIPT_HOST} ${MODEL_VIEWER_DRACO_HOST}`,
+  // fetch/XHR: our API, Polygon RPC (must match wagmiConfig), model-viewer/Draco CDNs,
+  // and blob texture URLs created while decoding the GLB.
+  `connect-src 'self' blob: ${FRONTEND_POLYGON_RPC_URL} ${MODEL_VIEWER_SCRIPT_HOST} ${MODEL_VIEWER_DRACO_HOST}`,
   // Draco decoder runs in a blob: worker created by model-viewer
   "worker-src 'self' blob:",
   "form-action 'self'", // forms can only submit to our own domain
