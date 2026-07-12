@@ -235,6 +235,10 @@ function validateRouterCall(
  * - `to` must be SwapRouter02
  * - `value` must be amountIn for native POL, else 0
  * - calldata must pass validateRouterCall
+ * - context starts from the UI request (tokens, amount, recipient, slippage), 
+ * - plus a few values the server adds from the same quote (e.g. amountInRaw, deadline, minimumAmountOutRaw)
+ * - transaction is the quoter/router’s proposed SwapRouter02 tx (to / data / value) 
+ * - AlphaRouter’s methodParameters, or our hand-built fallback calldata
  */
 export function validateSwapTransaction(transaction: SwapTransactionCandidate, context: SwapValidationContext): void {
   if (transaction.to.toLowerCase() !== ROUTER_ADDRESS_LOWER) {
