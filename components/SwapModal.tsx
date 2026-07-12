@@ -1,16 +1,17 @@
-import InfoTooltip from './InfoTooltip';
-import React, { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { formatUnits } from 'viem';
+import InfoTooltip from './InfoTooltip';
 import { getSwapToken } from '../utils/swapTokens';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useUniswapSwap } from '../hooks/useUniswapSwap';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
-import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
 import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
 import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
+
+import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
 
 const backdropVariants = {
   hidden: { opacity: 0 },

@@ -85,25 +85,25 @@ npm run build
 
 Review `server/index.ts` first. It should stay small.
 
-- [ ] `PORT` defaults to `4173`.
-- [ ] `HOST` defaults to `127.0.0.1`.
-- [ ] `createSwapRateLimiters()` is called once.
-- [ ] `startCleanupTimer()` is called once during startup.
-- [ ] Request order is API first, static second, final JSON `404`.
-- [ ] Top-level error handler logs `Server error:` and returns `{ "error": "internal_error" }`.
-- [ ] `warmApiCaches()` runs after `server.listen(...)` and does not block accepting requests.
+- [x] `PORT` defaults to `4173`.
+- [x] `HOST` defaults to `127.0.0.1`.
+- [x] `createSwapRateLimiters()` is called once.
+- [x] `startCleanupTimer()` is called once during startup.
+- [x] Request order is API first, static second, final JSON `404`.
+- [x] Top-level error handler logs `Server error:` and returns `{ "error": "internal_error" }`.
+- [x] `warmApiCaches()` runs after `server.listen(...)` and does not block accepting requests.
 
 Minor refactor candidates:
 
-- [ ] Keep `server/index.ts` composition-only. Move behavior into route/helper modules.
-- [ ] Avoid adding endpoint-specific logic to `server/index.ts`.
-- [ ] Consider a route table only if `server/getApiRoutes.ts` or `server/postApiRoutes.ts` grows further; do not abstract just for symmetry.
+- [x] Keep `server/index.ts` composition-only. Move behavior into route/helper modules.
+- [x] Avoid adding endpoint-specific logic to `server/index.ts`.
+- [x] Consider a route table only if `server/getApiRoutes.ts` or `server/postApiRoutes.ts` grows further; do not abstract just for symmetry.
 
 ## Phase 3: Static Files, Root JSON, And Cache Headers
 
 Review `server/staticRoutes.ts`, `server/serveFile.ts`, `server/cacheControl.ts`, and `constants/cachePolicy.ts`.
 
-- [ ] Preserve static route order:
+- [x] Preserve static route order:
   1. root `data_*.json`
   2. root `bonds_v2.json`
   3. root `buy_dips.json`
@@ -111,12 +111,12 @@ Review `server/staticRoutes.ts`, `server/serveFile.ts`, `server/cacheControl.ts`
   5. `dist` files
   6. `public` files
   7. `dist/index.html` SPA fallback
-- [ ] Root JSON misses return JSON `404`.
-- [ ] Non-API app paths can fall back to `dist/index.html`.
-- [ ] `.html` responses use `no-cache`.
-- [ ] root JSON files use short public cache.
-- [ ] hashed `dist/assets/*`, `prana-coin-fallback.png`, and `prana-coin.glb` use long immutable cache.
-- [ ] `serveFile` sets security headers before both `200` and `304` responses.
+- [x] Root JSON misses return JSON `404`.
+- [x] Non-API app paths can fall back to `dist/index.html`.
+- [x] `.html` responses use `no-cache`.
+- [x] root JSON files use short public cache.
+- [x] hashed `dist/assets/*`, `prana-coin-fallback.png`, and `prana-coin.glb` use long immutable cache.
+- [x] `serveFile` sets security headers before both `200` and `304` responses.
 
 Manual smoke checks:
 
