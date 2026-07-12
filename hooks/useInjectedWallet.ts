@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
-import { ProviderNotFoundError, useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { POLYGON_CHAIN_ID } from '../constants/swapContracts';
-import type { HexAddress, UseInjectedWalletResult } from '../types/swap.types';
+import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain, ProviderNotFoundError } from 'wagmi';
+
 import type { Connector } from 'wagmi';
+import type { HexAddress, UseInjectedWalletResult } from '../types/swap.types';
 
 const NO_INJECTED_WALLET_MESSAGE =
   'No injected wallet was found. Please install MetaMask, Rabby, or another browser wallet.';
@@ -37,10 +38,11 @@ async function getInjectedConnector(connectors: readonly Connector[]): Promise<C
 }
 
 export function useInjectedWallet(): UseInjectedWalletResult {
-  const { address, chainId, isConnected } = useAccount();
-  const { connectAsync, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { switchChainAsync } = useSwitchChain();
+  const connect = useConnect();
+  const disconnect = useDisconnect();
+  const connectors = useConnectors();
+  const switchChain = useSwitchChain();
+  const { address, chainId, isConnected } = useConnection();
 
   const connectWallet = useCallback(async () => {
     const connector = await getInjectedConnector(connectors);
@@ -50,7 +52,8 @@ export function useInjectedWallet(): UseInjectedWalletResult {
     }
 
     try {
-      await connectAsync({ connector });
+      // wagmi v3: connectAsync was renamed to mutateAsync
+      await connect.mutateAsync({ connector });
     } catch (error) {
       if (isProviderNotFoundError(error)) {
         throw new Error(NO_INJECTED_WALLET_MESSAGE);
@@ -58,23 +61,27 @@ export function useInjectedWallet(): UseInjectedWalletResult {
 
       throw error;
     }
-  }, [connectAsync, connectors]);
+  }, [connect.mutateAsync, connectors]);
 
   const ensurePolygon = useCallback(async () => {
     if (chainId === POLYGON_CHAIN_ID) return true;
 
-    await switchChainAsync({ chainId: POLYGON_CHAIN_ID });
+    // wagmi v3: switchChainAsync was renamed to mutateAsync
+    await switchChain.mutateAsync({ chainId: POLYGON_CHAIN_ID });
     return true;
-  }, [chainId, switchChainAsync]);
+  }, [chainId, switchChain.mutateAsync]);
 
   return {
     address: address as HexAddress | undefined,
     chainId,
     isConnected,
-    isConnecting: isPending,
+    isConnecting: connect.isPending,
     isPolygon: chainId === POLYGON_CHAIN_ID,
     connectWallet,
-    disconnectWallet: disconnect,
+    // wagmi v3: disconnect was renamed to mutate
+    disconnectWallet: () => {
+      disconnect.mutate();
+    },
     ensurePolygon,
   };
 }
