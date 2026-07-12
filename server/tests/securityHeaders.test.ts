@@ -32,14 +32,35 @@ function getContentSecurityPolicy(res: MockResponse): string {
   return csp;
 }
 
-test('CSP connect-src matches the pinned frontend Polygon RPC host', () => {
+test('CSP connect-src allows Polygon RPC plus model-viewer CDN hosts', () => {
   const res = mockResponse();
 
   setSecurityHeaders(res);
 
   const csp = getContentSecurityPolicy(res);
-  assert.match(csp, new RegExp(`(?:^|; )connect-src 'self' ${FRONTEND_POLYGON_RPC_URL}(?:;|$)`));
+  // Order: self → pinned RPC → model-viewer script host → Draco host
+  assert.match(
+    csp,
+    new RegExp(
+      `(?:^|; )connect-src 'self' ${FRONTEND_POLYGON_RPC_URL} https://ajax\\.googleapis\\.com https://www\\.gstatic\\.com(?:;|$)`,
+    ),
+  );
   assert.doesNotMatch(csp, /connect-src[^;]*https:\/\/polygon-rpc\.com/);
+});
+
+test('CSP allows model-viewer script/Draco hosts and blob workers', () => {
+  const res = mockResponse();
+
+  setSecurityHeaders(res);
+
+  const csp = getContentSecurityPolicy(res);
+  assert.match(
+    csp,
+    /(?:^|; )script-src 'self' https:\/\/ajax\.googleapis\.com https:\/\/www\.gstatic\.com 'wasm-unsafe-eval'(?:;|$)/,
+  );
+  assert.match(csp, /(?:^|; )worker-src 'self' blob:(?:;|$)/);
+  // model-src is not a real CSP directive — keep it out of the policy
+  assert.doesNotMatch(csp, /model-src/);
 });
 
 test('CSP img-src only allows same-origin and data images', () => {

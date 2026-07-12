@@ -97,7 +97,8 @@ Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live
 ### 5. Security Headers
 
 - `sendJson`, `sendText`, and `serveFile` all call `setSecurityHeaders()` before sending a response.
-- Review that CSP `connect-src` still allows only `'self'` and the pinned frontend Polygon RPC host from `constants/network.ts`.
+- Review that CSP `connect-src` allows `'self'`, the pinned frontend Polygon RPC host from `constants/network.ts`, and the model-viewer CDN hosts (`ajax.googleapis.com`, `www.gstatic.com` for Draco).
+- Review that `script-src` / `worker-src` still allow the Google model-viewer + Draco decoder setup (no invalid `model-src` directive).
 - Review `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`.
 
 ### 6. Static And Root JSON Routing

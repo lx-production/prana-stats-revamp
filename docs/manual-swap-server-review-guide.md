@@ -211,10 +211,10 @@ Review `constants/network.ts`, `utils/wagmiConfig.ts`, and `server/securityHeade
 
 - [x] `FRONTEND_POLYGON_RPC_URL` is the single browser RPC source of truth.
 - [x] `wagmiConfig` uses `http(FRONTEND_POLYGON_RPC_URL)`, not viem's implicit default.
-- [x] CSP `connect-src` includes exactly the pinned browser RPC host plus `'self'`.
+- [x] CSP `connect-src` includes the pinned browser RPC host, `'self'`, and model-viewer CDN hosts (`ajax.googleapis.com`, `www.gstatic.com`).
 - [x] CSP does not include stale `https://polygon-rpc.com` unless that is intentionally the pinned host.
 - [x] CSP `img-src` is tight: `'self' data:`.
-- [x] CSP includes `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, and `form-action 'self'`.
+- [x] CSP includes `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, and `worker-src 'self' blob:` (no invalid `model-src`).
 - [x] `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin` are set on JSON, text, static files, and `304`.
 
 Minor refactor candidates:
@@ -480,7 +480,7 @@ Check these before deploying swap/server changes:
 - [ ] Production service has `TRUSTED_PROXY_HOP_COUNT=2` for VPS -> Pi.
 - [ ] Production swap logs show real client IPs, not only `127.0.0.1` or the immediate proxy address.
 - [ ] Server/private RPC env vars are present for backend quote and verification work.
-- [x] Browser CSP `connect-src` matches `FRONTEND_POLYGON_RPC_URL`.
+- [x] Browser CSP `connect-src` includes `FRONTEND_POLYGON_RPC_URL` plus model-viewer CDN hosts.
 - [x] Nginx still proxies API/static traffic to the intended port, normally `4173`.
 - [x] Vite dev proxy still targets `4174` for local `dev:all`.
 - [ ] Logs are writable by the service user.
