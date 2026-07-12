@@ -69,10 +69,11 @@ This matters for the documented VPS nginx -> Pi nginx -> Node chain.
 
 ```bash
 npm run test:rate-limit
-node --import tsx --test server/loaders/swapQuote.test.ts
-node --import tsx --test server/loaders/swapLogs.test.ts
-node --import tsx --test server/loaders/swapTransactionVerification.test.ts
-node --import tsx --test server/securityHeaders.test.ts
+node --import tsx --test server/tests/apiBoundary.test.ts
+node --import tsx --test server/tests/swapQuote.test.ts
+node --import tsx --test server/tests/swapLogs.test.ts
+node --import tsx --test server/tests/swapTransactionVerification.test.ts
+node --import tsx --test server/tests/securityHeaders.test.ts
 npm run typecheck
 npm run build
 ```

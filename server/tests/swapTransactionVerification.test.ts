@@ -186,6 +186,114 @@ test('tampered verified log route is rejected before provider RPC calls', async 
   assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 0);
 });
 
+// HMAC covers the signed quote fields — any edit must fail before paid RPC.
+async function assertHmacRejectedBeforeRpc(
+  quote: SwapQuoteResponse,
+  expectedError: RegExp,
+): Promise<void> {
+  let providerLoaded = false;
+
+  await assert.rejects(
+    verifyAndLogSwapTransaction(buildRequest(quote), {
+      getProvider: async () => {
+        providerLoaded = true;
+        return createProvider({ calls: { getTransaction: 0, getTransactionReceipt: 0 } });
+      },
+      logVerifiedSwapTransactionEvent: () => undefined,
+    }),
+    expectedError,
+  );
+
+  assert.equal(providerLoaded, false);
+  assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 0);
+}
+
+test('tampered transaction calldata is rejected by HMAC before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    transaction: {
+      ...quote.transaction,
+      data: '0xdeadbeef' as HexAddress,
+    },
+  }, /verification is invalid/);
+});
+
+test('tampered quote recipient is rejected by HMAC before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    request: {
+      ...quote.request,
+      recipient: '0x00000000000000000000000000000000000000aa' as HexAddress,
+    },
+  }, /verification is invalid/);
+});
+
+test('tampered amountIn is rejected by HMAC before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    amountIn: '999',
+  }, /verification is invalid/);
+});
+
+test('tampered minimumAmountOut is rejected by HMAC before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    minimumAmountOut: '1',
+  }, /verification is invalid/);
+});
+
+test('tampered deadline is rejected by HMAC before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    deadline: quote.deadline + 60,
+  }, /verification is invalid/);
+});
+
+test('expired quote verification is rejected before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    verification: {
+      ...quote.verification,
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+    },
+  }, /has expired/);
+});
+
+test('missing quote verification is rejected before provider RPC calls', async () => {
+  const quote = buildQuote();
+  const { verification: _removed, ...quoteWithoutVerification } = quote;
+
+  await assertHmacRejectedBeforeRpc(
+    quoteWithoutVerification as SwapQuoteResponse,
+    /verification is missing/,
+  );
+});
+
+test('wrong quote verification version is rejected before provider RPC calls', async () => {
+  const quote = buildQuote();
+
+  await assertHmacRejectedBeforeRpc({
+    ...quote,
+    verification: {
+      ...quote.verification,
+      // Force an old token version the server no longer accepts
+      version: 1 as SwapQuoteResponse['verification']['version'],
+    },
+  }, /verification is missing/);
+});
+
 test('pending verification attempts do not consume the quote token', async () => {
   const quote = buildQuote();
   const pendingCalls = { getTransaction: 0, getTransactionReceipt: 0 };
@@ -211,6 +319,101 @@ test('pending verification attempts do not consume the quote token', async () =>
   });
 
   assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 1);
+});
+
+// Shared setup for on-chain mismatches: fail once, prove token unused, then succeed.
+async function assertOnChainFailureDoesNotConsumeToken(options: {
+  error: RegExp;
+  transaction?: {
+    from: string;
+    to?: string | null;
+    data: string;
+    value: { toString(): string };
+  };
+  receipt?: { status: number | null };
+}): Promise<void> {
+  const quote = buildQuote();
+  const failureCalls = { getTransaction: 0, getTransactionReceipt: 0 };
+
+  await assert.rejects(
+    verifyAndLogSwapTransaction(buildRequest(quote), {
+      getProvider: async () => createProvider({
+        ...(options.transaction ? { transaction: options.transaction } : {}),
+        ...(options.receipt ? { receipt: options.receipt } : {}),
+        calls: failureCalls,
+      }),
+      logVerifiedSwapTransactionEvent: () => undefined,
+    }),
+    options.error,
+  );
+
+  assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 0);
+  assert.equal(failureCalls.getTransaction, 1);
+  assert.equal(failureCalls.getTransactionReceipt, 1);
+
+  // Failed checks must leave the quote usable for a later confirmed attempt
+  const successCalls = { getTransaction: 0, getTransactionReceipt: 0 };
+  await verifyAndLogSwapTransaction(buildRequest(quote), {
+    getProvider: async () => createProvider({ calls: successCalls }),
+    logVerifiedSwapTransactionEvent: () => undefined,
+  });
+
+  assert.equal(swapQuoteVerificationTestUtils.getUsedSwapQuoteTokenCount(), 1);
+}
+
+test('reverted receipt does not consume the quote token', async () => {
+  await assertOnChainFailureDoesNotConsumeToken({
+    receipt: { status: 0 },
+    error: /did not succeed/,
+  });
+});
+
+test('wrong transaction sender does not consume the quote token', async () => {
+  await assertOnChainFailureDoesNotConsumeToken({
+    transaction: {
+      from: '0x00000000000000000000000000000000000000aa',
+      to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
+      data: TRANSACTION_DATA,
+      value: 0n,
+    },
+    error: /sender does not match/,
+  });
+});
+
+test('wrong transaction target does not consume the quote token', async () => {
+  await assertOnChainFailureDoesNotConsumeToken({
+    transaction: {
+      from: OWNER_ADDRESS,
+      to: '0x00000000000000000000000000000000000000bb',
+      data: TRANSACTION_DATA,
+      value: 0n,
+    },
+    error: /target is invalid/,
+  });
+});
+
+test('mismatched transaction calldata does not consume the quote token', async () => {
+  await assertOnChainFailureDoesNotConsumeToken({
+    transaction: {
+      from: OWNER_ADDRESS,
+      to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
+      data: '0xdead',
+      value: 0n,
+    },
+    error: /calldata does not match/,
+  });
+});
+
+test('mismatched transaction value does not consume the quote token', async () => {
+  await assertOnChainFailureDoesNotConsumeToken({
+    transaction: {
+      from: OWNER_ADDRESS,
+      to: UNISWAP_SWAP_ROUTER_02_ADDRESS,
+      data: TRANSACTION_DATA,
+      value: 1n,
+    },
+    error: /value does not match/,
+  });
 });
 
 test('expired used quote token entries are swept from the replay cache', () => {
