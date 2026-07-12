@@ -40,7 +40,7 @@ Both are explained in detail in Part 2, with fixes.
 Short answer: yes, every previously applied fix is still present and correctly wired. Quick
 confirmation of each, so this document stands on its own.
 
-**Fix #1 — backend calldata validation (`server/loaders/swapQuoteUtils.ts`, called from `swapQuote.ts`).** Still runs on both the
+**Fix #1 — backend calldata validation (`server/loaders/swapValidations.ts`, called from `swapQuote.ts`).** Still runs on both the
 AlphaRouter path and the PRANA fallback path before any quote is returned. `validateSwapTransaction`
 checks the router `to` address and native `value`, then `validateRouterCall` walks nested
 `multicall` batches (depth capped at 4), enforces the deadline on the `multicall(uint256,bytes[])`
@@ -486,7 +486,7 @@ was also verified with `npm run typecheck` and `npm run build`.
 The NEW-5 optional hardening items are now implemented across the swap validator, quote UI, CSP,
 and quote rate limiter.
 
-`server/loaders/swapQuoteUtils.ts` now tracks a cumulative input budget while recursively validating
+`server/loaders/swapValidations.ts` now tracks a cumulative input budget while recursively validating
 router calldata. Each input-consuming swap call (`exactInput`, `exactInputSingle`, and
 `swapExactTokensForTokens`) still has its individual amount checked, but it also spends from a
 shared `context.amountInRaw` budget across nested multicalls. This keeps legitimate split

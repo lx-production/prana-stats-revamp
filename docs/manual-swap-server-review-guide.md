@@ -25,7 +25,7 @@ The current code appears to include the later refactor notes from `fable-5-max-r
 | Quote hook | `hooks/useUniswapQuote.ts` |
 | Swap execution | `hooks/useUniswapSwap.ts`, `utils/swapTransactionLogs.ts` |
 | Swap types and constants | `types/swap.types.ts`, `constants/swapContracts.ts`, `constants/network.ts` |
-| Quote backend | `server/loaders/swapQuote.ts`, `server/loaders/swapQuoteUtils.ts` |
+| Quote backend | `server/loaders/swapQuote.ts`, `server/loaders/swapQuoteUtils.ts`, `server/loaders/swapValidations.ts` |
 | Quote signing and verification | `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.ts` |
 | Logs | `server/loaders/swapLogs.ts` |
 | API boundary | `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, `server/helpers/requestHelpers.ts` |
@@ -243,7 +243,7 @@ Minor refactor candidates:
 
 ## Phase 8: Backend Quote Loader
 
-Review `server/loaders/swapQuote.ts` and `server/loaders/swapQuoteUtils.ts`. This is the highest-risk file.
+Review `server/loaders/swapQuote.ts`, `server/loaders/swapQuoteUtils.ts`, and `server/loaders/swapValidations.ts`. This is the highest-risk area.
 
 Primary route:
 
@@ -286,7 +286,7 @@ Validation:
 
 Minor refactor candidates:
 
-- [ ] Calldata validation helpers live in `swapQuoteUtils.ts` (with path encoding/routing helpers); keep `swapQuote.ts` as orchestration only.
+- [ ] Calldata validation helpers live in `swapValidations.ts`; path encoding/routing helpers live in `swapQuoteUtils.ts`; keep `swapQuote.ts` as orchestration only.
 - [ ] Add focused tests for any new router function before adding it to the allowlist.
 
 ## Phase 9: Quote Signing And Verified Swap Logging
@@ -495,7 +495,7 @@ Use this to verify the later `fable-5-max-review.md` findings stayed fixed.
 | NEW-2: CSP missing frontend RPC host | Fixed with `FRONTEND_POLYGON_RPC_URL` | `constants/network.ts`, `utils/wagmiConfig.ts`, `server/securityHeaders.ts`, `server/securityHeaders.test.ts` |
 | NEW-3: verify endpoint RPC amplification | Fixed with separate verify limit and replay guard | `server/rateLimit.ts`, `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.ts`, tests |
 | NEW-4: verified log trusted unsigned fields | Fixed by signing `amountOut` and `route` | `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactionVerification.test.ts` |
-| NEW-5: optional hardening | Fixed: cumulative input, no deadline-less multicall, shorter deadline, UI expiry, tight img-src, global quote cap | `server/loaders/swapQuoteUtils.ts`, `constants/swapContracts.ts`, `hooks/useUniswapSwap.ts`, `server/securityHeaders.ts`, `server/rateLimit.ts`, tests |
+| NEW-5: optional hardening | Fixed: cumulative input, no deadline-less multicall, shorter deadline, UI expiry, tight img-src, global quote cap | `server/loaders/swapValidations.ts`, `constants/swapContracts.ts`, `hooks/useUniswapSwap.ts`, `server/securityHeaders.ts`, `server/rateLimit.ts`, tests |
 
 ## Review Worksheet
 

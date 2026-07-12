@@ -10,14 +10,11 @@ import {
   UNISWAP_SWAP_ROUTER_02_ADDRESS,
   WMATIC_ADDRESS,
 } from '../../constants/swapContracts.ts';
-import type { HexAddress } from '../../types/swap.types.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
-import {
-  encodeV3Path,
-  swapQuoteValidationTestUtils,
-  type SwapTransactionCandidate,
-  type SwapValidationContext,
-} from '../loaders/swapQuoteUtils.ts';
+import { encodeV3Path } from '../loaders/swapQuoteUtils.ts';
+import { swapQuoteValidationTestUtils } from '../loaders/swapValidations.ts';
+
+import type { HexAddress, SwapTransactionCandidate, SwapValidationContext } from '../../types/swap.types.ts';
 
 const OWNER_ADDRESS = '0x0000000000000000000000000000000000000001' as HexAddress;
 const SWAP_ROUTER_ADDRESS_THIS_RECIPIENT = '0x0000000000000000000000000000000000000002';

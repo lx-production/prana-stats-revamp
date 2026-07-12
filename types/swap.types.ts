@@ -32,6 +32,25 @@ export type SwapQuoteTransaction = {
   value: string;
 };
 
+/** Minimal tx shape we validate before returning a quote to the client. */
+export type SwapTransactionCandidate = SwapQuoteTransaction;
+
+/**
+ * Everything validation needs to check calldata against the user's request.
+ * `strictPath` = true for a normal single-leg swap (exact amounts + path ends).
+ * `strictPath` = false for multi-leg AlphaRouter routes where each leg
+ * only spends part of the total input.
+ */
+export type SwapValidationContext = {
+  request: SwapQuoteRequest;
+  tokenIn: SwapToken;
+  tokenOut: SwapToken;
+  amountInRaw: bigint;
+  minimumAmountOutRaw: bigint;
+  deadline: number;
+  strictPath: boolean; // false for AlphaRouter, true for our fallback path
+};
+
 export type SwapQuoteVerification = {
   version: 2;
   issuedAt: string;
