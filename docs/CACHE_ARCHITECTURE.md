@@ -366,7 +366,7 @@ This is safe because their filenames change when content changes.
 
 ## Dev vs Prod Behavior
 
-`vite.config.js` proxies both API routes and root JSON files to the Node server:
+`config/vite.config.js` proxies both API routes and root JSON files to the Node server:
 - `/api`
 - `/data_*.json`
 - `/bonds_v2.json`
@@ -495,7 +495,7 @@ When adding a new cached data source:
 
 5. If it is served as a root JSON file, add HTTP cache policy in `server/cacheControl.ts`.
 
-6. If the frontend needs it in dev, make sure `vite.config.js` proxies it to the Node server.
+6. If the frontend needs it in dev, make sure `config/vite.config.js` proxies it to the Node server.
 
 ## Anti-Patterns To Avoid
 

@@ -1,5 +1,9 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const rootDataJsonFiles = [
   'active_stakes.json',
@@ -18,7 +22,12 @@ const rootDataJsonFiles = [
 ];
 
 export default defineConfig({
+  // Keep project root at repo root even though this config lives in config/
+  root: path.resolve(__dirname, '..'),
   plugins: [react()],
+  css: {
+    postcss: path.join(__dirname, 'postcss.config.js'),
+  },
   server: {
     watch: {
       ignored: rootDataJsonFiles.map((filename) => `**/${filename}`),

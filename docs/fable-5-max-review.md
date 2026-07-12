@@ -104,7 +104,7 @@ function getRequestIp(req: IncomingMessage, trustedProxyAddresses: Set<string>):
 }
 ```
 
-But the documented production topology (`md/NETWORK_ARCHITECTURE.md`) has **two** nginx hops, each
+But the documented production topology (`docs/NETWORK_ARCHITECTURE.md`) has **two** nginx hops, each
 of which appends to `X-Forwarded-For` with `$proxy_add_x_forwarded_for`:
 
 - User → **VPS nginx** (appends the real client IP) → reverse SSH tunnel → **Pi nginx** (appends

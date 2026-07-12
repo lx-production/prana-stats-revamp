@@ -6,7 +6,7 @@
 
 import net from 'node:net';
 
-// CLI arg overrides API_PORT env; default matches serve:dev and vite.config.js proxy target.
+// CLI arg overrides API_PORT env; default matches serve:dev and config/vite.config.js proxy target.
 const port = Number(process.argv[2] || process.env.API_PORT || 4174);
 const host = process.env.API_HOST || '127.0.0.1';
 const timeoutMs = Number(process.env.WAIT_FOR_API_TIMEOUT_MS || 30_000);

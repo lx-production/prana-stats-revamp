@@ -256,7 +256,7 @@ Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log
 - TRADE is a `<button>`, not external `<a>`
 - `<SwapModal isOpen={...} onClose={...} />` at bottom of section
 
-### 13. Dev proxy — `vite.config.js`
+### 13. Dev proxy — `config/vite.config.js`
 
 Unchanged for swap, but required for local dev: `/api` (and root JSON paths) proxy to `http://localhost:4174`. `npm run serve:dev` sets `PORT=4174` so the API does not collide with port **4173**, which production uses and Cursor preview often binds — hitting the wrong process returns HTML instead of JSON.
 

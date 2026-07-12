@@ -58,7 +58,7 @@ IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
 
 ## 1. VPS (public edge)
 
-**Config reference:** `vps-prana.triethocduongpho.net`
+**Config reference:** `docs/vps-prana.triethocduongpho.net`
 
 **Role:** Terminate HTTPS, apply security and compression, then forward everything to the tunnel (localhost:9000).
 
@@ -97,7 +97,7 @@ So from the internet’s perspective: user hits VPS:443 → nginx on VPS sends t
 
 ## 3. Raspberry Pi (origin)
 
-**Config reference:** `pi-prana.triethocduongpho.net`
+**Config reference:** `docs/pi-prana.triethocduongpho.net`
 
 **Role:** Run nginx on port 80 and the Node app on 4173; serve the main stats app and the legacy stake/bond SPAs.
 
@@ -137,8 +137,8 @@ So the **only** port that needs to be reachable from the tunnel is **80** (nginx
 
 | Role   | File in repo                         | Typical deploy path (example)     |
 |--------|--------------------------------------|-----------------------------------|
-| VPS    | `vps-prana.triethocduongpho.net`     | e.g. `/etc/nginx/sites-available/` and symlink in `sites-enabled/` |
-| Pi     | `pi-prana.triethocduongpho.net`      | Same idea on the Pi               |
+| VPS    | `docs/vps-prana.triethocduongpho.net` | e.g. `/etc/nginx/sites-available/` and symlink in `sites-enabled/` |
+| Pi     | `docs/pi-prana.triethocduongpho.net`  | Same idea on the Pi               |
 
 After editing, reload nginx on the relevant host: `sudo nginx -t && sudo systemctl reload nginx`.
 
