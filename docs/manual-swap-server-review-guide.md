@@ -426,42 +426,42 @@ Minor refactor candidates:
 
 Review `components/SwapModal.tsx` and `hero3.tsx`.
 
-- [ ] TRADE opens the modal instead of linking away.
-- [ ] Modal can close cleanly and resets action errors appropriately.
-- [ ] Default pair is WBTC -> PRANA.
-- [ ] Token-in and token-out cannot be the same.
-- [ ] Amount input handles empty, zero, and invalid values.
-- [ ] Slippage is fixed at V1 default unless intentionally changed.
-- [ ] CTA flow is Connect -> Switch network -> Approve and Swap -> Swap -> Refresh expired quote.
-- [ ] Manual Refresh button is disabled while loading, without a valid amount, or during the 60-second manual refresh cooldown.
-- [ ] Manual Refresh button displays the remaining cooldown seconds without resizing or shifting the token output row.
-- [ ] Expired-quote CTA does not bypass the manual refresh cooldown.
-- [ ] Quote loading, quote error, swap error, insufficient balance, route, min received, and gas estimate states are visible.
-- [ ] Successful swaps replace the form with an in-modal success view (summary, Polygonscan link, Close, Swap again) instead of an overlapping toast and a vague "Swap Complete" CTA.
-- [ ] Estimated gas is shown in native POL when `estimatedGasUsed` and `gasPriceWei` are available, with USD in parentheses when available.
-- [ ] Route rows show token path plus percent allocation, but do not expose protocol/version labels such as `V3`.
-- [ ] Split routes with two or more rows remain readable on mobile.
-- [ ] Long addresses, long route strings, and error text do not overflow on mobile.
-- [ ] Modal design matches existing site style without introducing nested card clutter.
-- [ ] Escape/click outside/focus behavior is acceptable for the current modal implementation.
+- [x] TRADE opens the modal instead of linking away.
+- [x] Modal can close cleanly and resets action errors appropriately.
+- [x] Default pair is WBTC -> PRANA.
+- [x] Token-in and token-out cannot be the same.
+- [x] Amount input handles empty, zero, and invalid values.
+- [x] Slippage is fixed at V1 default unless intentionally changed.
+- [x] CTA flow is Connect -> Switch network -> Approve and Swap -> Swap -> Refresh expired quote.
+- [x] Manual Refresh button is disabled while loading, without a valid amount, or during the 60-second manual refresh cooldown.
+- [x] Manual Refresh button displays the remaining cooldown seconds without resizing or shifting the token output row.
+- [x] Expired-quote CTA does not bypass the manual refresh cooldown.
+- [x] Quote loading, quote error, swap error, insufficient balance, route, min received, and gas estimate states are visible.
+- [x] Successful swaps replace the form with an in-modal success view (summary, Polygonscan link, Close, Swap again) instead of an overlapping toast and a vague "Swap Complete" CTA.
+- [x] Estimated gas is shown in native POL when `estimatedGasUsed` and `gasPriceWei` are available, with USD in parentheses when available.
+- [x] Route rows show token path plus percent allocation, but do not expose protocol/version labels such as `V3`.
+- [x] Split routes with two or more rows remain readable on mobile.
+- [x] Long addresses, long route strings, and error text do not overflow on mobile.
+- [x] Modal design matches existing site style without introducing nested card clutter.
+- [x] Escape/click outside/focus behavior is acceptable for the current modal implementation.
 
 Minor refactor candidates:
 
-- [ ] If the modal keeps growing, split token selector, quote summary, and action button into small components.
-- [ ] Keep copy terse. Do not add instructional text that duplicates obvious controls.
-- [ ] Preserve stable dimensions for token controls and CTA to avoid layout jumps.
+- [x] If the modal keeps growing, split token selector, quote summary, and action button into small components.
+- [x] Keep copy terse. Do not add instructional text that duplicates obvious controls.
+- [x] Preserve stable dimensions for token controls and CTA to avoid layout jumps.
 
 ## Phase 14: Recent Swap Fixes To Re-Verify
 
 These are focused checks for recent swap quote and UI changes.
 
-- [ ] Native POL output quotes do not fail validation when AlphaRouter encodes swap output to SwapRouter02 `address(2)` before `unwrapWETH9`.
-- [ ] If primary-route calldata validation fails, the server writes `quote_route_failed` with `stage: "alpha_router_validation"` before returning the generic browser error.
-- [ ] `server/loaders/swapQuote.test.ts` includes a regression case for `exactInputSingle(... recipient = address(2))` followed by `unwrapWETH9(uint256,address)`.
-- [ ] Swap modal gas display prefers `~<amount> POL ($<amount>)` over USD-only display when both `estimatedGasUsed` and `gasPriceWei` are present.
-- [ ] Swap modal route display keeps percent allocation visible and omits protocol/version text.
-- [ ] Fallback PRANA routes that only have unreliable/zero quoter gas do not show a misleading POL gas amount.
-- [ ] Swap log request metadata is present on `quote_route_selected`, `quote_route_failed`, `transaction_event`, and `transaction_event_verified` logs.
+- [x] Native POL output quotes do not fail validation when AlphaRouter encodes swap output to SwapRouter02 `address(2)` before `unwrapWETH9`.
+- [x] If primary-route calldata validation fails, the server writes `quote_route_failed` with `stage: "alpha_router_validation"` before returning the generic browser error.
+- [x] `server/loaders/swapQuote.test.ts` includes a regression case for `exactInputSingle(... recipient = address(2))` followed by `unwrapWETH9(uint256,address)`.
+- [x] Swap modal gas display prefers `~<amount> POL ($<amount>)` over USD-only display when both `estimatedGasUsed` and `gasPriceWei` are present.
+- [x] Swap modal route display keeps percent allocation visible and omits protocol/version text.
+- [x] Fallback PRANA routes that only have unreliable/zero quoter gas do not show a misleading POL gas amount.
+- [x] Swap log request metadata is present on `quote_route_selected`, `quote_route_failed`, `transaction_event`, and `transaction_event_verified` logs.
 
 Optional live quote smoke test, using production-like RPC env vars:
 
@@ -476,13 +476,13 @@ Expected result: the command returns a quote, writes a `quote_route_selected` lo
 
 Check these before deploying swap/server changes:
 
-- [ ] `npm run build` succeeds on the deployment Node version.
+- [x] `npm run build` succeeds on the deployment Node version.
 - [ ] Production service has `TRUSTED_PROXY_HOP_COUNT=2` for VPS -> Pi.
 - [ ] Production swap logs show real client IPs, not only `127.0.0.1` or the immediate proxy address.
 - [ ] Server/private RPC env vars are present for backend quote and verification work.
-- [ ] Browser CSP `connect-src` matches `FRONTEND_POLYGON_RPC_URL`.
-- [ ] Nginx still proxies API/static traffic to the intended port, normally `4173`.
-- [ ] Vite dev proxy still targets `4174` for local `dev:all`.
+- [x] Browser CSP `connect-src` matches `FRONTEND_POLYGON_RPC_URL`.
+- [x] Nginx still proxies API/static traffic to the intended port, normally `4173`.
+- [x] Vite dev proxy still targets `4174` for local `dev:all`.
 - [ ] Logs are writable by the service user.
 
 ## Resolved Finding Matrix
