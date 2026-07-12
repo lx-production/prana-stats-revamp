@@ -36,7 +36,6 @@ function getActionLabel(
   if (status === 'approval-confirming') return 'Confirming Approval';
   if (status === 'swapping') return 'Swap in Wallet';
   if (status === 'swap-confirming') return 'Confirming Swap';
-  if (status === 'success') return 'Swap Complete';
   if (isQuoteLoading) return 'Finding Best Route';
   if (isQuoteExpired) return 'Refresh Quote';
   if (needsApproval) return 'Approve & Swap';
@@ -222,6 +221,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     }
   };
 
+  // Return to the swap form after a successful trade without closing the modal.
+  const handleSwapAgain = () => {
+    resetSwapState();
+    setActionError(null);
+    setAmountIn('');
+  };
+
   const estimatedOutput = quoteState.quote
     ? formatSwapTokenAmount(quoteState.quote.amountOutRaw, tokenOut)
     : '0';
@@ -255,6 +261,14 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const polygonscanTxUrl = swapState.transactionHash
     ? `${POLYGONSCAN_TX_BASE_URL}/${swapState.transactionHash}`
     : null;
+  const isSuccess = swapState.status === 'success';
+  const successTitle = locale === 'en' ? 'Swap successful' : 'Swap thành công';
+  const successSummary = `${amountIn || '0'} ${tokenIn.symbol} → ${estimatedOutput} ${tokenOut.symbol}`;
+  const closeLabel = locale === 'en' ? 'Close' : 'Đóng';
+  const swapAgainLabel = locale === 'en' ? 'Swap again' : 'Swap lại';
+  const viewOnPolygonscanLabel = locale === 'en' ? 'View on Polygonscan' : 'Xem trên Polygonscan';
+  const primaryActionClassName = 'inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] px-6 py-4 font-semibold text-[#2B1B05] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-10px_18px_rgba(120,73,0,0.45),0_16px_36px_rgba(0,0,0,0.38)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0';
+  const secondaryActionClassName = 'inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-4 font-semibold text-white transition hover:bg-white/10';
 
   return (
     <AnimatePresence initial={false}>
@@ -282,44 +296,6 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             transition={{ duration: 0.2 }}
           />
 
-          <AnimatePresence>
-            {swapState.status === 'success' && swapState.transactionHash && polygonscanTxUrl && (
-              <motion.div
-                role="status"
-                aria-live="polite"
-                className="absolute left-4 right-4 top-4 z-20 mx-auto max-w-lg rounded-2xl border border-emerald-300/30 bg-[#071f18]/95 p-4 text-sm text-emerald-50 shadow-[0_18px_55px_rgba(0,0,0,0.45)] ring-1 ring-emerald-200/10 backdrop-blur-xl"
-                initial={{ opacity: 0, y: -24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                transition={{ duration: 0.24 }}
-              >
-                <div className="flex gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-emerald-300" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white">Swap confirmed</p>
-                    <a
-                      href={polygonscanTxUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 block break-all rounded-xl border border-white/10 bg-black/20 px-3 py-2 font-mono text-xs text-emerald-100 transition hover:border-emerald-200/40 hover:bg-emerald-300/10"
-                    >
-                      {swapState.transactionHash}
-                    </a>
-                    <a
-                      href={polygonscanTxUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-200 transition hover:text-white"
-                    >
-                      View on Polygonscan
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <motion.div
             className="relative z-10 w-full max-w-lg overflow-visible rounded-3xl border border-white/15 bg-[#070b1f]/85 shadow-[0_28px_90px_rgba(0,0,0,0.7)] ring-1 ring-[#FCE8A9]/10"
             variants={dialogVariants}
@@ -333,7 +309,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-[#F5D27A]/70">PRANA Trade</p>
                   <h2 id="swap-title" className="mt-1 text-xl font-semibold text-white">
-                    Swap on Polygon
+                    {isSuccess ? successTitle : 'Swap on Polygon'}
                   </h2>
                 </div>
                 <button
@@ -347,145 +323,186 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             </div>
 
             <div className="space-y-4 p-5 sm:p-6">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <div className="mb-3 flex items-center justify-between text-xs text-white/55">
-                  <span>From</span>
-                  <span>Balance: {balanceLabel}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    inputMode="decimal"
-                    value={amountIn}
-                    onChange={handleAmountChange}
-                    placeholder="0.0"
-                    className="min-w-0 flex-1 bg-transparent text-3xl font-medium text-white outline-none placeholder:text-white/20"
-                  />
-                  <select
-                    value={tokenInSymbol}
-                    onChange={(event) => updateTokenIn(event.target.value as SwapTokenSymbol)}
-                    className="rounded-xl border border-white/15 bg-[#10152d] px-3 py-2 text-sm font-semibold text-white outline-none"
-                  >
-                    {V1_SWAP_TOKENS.map((token) => (
-                      <option key={token.symbol} value={token.symbol}>
-                        {token.symbol}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {isSuccess ? (
+                <div role="status" aria-live="polite" className="space-y-4">
+                  <div className="rounded-2xl border border-emerald-300/25 bg-[#071f18]/80 p-5 text-center">
+                    <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-300" />
+                    <p className="mt-3 text-lg font-semibold text-white">{successTitle}</p>
+                    <p className="mt-2 text-sm text-emerald-50/85">{successSummary}</p>
+                  </div>
 
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={reverseTokens}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#F5D27A]/25 bg-[#F5D27A]/10 text-[#F5D27A] transition hover:bg-[#F5D27A]/15"
-                >
-                  <ArrowDownUp className="h-4 w-4" />
-                </button>
-              </div>
+                  {swapState.transactionHash && polygonscanTxUrl && (
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <a
+                        href={polygonscanTxUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block break-all rounded-xl border border-white/10 bg-black/20 px-3 py-2 font-mono text-xs text-emerald-100 transition hover:border-emerald-200/40 hover:bg-emerald-300/10"
+                      >
+                        {swapState.transactionHash}
+                      </a>
+                      <a
+                        href={polygonscanTxUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-200 transition hover:text-white"
+                      >
+                        {viewOnPolygonscanLabel}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  )}
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <div className="mb-3 flex items-center justify-between text-xs text-white/55">
-                  <span>To</span>
-                  <button
-                    type="button"
-                    onClick={quoteState.refetch}
-                    className="inline-flex min-w-[5.5rem] items-center justify-end gap-1 transition hover:text-white disabled:cursor-not-allowed disabled:text-white/30 disabled:hover:text-white/30"
-                    disabled={!hasAmount || quoteState.isLoading || quoteState.isRefreshCoolingDown}
-                    aria-label={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds} seconds` : 'Refresh quote'}
-                    title={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds}s` : 'Refresh quote'}
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${quoteState.isLoading ? 'animate-spin' : ''}`} />
-                    {refreshQuoteLabel}
+                  <button type="button" onClick={onClose} className={primaryActionClassName}>
+                    {closeLabel}
+                  </button>
+                  <button type="button" onClick={handleSwapAgain} className={secondaryActionClassName}>
+                    {swapAgainLabel}
                   </button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1 text-3xl font-medium text-white">
-                    {quoteState.isLoading ? (
-                      <span className="text-white/35">...</span>
-                    ) : (
-                      estimatedOutput
-                    )}
-                  </div>
-                  <select
-                    value={tokenOutSymbol}
-                    onChange={(event) => updateTokenOut(event.target.value as SwapTokenSymbol)}
-                    className="rounded-xl border border-white/15 bg-[#10152d] px-3 py-2 text-sm font-semibold text-white outline-none"
-                  >
-                    {V1_SWAP_TOKENS.map((token) => (
-                      <option key={token.symbol} value={token.symbol}>
-                        {token.symbol}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="overflow-visible rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
-                <div className="relative flex justify-between gap-4">
-                  <span className="inline-flex items-center gap-1.5">
-                    {locale === 'en' ? 'Minimum received' : 'Tối thiểu nhận được'}
-                    <InfoTooltip
-                      ariaLabel={minimumReceivedTooltipAria}
-                      text={minimumReceivedTooltipText}
-                      positionClassName="bottom-full mb-2 left-0"
-                      widthClassName="w-full max-w-[32rem]"
-                    />
-                  </span>
-                  <span>{minimumReceived} {tokenOut.symbol}</span>
-                </div>
-                {estimatedGasLabel && (
-                  <div className="mt-2 flex justify-between gap-4">
-                    <span>Estimated gas</span>
-                    <span>{estimatedGasLabel}</span>
-                  </div>
-                )}
-                {quoteState.quote?.route.length ? (
-                  <div className="mt-3 border-t border-white/10 pt-3">
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/40">Route</p>
-                    <div className="mt-2 space-y-1">
-                      {quoteState.quote.route.map((route, index) => (
-                        <div key={`${route.path.join('-')}-${index}`} className="flex justify-between gap-3 text-xs">
-                          <span>{route.path.join(' -> ')}</span>
-                          <span>{route.percent}%</span>
-                        </div>
-                      ))}
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="mb-3 flex items-center justify-between text-xs text-white/55">
+                      <span>From</span>
+                      <span>Balance: {balanceLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        inputMode="decimal"
+                        value={amountIn}
+                        onChange={handleAmountChange}
+                        placeholder="0.0"
+                        className="min-w-0 flex-1 bg-transparent text-3xl font-medium text-white outline-none placeholder:text-white/20"
+                      />
+                      <select
+                        value={tokenInSymbol}
+                        onChange={(event) => updateTokenIn(event.target.value as SwapTokenSymbol)}
+                        className="rounded-xl border border-white/15 bg-[#10152d] px-3 py-2 text-sm font-semibold text-white outline-none"
+                      >
+                        {V1_SWAP_TOKENS.map((token) => (
+                          <option key={token.symbol} value={token.symbol}>
+                            {token.symbol}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                ) : null}
-              </div>
 
-              {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance || swapState.isQuoteExpired) && (
-                <div className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                  {swapState.hasInsufficientBalance
-                    ? `Insufficient ${tokenIn.symbol} balance.`
-                    : actionError ?? swapState.error ?? quoteState.error ?? (locale === 'en' ? 'Quote expired. Refresh to continue.' : 'Quote đã hết hạn. Refresh để tiếp tục.')}
-                </div>
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={reverseTokens}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#F5D27A]/25 bg-[#F5D27A]/10 text-[#F5D27A] transition hover:bg-[#F5D27A]/15"
+                    >
+                      <ArrowDownUp className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="mb-3 flex items-center justify-between text-xs text-white/55">
+                      <span>To</span>
+                      <button
+                        type="button"
+                        onClick={quoteState.refetch}
+                        className="inline-flex min-w-[5.5rem] items-center justify-end gap-1 transition hover:text-white disabled:cursor-not-allowed disabled:text-white/30 disabled:hover:text-white/30"
+                        disabled={!hasAmount || quoteState.isLoading || quoteState.isRefreshCoolingDown}
+                        aria-label={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds} seconds` : 'Refresh quote'}
+                        title={quoteState.isRefreshCoolingDown ? `Refresh quote available in ${quoteState.refreshCooldownSeconds}s` : 'Refresh quote'}
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 ${quoteState.isLoading ? 'animate-spin' : ''}`} />
+                        {refreshQuoteLabel}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1 text-3xl font-medium text-white">
+                        {quoteState.isLoading ? (
+                          <span className="text-white/35">...</span>
+                        ) : (
+                          estimatedOutput
+                        )}
+                      </div>
+                      <select
+                        value={tokenOutSymbol}
+                        onChange={(event) => updateTokenOut(event.target.value as SwapTokenSymbol)}
+                        className="rounded-xl border border-white/15 bg-[#10152d] px-3 py-2 text-sm font-semibold text-white outline-none"
+                      >
+                        {V1_SWAP_TOKENS.map((token) => (
+                          <option key={token.symbol} value={token.symbol}>
+                            {token.symbol}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-visible rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
+                    <div className="relative flex justify-between gap-4">
+                      <span className="inline-flex items-center gap-1.5">
+                        {minimumReceivedLabel}
+                        <InfoTooltip
+                          ariaLabel={minimumReceivedTooltipAria}
+                          text={minimumReceivedTooltipText}
+                          positionClassName="bottom-full mb-2 left-0"
+                          widthClassName="w-full max-w-[32rem]"
+                        />
+                      </span>
+                      <span>{minimumReceived} {tokenOut.symbol}</span>
+                    </div>
+                    {estimatedGasLabel && (
+                      <div className="mt-2 flex justify-between gap-4">
+                        <span>Estimated gas</span>
+                        <span>{estimatedGasLabel}</span>
+                      </div>
+                    )}
+                    {quoteState.quote?.route.length ? (
+                      <div className="mt-3 border-t border-white/10 pt-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/40">Route</p>
+                        <div className="mt-2 space-y-1">
+                          {quoteState.quote.route.map((route, index) => (
+                            <div key={`${route.path.join('-')}-${index}`} className="flex justify-between gap-3 text-xs">
+                              <span>{route.path.join(' -> ')}</span>
+                              <span>{route.percent}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance || swapState.isQuoteExpired) && (
+                    <div className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                      {swapState.hasInsufficientBalance
+                        ? `Insufficient ${tokenIn.symbol} balance.`
+                        : actionError ?? swapState.error ?? quoteState.error ?? (locale === 'en' ? 'Quote expired. Refresh to continue.' : 'Quote đã hết hạn. Refresh để tiếp tục.')}
+                    </div>
+                  )}
+
+                  {wallet.isConnected && (
+                    <div className="text-center text-xs text-white/50">
+                      Connected: {formatCompactAddress(wallet.address ?? '')}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleAction}
+                    disabled={isActionDisabled}
+                    className={primaryActionClassName}
+                  >
+                    {(quoteState.isLoading || isBusy || wallet.isConnecting) && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    {actionLabel}
+                  </button>
+
+                  <p className="text-center text-xs leading-relaxed text-white/45">
+                    {locale === 'en'
+                      ? "Quotes are prepared by PRANA's backend with Uniswap routing. Your wallet still signs every approval and swap."
+                      : 'Giá được PRANA backend lấy từ Uniswap routing on-chain. Ví của bạn vẫn ký mọi lệnh approve và swap.'}
+                  </p>
+                </>
               )}
-
-              {wallet.isConnected && (
-                <div className="text-center text-xs text-white/50">
-                  Connected: {formatCompactAddress(wallet.address ?? '')}
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={handleAction}
-                disabled={isActionDisabled}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] px-6 py-4 font-semibold text-[#2B1B05] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-10px_18px_rgba(120,73,0,0.45),0_16px_36px_rgba(0,0,0,0.38)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-              >
-                {(quoteState.isLoading || isBusy || wallet.isConnecting) && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {actionLabel}
-              </button>
-
-              <p className="text-center text-xs leading-relaxed text-white/45">
-                {locale === 'en'
-                  ? "Quotes are prepared by PRANA's backend with Uniswap routing. Your wallet still signs every approval and swap."
-                  : 'Giá được PRANA backend lấy từ Uniswap routing on-chain. Ví của bạn vẫn ký mọi lệnh approve và swap.'}
-              </p>
             </div>
           </motion.div>
         </motion.div>

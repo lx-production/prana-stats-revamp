@@ -437,6 +437,7 @@ Review `components/SwapModal.tsx` and `hero3.tsx`.
 - [ ] Manual Refresh button displays the remaining cooldown seconds without resizing or shifting the token output row.
 - [ ] Expired-quote CTA does not bypass the manual refresh cooldown.
 - [ ] Quote loading, quote error, swap error, insufficient balance, route, min received, and gas estimate states are visible.
+- [ ] Successful swaps replace the form with an in-modal success view (summary, Polygonscan link, Close, Swap again) instead of an overlapping toast and a vague "Swap Complete" CTA.
 - [ ] Estimated gas is shown in native POL when `estimatedGasUsed` and `gasPriceWei` are available, with USD in parentheses when available.
 - [ ] Route rows show token path plus percent allocation, but do not expose protocol/version labels such as `V3`.
 - [ ] Split routes with two or more rows remain readable on mobile.

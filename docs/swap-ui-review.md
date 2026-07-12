@@ -246,6 +246,7 @@ Fire-and-forget helper that posts transaction lifecycle events to `/api/swap/log
 - Local state: token in/out, amount, slippage (fixed 0.5% for v1)
 - Composes the three hooks
 - Primary button flow: Connect → Switch network → Approve & Swap → Swap
+- On `status === 'success'`, the form is replaced by an in-modal success view with tx hash / Polygonscan link, plus Close and Swap again CTAs
 - Route summary, min received, gas estimate display
 - Error display for quote errors, swap errors, insufficient balance
 
