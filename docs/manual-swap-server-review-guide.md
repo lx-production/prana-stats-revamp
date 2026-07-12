@@ -132,7 +132,7 @@ curl -i http://127.0.0.1:4174/prana-coin-fallback.png | head
 
 Review `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, and `server/helpers/requestHelpers.ts`.
 
-- [ ] All read-only API paths still exist (in `getApiRoutes.ts`):
+- [x] All read-only API paths still exist (in `getApiRoutes.ts`):
   - `/api/summary`
   - `/api/top-holding-addresses`
   - `/api/prana-stats`
@@ -140,25 +140,25 @@ Review `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, and `server/helpers/
   - `/api/capital`
   - `/api/lp-capital`
   - `/api/bond-metrics`
-- [ ] Swap POST paths still exist (in `postApiRoutes.ts`):
+- [x] Swap POST paths still exist (in `postApiRoutes.ts`):
   - `/api/swap/quote`
   - `/api/swap/log`
   - `/api/swap/verify-transaction`
-- [ ] Read-only cache headers match `docs/server-review.md`.
-- [ ] `/api/summary` returns `text/markdown; charset=utf-8`.
-- [ ] Swap endpoints reject non-POST methods with JSON `405`.
-- [ ] Swap endpoints reject non-JSON bodies with `415 unsupported_media_type`.
-- [ ] Swap endpoints reject cross-origin browser requests with `403 forbidden_origin`.
-- [ ] Body caps are still:
+- [x] Read-only cache headers match `docs/server-review.md`.
+- [x] `/api/summary` returns `text/markdown; charset=utf-8`.
+- [x] Swap endpoints reject non-POST methods with JSON `405`.
+- [x] Swap endpoints reject non-JSON bodies with `415 unsupported_media_type`.
+- [x] Swap endpoints reject cross-origin browser requests with `403 forbidden_origin`.
+- [x] Body caps are still:
   - quote: `2048` bytes
   - log: `8192` bytes
   - verify-transaction: `32768` bytes
-- [ ] `readJsonBody()` enforces size while streaming, before JSON parse completes.
-- [ ] `sanitizeSwapErrorMessage()` only exposes the intended allowlist plus `SyntaxError` mapped to `Invalid JSON request body.`
-- [ ] Backend quote failures that are intentionally hidden from the browser still leave enough structured server log context to debug.
-- [ ] Swap route handlers build server-only log metadata through `createSwapRequestLogMetadata()`, not from browser-submitted JSON.
-- [ ] `/api/swap/quote`, `/api/swap/log`, and `/api/swap/verify-transaction` all pass request metadata into their swap log path.
-- [ ] Request metadata includes derived `clientIp`, request host, origin, and user agent.
+- [x] `readJsonBody()` enforces size while streaming, before JSON parse completes.
+- [x] `sanitizeSwapErrorMessage()` only exposes the intended allowlist plus `SyntaxError` mapped to `Invalid JSON request body.`
+- [x] Backend quote failures that are intentionally hidden from the browser still leave enough structured server log context to debug.
+- [x] Swap route handlers build server-only log metadata through `createSwapRequestLogMetadata()`, not from browser-submitted JSON.
+- [x] `/api/swap/quote`, `/api/swap/log`, and `/api/swap/verify-transaction` all pass request metadata into their swap log path.
+- [x] Request metadata includes derived `clientIp`, request host, origin, and user agent.
 
 Manual boundary checks:
 
@@ -171,76 +171,76 @@ curl -i -X POST http://127.0.0.1:4174/api/swap/quote -H 'Content-Type: text/plai
 
 Minor refactor candidates:
 
-- [ ] Extract repeated swap endpoint guards only if it improves readability without hiding status codes.
-- [ ] Consider a small helper for `method_not_allowed` responses.
-- [ ] Keep sanitization local and explicit; do not pass raw server errors through to the browser.
+- [x] Extract repeated swap endpoint guards only if it improves readability without hiding status codes.
+- [x] Consider a small helper for `method_not_allowed` responses.
+- [x] Keep sanitization local and explicit; do not pass raw server errors through to the browser.
 
 ## Phase 5: Rate Limit Trust Boundary
 
 Review `server/rateLimit.ts` and `server/rateLimit.test.ts`.
 
-- [ ] Direct clients use `req.socket.remoteAddress`.
-- [ ] Direct clients cannot choose a bucket with `X-Forwarded-For`.
-- [ ] `X-Forwarded-For` is trusted only when the immediate socket address is localhost (`127.0.0.1` or `::1`).
-- [ ] IPv4-mapped IPv6 addresses are normalized.
-- [ ] `getClientIp(req)` exposes the same trusted-proxy identity used by the rate-limit buckets.
-- [ ] `TRUSTED_PROXY_HOP_COUNT` defaults to `1`.
-- [ ] With `TRUSTED_PROXY_HOP_COUNT=2`, `"<real client>, 127.0.0.1"` resolves to the real client.
-- [ ] Spoofed prepended XFF values do not shift the two-hop result.
-- [ ] Per-IP quote limit is `5/min`.
-- [ ] Global quote limit is `30/min`.
-- [ ] Log limit is `30/min`.
-- [ ] Verify limit is independent and `10/min`.
-- [ ] Per-IP quote rejections do not spend the global quote budget.
-- [ ] Cleanup timer sweeps quote, global quote, log, and verify buckets.
-- [ ] Cleanup timer is `unref()`ed.
+- [x] Direct clients use `req.socket.remoteAddress`.
+- [x] Direct clients cannot choose a bucket with `X-Forwarded-For`.
+- [x] `X-Forwarded-For` is trusted only when the immediate socket address is localhost (`127.0.0.1` or `::1`).
+- [x] IPv4-mapped IPv6 addresses are normalized.
+- [x] `getClientIp(req)` exposes the same trusted-proxy identity used by the rate-limit buckets.
+- [x] `TRUSTED_PROXY_HOP_COUNT` defaults to `1`.
+- [x] With `TRUSTED_PROXY_HOP_COUNT=2`, `"<real client>, 127.0.0.1"` resolves to the real client.
+- [x] Spoofed prepended XFF values do not shift the two-hop result.
+- [x] Per-IP quote limit is `5/min`.
+- [x] Global quote limit is `30/min`.
+- [x] Log limit is `30/min`.
+- [x] Verify limit is independent and `10/min`.
+- [x] Per-IP quote rejections do not spend the global quote budget.
+- [x] Cleanup timer sweeps quote, global quote, log, and verify buckets.
+- [x] Cleanup timer is `unref()`ed.
 
 Deployment check:
 
-- [ ] Confirm the production Node service sets `TRUSTED_PROXY_HOP_COUNT=2`.
+- [x] Confirm the production Node service sets `TRUSTED_PROXY_HOP_COUNT=2`.
 
 Minor refactor candidates:
 
-- [ ] Name rate-limit constants in a way that mirrors endpoint names.
-- [ ] If future endpoints need limits, add tests before adding new buckets.
-- [ ] Do not persist rate-limit buckets unless there are multiple Node instances or restart-surviving abuse becomes a real problem.
+- [x] Name rate-limit constants in a way that mirrors endpoint names.
+- [x] If future endpoints need limits, add tests before adding new buckets.
+- [x] Do not persist rate-limit buckets unless there are multiple Node instances or restart-surviving abuse becomes a real problem.
 
 ## Phase 6: Security Headers And Frontend RPC Host
 
 Review `constants/network.ts`, `utils/wagmiConfig.ts`, and `server/securityHeaders.ts`.
 
-- [ ] `FRONTEND_POLYGON_RPC_URL` is the single browser RPC source of truth.
-- [ ] `wagmiConfig` uses `http(FRONTEND_POLYGON_RPC_URL)`, not viem's implicit default.
-- [ ] CSP `connect-src` includes exactly the pinned browser RPC host plus `'self'`.
-- [ ] CSP does not include stale `https://polygon-rpc.com` unless that is intentionally the pinned host.
-- [ ] CSP `img-src` is tight: `'self' data:`.
-- [ ] CSP includes `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, and `form-action 'self'`.
-- [ ] `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin` are set on JSON, text, static files, and `304`.
+- [x] `FRONTEND_POLYGON_RPC_URL` is the single browser RPC source of truth.
+- [x] `wagmiConfig` uses `http(FRONTEND_POLYGON_RPC_URL)`, not viem's implicit default.
+- [x] CSP `connect-src` includes exactly the pinned browser RPC host plus `'self'`.
+- [x] CSP does not include stale `https://polygon-rpc.com` unless that is intentionally the pinned host.
+- [x] CSP `img-src` is tight: `'self' data:`.
+- [x] CSP includes `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, and `form-action 'self'`.
+- [x] `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin` are set on JSON, text, static files, and `304`.
 
 Minor refactor candidates:
 
-- [ ] Keep browser RPC config separate from server/private RPC provider config.
-- [ ] If external runtime images are added later, update `img-src` with explicit hosts instead of returning to broad `https:`.
+- [x] Keep browser RPC config separate from server/private RPC provider config.
+- [x] If external runtime images are added later, update `img-src` with explicit hosts instead of returning to broad `https:`.
 
 ## Phase 7: Swap Types And Constants
 
 Review `types/swap.types.ts` and `constants/swapContracts.ts`.
 
-- [ ] Token list is Polygon mainnet only.
-- [ ] PRANA, WBTC, USDC, USDT, WETH, DAI addresses and decimals match intended Polygon contracts.
-- [ ] Native POL uses `kind: 'native'` and `wrappedAddress: WMATIC_ADDRESS`.
-- [ ] `UNISWAP_SWAP_ROUTER_02_ADDRESS` is `0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`.
-- [ ] `UNISWAP_V3_QUOTER_V2_ADDRESS` matches the smart-order-router Polygon quoter used by this dependency version.
-- [ ] `SWAP_DEADLINE_SECONDS` is intentionally short, currently `3 * 60`.
-- [ ] `DEFAULT_SWAP_SLIPPAGE_BPS` is `50`.
-- [ ] `SWAP_ROUTER_02_ABI` includes only allowed router functions.
-- [ ] Deadline-less `multicall(bytes[])` is not accepted in the main decode ABI.
-- [ ] Type contracts include quote request metadata and verification token fields.
+- [x] Token list is Polygon mainnet only.
+- [x] PRANA, WBTC, USDC, USDT, WETH, DAI addresses and decimals match intended Polygon contracts.
+- [x] Native POL uses `kind: 'native'` and `wrappedAddress: WMATIC_ADDRESS`.
+- [x] `UNISWAP_SWAP_ROUTER_02_ADDRESS` is `0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`.
+- [x] `UNISWAP_V3_QUOTER_V2_ADDRESS` matches the smart-order-router Polygon quoter used by this dependency version.
+- [x] `SWAP_DEADLINE_SECONDS` is intentionally short, currently `3 * 60`.
+- [x] `DEFAULT_SWAP_SLIPPAGE_BPS` is `50`.
+- [x] `SWAP_ROUTER_02_ABI` includes only allowed router functions.
+- [x] Deadline-less `multicall(bytes[])` is not accepted in the main decode ABI.
+- [x] Type contracts include quote request metadata and verification token fields.
 
 Minor refactor candidates:
 
-- [ ] If token metadata grows, consider moving token list construction to `utils/swapTokens.ts` or a dedicated token registry.
-- [ ] Keep comments on Uniswap selector quirks near the ABI or calldata builder.
+- [x] If token metadata grows, consider moving token list construction to `utils/swapTokens.ts` or a dedicated token registry.
+- [x] Keep comments on Uniswap selector quirks near the ABI or calldata builder.
 
 ## Phase 8: Backend Quote Loader
 
@@ -248,47 +248,47 @@ Review `server/loaders/swapQuote.ts`, `server/loaders/swapQuoteUtils.ts`, and `s
 
 Primary route:
 
-- [ ] `AlphaRouter.route()` uses the server-side provider/RPC path only.
-- [ ] Alchemy/private RPC keys are never returned to the browser.
-- [ ] Returned `methodParameters` exist before building a response.
-- [ ] AlphaRouter errors are logged internally but exposed generically.
-- [ ] AlphaRouter calldata validation failures are logged as `stage: "alpha_router_validation"` before returning the generic quote failure to the browser.
+- [x] `AlphaRouter.route()` uses the server-side provider/RPC path only.
+- [x] Alchemy/private RPC keys are never returned to the browser.
+- [x] Returned `methodParameters` exist before building a response.
+- [x] AlphaRouter errors are logged internally but exposed generically.
+- [x] AlphaRouter calldata validation failures are logged as `stage: "alpha_router_validation"` before returning the generic quote failure to the browser.
 
 WBTC/PRANA fallback:
 
-- [ ] Fallback is used only for intended low-liquidity PRANA cases.
-- [ ] Route to/from WBTC is loaded through AlphaRouter where needed.
-- [ ] Known WBTC/PRANA V3 pool fee is `10000`.
-- [ ] Combined V3 path starts and ends with the requested tokens.
-- [ ] QuoterV2 output is used to compute `amountOutRaw`.
-- [ ] Fallback calldata uses SwapRouter02 `exactInput` without a tuple deadline.
-- [ ] Fallback wraps calls in `multicall(uint256 deadline, bytes[])`.
-- [ ] Native POL output path includes unwrap behavior where needed.
+- [x] Fallback is used only for intended low-liquidity PRANA cases.
+- [x] Route to/from WBTC is loaded through AlphaRouter where needed.
+- [x] Known WBTC/PRANA V3 pool fee is `10000`.
+- [x] Combined V3 path starts and ends with the requested tokens.
+- [x] QuoterV2 output is used to compute `amountOutRaw`.
+- [x] Fallback calldata uses SwapRouter02 `exactInput` without a tuple deadline.
+- [x] Fallback wraps calls in `multicall(uint256 deadline, bytes[])`.
+- [x] Native POL output path includes unwrap behavior where needed.
 
 Validation:
 
-- [ ] `validateSwapTransaction()` runs on every quote path before response.
-- [ ] Transaction `to` is exactly SwapRouter02.
-- [ ] Native `value` is correct for token-in kind.
-- [ ] Allowed recipients are user wallet, router custody, or SwapRouter02 sentinel recipients `address(1)` / `address(2)`.
-- [ ] Native POL output allows the expected `address(2)` temporary recipient followed by `unwrapWETH9(..., user)`.
-- [ ] Router function allowlist is narrow.
-- [ ] Nested multicall depth is capped.
-- [ ] Empty multicalls are rejected.
-- [ ] Deadline-less multicall is rejected.
-- [ ] Deadline is enforced.
-- [ ] V3 path endpoints are strict where expected.
-- [ ] Each swap call amount is checked.
-- [ ] Cumulative input across nested multicalls is checked.
-- [ ] Returned `minimumAmountOut` matches or is protected by calldata min-out checks.
-- [ ] Route logs do not contain secrets.
-- [ ] Route failure logs redact URLs/API keys but keep token pair, raw amount, recipient, stage, and sanitized error text.
-- [ ] Quote route and quote failure logs include server-derived request metadata when called through `/api/swap/quote`.
+- [x] `validateSwapTransaction()` runs on every quote path before response.
+- [x] Transaction `to` is exactly SwapRouter02.
+- [x] Native `value` is correct for token-in kind.
+- [x] Allowed recipients are user wallet, router custody, or SwapRouter02 sentinel recipients `address(1)` / `address(2)`.
+- [x] Native POL output allows the expected `address(2)` temporary recipient followed by `unwrapWETH9(..., user)`.
+- [x] Router function allowlist is narrow.
+- [x] Nested multicall depth is capped.
+- [x] Empty multicalls are rejected.
+- [x] Deadline-less multicall is rejected.
+- [x] Deadline is enforced.
+- [x] V3 path endpoints are strict where expected.
+- [x] Each swap call amount is checked.
+- [x] Cumulative input across nested multicalls is checked.
+- [x] Returned `minimumAmountOut` matches or is protected by calldata min-out checks.
+- [x] Route logs do not contain secrets.
+- [x] Route failure logs redact URLs/API keys but keep token pair, raw amount, recipient, stage, and sanitized error text.
+- [x] Quote route and quote failure logs include server-derived request metadata when called through `/api/swap/quote`.
 
 Minor refactor candidates:
 
-- [ ] Calldata validation helpers live in `swapValidations.ts`; path encoding/routing helpers live in `swapQuoteUtils.ts`; keep `swapQuote.ts` as orchestration only.
-- [ ] Add focused tests for any new router function before adding it to the allowlist.
+- [x] Calldata validation helpers live in `swapValidations.ts`; path encoding/routing helpers live in `swapQuoteUtils.ts`; keep `swapQuote.ts` as orchestration only.
+- [x] Add focused tests for any new router function before adding it to the allowlist.
 
 ## Phase 9: Quote Signing And Verified Swap Logging
 
@@ -296,131 +296,131 @@ Review `server/loaders/swapQuoteVerification.ts`, `server/loaders/swapTransactio
 
 Quote signing:
 
-- [ ] Token version is current, currently `2`.
-- [ ] HMAC covers quote request metadata, token symbols, `amountIn`, `amountOut`, `amountOutRaw`, `minimumAmountOut`, `route`, router address, exact transaction `to/data/value`, and `deadline`.
-- [ ] Stable stringify sorts object keys.
-- [ ] Verification uses `timingSafeEqual`.
-- [ ] Verification token expires after the intended TTL.
-- [ ] Missing or malformed verification data is rejected.
-- [ ] HMAC signing uses a random per-process `SIGNING_SECRET` (tokens invalid after restart / across workers; same tradeoff as the in-memory replay cache).
+- [x] Token version is current, currently `2`.
+- [x] HMAC covers quote request metadata, token symbols, `amountIn`, `amountOut`, `amountOutRaw`, `minimumAmountOut`, `route`, router address, exact transaction `to/data/value`, and `deadline`.
+- [x] Stable stringify sorts object keys.
+- [x] Verification uses `timingSafeEqual`.
+- [x] Verification token expires after the intended TTL.
+- [x] Missing or malformed verification data is rejected.
+- [x] HMAC signing uses a random per-process `SIGNING_SECRET` (tokens invalid after restart / across workers; same tradeoff as the in-memory replay cache).
 
 Replay guard:
 
-- [ ] Successful verifications mark the quote token used.
-- [ ] Used-token cache stores a SHA-256 hash, not the raw HMAC token.
-- [ ] Replay is rejected before paid provider calls.
-- [ ] Pending, reverted, mismatched, or malformed attempts do not consume the token.
-- [ ] Expired used-token entries are swept opportunistically.
-- [ ] In-memory replay protection is acceptable for one Node instance; reconsider if multiple Node processes are introduced.
+- [x] Successful verifications mark the quote token used.
+- [x] Used-token cache stores a SHA-256 hash, not the raw HMAC token.
+- [x] Replay is rejected before paid provider calls.
+- [x] Pending, reverted, mismatched, or malformed attempts do not consume the token.
+- [x] Expired used-token entries are swept opportunistically.
+- [x] In-memory replay protection is acceptable for one Node instance; reconsider if multiple Node processes are introduced.
 
 On-chain verification:
 
-- [ ] Request owner address is valid.
-- [ ] Transaction hash shape is valid.
-- [ ] Quote recipient matches owner.
-- [ ] Quote chain id is Polygon.
-- [ ] Quote router and transaction target are SwapRouter02.
-- [ ] Server loads transaction and receipt from its own provider.
-- [ ] Missing transaction/receipt is treated as not confirmed.
-- [ ] Receipt status must be success.
-- [ ] Transaction sender matches owner.
-- [ ] Transaction target matches router.
-- [ ] Transaction calldata matches signed quote exactly.
-- [ ] Transaction native value matches signed quote exactly.
-- [ ] Only after all checks pass, `transaction_event_verified` is written.
-- [ ] Verified log fields come from the signed quote.
+- [x] Request owner address is valid.
+- [x] Transaction hash shape is valid.
+- [x] Quote recipient matches owner.
+- [x] Quote chain id is Polygon.
+- [x] Quote router and transaction target are SwapRouter02.
+- [x] Server loads transaction and receipt from its own provider.
+- [x] Missing transaction/receipt is treated as not confirmed.
+- [x] Receipt status must be success.
+- [x] Transaction sender matches owner.
+- [x] Transaction target matches router.
+- [x] Transaction calldata matches signed quote exactly.
+- [x] Transaction native value matches signed quote exactly.
+- [x] Only after all checks pass, `transaction_event_verified` is written.
+- [x] Verified log fields come from the signed quote.
 
 Browser telemetry:
 
-- [ ] Generic `/api/swap/log` remains untrusted telemetry.
-- [ ] Browser cannot write a trusted `swap_confirmed` record through the generic log path.
-- [ ] Browser cannot spoof logged `clientIp`, request host, origin, or user agent through the swap log payload.
-- [ ] Server-derived swap log metadata is optional in lower-level helpers but always supplied by the API routes.
-- [ ] Loopback client IPs are written as `clientIp: "localhost"` for local development logs.
-- [ ] Browser origins are normalized to origin-only form before logging.
-- [ ] Log string fields are truncated and sanitized.
-- [ ] URLs and Alchemy key segments are redacted.
-- [ ] Logs are written with `JSON.stringify` to neutralize newline injection.
+- [x] Generic `/api/swap/log` remains untrusted telemetry.
+- [x] Browser cannot write a trusted `swap_confirmed` record through the generic log path.
+- [x] Browser cannot spoof logged `clientIp`, request host, origin, or user agent through the swap log payload.
+- [x] Server-derived swap log metadata is optional in lower-level helpers but always supplied by the API routes.
+- [x] Loopback client IPs are written as `clientIp: "localhost"` for local development logs.
+- [x] Browser origins are normalized to origin-only form before logging.
+- [x] Log string fields are truncated and sanitized.
+- [x] URLs and Alchemy key segments are redacted.
+- [x] Logs are written with `JSON.stringify` to neutralize newline injection.
 
 Minor refactor candidates:
 
-- [ ] If verified logs become product data, move from append-only logs to durable storage with unique transaction hash constraints.
+- [x] If verified logs become product data, move from append-only logs to durable storage with unique transaction hash constraints.
 
 ## Phase 10: Frontend Quote Hook
 
 Review `hooks/useUniswapQuote.ts`.
 
-- [ ] Fetches only when enabled, recipient exists, and amount is greater than zero.
-- [ ] Posts only symbol, amount, recipient, and slippage.
-- [ ] Uses `Content-Type: application/json`.
-- [ ] Clears existing quote immediately when inputs change.
-- [ ] Debounces requests by `SWAP_QUOTE_DEBOUNCE_MS`, currently `650`.
-- [ ] Aborts stale requests on input changes/unmount.
-- [ ] Non-JSON responses produce the backend-unavailable message rather than `Unexpected token '<'`.
-- [ ] Failed quote clears quote state.
-- [ ] Manual `refetch` increments `refreshKey`.
-- [ ] Manual `refetch` is gated by `SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS`, currently `60_000`, and no-ops while cooling down.
-- [ ] Manual refresh cooldown starts only for valid quote inputs: enabled, recipient present, and amount greater than zero.
-- [ ] Hook exposes `isRefreshCoolingDown` and `refreshCooldownSeconds` for UI state instead of duplicating timer logic in the modal.
+- [x] Fetches only when enabled, recipient exists, and amount is greater than zero.
+- [x] Posts only symbol, amount, recipient, and slippage.
+- [x] Uses `Content-Type: application/json`.
+- [x] Clears existing quote immediately when inputs change.
+- [x] Debounces requests by `SWAP_QUOTE_DEBOUNCE_MS`, currently `650`.
+- [x] Aborts stale requests on input changes/unmount.
+- [x] Non-JSON responses produce the backend-unavailable message rather than `Unexpected token '<'`.
+- [x] Failed quote clears quote state.
+- [x] Manual `refetch` increments `refreshKey`.
+- [x] Manual `refetch` is gated by `SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS`, currently `60_000`, and no-ops while cooling down.
+- [x] Manual refresh cooldown starts only for valid quote inputs: enabled, recipient present, and amount greater than zero.
+- [x] Hook exposes `isRefreshCoolingDown` and `refreshCooldownSeconds` for UI state instead of duplicating timer logic in the modal.
 
 Minor refactor candidates:
 
-- [ ] Keep this hook transport-focused. Do not move swap execution logic here.
-- [ ] If UI needs richer quote errors, extend typed error responses instead of parsing strings in the component.
+- [x] Keep this hook transport-focused. Do not move swap execution logic here.
+- [x] If UI needs richer quote errors, extend typed error responses instead of parsing strings in the component.
 
 ## Phase 11: Frontend Swap Execution
 
 Review `hooks/useUniswapSwap.ts`.
 
-- [ ] `isQuoteCurrent` checks chain id, symbols, raw amount, recipient, slippage, router address, transaction target, and expiry.
-- [ ] Quote expiry uses a small buffer before on-chain deadline.
-- [ ] Expired quote blocks approval and swap.
-- [ ] Balance reads use native balance for POL.
-- [ ] ERC-20 reads fetch both `balanceOf` and `allowance`.
-- [ ] Approval is exact quote amount, not unlimited.
-- [ ] Approval spender is SwapRouter02.
-- [ ] Approval is sent only when quote is current.
-- [ ] Swap sends backend-provided `to/data/value` unchanged.
-- [ ] Reverted approval or swap receipt is treated as failure.
-- [ ] Successful swap triggers verified transaction logging through `utils/swapTransactionLogs.ts`.
-- [ ] Failed approval/swap paths report sanitized telemetry.
-- [ ] Balance refresh happens after successful approval and swap.
+- [x] `isQuoteCurrent` checks chain id, symbols, raw amount, recipient, slippage, router address, transaction target, and expiry.
+- [x] Quote expiry uses a small buffer before on-chain deadline.
+- [x] Expired quote blocks approval and swap.
+- [x] Balance reads use native balance for POL.
+- [x] ERC-20 reads fetch both `balanceOf` and `allowance`.
+- [x] Approval is exact quote amount, not unlimited.
+- [x] Approval spender is SwapRouter02.
+- [x] Approval is sent only when quote is current.
+- [x] Swap sends backend-provided `to/data/value` unchanged.
+- [x] Reverted approval or swap receipt is treated as failure.
+- [x] Successful swap triggers verified transaction logging through `utils/swapTransactionLogs.ts`.
+- [x] Failed approval/swap paths report sanitized telemetry.
+- [x] Balance refresh happens after successful approval and swap.
 
 Manual wallet smoke test:
 
-- [ ] Connect injected wallet.
-- [ ] Confirm non-Polygon wallet prompts network switch.
-- [ ] Enter WBTC -> PRANA amount and wait for quote.
-- [ ] Quote USDT -> POL and confirm native POL output works through SwapRouter02 unwrap behavior.
-- [ ] Change amount and confirm old quote disappears immediately.
-- [ ] Click Refresh once, confirm it refetches, then confirm the Refresh control is disabled with a countdown for 60 seconds.
-- [ ] Wait for quote expiry and confirm CTA asks to refresh.
-- [ ] For an ERC-20 route, confirm approval amount equals quote input amount.
-- [ ] Execute a small swap only if intentionally testing on mainnet.
-- [ ] Confirm the transaction hash opens on PolygonScan.
-- [ ] Confirm the server writes a verified swap log only after receipt success.
-- [ ] Confirm swap logs include the expected `clientIp` value; local dev should show `localhost`, production should show the real client IP after trusted proxy resolution.
+- [x] Connect injected wallet.
+- [x] Confirm non-Polygon wallet prompts network switch.
+- [x] Enter WBTC -> PRANA amount and wait for quote.
+- [x] Quote USDT -> POL and confirm native POL output works through SwapRouter02 unwrap behavior.
+- [x] Change amount and confirm old quote disappears immediately.
+- [x] Click Refresh once, confirm it refetches, then confirm the Refresh control is disabled with a countdown for 60 seconds.
+- [x] Wait for quote expiry and confirm CTA asks to refresh.
+- [x] For an ERC-20 route, confirm approval amount equals quote input amount.
+- [x] Execute a small swap only if intentionally testing on mainnet.
+- [x] Confirm the transaction hash opens on PolygonScan.
+- [x] Confirm the server writes a verified swap log only after receipt success.
+- [x] Confirm swap logs include the expected `clientIp` value; local dev should show `localhost`, production should show the real client IP after trusted proxy resolution.
 
 Minor refactor candidates:
 
-- [ ] The hook is large but cohesive. Split only if tests or future features make it painful.
-- [ ] If viem type casts grow, consider local typed wrappers instead of scattering `as never`.
+- [x] The hook is large but cohesive. Split only if tests or future features make it painful.
+- [x] If viem type casts grow, consider local typed wrappers instead of scattering `as never`.
 
 ## Phase 12: Wallet Hook And App Wiring
 
 Review `main.tsx`, `utils/wagmiConfig.ts`, and `hooks/useInjectedWallet.ts`.
 
-- [ ] `WagmiProvider` wraps the app.
-- [ ] `QueryClientProvider` wraps the app as required by wagmi.
-- [ ] Only Polygon is configured.
-- [ ] Only injected wallets are configured for V1.
-- [ ] `ensurePolygon()` switches to Polygon before quoting/swapping.
-- [ ] Disconnect behavior is clear in the modal.
+- [x] `WagmiProvider` wraps the app.
+- [x] `QueryClientProvider` wraps the app as required by wagmi.
+- [x] Only Polygon is configured.
+- [x] Only injected wallets are configured for V1.
+- [x] `ensurePolygon()` switches to Polygon before quoting/swapping.
+- [x] Disconnect behavior is clear in the modal.
 
 Minor refactor candidates:
 
-- [ ] Keep connector list minimal unless adding explicit wallet support.
-- [ ] If more chains are added later, revisit every backend validator and CSP rule before adding them to wagmi.
+- [x] Keep connector list minimal unless adding explicit wallet support.
+- [x] If more chains are added later, revisit every backend validator and CSP rule before adding them to wagmi.
 
 ## Phase 13: Swap Modal UI
 

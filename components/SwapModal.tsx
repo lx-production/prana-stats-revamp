@@ -7,7 +7,7 @@ import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { useUniswapQuote } from '../hooks/useUniswapQuote';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
-import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
+import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
 import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
 import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
 
@@ -222,6 +222,12 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     }
   };
 
+  const handleDisconnectWallet = () => {
+    wallet.disconnectWallet();
+    resetSwapState();
+    setActionError(null);
+  };
+
   // Return to the swap form after a successful trade without closing the modal.
   const handleSwapAgain = () => {
     resetSwapState();
@@ -266,6 +272,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const successTitle = locale === 'en' ? 'Swap successful' : 'Swap thành công';
   const successSummary = `${amountIn || '0'} ${tokenIn.symbol} → ${estimatedOutput} ${tokenOut.symbol}`;
   const closeLabel = locale === 'en' ? 'Close' : 'Đóng';
+  const disconnectLabel = locale === 'en' ? 'Disconnect' : 'Ngắt kết nối';
   const swapAgainLabel = locale === 'en' ? 'Swap again' : 'Swap lại';
   const viewOnPolygonscanLabel = locale === 'en' ? 'View on Polygonscan' : 'Xem trên Polygonscan';
   const primaryActionClassName = 'inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#7A5410]/40 bg-[linear-gradient(120deg,#FBE9A7_0%,#F4D46E_18%,#D6A13A_38%,#F7DE84_58%,#B77B22_100%)] px-6 py-4 font-semibold text-[#2B1B05] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-10px_18px_rgba(120,73,0,0.45),0_16px_36px_rgba(0,0,0,0.38)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0';
@@ -480,8 +487,20 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   )}
 
                   {wallet.isConnected && (
-                    <div className="text-center text-xs text-white/50">
-                      Connected: {formatCompactAddress(wallet.address ?? '')}
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs text-white/50">
+                      <span>
+                        Connected: {formatCompactAddress(wallet.address ?? '')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectWallet}
+                        disabled={isBusy}
+                        aria-label={`${disconnectLabel} wallet`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-semibold text-white/65 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/10 disabled:hover:bg-white/[0.04] disabled:hover:text-white/65"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        {disconnectLabel}
+                      </button>
                     </div>
                   )}
 
