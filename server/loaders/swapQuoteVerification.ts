@@ -24,9 +24,11 @@ const TOKEN_VERSION = 2;
 // (and across different workers) — same tradeoff as the in-memory replay cache.
 const SIGNING_SECRET = randomBytes(32).toString('hex');
 
-// How long a signed quote stays usable for verify-transaction (30 minutes).
-const QUOTE_VERIFICATION_TTL_SECONDS = 30 * 60;
+// How long a signed quote stays usable for verify-transaction (5 minutes).
+// Slightly longer than SWAP_DEADLINE_SECONDS (3 min) so confirm + verify can finish.
+const QUOTE_VERIFICATION_TTL_SECONDS = 5 * 60;
 
+// It’s a “this quote token was already verified” sticky note, kept in RAM.
 // In-memory replay cache: sha256(token) → expiresAt (ms).
 // Survives only for this Node process; cleared on restart (acceptable for RPC anti-amplification).
 const usedSwapQuoteTokenHashes = new Map<string, number>();
@@ -35,8 +37,10 @@ const usedSwapQuoteTokenHashes = new Map<string, number>();
 type SignableSwapQuote = Omit<SwapQuoteResponse, 'verification'>;
 
 /**
- * Deterministic JSON-ish string so the same object always signs the same way.
+ * turns any value into a string that always looks the same for the same data — 
+ * even if object keys were in a different order.
  * Plain JSON.stringify is unsafe for signing because key order can differ.
+ * Normal JSON.stringify does not guarantee key order
  */
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) {
@@ -45,6 +49,7 @@ function stableStringify(value: unknown): string {
 
   if (value && typeof value === 'object') {
     return `{${Object.entries(value)
+      // sort keys alphabetically (a before b)
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`)
       .join(',')}}`;

@@ -436,7 +436,7 @@ consume the quote token, so a legitimate delayed confirmation can still be retri
 
 This is intentionally an in-memory guard. Restarting the Node process clears the used-token cache,
 which is acceptable for this finding because the goal is to reduce routine paid-RPC amplification
-during the 30-minute quote-token lifetime, not to create durable swap state. A persistent store
+during the quote-token lifetime (currently 5 minutes), not to create durable swap state. A persistent store
 would only be necessary if replay suppression had to survive process restarts or multiple Node
 instances.
 
@@ -466,7 +466,7 @@ swap and submit a falsified human-readable output amount or route for the verifi
 
 The quote verification token version was bumped from `1` to `2`. That intentionally makes any
 already-issued v1 quote tokens invalid after deploy; the practical impact is only that an in-flight
-quote may need to refresh, and quote tokens already expire after 30 minutes.
+quote may need to refresh, and quote tokens already expire after 5 minutes.
 
 This chose the "sign the fields" path rather than deriving route/output from the receipt. Receipt
 decoding would require reconstructing multi-hop token transfer behavior across V2/V3 paths, while
