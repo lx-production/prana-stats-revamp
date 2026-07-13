@@ -3,5 +3,9 @@ dist
 .DS_Store
 .npm-cache
 .env
+# Generated / fetched data dumps — keep config JSON (package.json, tsconfig) tracked
 *.json
-
+!package.json
+!package-lock.json
+!tsconfig.json
+!**/tsconfig.json
