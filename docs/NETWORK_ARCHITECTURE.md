@@ -148,11 +148,11 @@ After editing, reload nginx on the relevant host: `sudo nginx -t && sudo systemc
 
 After `npm run redeploy` (build + restart), anyone can check:
 
-1. Open the site footer: **Build** is the Vite bundle SHA; **API** is the running Node process SHA (`/api/version`).
+1. Open the site footer: **Build** is the Vite bundle SHA (link to the GitHub commit).
 2. Or call `GET https://prana.triethocduongpho.net/api/version` and compare `commit` to `https://github.com/lx-production/prana-stats-revamp/commit/<sha>` (or `origin/main`).
 3. A trailing `*` on the short SHA means the checkout was dirty (uncommitted local changes) when that identity was resolved — not a clean public commit.
 
-Both identities come from `git` on the Pi at build time (UI) and process start (API). Redeploy from a clean `main` checkout so they match GitHub.
+UI SHA is baked at `vite build`; `/api/version` is resolved at Node process start. With the usual `redeploy` flow they match. Redeploy from a clean `main` checkout so they match GitHub.
 
 ## 8. Operational notes
 

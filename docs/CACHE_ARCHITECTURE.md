@@ -211,7 +211,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - Resolved once at Node process start from `git rev-parse` (`utils/resolveBuildInfo.ts`): `commit`, `commitShort`, `branch`, `dirty`, `builtAt`, `repoUrl`.
 - No server memory TTL cache (value is fixed for the process lifetime).
 - Browser HTTP cache: `Cache-Control: public, max-age=60` (`BROWSER_CACHE_TTL_SECONDS.versionApiResponseBrowserHttp`).
-- The Vite client bundle gets the same shape at build time via `define.__APP_BUILD_INFO__` in `config/vite.config.js`; the site footer compares UI vs API SHAs.
+- The Vite client bundle gets the same shape at build time via `define.__APP_BUILD_INFO__` in `config/vite.config.js`; the site footer shows that UI build SHA.
 - Not warmed at startup and not loaded by `prefetchInitialJson.ts`.
 
 ### Computed API snapshot: markdown summary (`/api/summary`)
