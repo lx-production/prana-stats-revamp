@@ -132,7 +132,7 @@ curl -i http://127.0.0.1:4174/prana-coin-fallback.png | head
 
 Review `server/getApiRoutes.ts`, `server/postApiRoutes.ts`, and `server/helpers/requestHelpers.ts`.
 
-- [x] All read-only API paths still exist (in `getApiRoutes.ts`):
+- [x] All read-only API paths still exist (in `getApiRoutes.ts`), including `/api/version`:
   - `/api/summary`
   - `/api/top-holding-addresses`
   - `/api/prana-stats`

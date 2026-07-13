@@ -44,6 +44,7 @@ Use this guide to review the dependency-free server split. The intended change i
 Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live in `server/postApiRoutes.ts`.
 
 - All existing API paths still exist:
+  - `/api/version`
   - `/api/summary`
   - `/api/top-holding-addresses`
   - `/api/prana-stats`
@@ -56,6 +57,7 @@ Readonly GET routes live in `server/getApiRoutes.ts`. POST-only swap routes live
   - `/api/swap/verify-transaction`
 - Cache headers match the old behavior (values now come from `constants/cachePolicy.ts`):
   - Most read-only APIs: `private, max-age=30`
+  - `/api/version`: `public, max-age=60`
   - `/api/lp-capital`: `private, max-age=3600`
   - `/api/staking-stats` and `/api/bond-metrics`: `private, max-age=86400`
   - errors and swap POST successes without explicit cache options still use `no-cache`.

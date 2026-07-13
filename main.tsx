@@ -13,6 +13,7 @@ import BasicStats from "./components/BasicStats";
 import BondingStats from "./components/BondingStats";
 import NeuralShaderBackground from "./shader.tsx";
 import StakingStats from "./components/StakingStats";
+import AppFooter from "./components/AppFooter";
 import LanguageToggle from "./components/LanguageToggle";
 import PranaConverter from "./components/PranaConverter";
 import PriceChartsSection from "./components/PriceChartsSection";
@@ -76,6 +77,7 @@ function App() {
         <Timeline />
         <FaqSection />
       </main>
+      <AppFooter />
     </div>
     </SiteLanguageProvider>
   );

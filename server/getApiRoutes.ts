@@ -1,4 +1,5 @@
 import { createServerCache } from './helpers/cacheHelpers.ts';
+import { loadVersionInfo } from './loaders/version.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { sendJson, sendText } from './helpers/requestHelpers.ts';
@@ -16,6 +17,8 @@ const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS
 const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
+// Version identity is fixed for the process lifetime; allow short public reuse.
+const VERSION_API_CACHE_CONTROL = `public, max-age=${BROWSER_CACHE_TTL_SECONDS.versionApiResponseBrowserHttp}`;
 
 // In-memory server caches shared with startup warmup
 export const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
@@ -24,6 +27,12 @@ export const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summar
 // Handles readonly GET API routes (stats, capital, summary, etc.)
 export function createGetApiRouteHandler(): RequestHandler {
   return async function handleGetApiRequest(req, res, url): Promise<boolean> {
+    // Public deploy identity — compare with GitHub `main` and the UI footer SHA.
+    if (url.pathname === '/api/version') {
+      sendJson(res, 200, loadVersionInfo(), { cacheControl: VERSION_API_CACHE_CONTROL });
+      return true;
+    }
+
     if (url.pathname === '/api/summary') {
       const result = await summaryCache(() => loadSummaryMarkdown());
       sendText(res, 200, result, {

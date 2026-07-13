@@ -13,6 +13,7 @@ export const BROWSER_CACHE_TTL_SECONDS = Object.freeze({
   lpCapitalApiResponseBrowserHttp: 60 * 60, // 1h, /api/lp-capital HTTP cache TTL (Cache-Control: private, max-age=...)
   bondMetricsApiResponseBrowserHttp: 60 * 60 * 24, // 24h, /api/bond-metrics HTTP cache TTL (Cache-Control: private, max-age=...)
   stakingStatsApiResponseBrowserHttp: 60 * 60 * 24, // 24h, /api/staking-stats HTTP cache TTL (Cache-Control: private, max-age=...)
+  versionApiResponseBrowserHttp: 60, // 1m, /api/version is process-static but keep short for redeploys
   rootBondsJsonHttp: 30,
   rootBuyDipsJsonHttp: 30,
   rootDataJsonHttp: 30,

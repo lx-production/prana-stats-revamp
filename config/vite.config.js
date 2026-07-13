@@ -2,8 +2,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolveBuildInfo } from '../utils/resolveBuildInfo.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Bake git identity into the client bundle at build/dev-server start.
+const appBuildInfo = resolveBuildInfo()
 
 const rootDataJsonFiles = [
   'active_stakes.json',
@@ -25,6 +29,10 @@ export default defineConfig({
   // Keep project root at repo root even though this config lives in config/
   root: path.resolve(__dirname, '..'),
   plugins: [react()],
+  // Frontend footer reads this constant; must stay JSON-serializable.
+  define: {
+    __APP_BUILD_INFO__: JSON.stringify(appBuildInfo),
+  },
   css: {
     postcss: path.join(__dirname, 'postcss.config.js'),
   },

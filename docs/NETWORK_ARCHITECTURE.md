@@ -144,7 +144,17 @@ After editing, reload nginx on the relevant host: `sudo nginx -t && sudo systemc
 
 ---
 
-## 7. Operational notes
+## 7. Verifying prod matches GitHub `main`
+
+After `npm run redeploy` (build + restart), anyone can check:
+
+1. Open the site footer: **Build** is the Vite bundle SHA; **API** is the running Node process SHA (`/api/version`).
+2. Or call `GET https://prana.triethocduongpho.net/api/version` and compare `commit` to `https://github.com/lx-production/prana-stats-revamp/commit/<sha>` (or `origin/main`).
+3. A trailing `*` on the short SHA means the checkout was dirty (uncommitted local changes) when that identity was resolved — not a clean public commit.
+
+Both identities come from `git` on the Pi at build time (UI) and process start (API). Redeploy from a clean `main` checkout so they match GitHub.
+
+## 8. Operational notes
 
 - **Tunnel persistence:** If the SSH session drops, the tunnel is down until the Pi reconnects. Use something like `autossh` or a systemd service that restarts the SSH tunnel so 9000 stays available.
 - **Binding on VPS:** The tunnel binds to 127.0.0.1:9000 on the VPS, so only nginx on the VPS can use it; that’s correct and secure.
