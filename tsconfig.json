@@ -25,6 +25,7 @@
     "main.tsx",
     "hero3.tsx",
     "shader.tsx",
+    "flutterShader.tsx",
     "spinningFavicon.ts",
     "vite-env.d.ts"
   ],

@@ -11,7 +11,7 @@ import Timeline from "./components/Timeline";
 import FaqSection from "./components/FaqSection";
 import BasicStats from "./components/BasicStats";
 import BondingStats from "./components/BondingStats";
-import NeuralShaderBackground from "./shader.tsx";
+import FlutterShaderBackground from "./flutterShader.tsx";
 import StakingStats from "./components/StakingStats";
 import AppFooter from "./components/AppFooter";
 import LanguageToggle from "./components/LanguageToggle";
@@ -37,15 +37,15 @@ function App() {
     <SiteLanguageProvider>
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
-      <NeuralShaderBackground
+      <FlutterShaderBackground
         className="select-none"
         opacity={1}
-        brightness={0.42}
-        gamma={1.0}
-        speed={0.08}
-        flow={4.5}
-        spin={0.04}
-        iterations={32}
+        brightness={0.5}
+        gamma={1.05}
+        speed={0.1}
+        darkTint={0.5}
+        darkTintColor={[0.02, 0.0, 0.08]}
+        iterations={50}
         maxDpr={1.15}
         targetFps={30}
         renderScale={0.9}
