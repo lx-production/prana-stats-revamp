@@ -2,16 +2,16 @@ import type { HeroHeadlines, HeroHeadlinesByLocale } from "../types/heroHeadline
 
 export const heroHeadlinesByLocale: HeroHeadlinesByLocale = {
   en: {
-    title: "Strongest Liquidity",
-    subtitle: "Highest Protocol Reserve Ratio",
+    title: "Swap from the Official UI",
+    subtitle: "7 tokens on Polygon",
     tagline:
-      "Healthiest Liquidity Density and Protocol Reserve in the entire market",
+      "The on-chain PRANA trading gateway supported by Triết Học Đường Phố",
   },
   vi: {
-    title: "Thanh Khoản Mạnh Nhất",
-    subtitle: "Tỉ Lệ Dự Trữ Cao Nhất",
+    title: "Swap từ UI chính thức",
+    subtitle: "7 token trên Polygon",
     tagline:
-      "Sức khỏe thanh khoản và quỹ dự trữ top 1 toàn thị trường",
+      "Cổng giao dịch PRANA on-chain được hỗ trợ bởi Triết Học Đường Phố",
   },
 };
 
