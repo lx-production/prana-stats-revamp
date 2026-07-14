@@ -18,7 +18,7 @@ export interface FlutterShaderBackgroundProps {
   gamma?: number;                   // tone curve (>1 darkens mids)
   darkTint?: number;                // overlay strength for dark tint (0..1)
   darkTintColor?: [number, number, number]; // RGB in linear-ish 0..1 range
-  iterations?: number;              // outer march loop count; original is 50
+  iterations?: number;              // outer march loop count; original is 50; active default is 32
   maxDpr?: number;                  // clamp device pixel ratio; lower = faster
   targetFps?: number;               // draw-rate cap
   renderScale?: number;             // additional internal resolution scale (0.5..1.0)
@@ -32,7 +32,7 @@ export function FlutterShaderBackground({
   gamma = 1.05,
   darkTint = 0.42,
   darkTintColor = [0.02, 0.0, 0.08],
-  iterations = 50,
+  iterations = 32,
   maxDpr = 1.15,
   targetFps = 30,
   renderScale = 0.9,

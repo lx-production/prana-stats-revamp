@@ -45,10 +45,10 @@ function App() {
         speed={0.1}
         darkTint={0.5}
         darkTintColor={[0.02, 0.0, 0.08]}
-        iterations={50}
+        iterations={32}
         maxDpr={1.15}
         targetFps={30}
-        renderScale={0.9}
+        renderScale={1}
       />
 
       <main className="relative z-10 flex flex-col gap-6 pb-24">
