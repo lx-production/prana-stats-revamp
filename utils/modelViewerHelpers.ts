@@ -1,24 +1,5 @@
-import type {
-  Dispatch,
-  KeyboardEvent as ReactKeyboardEvent,
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-} from "react";
-
-type CameraOrbit = {
-  theta: number;
-  phi: number;
-  radius: number;
-};
-
-type ModelViewerElement = HTMLElement & {
-  cameraOrbit?: string;
-  autoRotate?: boolean;
-  orientation?: string;
-  getCameraOrbit?: () => CameraOrbit | null;
-  jumpCameraToGoal?: () => void;
-};
+import type { Dispatch, RefObject, SetStateAction, KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { ModelViewerElement } from "../types/modelViewer.types";
 
 // Parse "xdeg ydeg zdeg" orientation into degrees
 export const parseOrientationDeg = (orientation: string | null | undefined): [number, number, number] => {
@@ -60,7 +41,7 @@ export const createSpinCoin = (
   mvRef: RefObject<ModelViewerElement | null>,
   spinning: boolean,
   setSpinning: Dispatch<SetStateAction<boolean>>,
-  spinFrameRef: MutableRefObject<number | null>
+  spinFrameRef: RefObject<number | null>
 ) => {
   return () => {
     const mv = mvRef.current;
