@@ -3,19 +3,33 @@ import fs from 'node:fs/promises';
 import { ethers } from 'ethers';
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
+import { getRpcUrl, redactUrl } from '../../utils/envUtils.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
 import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
+import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
-import type { ActiveStake, ActiveStakesResult, StakeData } from '../../types/activeStakes.types.ts';
-import { getRpcUrl, redactUrl } from '../../utils/envUtils.ts';
 import { formatUnixSecondsToHuman, isRateLimitError, sleep, toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
+
+import type { ActiveStake, ActiveStakesResult, StakeData } from '../../types/activeStakes.types.ts';
 
 const ACTIVE_STAKES_FILENAME = 'active_stakes.json';
 const ACTIVE_STAKES_PATH = path.join(PROJECT_ROOT, ACTIVE_STAKES_FILENAME);
+// Align disk snapshot freshness with /api/staking-stats cache TTL.
+const ACTIVE_STAKES_MAX_AGE_MS = SERVER_CACHE_TTL_MS.stakingStatsApiResponse;
 const SECONDS_PER_DAY = 86_400n;
 const SECONDS_PER_YEAR = 365n * SECONDS_PER_DAY;
 const PERCENT_SCALE = 100n;
+
+function isUsableSnapshot(snapshot: ActiveStakesResult | null): snapshot is ActiveStakesResult {
+  return Boolean(snapshot && Array.isArray(snapshot.activeStakes));
+}
+
+function isFreshSnapshot(snapshot: ActiveStakesResult, maxAgeMs: number): boolean {
+  const generatedAtMs = Date.parse(snapshot.generatedAt);
+  if (!Number.isFinite(generatedAtMs)) return false;
+  return Date.now() - generatedAtMs < maxAgeMs;
+}
 
 async function getStakerStakesWithRetry(
   stakingContract: ethers.Contract,
@@ -167,14 +181,25 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
   };
 }
 
+// Chain fetch + persist. Prefer loadActiveStakesSnapshot() for normal reads.
+export async function writeActiveStakesSnapshot(): Promise<ActiveStakesResult> {
+  const snapshot = await fetchActiveStakesSnapshot();
+  await fs.writeFile(ACTIVE_STAKES_PATH, JSON.stringify(snapshot, null, 2), 'utf8');
+  return snapshot;
+}
+
+// Read disk first; refresh from chain only when missing or stale.
 export async function loadActiveStakesSnapshot(): Promise<ActiveStakesResult> {
+  const cachedSnapshot = await readJsonIfExists<ActiveStakesResult>(ACTIVE_STAKES_PATH);
+  if (isUsableSnapshot(cachedSnapshot) && isFreshSnapshot(cachedSnapshot, ACTIVE_STAKES_MAX_AGE_MS)) {
+    return cachedSnapshot;
+  }
+
   try {
-    const snapshot = await fetchActiveStakesSnapshot();
-    await fs.writeFile(ACTIVE_STAKES_PATH, JSON.stringify(snapshot, null, 2), 'utf8');
-    return snapshot;
+    return await writeActiveStakesSnapshot();
   } catch (err) {
-    const cachedSnapshot = await readJsonIfExists<ActiveStakesResult>(ACTIVE_STAKES_PATH);
-    if (cachedSnapshot && Array.isArray(cachedSnapshot.activeStakes)) return cachedSnapshot;
+    // Keep serving a readable stale file if the chain refresh fails.
+    if (isUsableSnapshot(cachedSnapshot)) return cachedSnapshot;
     throw err;
   }
 }

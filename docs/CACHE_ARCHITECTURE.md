@@ -180,12 +180,13 @@ This endpoint owns the staking card payload:
 
 Runway refactor notes:
 - `/api/staking-stats` no longer depends on a single fixed APR assumption in the browser.
-- The server now loads active stakes from chain (`getStakers()` + `getStakerStakes(...)`) via `server/loaders/activeStakes.ts`.
-- That loader writes/updates `active_stakes.json` as a snapshot and computes weighted daily interest from each stake's own APR.
+- Active stakes come from `server/loaders/activeStakes.ts` via `loadActiveStakesSnapshot()`:
+  - Prefer a fresh `active_stakes.json` on disk (TTL aligned with `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h).
+  - If the file is missing or stale, refresh from chain (`getStakers()` + `getStakerStakes(...)`) and rewrite the JSON.
+  - If the chain refresh fails, fall back to the latest readable `active_stakes.json` (even if stale).
+- Weighted daily interest uses each stake's own APR (`sum(amountPrana * apr / 100 / 365)`).
 - `runwayDays` is computed server-side as:
   - `runwayDays = interestContractBalancePrana / dailyInterestPrana`
-  - where `dailyInterestPrana = sum(amountPrana * apr / 100 / 365)` across active stakes.
-- If chain fetch fails, the loader falls back to the latest readable `active_stakes.json`.
 
 ### Computed API snapshot: bond metrics
 - `hooks/useBondStats.ts`
