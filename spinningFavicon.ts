@@ -1,6 +1,8 @@
 // This module starts a spinning favicon animation by updating the favicon via a canvas.
 // It returns a cleanup function you can call to stop the animation.
 
+import { PRANA_ICON_DATA_URL } from "./utils/pranaIconDataUrl.ts";
+
 export interface SpinningFaviconOptions {
   iconUrl?: string;
   size?: number;
@@ -11,7 +13,8 @@ export interface SpinningFaviconOptions {
 
 export function startSpinningFavicon(options: SpinningFaviconOptions = {}): () => void {
   const {
-    iconUrl = "/assets/icons/prana.svg",
+    // Data URL avoids a second network fetch of /assets/icons/prana.svg (favicon already loads the file).
+    iconUrl = PRANA_ICON_DATA_URL,
     size = 96,
     imageScale = 0.8,
     stepDegrees = 5,
@@ -45,7 +48,7 @@ export function startSpinningFavicon(options: SpinningFaviconOptions = {}): () =
   if (!ctx) return () => {};
 
   const img = new Image();
-  img.crossOrigin = "anonymous";
+  // Same-origin / data-URL icon — no CORS needed (crossOrigin caused a duplicate network fetch).
   img.src = iconUrl;
 
   let rafId: number | null = null;

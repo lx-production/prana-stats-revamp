@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import InfoTooltip from './InfoTooltip';
+import PranaIcon from './icons/PranaIcon';
+import BitcoinIcon from './icons/BitcoinIcon';
+import React, { useEffect, useState } from 'react';
+
 import type { DoublePranaAltCopy, DoublePranaSideCopy } from '../types/doublePranaAbsorptionFlow.types';
 
-const BITCOIN_ICON = '/assets/icons/bitcoin.svg';
-const PRANA_ICON = '/assets/icons/prana.svg';
 const ROTATION_SLOWDOWN = 2;
 
 type StreamParticle = {
@@ -161,15 +162,12 @@ export const TokenIcon: React.FC<{
   alt?: string;
   className?: string;
   decorative?: boolean;
-}> = ({ token, alt = '', className = '', decorative = false }) => (
-  <img
-    src={token === 'bitcoin' ? BITCOIN_ICON : PRANA_ICON}
-    alt={decorative ? '' : alt}
-    aria-hidden={decorative}
-    className={className}
-    draggable={false}
-  />
-);
+}> = ({ token, alt = '', className = '', decorative = false }) =>
+  token === 'bitcoin' ? (
+    <BitcoinIcon alt={alt} className={className} decorative={decorative} />
+  ) : (
+    <PranaIcon alt={alt} className={className} decorative={decorative} />
+  );
 
 export const VerticalParticleStream: React.FC<{
   particles: StreamParticle[];
