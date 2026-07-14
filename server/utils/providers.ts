@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { PROJECT_ROOT } from '../projectRoot.ts';
-import { loadDotEnvIntoProcessEnv } from '../../scripts/utils/fetchActiveStakesUtils.ts';
+import { loadDotEnvIntoProcessEnv } from '../../utils/envUtils.ts';
 
 const DEFAULT_POLYGON_RPC_URL = 'https://polygon-rpc.com';
 const DEFAULT_ARBITRUM_RPC_URL = 'https://arb1.arbitrum.io/rpc';

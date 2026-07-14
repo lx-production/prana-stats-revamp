@@ -8,7 +8,8 @@ import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
 import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 import type { ActiveStake, ActiveStakesResult, StakeData } from '../../types/activeStakes.types.ts';
-import { formatUnixSecondsToHuman, getRpcUrl, isRateLimitError, redactUrl, sleep, toBigInt, toNumberSafe } from '../../scripts/utils/fetchActiveStakesUtils.ts';
+import { getRpcUrl, redactUrl } from '../../utils/envUtils.ts';
+import { formatUnixSecondsToHuman, isRateLimitError, sleep, toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 
 const ACTIVE_STAKES_FILENAME = 'active_stakes.json';
 const ACTIVE_STAKES_PATH = path.join(PROJECT_ROOT, ACTIVE_STAKES_FILENAME);
