@@ -437,7 +437,7 @@ Pricing and market cap only. Fiat and BTC performance percentages are computed i
 
 ### `/api/summary`
 
-Markdown document (not JSON). Aggregates live protocol stats, bond/staking/capital/LP summaries, performance ranges, FAQ/covenants excerpts, and links to raw JSON endpoints. Cached on the server for 1 hour; browsers may reuse the response locally for 30 seconds (`private`).
+Markdown document (not JSON). Aggregates live protocol stats, bond/staking/capital/LP summaries, performance ranges, FAQ/covenants excerpts, and links to raw JSON endpoints plus `/api/version`. Cached on the server for 1 hour; browsers may reuse the response locally for 30 seconds (`private`).
 
 Example opening (truncated):
 

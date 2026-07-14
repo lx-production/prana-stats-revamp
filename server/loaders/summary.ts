@@ -226,6 +226,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     '## Raw Data Endpoints',
     '',
     mdList([
+      `${origin}/api/version - Deploy identity (git commit SHA).`,
       `${origin}/api/prana-stats`,
       `${origin}/api/staking-stats`,
       `${origin}/api/capital`,
