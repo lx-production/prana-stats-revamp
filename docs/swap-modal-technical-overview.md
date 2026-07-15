@@ -361,7 +361,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `server/index.ts` | HTTP server composition |
 | `server/postApiRoutes.ts` | Swap POST routes |
 | `server/loaders/swapQuote.ts` | Quote orchestration |
-| `server/loaders/swapQuoteUtils.ts` | AlphaRouter + path helpers |
+| `server/utils/swapQuoteUtils.ts` | AlphaRouter + path helpers |
 | `server/loaders/swapValidations.ts` | Calldata audit |
 | `server/loaders/swapQuoteVerification.ts` | HMAC sign / verify |
 | `server/loaders/swapTransactionVerification.ts` | On-chain confirmation |

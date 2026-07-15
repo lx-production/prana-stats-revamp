@@ -1,5 +1,5 @@
 import { fetchJson, fetchJsonSafe } from '../../utils/fetchJson.ts';
-import { readPricePointSeries } from './summaryUtils.ts';
+import { readPricePointSeries } from '../utils/summaryUtils.ts';
 import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
 import type { PranaPricesBundle } from '../../types/types.ts';
 

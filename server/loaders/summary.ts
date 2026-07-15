@@ -17,7 +17,7 @@ import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetr
 import { buildBtcPriceChange, buildFiatPriceChange } from '../../utils/pranaStatsPerformance.ts';
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
-import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from './summaryUtils.ts';
+import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from '../utils/summaryUtils.ts';
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 

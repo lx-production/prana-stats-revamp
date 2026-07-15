@@ -11,7 +11,7 @@ import {
   WMATIC_ADDRESS,
 } from '../../constants/swapContracts.ts';
 import { getSwapToken } from '../../utils/swapTokens.ts';
-import { encodeV3Path } from '../loaders/swapQuoteUtils.ts';
+import { encodeV3Path } from '../utils/swapQuoteUtils.ts';
 import { swapQuoteValidationTestUtils } from '../loaders/swapValidations.ts';
 
 import type { HexAddress, SwapTransactionCandidate, SwapValidationContext } from '../../types/swap.types.ts';
