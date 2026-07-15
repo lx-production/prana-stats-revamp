@@ -1,12 +1,8 @@
-import { SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
-import { createBrowserJsonCache } from './browserJsonCache';
+import { fetchJson } from './fetchJson.ts';
+
 import type { StakingStatsApiResponse } from '../types/api.types';
 
-const stakingStatsApiCache = createBrowserJsonCache({
-  ttlMs: SERVER_CACHE_TTL_MS.stakingStatsApiResponse,
-  getUrl: () => '/api/staking-stats',
-});
-
-export async function fetchStakingStatsApi(opts: { force?: boolean } = {}): Promise<StakingStatsApiResponse> {
-  return await stakingStatsApiCache.fetchCached<StakingStatsApiResponse>(opts);
+// Browser relies on HTTP Cache-Control (24h) + fetchJson GET dedupe; no in-memory TTL layer.
+export async function fetchStakingStatsApi(): Promise<StakingStatsApiResponse> {
+  return await fetchJson<StakingStatsApiResponse>('/api/staking-stats');
 }

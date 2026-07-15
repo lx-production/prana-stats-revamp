@@ -15,6 +15,7 @@ import type { ActiveStake, ActiveStakesResult, StakeData } from '../../types/act
 
 const ACTIVE_STAKES_FILENAME = 'active_stakes.json';
 const ACTIVE_STAKES_PATH = path.join(PROJECT_ROOT, ACTIVE_STAKES_FILENAME);
+
 // Align disk snapshot freshness with /api/staking-stats cache TTL.
 const ACTIVE_STAKES_MAX_AGE_MS = SERVER_CACHE_TTL_MS.stakingStatsApiResponse;
 const SECONDS_PER_DAY = 86_400n;
@@ -64,6 +65,17 @@ function calculateInterestRaw(amountRaw: bigint, apr: number, seconds: bigint): 
   return interestPerSecondRaw * seconds;
 }
 
+/**
+ * Live chain read of every staker’s stakes (no disk cache).
+ *
+ * For each stake, uses the latest block timestamp + contract gracePeriod to decide:
+ * - still locking (active) → include in activeStakes and accrue daily interest
+ * - matured but still within the claim window with unclaimed principal interest →
+ *   count toward claimable interest only (not listed in activeStakes)
+ *
+ * Returns scan totals, interest aggregates, and the active stake list.
+ * Prefer loadActiveStakesSnapshot() for normal reads; this is what write/refresh call.
+ */
 export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
   const provider = await getServerPolygonProvider();
   const stakingContract = new ethers.Contract(

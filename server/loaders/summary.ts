@@ -5,6 +5,7 @@ import { loadCachedLpCapital } from './cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './cached/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './topHoldingAddresses.ts';
+
 import { PROJECT_ROOT } from '../projectRoot.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { parseFaqMarkdown } from '../../utils/faqParser.ts';
@@ -18,6 +19,7 @@ import { buildBtcPriceChange, buildFiatPriceChange } from '../../utils/pranaStat
 import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
 import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from '../utils/summaryUtils.ts';
+
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';
 
@@ -109,7 +111,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     mdList([
       'PRANA is designed around 100% Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
       `Hero message: ${formatHeroMessage(heroHeadlinesByLocale.en)}`,
-      `Primary actions: Stake (${origin}/stake/), Bond (${origin}/bond/), Trade (https://app.uniswap.org/explore/pools/polygon/0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED).`,
+      `Primary actions: Swap (Official UI from PRANA Protocol), Stake (${origin}/stake/), Bond (${origin}/bond/).`,
     ]),
     '',
     '## Investment Thesis',

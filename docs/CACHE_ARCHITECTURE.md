@@ -55,12 +55,12 @@ The diagram is simplified: only code paths that call `createBrowserJsonCache` la
 
 ### Browser in-memory cache
 - Used by small client helpers created with `createBrowserJsonCache(...)`:
-  - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`, `utils/stakingStatsApi.ts` → `/api/staking-stats`)
+  - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`)
   - Shared generated JSON helpers (e.g. `utils/buyDipsJson.ts` → `/buy_dips.json`)
 - Prevents duplicate fetches and avoids repeated requests during a short window.
 - Supports forced refresh when needed.
 
-Most root JSON files are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache. `buy_dips.json` also has a short in-memory cache because multiple components consume the same payload.
+Most root JSON files and some APIs (e.g. `/api/staking-stats`, `/api/bond-metrics`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache. `buy_dips.json` also has a short in-memory cache because multiple components consume the same payload.
 
 ### Server API cache
 - Used for computed API endpoints.
@@ -165,8 +165,8 @@ These use:
 - `/api/staking-stats`
 
 Browser behavior:
-- `utils/stakingStatsApi.ts` uses `createBrowserJsonCache(...)` with TTL `SERVER_CACHE_TTL_MS.stakingStatsApiResponse` (24 hours)
-- also relies on browser HTTP cache (`private, max-age=24h`) and concurrent GET dedupe under the hood
+- `utils/stakingStatsApi.ts` uses `fetchJson(...)` with browser HTTP cache (`private, max-age=24h`) and concurrent GET dedupe
+- does not keep a TTL in-memory browser snapshot
 
 This endpoint owns the staking card payload:
 - `stakedPrana`
@@ -230,6 +230,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - `utils/prana365Data.ts` → `/data_365_days.json`
 - `utils/pranaSatsData.ts` → `/data_sats.json`
 - `utils/bondMetricsApi.ts` → `/api/bond-metrics`
+- `utils/stakingStatsApi.ts` → `/api/staking-stats` (HTTP `max-age=24h`)
 
 ### Top holding addresses API path
 
@@ -239,7 +240,6 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 
 **`createBrowserJsonCache(...)` (TTL in-memory + force):**
 - `utils/pranaStatsApi.ts` → `/api/prana-stats`
-- `utils/stakingStatsApi.ts` → `/api/staking-stats` (24h TTL)
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
 
 ### Chart JSON and performance
@@ -397,7 +397,7 @@ Important development note:
 
 Use `force: true` only when you specifically need to bypass the short-lived browser cache.
 
-Helpers that accept `{ force?: boolean }` (for example `fetchStakingStatsApi`, `fetchPranaStatsApi`, `fetchBondMetricsApi`) pass that through to either `createBrowserJsonCache` or `fetchJson` dedupe bypass. Normal page loads should omit `force`.
+Helpers that accept `{ force?: boolean }` (for example `fetchPranaStatsApi`) pass that through to `createBrowserJsonCache` (or, for some helpers, `fetchJson` dedupe bypass / URL cache-bust). Normal page loads should omit `force`. Note: most `force` paths still do not bypass browser HTTP `max-age` unless they cache-bust the URL (e.g. `bonds_v2.json?t=...`). `fetchStakingStatsApi` and `fetchBondMetricsApi` have no `force` option — browser caching is HTTP-only.
 
 Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
 
