@@ -58,7 +58,6 @@ The diagram is simplified: only code paths that call `createBrowserJsonCache` la
   - API snapshot helpers (e.g. `utils/pranaStatsApi.ts` → `/api/prana-stats`)
   - Shared generated JSON helpers (e.g. `utils/buyDipsJson.ts` → `/buy_dips.json`)
 - Prevents duplicate fetches and avoids repeated requests during a short window.
-- Supports forced refresh when needed.
 
 Most root JSON files and some APIs (e.g. `/api/staking-stats`, `/api/bond-metrics`) are fetched with `fetchJson` / `fetchJsonSafe` only: concurrent GET dedupe still applies, but there is no TTL in-memory layer on top of the browser HTTP cache. `buy_dips.json` also has a short in-memory cache because multiple components consume the same payload.
 
@@ -108,17 +107,14 @@ The shared browser helper is `utils/browserJsonCache.ts`.
 It provides:
 - a short-lived in-memory cache
 - in-flight request sharing
-- forced refresh support
 
 Main API:
 - `getCachedValue()`
-- `fetchCached({ force?: boolean })`
+- `fetchCached()`
 
 Behavior:
 - If cached data is still within TTL, return it immediately.
-- If a non-forced request is already in flight, reuse that Promise.
-- If `force: true` is passed, bypass the local cache and fetch again.
-- Forced refresh also disables the lower-level `fetchJson()` dedupe for that request by setting `dedupeKey: null`.
+- If a request is already in flight, reuse that Promise.
 
 ## Low-Level Fetch Dedupe
 
@@ -238,7 +234,7 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - The server caches the single top-holding payload in memory for `SERVER_CACHE_TTL_MS.topHoldingsRefresh` (30 seconds) using `createServerCache(...)`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
-**`createBrowserJsonCache(...)` (TTL in-memory + force):**
+**`createBrowserJsonCache(...)` (TTL in-memory):**
 - `utils/pranaStatsApi.ts` → `/api/prana-stats`
 - `utils/buyDipsJson.ts` → `/buy_dips.json`
 
@@ -393,16 +389,6 @@ Important development note:
 - if `npm run serve` fails with `EADDRINUSE` on `4173`, an **older** `node server/index.ts` may still be listening; that process will keep serving **old** API shapes until you stop it and restart. Vite on `5173` proxies `/api` to whatever is on `4173`, so code changes to loaders are invisible until the Node server restarts.
 - after a Node restart, watch the console for `Warming API caches...` / `API cache warming finished.`; failed warmups are warnings only. Until warmup completes, first requests may still trigger loaders on demand.
 
-## Force Refresh Rules
-
-Use `force: true` only when you specifically need to bypass the short-lived browser cache.
-
-Helpers that accept `{ force?: boolean }` (for example `fetchPranaStatsApi`) pass that through to `createBrowserJsonCache` (or, for some helpers, `fetchJson` dedupe bypass / URL cache-bust). Normal page loads should omit `force`. Note: most `force` paths still do not bypass browser HTTP `max-age` unless they cache-bust the URL (e.g. `bonds_v2.json?t=...`). `fetchStakingStatsApi` and `fetchBondMetricsApi` have no `force` option — browser caching is HTTP-only.
-
-Top holding addresses no longer use forced file refetch. They are served directly from `/api/top-holding-addresses` with server-side memory TTL.
-
-Do not use forced refresh for normal page load unless there is a clear reason.
-
 ## Current API Shapes
 
 These are shortened example payloads that reflect the current responsibility split.
@@ -499,7 +485,7 @@ When adding a new cached data source:
 
 2. Put its TTL in `constants/cachePolicy.ts`.
 
-3. If it is browser-consumed JSON, default to `fetchJson` plus HTTP headers in `cacheControl.ts` (concurrent GET dedupe covers multiple mounts). Use `createBrowserJsonCache(...)` only when you need a TTL in-memory snapshot or forced refresh beyond HTTP cache.
+3. If it is browser-consumed JSON, default to `fetchJson` plus HTTP headers in `cacheControl.ts` (concurrent GET dedupe covers multiple mounts). Use `createBrowserJsonCache(...)` only when you need a TTL in-memory snapshot beyond HTTP cache.
 
 4. If it is a computed API endpoint, use the server cache helpers instead of inventing a one-off cache.
 
@@ -522,7 +508,7 @@ If you are not sure where to put a new cache:
 - Raw generated JSON file:
   - serve from Node root route
   - give it short browser-fresh HTTP headers
-  - use `fetchJson` / `fetchJsonSafe` by default; add `createBrowserJsonCache(...)` only if you need extra client TTL or force refresh on top of HTTP cache
+  - use `fetchJson` / `fetchJsonSafe` by default; add `createBrowserJsonCache(...)` only if you need extra client TTL on top of HTTP cache
 
 - Computed API response:
   - cache on the server with `createServerCache(...)`

@@ -1,15 +1,14 @@
-import type { BondsV2Json } from '../types/types.ts';
 import { fetchJsonSafe } from './fetchJson.ts';
 
-// Default URL allows browser caching based on server cache headers.
-// When `force` is true, append a one-off cache-buster to fetch the latest file.
-export function getBondsV2JsonUrl(force = false) {
-  if (!force) return '/bonds_v2.json';
-  return `/bonds_v2.json?t=${Date.now()}`;
+import type { BondsV2Json } from '../types/types.ts';
+
+// URL allows browser caching based on server cache headers.
+export function getBondsV2JsonUrl() {
+  return '/bonds_v2.json';
 }
 
-export async function fetchBondsV2JsonSafe<T>(fallback: T, opts: { force?: boolean } = {}): Promise<T> {
-  return await fetchJsonSafe<T>(getBondsV2JsonUrl(opts.force === true), fallback);
+export async function fetchBondsV2JsonSafe<T>(fallback: T): Promise<T> {
+  return await fetchJsonSafe<T>(getBondsV2JsonUrl(), fallback);
 }
 
 export const getTotalsFromBondsV2Json = (data: unknown) => {
@@ -27,9 +26,8 @@ export const getTotalsFromBondsV2Json = (data: unknown) => {
 
 // Wrapper that uses fetchBondsV2JsonSafe + getTotalsFromBondsV2Json to return only the buy and sell bond totals
 export async function fetchBondsV2TotalsSafe(
-  opts: { force?: boolean } = {},
   data?: unknown
 ): Promise<{ buyBondTotalRawV2: bigint; sellBondTotalRawV2: bigint }> {
-  const value = data ?? (await fetchBondsV2JsonSafe<unknown>(null, opts));
+  const value = data ?? (await fetchBondsV2JsonSafe<unknown>(null));
   return getTotalsFromBondsV2Json(value);
 }

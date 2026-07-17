@@ -156,6 +156,5 @@ UI identity is baked at `vite build`; `/api/version` is resolved at Node process
 
 ## 8. Operational notes
 
-- **Tunnel persistence:** If the SSH session drops, the tunnel is down until the Pi reconnects. Use something like `autossh` or a systemd service that restarts the SSH tunnel so 9000 stays available.
 - **Binding on VPS:** The tunnel binds to 127.0.0.1:9000 on the VPS, so only nginx on the VPS can use it; that’s correct and secure.
 - **SSL:** Only the VPS needs a certificate; the Pi only talks HTTP to the tunnel and to the Node app on localhost.

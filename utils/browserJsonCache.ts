@@ -7,12 +7,8 @@ type CacheEntry = {
 
 type BrowserJsonCacheConfig = {
   ttlMs: number;
-  getUrl: (force: boolean) => string;
+  getUrl: () => string;
   init?: RequestInit;
-};
-
-type FetchJsonCacheOptions = {
-  force?: boolean;
 };
 
 export function createBrowserJsonCache(config: BrowserJsonCacheConfig) {
@@ -25,28 +21,22 @@ export function createBrowserJsonCache(config: BrowserJsonCacheConfig) {
     return cached.value as T;
   };
 
-  const fetchCached = async <T = unknown>(opts: FetchJsonCacheOptions = {}): Promise<T> => {
-    const force = opts.force === true;
-    const cachedValue = !force ? getCachedValue<T>() : null;
+  // Return cached value within TTL; otherwise share one in-flight fetch.
+  const fetchCached = async <T = unknown>(): Promise<T> => {
+    const cachedValue = getCachedValue<T>();
     if (cachedValue !== null) {
       return cachedValue;
     }
 
-    if (!force && inFlight) {
+    if (inFlight) {
       return (await inFlight) as T;
     }
 
     const load = async (): Promise<T> => {
-      const value = await fetchJson<T>(config.getUrl(force), config.init, {
-        dedupeKey: force ? null : undefined,
-      });
+      const value = await fetchJson<T>(config.getUrl(), config.init);
       cached = { value, timestamp: Date.now() };
       return value;
     };
-
-    if (force) {
-      return await load();
-    }
 
     inFlight = load().finally(() => {
       inFlight = null;
