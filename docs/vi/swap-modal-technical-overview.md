@@ -18,11 +18,11 @@ Cặp mặc định khi mở modal: **WBTC → PRANA**.
 
 Danh sách 7 token đang được hỗ trợ: `PRANA`, `WBTC`, `POL` (native), `USDC`, `USDT`, `WETH`, `DAI`.
 
+User có thể chọn bất kỳ hai token khác nhau trong danh sách đó, không chỉ swap tới hoặc từ PRANA. Họ cũng có thể swap qua lại giữa sáu token còn lại (ví dụ USDT → WETH hoặc POL → USDC). Cặp có PRANA có thể dùng fallback WBTC/PRANA riêng khi AlphaRouter không tìm được route; cặp không có PRANA đi qua AlphaRouter thôi.
+
 Slippage cố định **0.5%** (`50` bps).
 
 ---
-
-
 
 ## Mục tiêu thiết kế
 
@@ -35,8 +35,6 @@ Slippage cố định **0.5%** (`50` bps).
 Stack này **không** dùng LiFi, 0x, RainbowKit hay WalletConnect. Chỉ Wagmi + injected connector.
 
 ---
-
-
 
 ## Kiến trúc mức cao
 
@@ -69,8 +67,6 @@ flowchart TD
 
 
 
-
-
 ### Phân tách trust
 
 
@@ -85,8 +81,6 @@ flowchart TD
 Browser **không bao giờ tự dựng swap calldata**. Nó gửi đúng `quote.transaction.{to, data, value}` như server trả về.
 
 ---
-
-
 
 ## Luồng user end-to-end
 
@@ -122,8 +116,6 @@ sequenceDiagram
 
 
 
-
-
 ### Từng bước
 
 1. **Mở** — `hero3.tsx` set `isSwapOpen`; `SwapModal` mount với WBTC → PRANA.
@@ -137,8 +129,6 @@ sequenceDiagram
   - Gửi swap transaction do server cung cấp.
 7. **Thành công** — màn success trong modal kèm link Polygonscan; tùy chọn “Swap again”.
 8. **Telemetry** — event vòng đời approval/swap tới `/api/swap/log`; swap confirmed tới `/api/swap/verify-transaction`.
-
-
 
 ### Máy trạng thái CTA chính
 
@@ -154,8 +144,6 @@ idle → approving → approval-confirming → approved → swapping → swap-co
 ```
 
 ---
-
-
 
 ## Pipeline quote (server)
 
@@ -173,8 +161,6 @@ Thanh khoản chính của PRANA nằm ở pool Uniswap V3 WBTC/PRANA đã biế
 - **Bán PRANA:** Quote `PRANA → WBTC` qua QuoterV2, rồi leg AlphaRouter `WBTC → tokenOut`.
 - Tự dựng calldata `exactInput` và bọc trong `multicall(uint256 deadline, bytes[])` để fallback có deadline on-chain giống quote AlphaRouter.
 - Output native POL thêm `unwrapWETH9` trong multicall.
-
-
 
 ### 3. Validate trước khi trả về
 
@@ -200,8 +186,6 @@ Route được chọn và các lần thất bại được ghi structured JSON l
 
 ---
 
-
-
 ## Độ tươi của quote phía frontend
 
 Quote hết hạn sau **3 phút** (`SWAP_DEADLINE_SECONDS`). Frontend còn:
@@ -214,8 +198,6 @@ Quote hết hạn sau **3 phút** (`SWAP_DEADLINE_SECONDS`). Frontend còn:
 Nếu user sửa amount hoặc token sau khi đã có quote, họ phải lấy quote mới trước khi swap.
 
 ---
-
-
 
 ## Approval và thực thi swap
 
@@ -238,8 +220,6 @@ Balance và allowance dùng RPC **browser**. Routing và verification dùng RPC 
 
 ---
 
-
-
 ## Bề mặt API
 
 Mọi endpoint swap chỉ nhận POST, same-origin, `Content-Type` JSON, giới hạn kích thước body và rate limit theo IP (`server/postApiRoutes.ts`, `server/rateLimit.ts`).
@@ -250,8 +230,6 @@ Mọi endpoint swap chỉ nhận POST, same-origin, `Content-Type` JSON, giới 
 | `POST /api/swap/quote`              | Route + unsigned tx + HMAC                       | 2 KB          | 5 (+ 30 global)            |
 | `POST /api/swap/log`                | Telemetry vòng đời không tin cậy                 | 8 KB          | 30                         |
 | `POST /api/swap/verify-transaction` | `swap_confirmed` tin cậy sau chứng minh on-chain | 32 KB         | 10                         |
-
-
 
 
 ### Quote request
@@ -265,8 +243,6 @@ Mọi endpoint swap chỉ nhận POST, same-origin, `Content-Type` JSON, giới 
   "slippageBps": 50
 }
 ```
-
-
 
 ### Quote response (hình dạng)
 
@@ -284,8 +260,6 @@ Trả về metadata `request` đã echo, mô tả token, amount dạng human + r
 Client không thể bịa analytics swap đã verify nếu không có giao dịch on-chain khớp.
 
 ---
-
-
 
 ## Cấu hình RPC và ví
 
@@ -313,8 +287,6 @@ CSP `connect-src` cho phép gọi API same-origin cộng host RPC frontend (`ser
 
 ---
 
-
-
 ## Hạ tầng mạng tùy chỉnh (production)
 
 Production không phải “Node trên VPS công khai.” Origin app chạy trên **Raspberry Pi 5** ở nhà; **VPS** là edge HTTPS công khai. Chúng nối bằng **reverse SSH tunnel**.
@@ -336,15 +308,11 @@ Raspberry Pi (sau NAT)
     /bond/   → static SPA cũ
 ```
 
-
-
 ### Vì sao hình dạng này
 
 - **Không port forwarding ở nhà** — Pi mở SSH tới VPS; VPS không cần quay vào mạng nhà.
 - **TLS và rate limit edge nằm trên VPS** — Pi chỉ thấy traffic đã qua edge công khai.
 - **App ở một máy** — Node + nginx local trên Pi; VPS chủ yếu là nginx + SSH.
-
-
 
 ### Định danh rate-limit qua proxy
 
@@ -368,8 +336,6 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 ---
 
-
-
 ## Mô hình bảo mật (tóm tắt)
 
 1. **RPC private ở lại server** — browser chỉ dùng RPC public.
@@ -385,11 +351,7 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 ---
 
-
-
 ## Bản đồ mã nguồn chính
-
-
 
 ### Frontend
 
@@ -406,8 +368,6 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `utils/swapTokenFormatting.ts` | Helper parse/format amount                 |
 | `constants/swapContracts.ts`   | Token, router, deadline, ABI               |
 | `types/swap.types.ts`          | Type API và UI dùng chung                  |
-
-
 
 
 ### Backend
@@ -428,8 +388,6 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `server/securityHeaders.ts`                     | CSP và header liên quan               |
 
 
-
-
 ### Tests
 
 - `server/tests/swapQuote.test.ts`
@@ -440,8 +398,6 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 ---
 
-
-
 ## Giới hạn V1
 
 - Chỉ Polygon mainnet; không bridge cross-chain
@@ -449,11 +405,9 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 - UI slippage cố định 0.5%
 - Chỉ injected wallet (không WalletConnect / luồng deep-link mobile)
 - HMAC quote + cache replay là **local theo process** — deploy nhiều instance cần shared secret và shared replay store
-- Availability production phụ thuộc tunnel SSH Pi ↔ VPS còn sống 
+- Availability production phụ thuộc tunnel SSH Pi ↔ VPS còn sống
 
 ---
-
-
 
 ## Mô hình tư duy cho contributor mới
 

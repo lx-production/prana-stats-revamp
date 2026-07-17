@@ -18,6 +18,8 @@ Default pair when the modal opens: **WBTC → PRANA**.
 
 V1 tokens: `PRANA`, `WBTC`, `POL` (native), `USDC`, `USDT`, `WETH`, `DAI`.
 
+Any two different tokens from that list can be selected as the pair, not only swaps to or from PRANA. Users can also swap among the other six tokens (for example USDT → WETH or POL → USDC). PRANA pairs may use a dedicated WBTC/PRANA fallback when AlphaRouter cannot find a route; non-PRANA pairs go through AlphaRouter alone.
+
 Slippage is fixed at **0.5%** (`50` bps) in V1.
 
 ---
