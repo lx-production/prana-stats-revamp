@@ -34,7 +34,8 @@ const AppFooter: React.FC = () => {
           <span className="font-mono text-white/55" title={title}>
             {text}
           </span>
-        )}
+        )}{' '}
+        by Triết Học Đường Phố with 💖
       </p>
     </footer>
   );
