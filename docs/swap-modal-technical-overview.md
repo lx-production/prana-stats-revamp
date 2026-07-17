@@ -5,6 +5,7 @@ This document describes the in-app Polygon swap modal end to end: UI flow, serve
 Related docs:
 
 - [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md) — full VPS ↔ Pi tunnel ops detail
+- [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — inventory of infra + swap security mechanisms
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — stats cache layer (separate from swap)
 
 ---

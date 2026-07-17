@@ -2,6 +2,8 @@
 
 This document describes how the app is exposed to the internet: a Raspberry Pi at home runs the app and connects to a public VPS via a **reverse SSH tunnel**. The VPS is the public face; the Pi is the private origin.
 
+Related: [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) inventories the security mechanisms on this path and in the swap modal.
+
 ---
 
 ## Overview
