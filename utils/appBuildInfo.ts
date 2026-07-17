@@ -12,6 +12,7 @@ export function getAppBuildInfo(): BuildInfo {
   return {
     commit: 'unknown',
     commitShort: 'unknown',
+    tag: null,
     branch: 'unknown',
     dirty: false,
     builtAt: '',

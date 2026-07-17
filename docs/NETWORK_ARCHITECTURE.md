@@ -148,11 +148,11 @@ After editing, reload nginx on the relevant host: `sudo nginx -t && sudo systemc
 
 After `npm run redeploy` (build + restart), anyone can check:
 
-1. Open the site footer: **Build** is the Vite bundle SHA (link to the GitHub commit).
-2. Or call `GET https://prana.triethocduongpho.net/api/version` and compare `commit` to `https://github.com/lx-production/prana-stats-revamp/commit/<sha>` (or `origin/main`).
-3. A trailing `*` on the short SHA means the checkout was dirty (uncommitted local changes) when that identity was resolved — not a clean public commit.
+1. Open the site footer: **Build** shows the git tag when HEAD is tagged (link to the GitHub release), otherwise the short SHA (link to the commit).
+2. Or call `GET https://prana.triethocduongpho.net/api/version` and compare `tag` (e.g. `v2.0.0`) and/or `commit` to GitHub.
+3. A trailing `*` on the label means the checkout was dirty (uncommitted local changes) when that identity was resolved — not a clean public commit.
 
-UI SHA is baked at `vite build`; `/api/version` is resolved at Node process start. With the usual `redeploy` flow they match. Redeploy from a clean `main` checkout so they match GitHub.
+UI identity is baked at `vite build`; `/api/version` is resolved at Node process start. With the usual `redeploy` flow they match. Redeploy from a clean `main` checkout with tags fetched (`git fetch --tags`) so they match GitHub.
 
 ## 8. Operational notes
 

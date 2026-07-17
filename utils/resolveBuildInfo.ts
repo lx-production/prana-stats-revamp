@@ -25,6 +25,8 @@ export function resolveBuildInfo(): BuildInfo {
   const commitShort =
     runGit(['rev-parse', '--short', 'HEAD']) ??
     (commit ? commit.slice(0, 7) : 'unknown');
+  // Only set when HEAD itself is tagged (clean release checkout).
+  const tag = runGit(['describe', '--tags', '--exact-match', 'HEAD']);
   const branch = runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
   // Non-empty porcelain output means uncommitted local changes.
   const dirty = Boolean(runGit(['status', '--porcelain']));
@@ -32,6 +34,7 @@ export function resolveBuildInfo(): BuildInfo {
   return {
     commit: commit ?? 'unknown',
     commitShort,
+    tag,
     branch: branch ?? 'unknown',
     dirty,
     builtAt: new Date().toISOString(),

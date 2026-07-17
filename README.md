@@ -21,8 +21,8 @@ Useful scripts: `npm run build`, `npm run serve`, `npm run typecheck`, `npm run 
 
 ## Verify production matches this repo
 
-1. Footer **Build** SHA on the live site → GitHub commit link
-2. Or `GET /api/version` and compare `commit` to `main`
+1. Footer **Build** shows the git tag when the checkout is tagged (e.g. `v2.0.0` → GitHub release), otherwise the short SHA → commit link
+2. Or `GET /api/version` and compare `tag` / `commit` to GitHub
 
 Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 
