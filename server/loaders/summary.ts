@@ -63,7 +63,8 @@ export async function loadSummaryMarkdown(): Promise<string> {
     loadCachedCapital(),
     loadCachedLpCapital(),
     loadCachedBondMetrics(),
-    loadCachedTopHoldingAddresses(),
+    // Page 1 (top 5) is enough for supply/liquidity metrics and the summary list.
+    loadCachedTopHoldingAddresses(1),
     readJsonIfExists<BuyDipsJson>(path.join(PROJECT_ROOT, 'buy_dips.json')),
     readPricePointSeries('data_730_days.json'),
     readMarkdownData('faq-en.md'),

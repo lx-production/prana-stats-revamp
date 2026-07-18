@@ -234,8 +234,8 @@ This avoids duplicating bond summary fields in `/api/prana-stats`.
 - First paint loads page `1` only; later pages load on demand when the user changes page. Cached pages stay in React state for the session.
 - The hook stores the server `holders` array as-is (no client-side page slicing). Server pagination is the source of truth.
 - Server loader (`server/loaders/topHoldingAddresses.ts`):
-  - `?page=N` → slice `TOP_HOLDING_ADDRESSES` to that page, then call `loadTopHoldingAddresses(holders)` from `scripts/update-top-holding-addresses.ts` (on-demand RPC multicall / fallback; not a JSON file writer in this flow).
-  - no `page` (used by `/api/summary`) → load all configured holders in one cached payload.
+  - always paginated: slice `TOP_HOLDING_ADDRESSES` for `page`, then call `loadTopHoldingAddresses(holders)` from `scripts/update-top-holding-addresses.ts` (on-demand RPC multicall / fallback; not a JSON file writer in this flow).
+  - `/api/summary` uses page `1` only — enough for supply/liquidity (ranks 1–5 / DEX pool labels) and the markdown top-holders list; shares the same page-1 cache as the UI.
 - Each page has its own in-memory TTL cache (`SERVER_CACHE_TTL_MS.topHoldingsRefresh`, 30 seconds) via `createServerCache(...)`.
 - There is no `top_holding_addresses.json` read/write in the runtime request flow.
 
@@ -285,8 +285,7 @@ Bond refresh request dedupe:
 - `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run used by `/api/bond-metrics` and does not keep a TTL cache after it completes
 
 Top holdings in-memory cache (TTL = `SERVER_CACHE_TTL_MS.topHoldingsRefresh`):
-- `/api/top-holding-addresses?page=N` — one cache entry per page (5 addresses each)
-- `/api/summary` path via `loadCachedTopHoldingAddresses()` with no page — separate cache for the full holder list
+- `/api/top-holding-addresses?page=N` and `/api/summary` (page `1`) — one cache entry per page (5 addresses each); summary reuses page 1
 
 ### LP position NFT id cache
 
