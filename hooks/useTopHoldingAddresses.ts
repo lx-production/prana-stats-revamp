@@ -14,16 +14,6 @@ type TopHoldingAddressesContextValue = TopHoldingAddressesData & {
   isPageLoading: boolean;
   setActivePage: (page: number) => void;
 };
-function getPageHolders(
-  holders: TopHoldingAddressesData['holders'],
-  page: number,
-): TopHoldingAddressesData['holders'] {
-  if (holders.length <= HOLDERS_PER_PAGE) return holders;
-
-  const start = (page - 1) * HOLDERS_PER_PAGE;
-  return holders.slice(start, start + HOLDERS_PER_PAGE);
-}
-
 
 function useTopHoldingAddressesInternal(): TopHoldingAddressesContextValue {
   const [holdersByPage, setHoldersByPage] = useState<Record<number, TopHoldingAddressesData['holders']>>({});
@@ -40,10 +30,11 @@ function useTopHoldingAddressesInternal(): TopHoldingAddressesContextValue {
     void fetchJson<TopHoldingAddressesJson>(`/api/top-holding-addresses?page=${activePage}`)
       .then((json) => {
         if (cancelled) return;
+        // Server already returns one page of holders.
         const responseHolders = Array.isArray(json?.holders) ? json.holders : [];
         setHoldersByPage((pages) => ({
           ...pages,
-          [activePage]: getPageHolders(responseHolders, activePage),
+          [activePage]: responseHolders,
         }));
         setGeneratedAt(typeof json?.generatedAt === 'string' ? json.generatedAt : null);
       })
