@@ -7,7 +7,8 @@ import { loadCachedCapital } from './loaders/cached/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
-import { loadCachedTopHoldingAddresses } from './loaders/topHoldingAddresses.ts';
+import { loadCachedTopHoldingAddresses, TOP_HOLDERS_PAGE_SIZE } from './loaders/topHoldingAddresses.ts';
+import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
@@ -44,7 +45,12 @@ export function createGetApiRouteHandler(): RequestHandler {
 
     // Endpoint the frontend can call for top holdings with a short-lived memory cache.
     if (url.pathname === '/api/top-holding-addresses') {
-      const result = await loadCachedTopHoldingAddresses();
+      const requestedPage = Number(url.searchParams.get('page') ?? '1');
+      const pageCount = Math.ceil(TOP_HOLDING_ADDRESSES.length / TOP_HOLDERS_PAGE_SIZE);
+      const page = Number.isInteger(requestedPage) && requestedPage >= 1 && requestedPage <= pageCount
+        ? requestedPage
+        : 1;
+      const result = await loadCachedTopHoldingAddresses(page);
       sendJson(res, 200, result, { cacheControl: READONLY_API_CACHE_CONTROL });
       return true;
     }

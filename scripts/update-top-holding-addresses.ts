@@ -1,10 +1,13 @@
 import { ethers } from 'ethers';
 import { loadDotEnvIntoProcessEnv, getRpcUrl } from '../utils/bondsScanUtils.ts';
 import { fetchBalancesViaMulticall, fetchBalancesViaFallback, buildOutput } from '../utils/topHoldingAddressesUpdater.ts';
+import { TOP_HOLDING_ADDRESSES, type TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
 import type { TopHoldingAddressesBuildOutput } from '../types/types.ts';
 import type { TopHoldingAddressesUpdateStrategy } from './types/updateTopHoldingAddressesTypes.ts';
 
-export async function loadTopHoldingAddresses(): Promise<TopHoldingAddressesBuildOutput> {
+export async function loadTopHoldingAddresses(
+  holders: TopHoldingAddress[] = TOP_HOLDING_ADDRESSES,
+): Promise<TopHoldingAddressesBuildOutput> {
   await loadDotEnvIntoProcessEnv();
   const rpcUrl = getRpcUrl();
   const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -12,10 +15,10 @@ export async function loadTopHoldingAddresses(): Promise<TopHoldingAddressesBuil
   let balancesRaw: bigint[];
   let strategy: TopHoldingAddressesUpdateStrategy = 'multicall';
   try {
-    balancesRaw = await fetchBalancesViaMulticall(provider);
+    balancesRaw = await fetchBalancesViaMulticall(provider, holders);
   } catch (error) {
     console.warn('Multicall failed, falling back to parallel balanceOf calls:', error);
-    balancesRaw = await fetchBalancesViaFallback(provider);
+    balancesRaw = await fetchBalancesViaFallback(provider, holders);
     strategy = 'fallback';
   }
 
@@ -23,7 +26,7 @@ export async function loadTopHoldingAddresses(): Promise<TopHoldingAddressesBuil
     console.info('Loaded top holding addresses via fallback RPC calls.');
   }
 
-  return buildOutput({ balancesRaw, rpcUrl });
+  return buildOutput({ balancesRaw, rpcUrl, holders });
 }
 
 async function main(): Promise<void> {

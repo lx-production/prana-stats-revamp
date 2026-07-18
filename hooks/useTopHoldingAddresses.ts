@@ -1,61 +1,89 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fetchJson } from '../utils/fetchJson';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses';
 import type { TopHoldingAddressesData, TopHoldingAddressesJson } from '../types';
 
 const TOTAL_HOLDERS = TOP_HOLDING_ADDRESSES.length;
+const HOLDERS_PER_PAGE = 5;
+const PAGE_COUNT = Math.ceil(TOTAL_HOLDERS / HOLDERS_PER_PAGE);
 
-const initialTopHoldingAddresses: TopHoldingAddressesData = {
-  holders: [],
-  totalHolders: 0,
-  generatedAt: null,
-  isLoading: true,
-  error: null,
+type TopHoldingAddressesContextValue = TopHoldingAddressesData & {
+  activePage: number;
+  pageCount: number;
+  pageHolders: TopHoldingAddressesData['holders'];
+  isPageLoading: boolean;
+  setActivePage: (page: number) => void;
 };
+function getPageHolders(
+  holders: TopHoldingAddressesData['holders'],
+  page: number,
+): TopHoldingAddressesData['holders'] {
+  if (holders.length <= HOLDERS_PER_PAGE) return holders;
 
-function useTopHoldingAddressesInternal() {
-  const [data, setData] = useState<TopHoldingAddressesData>(initialTopHoldingAddresses);
+  const start = (page - 1) * HOLDERS_PER_PAGE;
+  return holders.slice(start, start + HOLDERS_PER_PAGE);
+}
 
-  const fetchData = useCallback(async () => {
-    setData((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    try {
-      const json = await fetchJson<TopHoldingAddressesJson>('/api/top-holding-addresses');
-
-      setData({
-        holders: Array.isArray(json?.holders) ? json.holders : [],
-        totalHolders: TOTAL_HOLDERS,
-        generatedAt: typeof json?.generatedAt === 'string' ? json.generatedAt : null,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err: any) {
-      console.error('Failed to fetch top holding addresses:', err);
-      const message =
-        typeof err?.message === 'string' && err.message.trim().length > 0
-          ? err.message
-          : 'Failed to fetch top holding addresses';
-      setData((prev) => ({
-        ...prev,
-        holders: [],
-        totalHolders: TOTAL_HOLDERS,
-        isLoading: false,
-        error: message,
-      }));
-    }
-  }, []);
+function useTopHoldingAddressesInternal(): TopHoldingAddressesContextValue {
+  const [holdersByPage, setHoldersByPage] = useState<Record<number, TopHoldingAddressesData['holders']>>({});
+  const [activePage, setActivePage] = useState(1);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    if (holdersByPage[activePage]) return;
+
+    let cancelled = false;
+    setError(null);
+
+    void fetchJson<TopHoldingAddressesJson>(`/api/top-holding-addresses?page=${activePage}`)
+      .then((json) => {
+        if (cancelled) return;
+        const responseHolders = Array.isArray(json?.holders) ? json.holders : [];
+        setHoldersByPage((pages) => ({
+          ...pages,
+          [activePage]: getPageHolders(responseHolders, activePage),
+        }));
+        setGeneratedAt(typeof json?.generatedAt === 'string' ? json.generatedAt : null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error('Failed to fetch top holding addresses:', err);
+        setError(
+          err instanceof Error && err.message.trim().length > 0
+            ? err.message
+            : 'Failed to fetch top holding addresses',
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activePage, holdersByPage]);
+
+  const holders = useMemo(
+    () => Array.from({ length: PAGE_COUNT }, (_, index) => holdersByPage[index + 1] ?? []).flat(),
+    [holdersByPage],
+  );
+  const pageHolders = holdersByPage[activePage] ?? [];
+  const isPageLoading = !holdersByPage[activePage];
 
   return {
-    ...data,
+    holders,
     totalHolders: TOTAL_HOLDERS,
+    generatedAt,
+    isLoading: !holdersByPage[1],
+    error,
+    activePage,
+    pageCount: PAGE_COUNT,
+    pageHolders,
+    isPageLoading,
+    setActivePage: (page) => setActivePage(Math.min(Math.max(page, 1), PAGE_COUNT)),
   };
 }
 
-const TopHoldingAddressesContext = createContext<TopHoldingAddressesData | null>(null);
+const TopHoldingAddressesContext = createContext<TopHoldingAddressesContextValue | null>(null);
 
 export function TopHoldingAddressesProvider({ children }: { children: ReactNode }) {
   const value = useTopHoldingAddressesInternal();

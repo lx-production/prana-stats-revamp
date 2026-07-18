@@ -28,7 +28,7 @@ export const TopHoldingAddresses: React.FC = () => {
       ariaLabel: 'PRANA Staking info',
     },
   };
-  const { holders, isLoading, error } = useTopHoldingAddresses();
+  const { activePage, error, isPageLoading, pageCount, pageHolders, setActivePage } = useTopHoldingAddresses();
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -63,7 +63,7 @@ export const TopHoldingAddresses: React.FC = () => {
           ) : null}
 
           <div className="mt-5 grid grid-cols-1 gap-2">
-            {isLoading ? (
+            {isPageLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={`loading-${index}`}
@@ -71,8 +71,8 @@ export const TopHoldingAddresses: React.FC = () => {
                 />
               ))
             ) : (
-              holders.map((holder, index) => {
-                const rank = index + 1;
+              pageHolders.map((holder, index) => {
+                const rank = (activePage - 1) * 5 + index + 1;
                 const isNonCirculating = nonCirculatingRanks.has(rank);
                 const balanceValue = Number(holder.balance);
                 const formattedBalance = Number.isFinite(balanceValue) ? formatNumber(Math.round(balanceValue)) : '0';
@@ -117,6 +117,29 @@ export const TopHoldingAddresses: React.FC = () => {
               })
             )}
           </div>
+
+          <nav className="mt-5 flex justify-center gap-2" aria-label="Top holding addresses pages">
+            {Array.from({ length: pageCount }, (_, index) => {
+              const page = index + 1;
+              const isActive = page === activePage;
+
+              return (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setActivePage(page)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`h-9 min-w-9 rounded-lg border px-3 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'border-cyan-400/50 bg-cyan-400/15 text-cyan-200'
+                      : 'border-white/10 bg-black/20 text-gray-300 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
     </section>
