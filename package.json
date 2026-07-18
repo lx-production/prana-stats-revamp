@@ -51,6 +51,15 @@
     "vite": "^8.1.0"
   },
   "overrides": {
-    "axios": "^1.18.1"
+    "axios": "1.18.1",
+    "@ethersproject/providers": {
+      "ws": "8.21.1"
+    },
+    "ethers": {
+      "ws": "8.21.1"
+    },
+    "viem": {
+      "ws": "8.21.1"
+    }
   }
 }
