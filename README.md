@@ -34,6 +34,7 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md)                   | How prod is exposed (VPS ↔ Pi)             |
 | [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md)                       | API/data caching, including `/api/version` |
 | [docs/swap-modal-technical-overview.md](docs/swap-modal-technical-overview.md) | Swap quote / verify flow                   |
+| `/terms`                                                                       | Terms / Risk Disclosure page (footer link) |
 
 
 Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.

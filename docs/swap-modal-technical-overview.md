@@ -382,6 +382,12 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 
 ---
 
+## Terms / Risk Disclosure
+
+Public legal copy for end users lives at **`/terms`** (footer link + launch posts). Content is markdown under `data/terms-risk-vi.md` and `data/terms-risk-en.md`, rendered by `components/TermsRiskPage.tsx`. Path matching uses `constants/appRoutes.ts` (no React Router). Production and Vite SPA both fall back to `index.html` for this path.
+
+---
+
 ## V1 limitations
 
 - Polygon mainnet only; no cross-chain bridging

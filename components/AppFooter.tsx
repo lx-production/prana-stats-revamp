@@ -1,4 +1,6 @@
 import React from 'react';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
+import { TERMS_RISK_PATH } from '../constants/appRoutes.ts';
 import { getAppBuildInfo } from '../utils/appBuildInfo.ts';
 import { buildIdentityUrl, formatBuildLabel } from '../utils/buildInfoUrls.ts';
 
@@ -8,6 +10,7 @@ import { buildIdentityUrl, formatBuildLabel } from '../utils/buildInfoUrls.ts';
  * Machine checks can still use `GET /api/version` for the running Node process.
  */
 const AppFooter: React.FC = () => {
+  const { locale } = useSiteLanguage();
   const buildInfo = getAppBuildInfo();
   const href = buildIdentityUrl(buildInfo);
   const text = formatBuildLabel(buildInfo);
@@ -18,6 +21,14 @@ const AppFooter: React.FC = () => {
 
   return (
     <footer className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+      <p className="mb-3 text-center text-xs text-white/45">
+        <a
+          href={TERMS_RISK_PATH}
+          className="underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          {locale === 'en' ? 'Terms / Risk Disclosure' : 'Điều khoản / Công bố rủi ro'}
+        </a>
+      </p>
       <p className="text-center text-xs text-white/35">
         Build{' '}
         {href ? (

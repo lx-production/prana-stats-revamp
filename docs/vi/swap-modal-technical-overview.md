@@ -398,6 +398,12 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 ---
 
+## Điều khoản / Công bố rủi ro
+
+Bản pháp lý công khai cho người dùng dùng ở **`/terms`** (link footer + bài launch). Nội dung nằm trong `data/terms-risk-vi.md` và `data/terms-risk-en.md`, render bởi `components/TermsRiskPage.tsx`. Path match qua `constants/appRoutes.ts` (không dùng React Router). Production và Vite SPA đều fallback `index.html` cho path này.
+
+---
+
 ## Giới hạn V1
 
 - Chỉ Polygon mainnet; không bridge cross-chain

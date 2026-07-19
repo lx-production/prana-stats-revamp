@@ -1,56 +1,41 @@
 import React from "react";
 import "./index.css";
 import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import PranaHero from "./hero3.tsx";
 import Supply from "./components/Supply";
 import Capital from "./components/Capital";
 import Liquidity from "./components/Liquidity";
 import Timeline from "./components/Timeline";
+import AppFooter from "./components/AppFooter";
 import FaqSection from "./components/FaqSection";
 import BasicStats from "./components/BasicStats";
+import { wagmiConfig } from "./utils/wagmiConfig";
 import BondingStats from "./components/BondingStats";
-import FlutterShaderBackground from "./flutterShader.tsx";
 import StakingStats from "./components/StakingStats";
-import AppFooter from "./components/AppFooter";
+import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
 import PranaConverter from "./components/PranaConverter";
+import { useAppPathname } from "./hooks/useAppPathname";
+import { isTermsRiskPath } from "./constants/appRoutes";
+import FlutterShaderBackground from "./flutterShader.tsx";
 import PriceChartsSection from "./components/PriceChartsSection";
-import TopHoldingAddresses from "./components/TopHoldingAddresses";
-import DoublePranaAbsorptionFlow from "./components/DoublePranaAbsorptionFlow";
-import PranaPerformanceSection from "./components/PranaPerformanceSection";
-import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
-import { wagmiConfig } from "./utils/wagmiConfig";
+import TopHoldingAddresses from "./components/TopHoldingAddresses";
+import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import DoublePranaAbsorptionFlow from "./components/DoublePranaAbsorptionFlow";
+import PranaPerformanceSection from "./components/PranaPerformanceSection";
 import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
 
 prefetchInitialJson();
 
 const queryClient = new QueryClient();
 
-function App() {
-  useSpinningFavicon();
-
+function HomePage() {
   return (
-    <SiteLanguageProvider>
-    <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
-      <LanguageToggle />
-      <FlutterShaderBackground
-        className="select-none"
-        opacity={1}
-        brightness={0.5}
-        gamma={1.05}
-        speed={0.1}
-        darkTint={0.5}
-        darkTintColor={[0.02, 0.0, 0.08]}
-        iterations={32}
-        maxDpr={1.15}
-        targetFps={30}
-        renderScale={1}
-      />
-
+    <>
       <main className="relative z-10 flex flex-col gap-6 pb-24">
         <PranaHero />
         <TopHoldingAddressesProvider>
@@ -78,6 +63,41 @@ function App() {
         <FaqSection />
       </main>
       <AppFooter />
+    </>
+  );
+}
+
+function App() {
+  useSpinningFavicon();
+  const pathname = useAppPathname();
+  const showTerms = isTermsRiskPath(pathname);
+
+  return (
+    <SiteLanguageProvider>
+    <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
+      <LanguageToggle />
+      <FlutterShaderBackground
+        className="select-none"
+        opacity={1}
+        brightness={0.5}
+        gamma={1.05}
+        speed={0.1}
+        darkTint={0.5}
+        darkTintColor={[0.02, 0.0, 0.08]}
+        iterations={32}
+        maxDpr={1.15}
+        targetFps={30}
+        renderScale={1}
+      />
+
+      {showTerms ? (
+        <>
+          <TermsRiskPage />
+          <AppFooter />
+        </>
+      ) : (
+        <HomePage />
+      )}
     </div>
     </SiteLanguageProvider>
   );
