@@ -1,10 +1,10 @@
 // QUICK TWEAKS:
 // <FlutterShaderBackground
 //    opacity={1}                 // CSS layer opacity; keep at 1 for solid dark BG
-//    speed={0.22}                 // time scale (1.0 original)
+//    speed={0.1}                  // time scale (1.0 original)
 //    brightness={0.5}            // final shader brightness
 //    gamma={1.05}                // tone curve (>1 darkens mids)
-//    darkTint={0.42}             // dark overlay strength (0..1)
+//    darkTint={0.5}              // dark overlay strength (0..1)
 //    darkTintColor={[0.02, 0.0, 0.08]} // RGB tint color
 // />
 
@@ -27,15 +27,15 @@ export interface FlutterShaderBackgroundProps {
 export function FlutterShaderBackground({
   className = "",
   opacity = 1,
-  speed = 0.22,
+  speed = 0.1,
   brightness = 0.5,
   gamma = 1.05,
-  darkTint = 0.42,
+  darkTint = 0.5,
   darkTintColor = [0.02, 0.0, 0.08],
   iterations = 32,
   maxDpr = 1.15,
   targetFps = 30,
-  renderScale = 0.9,
+  renderScale = 1,
 }: FlutterShaderBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -215,7 +215,7 @@ export function FlutterShaderBackground({
   ]);
 
   return (
-    <div className={`fixed inset-0 pointer-events-none z-0 ${className}`} style={{ opacity }}>
+    <div className={`fixed inset-0 pointer-events-none select-none z-0 ${className}`} style={{ opacity }}>
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );

@@ -76,19 +76,7 @@ function App() {
     <SiteLanguageProvider>
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
-      <FlutterShaderBackground
-        className="select-none"
-        opacity={1}
-        brightness={0.5}
-        gamma={1.05}
-        speed={0.1}
-        darkTint={0.5}
-        darkTintColor={[0.02, 0.0, 0.08]}
-        iterations={32}
-        maxDpr={1.15}
-        targetFps={30}
-        renderScale={1}
-      />
+      <FlutterShaderBackground />
 
       {showTerms ? (
         <>
