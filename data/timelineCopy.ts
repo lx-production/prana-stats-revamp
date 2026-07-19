@@ -62,6 +62,11 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
     title: "Tăng lãi suất PRANA Staking",
     description: "Mỗi kỳ hạn tăng thêm 3%. Kỳ hạn 1 năm: 15%",
   },
+  event_14: {
+    title: "Khai trương PRANA Swap",
+    description:
+      "PRANA Swap chính thức đi vào hoạt động. Swap ngay trên trang nhà PRANA Protocol",
+  },
 };
 
 export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
@@ -124,5 +129,10 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
   event_13: {
     title: "PRANA Staking Interest Rate Increased",
     description: "Each term increased by 3%. 1-year term: 15%",
+  },
+  event_14: {
+    title: "PRANA Swap Launch",
+    description:
+      "PRANA Swap is now officially live. Swap now on the PRANA Protocol homepage.",
   },
 };

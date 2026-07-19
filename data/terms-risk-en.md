@@ -58,7 +58,7 @@ Before using the product, you are responsible for:
 
 When approving or swapping an ERC-20 token, your wallet will ask you to sign an interaction with **Uniswap SwapRouter02** on Polygon. This is the single address used for both the approve step (spender) and the swap step (`to`):
 
-`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`
+[0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)
 
 If your wallet shows a different spender/`to` address, stop and do not confirm the transaction.
 

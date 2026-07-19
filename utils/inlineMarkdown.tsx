@@ -7,11 +7,12 @@ import type { ReactNode } from "react";
  * Render a plain-text markdown snippet with:
  * - **bold**
  * - `inline code`
+ * - [links](url) — open in a new tab with rel="nofollow noopener noreferrer"
  * Newlines stay as text so the parent can use whitespace-pre-line.
  */
 export function renderInlineMarkdown(text: string): ReactNode[] {
-  // Capture **bold** and `code` tokens; leave everything else as plain text.
-  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  // Capture **bold**, `code`, and [label](url) tokens; leave everything else as plain text.
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
 
   return tokens.map((token, index) => {
     if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
@@ -30,6 +31,23 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
         >
           {token.slice(1, -1)}
         </code>
+      );
+    }
+
+    // Markdown link: [label](https://example.com)
+    const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
+    if (linkMatch) {
+      const [, label, href] = linkMatch;
+      return (
+        <a
+          key={index}
+          href={href}
+          target="_blank"
+          rel="nofollow noopener noreferrer"
+          className="break-all rounded bg-white/10 px-1 py-0.5 font-mono text-[0.9em] text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60"
+        >
+          {label}
+        </a>
       );
     }
 

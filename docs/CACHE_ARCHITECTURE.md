@@ -434,7 +434,7 @@ Markdown document (not JSON). Aggregates live protocol stats, bond/staking/capit
 Example opening (truncated):
 
 ```markdown
-# PRANA Stats Summary
+# PRANA Protocol Summary
 
 Canonical site: https://prana.triethocduongpho.net
 ...

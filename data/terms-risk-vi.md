@@ -58,7 +58,7 @@ Trước khi sử dụng, bạn có trách nhiệm:
 
 Khi approve hoặc swap token ERC-20, ví sẽ yêu cầu bạn ký tương tác với **Uniswap SwapRouter02** trên Polygon. Đây là địa chỉ duy nhất dùng cho cả bước approve (spender) và bước swap (`to`):
 
-`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`
+[0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)
 
 Nếu ví hiển thị địa chỉ spender/`to` khác địa chỉ trên, hãy dừng lại và không xác nhận giao dịch.
 

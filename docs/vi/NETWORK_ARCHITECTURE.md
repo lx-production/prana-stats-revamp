@@ -1,4 +1,4 @@
-# Prana Stats – Kiến trúc mạng
+# PRANA Protocol – Kiến trúc mạng
 
 Tài liệu này mô tả cách app được expose ra internet: một Raspberry Pi ở nhà chạy app và kết nối tới VPS công khai qua **reverse SSH tunnel**. VPS là mặt tiền công khai; Pi là origin riêng tư.
 

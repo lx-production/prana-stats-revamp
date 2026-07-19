@@ -101,7 +101,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
   }));
 
   return [
-    '# PRANA Stats Summary',
+    '# PRANA Protocol Summary',
     '',
     'Extraction source: live UI',
     `Generated at: ${new Date().toISOString()}`,

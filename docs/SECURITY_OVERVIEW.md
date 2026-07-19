@@ -30,7 +30,7 @@ Applied to API and static responses via `setSecurityHeaders()` (`server/security
 
 - **Chain:** Polygon mainnet only (`chainId` `137`).
 - **Tokens:** fixed allowlist of seven symbols (`PRANA`, `WBTC`, `POL`, `USDC`, `USDT`, `WETH`, `DAI`) via `V1_SWAP_TOKENS` / `getSwapToken()`.
-- **Router:** Uniswap SwapRouter02 on Polygon (`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`).
+- **Router:** Uniswap SwapRouter02 on Polygon ([`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)).
 - **Slippage UI:** fixed at `50` bps (0.5%) in the modal; server clamps requested bps to `[1, 500]` via `getValidatedSlippageBps()`.
 - **Wallet:** injected connectors only (wagmi); no WalletConnect / LiFi / 0x / RainbowKit.
 - **Calldata source:** browser never builds swap calldata; it submits `quote.transaction.{to, data, value}` from the server response.

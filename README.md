@@ -1,6 +1,6 @@
-# PRANA Stats
+# PRANA Protocol
 
-Live dashboard for the [PRANA](https://prana.triethocduongpho.net) protocol — staking, bonding, liquidity, supply, price performance, and on-site swap — with a small Node API that serves the UI and JSON snapshots.
+Official home for the [PRANA](https://prana.triethocduongpho.net) protocol — swap, staking, bonding, liquidity, supply, price performance, and on-chain data — with a small Node API that serves the UI and JSON snapshots.
 
 **Live:** [https://prana.triethocduongpho.net](https://prana.triethocduongpho.net)
 

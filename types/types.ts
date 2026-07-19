@@ -3,7 +3,7 @@ import type { TopHoldingAddress } from '../constants/topHoldingAddresses.ts';
 import type { PriceChangeSet } from './performance.ts';
 import type { PricePoint } from './pricePoint.ts';
 
-// Types and interfaces for the Prana Stats application
+// Types and interfaces for the PRANA Protocol application
 
 export type BondTotalsCacheEntry = {
   total: bigint;

@@ -1,6 +1,6 @@
-# PRANA Stats
+# PRANA Protocol
 
-> PRANA protocol stats: staking, bonding, liquidity, supply, performance, FAQ, and raw JSON endpoints.
+> Official PRANA home: swap, staking, bonding, liquidity, supply, performance, FAQ, and raw JSON endpoints.
 
 - Summary (markdown): https://prana.triethocduongpho.net/api/summary
 - Raw JSON APIs: listed in the summary under "Raw Data Endpoints"

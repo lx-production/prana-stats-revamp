@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { TIMELINE_COPY_EN, TIMELINE_COPY_VI } from "../data/timelineCopy";
-import { TIMELINE_EVENTS_META } from "../data/timelineEventsMeta";
 import { useSiteLanguage } from "./useSiteLanguage";
+import { TIMELINE_EVENTS_META } from "../data/timelineEventsMeta";
+import { TIMELINE_COPY_EN, TIMELINE_COPY_VI } from "../data/timelineCopy";
+
 import type { TimelineEvent } from "../types/timeline.ts";
 
 export const useTimelineEvents = (): TimelineEvent[] => {

@@ -31,7 +31,7 @@ Tài liệu liên quan:
 
 - **Chain:** chỉ Polygon mainnet (`chainId` `137`).
 - **Token:** allowlist cố định gồm bảy symbol (`PRANA`, `WBTC`, `POL`, `USDC`, `USDT`, `WETH`, `DAI`) qua `V1_SWAP_TOKENS` / `getSwapToken()`.
-- **Router:** Uniswap SwapRouter02 trên Polygon (`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`).
+- **Router:** Uniswap SwapRouter02 trên Polygon ([`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)).
 - **Slippage UI:** cố định `50` bps (0.5%) trong modal; server giới hạn bps được gửi trong khoảng `[1, 500]` qua `getValidatedSlippageBps()`.
 - **Wallet:** chỉ injected connector (wagmi); không dùng WalletConnect / LiFi / 0x / RainbowKit.
 - **Nguồn calldata:** browser không tự dựng swap calldata; nó gửi đúng `quote.transaction.{to, data, value}` từ response của server.

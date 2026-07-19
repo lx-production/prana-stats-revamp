@@ -1,10 +1,10 @@
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { Clock, ExternalLink } from "lucide-react";
+import { formatUnixDate } from "../utils/formatters";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
-import { formatUnixDate } from "../utils/formatters";
 
 const listVariants = {
   hidden: {},

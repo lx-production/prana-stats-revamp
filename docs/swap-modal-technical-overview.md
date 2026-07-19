@@ -72,7 +72,7 @@ flowchart TD
 | **Browser** | UI, wallet connect, balance/allowance reads, signing approve + swap, fire-and-forget lifecycle logs |
 | **Node backend** | Quote routing, calldata construction, calldata validation, HMAC signing, rate limits, on-chain verification, structured logs |
 | **User wallet** | Final authority: only the wallet can move funds |
-| **Polygon** | Execution via Uniswap SwapRouter02 (`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`) |
+| **Polygon** | Execution via Uniswap SwapRouter02 ([`0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45`](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)) |
 
 The browser **never builds swap calldata**. It sends `quote.transaction.{to, data, value}` exactly as returned by the server.
 
@@ -384,7 +384,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 
 ## Terms / Risk Disclosure
 
-Public legal copy for end users lives at **`/terms`** (footer link + launch posts). Content is markdown under `data/terms-risk-vi.md` and `data/terms-risk-en.md`, rendered by `components/TermsRiskPage.tsx`. Path matching uses `constants/appRoutes.ts` (no React Router). Production and Vite SPA both fall back to `index.html` for this path.
+Public legal copy for end users lives at **`/terms`** (footer link + launch posts). Content is markdown under `data/terms-risk-vi.md` and `data/terms-risk-en.md`, rendered by `components/TermsRiskPage.tsx` via `utils/inlineMarkdown.tsx` (bold, inline code, and `[label](url)` links). The SwapRouter02 address in section 5 links to [Polygonscan token transfers](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns) (`target="_blank"`, `rel="nofollow noopener noreferrer"`). Path matching uses `constants/appRoutes.ts` (no React Router). Production and Vite SPA both fall back to `index.html` for this path.
 
 ---
 
