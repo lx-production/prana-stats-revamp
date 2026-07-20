@@ -60,6 +60,8 @@ export type StakingCopy = {
   earlyDialogConfirm: string;
   earlyDialogCancel: string;
   switchPolygonFirst: string;
+  stakingContractLink: string;
+  interestContractLink: string;
 };
 
 const vi: StakingCopy = {
@@ -136,6 +138,8 @@ const vi: StakingCopy = {
   earlyDialogConfirm: 'Xác nhận unstake sớm',
   earlyDialogCancel: 'Hủy',
   switchPolygonFirst: 'Hãy chuyển sang Polygon trước.',
+  stakingContractLink: 'Hợp đồng Staking',
+  interestContractLink: 'Hợp đồng Interest',
 };
 
 const en: StakingCopy = {
@@ -213,6 +217,8 @@ const en: StakingCopy = {
   earlyDialogConfirm: 'Confirm early unstake',
   earlyDialogCancel: 'Cancel',
   switchPolygonFirst: 'Switch to Polygon first.',
+  stakingContractLink: 'Staking contract',
+  interestContractLink: 'Interest contract',
 };
 
 export function getStakingCopy(locale: SiteLocale): StakingCopy {

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
-import { Loader2 } from 'lucide-react';
+import { Coins, Loader2, Lock } from 'lucide-react';
+import GlassPanel from '../../../components/ui/GlassPanel.tsx';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
@@ -154,47 +156,40 @@ export default function StakingForm({
 
   if (configLoading) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
+      <GlassPanel>
         <div className="flex items-center gap-2 text-sm text-white/60">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           {copy.loadingConfig}
         </div>
-      </section>
+      </GlassPanel>
     );
   }
 
   if (configError || !config) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-        <p className="text-sm text-red-300" role="alert">
-          {copy.configError}
-        </p>
-      </section>
+      <GlassPanel>
+        <StatusBanner tone="error">{copy.configError}</StatusBanner>
+      </GlassPanel>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-      <h2 className="text-lg font-medium tracking-wide text-white">
+    <GlassPanel hoverable>
+      <h2 className="flex items-center gap-2 text-lg font-medium tracking-wide text-white">
+        <Coins className="h-5 w-5 text-cyan-300" aria-hidden />
         {copy.stakeHeading}
       </h2>
 
       {paused ? (
-        <p
-          className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
-          role="status"
-        >
+        <StatusBanner tone="warning" className="mt-3">
           {copy.pausedBanner}
-        </p>
+        </StatusBanner>
       ) : null}
 
       {!wallet.isPolygon ? (
-        <p
-          className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
-          role="status"
-        >
+        <StatusBanner tone="warning" className="mt-3">
           {copy.switchPolygonFirst}
-        </p>
+        </StatusBanner>
       ) : null}
 
       <div className="mt-5 space-y-5">
@@ -234,13 +229,13 @@ export default function StakingForm({
               const value = event.target.value;
               if (isStakeAmountInput(value)) setAmount(value);
             }}
-            className="w-full rounded-2xl border border-white/15 bg-transparent px-4 py-3 text-white placeholder:text-white/30 focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40 disabled:opacity-50"
+            className="w-full rounded-2xl border border-white/15 bg-transparent px-4 py-3 text-white placeholder:text-white/30 focus:border-[#F5D27A]/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40 disabled:opacity-50"
           />
 
           {amountError ? (
-            <p className="mt-2 text-xs text-red-300" role="alert">
+            <StatusBanner tone="error" className="mt-2 text-xs">
               {amountError}
-            </p>
+            </StatusBanner>
           ) : null}
         </div>
 
@@ -274,12 +269,10 @@ export default function StakingForm({
         </div>
 
         {stakeTx.error ? (
-          <p className="text-sm text-red-300" role="alert">
-            {stakeTx.error}
-          </p>
+          <StatusBanner tone="error">{stakeTx.error}</StatusBanner>
         ) : null}
         {stakeTx.success ? (
-          <p className="text-sm text-emerald-300" role="status">
+          <StatusBanner tone="success">
             {stakeTx.success}
             {stakeTx.transactionHash ? (
               <>
@@ -290,7 +283,7 @@ export default function StakingForm({
                 />
               </>
             ) : null}
-          </p>
+          </StatusBanner>
         ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -306,7 +299,10 @@ export default function StakingForm({
                 {copy.signingPermit}
               </span>
             ) : stakeTx.hasValidPermit ? (
-              copy.permitSigned
+              <span className="inline-flex items-center gap-2">
+                <Lock className="h-4 w-4" aria-hidden />
+                {copy.permitSigned}
+              </span>
             ) : (
               copy.signPermit
             )}
@@ -333,6 +329,6 @@ export default function StakingForm({
           </button>
         </div>
       </div>
-    </section>
+    </GlassPanel>
   );
 }

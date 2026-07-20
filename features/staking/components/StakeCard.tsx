@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import {
   calculateAccruedInterestRaw,
   calculateTotalInterestRaw,
@@ -117,7 +118,7 @@ export default function StakeCard({
     !actionsEnabled || actionsLocked || Boolean(activeAction);
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:border-white/20">
+    <article className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition-all duration-500 hover:border-white/20 hover:bg-white/10">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-white">
           {copy.stakeId(stake.id)}
@@ -129,12 +130,12 @@ export default function StakeCard({
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-baseline gap-3">
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-3">
         <div className="text-xl font-semibold text-white">
           {formatPranaAmount(amountRaw)}{' '}
           <span className="text-sm font-normal text-white/55">PRANA</span>
         </div>
-        <span className="rounded-md border border-white/10 px-2 py-0.5 text-xs text-cyan-300">
+        <span className="w-fit rounded-md border border-white/10 px-2 py-0.5 text-xs text-cyan-300">
           {copy.aprLabel(stake.apr)}
         </span>
       </div>
@@ -143,7 +144,8 @@ export default function StakeCard({
         {copy.durationDays(daysFromSeconds(stake.durationSeconds))}
       </p>
 
-      <div className="mt-3 grid gap-1 text-xs text-white/55 sm:grid-cols-2">
+      {/* Stack metadata on mobile; two columns from sm up */}
+      <div className="mt-3 flex flex-col gap-1 text-xs text-white/55 sm:grid sm:grid-cols-2">
         <div>
           {copy.started}: {formatStakeDate(stake.startTime, locale)}
         </div>
@@ -179,15 +181,15 @@ export default function StakeCard({
       </div>
 
       {mustClaimBeforeUnstake ? (
-        <p className="mt-3 text-xs text-amber-200" role="status">
+        <StatusBanner tone="warning" className="mt-3 text-xs">
           {copy.claimFirstHint}
-        </p>
+        </StatusBanner>
       ) : null}
 
       {warnUnclaimedExpired ? (
-        <p className="mt-3 text-xs text-red-300" role="status">
+        <StatusBanner tone="error" className="mt-3 text-xs">
           {copy.graceExpiredWarning}
-        </p>
+        </StatusBanner>
       ) : null}
 
       {actionsEnabled ? (

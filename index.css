@@ -94,6 +94,29 @@
   }
 }
 
+/* Accessibility: freeze decorative motion when OS requests reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn-hero {
+    transition: none;
+  }
+
+  .btn-hero:hover {
+    transform: none;
+  }
+
+  .btn-gold-border {
+    animation: none;
+  }
+
+  .animate-shine {
+    animation: none !important;
+  }
+
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
 .text-4xl {
   font-size: 2rem;
   line-height: 1.2rem;

@@ -13,12 +13,11 @@
 ## Tiến độ
 
 - [x] **Bước 1 — Tách homepage và thiết lập lazy `/stake/`** (`40e0da1`): frontend/server typecheck pass, 70 server tests pass, production build pass; `StatsPage` và `StakingPage` đã thành chunk riêng, `/stake` redirect `308` giữ query string và direct refresh `/stake/` trả SPA shell.
-- [x] **Closeout Bước 1**: automated route tests (`server/tests/stakeRoutes.test.ts`), `STAKE_PATH` / `STAKE_CANONICAL_PATH` dùng chung (hero + server + matcher), `AppFooter` trên placeholder, `usePageMetadata` cho title/description theo locale.
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (EIP-712 + `parseSignature`, invalidate permit, wait receipt); `useStakeActions` + `EarlyUnstakeDialog`; claim-before-unstake / grace rules; lỗi VI/EN chuẩn hóa; Polygonscan link; tests permit/status/errors.
-- [ ] **Bước 6 — Đồng bộ styling với main app.**
+- [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [ ] **Bước 7 — Xóa phần dư thừa của `staking-ui`.**
 - [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành.**
 
@@ -108,7 +107,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 - Tạo TypeScript types cho config, account snapshot, stake record, permit snapshot và transaction status.
 - Đảm bảo Tailwind/TypeScript config scan/include `pages/**` và `features/**` (Bước 1 có thể đã thêm `pages/**`).
 
-Closeout: `POLYGON_CHAIN_ID` / `SECONDS_PER_*` sống trong `constants/network.ts` (swap re-export để tương thích); `PRANA_TOKEN_ABI` tối thiểu + typed `STAKING_CONTRACT_ABI as const`; types tại `features/staking/staking.types.ts` (permit domain derive từ constants; `Address`/`Hex` từ `blockchain.types`); `staking-ui` constants chỉ còn thin re-export; route tests inject fixture `distDir` qua `createStaticRequestHandler`; `npm test` → `test:server`.
+
 ### Bước 3 — Tạo backend staking read API ✅
 
 Thêm hai GET endpoint:
@@ -173,7 +172,7 @@ Quy tắc backend:
 - Không tạo generic JSON-RPC proxy.
 - Backend tiếp tục dùng `VITE_ALCHEMY_POLYGON_MAIN` làm Polygon RPC mặc định, theo cấu hình server hiện tại. Biến này chỉ được đọc ở server; frontend main app không tham chiếu nó.
 
-Closeout: loaders `stakingConfig` / `stakingAccount` + cached config; routes trong `getApiRoutes` (GET-only 405 + `Allow: GET`); validate address trước rate-limit; `formatErrorForLog` cho console; tests `stakingApi.test.ts` + rateLimit; warmup `/api/staking/config`.
+
 ### Bước 4 — Port form và account state ✅
 
 - Chuyển `StakingForm`, `ActiveStakes` và hooks sang TS/TSX trong feature folder.
@@ -194,7 +193,7 @@ interestPerSecond = annualInterest / 31,536,000
 totalInterest = interestPerSecond × duration
 ```
 
-Closeout: `features/staking/` có `stakingMath` + tests, `stakingApi`, `staking.copy`, hooks config/account, `DurationSelector` / `StakingForm` / `ActiveStakes` / `StakeCard` / `WalletControl`; permit+stake buttons disabled chờ Bước 5; `npm run test:staking`.
+
 ### Bước 5 — Harden permit và transaction flow ✅
 
 Giữ hai nút riêng theo lựa chọn:
@@ -235,8 +234,7 @@ Stake management:
 - Mỗi action chờ receipt rồi mới refetch; khóa các action khác trong lúc một transaction đang chạy.
 - Chuẩn hóa lỗi VI/EN cho user rejection, wrong chain, insufficient balance, expired permit, revert và RPC unavailable; không render nguyên raw wallet/provider error.
 
-Closeout: `useStakeTransaction` / `useStakeActions` / `EarlyUnstakeDialog` / `getStakeActionState`; `permitUtils` + `stakingErrors`; mutual busy lock form↔stakes; `test:staking` gồm permit invalidation, claim-before-unstake, grace expiry, error classification.
-### Bước 6 — Đồng bộ styling với main app
+### Bước 6 — Đồng bộ styling với main app ✅
 
 - Bỏ hoàn toàn light theme và `ThemeContext`; staking dùng dark theme của main app.
 - Page shell:

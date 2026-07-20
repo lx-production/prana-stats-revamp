@@ -9,6 +9,7 @@
 // />
 
 import React, { useEffect, useRef } from "react";
+import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 
 export interface FlutterShaderBackgroundProps {
   className?: string;
@@ -47,8 +48,12 @@ export function FlutterShaderBackground({
   const locDarkTintRef = useRef<WebGLUniformLocation | null>(null);
   const locDarkTintColorRef = useRef<WebGLUniformLocation | null>(null);
   const [darkTintR, darkTintG, darkTintB] = darkTintColor;
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    // Skip WebGL loop when user prefers reduced motion — solid page bg shows through.
+    if (prefersReducedMotion) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -212,6 +217,7 @@ export function FlutterShaderBackground({
     maxDpr,
     targetFps,
     renderScale,
+    prefersReducedMotion,
   ]);
 
   return (

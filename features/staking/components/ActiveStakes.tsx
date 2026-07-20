@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import GlassPanel from '../../../components/ui/GlassPanel.tsx';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getStakingCopy } from '../staking.copy.ts';
 import { useStakeActions } from '../hooks/useStakeActions.ts';
@@ -101,37 +103,34 @@ export default function ActiveStakes({
   const penaltyPercent = config?.earlyUnstakePenaltyPercent ?? 0;
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
+    <GlassPanel hoverable>
       <h2 className="text-lg font-medium tracking-wide text-white">
         {copy.activeStakesHeading}
       </h2>
 
       {configLoading ? (
-        <p className="mt-3 text-sm text-white/55" role="status">
+        <StatusBanner tone="neutral" className="mt-3">
           {copy.stakesConfigPending}
-        </p>
+        </StatusBanner>
       ) : null}
       {configError ? (
-        <p className="mt-3 text-sm text-amber-200" role="status">
+        <StatusBanner tone="warning" className="mt-3">
           {copy.stakesConfigError}
-        </p>
+        </StatusBanner>
       ) : null}
       {configReady && paused ? (
-        <p
-          className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
-          role="status"
-        >
+        <StatusBanner tone="warning" className="mt-3">
           {copy.stakesPausedBanner}
-        </p>
+        </StatusBanner>
       ) : null}
 
       {stakeActions.error ? (
-        <p className="mt-3 text-sm text-red-300" role="alert">
+        <StatusBanner tone="error" className="mt-3">
           {stakeActions.error}
-        </p>
+        </StatusBanner>
       ) : null}
       {stakeActions.success ? (
-        <p className="mt-3 text-sm text-emerald-300" role="status">
+        <StatusBanner tone="success" className="mt-3">
           {stakeActions.success}
           {stakeActions.transactionHash ? (
             <>
@@ -142,7 +141,7 @@ export default function ActiveStakes({
               />
             </>
           ) : null}
-        </p>
+        </StatusBanner>
       ) : null}
 
       {loading ? (
@@ -151,9 +150,9 @@ export default function ActiveStakes({
           {copy.loadingStakes}
         </div>
       ) : error ? (
-        <p className="mt-4 text-sm text-red-300" role="alert">
+        <StatusBanner tone="error" className="mt-4">
           {copy.accountError}
-        </p>
+        </StatusBanner>
       ) : !stakes || stakes.length === 0 ? (
         <p className="mt-4 text-sm text-white/55">{copy.noStakes}</p>
       ) : (
@@ -192,6 +191,6 @@ export default function ActiveStakes({
           }}
         />
       ) : null}
-    </section>
+    </GlassPanel>
   );
 }

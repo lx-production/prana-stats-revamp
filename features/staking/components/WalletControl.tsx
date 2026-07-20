@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2, LogOut, Wallet } from 'lucide-react';
+import StatusBanner from '../../../components/ui/StatusBanner';
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage';
 import { formatCompactAddress } from '../../../utils/swapTokenFormatting';
@@ -46,7 +47,7 @@ export default function WalletControl() {
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          className="btn-hero btn-gold-border inline-flex items-center gap-2"
+          className="btn-hero btn-gold-border inline-flex w-full items-center justify-center gap-2 sm:w-auto"
           onClick={() => void onConnect()}
           disabled={busy || wallet.isConnecting}
         >
@@ -57,11 +58,7 @@ export default function WalletControl() {
           )}
           {copy.connectWallet}
         </button>
-        {error ? (
-          <p className="text-sm text-red-300" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error ? <StatusBanner tone="error">{error}</StatusBanner> : null}
       </div>
     );
   }
@@ -70,7 +67,7 @@ export default function WalletControl() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-sm text-white/70">
         <span className="text-white/45">{copy.connectedAs}</span>{' '}
-        <span className="font-medium text-white">
+        <span className="break-all font-medium text-white">
           {formatCompactAddress(wallet.address ?? '')}
         </span>
       </div>
@@ -79,7 +76,7 @@ export default function WalletControl() {
         {!wallet.isPolygon ? (
           <button
             type="button"
-            className="btn-hero btn-gold-border"
+            className="btn-hero btn-gold-border w-full sm:w-auto"
             onClick={() => void onSwitchPolygon()}
             disabled={busy}
           >
@@ -92,7 +89,7 @@ export default function WalletControl() {
 
         <button
           type="button"
-          className="btn-hero btn-glass inline-flex items-center justify-center gap-2"
+          className="btn-hero btn-glass inline-flex w-full items-center justify-center gap-2 sm:w-auto"
           onClick={() => wallet.disconnectWallet()}
         >
           <LogOut className="h-4 w-4" aria-hidden />
@@ -100,11 +97,7 @@ export default function WalletControl() {
         </button>
       </div>
 
-      {error ? (
-        <p className="text-sm text-red-300 sm:col-span-2" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <StatusBanner tone="error">{error}</StatusBanner> : null}
     </div>
   );
 }

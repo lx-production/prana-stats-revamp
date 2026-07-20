@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+import { trapFocus } from '../../../utils/focusTrap.ts';
 import {
   calculateEarlyUnstakeReturn,
   formatPranaAmount,
@@ -19,7 +21,7 @@ type EarlyUnstakeDialogProps = {
 
 /**
  * Confirm early unstake with dynamic penalty + principal return preview.
- * Replaces window.confirm from the legacy staking-ui.
+ * Focus is trapped while open; Escape cancels (when not busy).
  */
 export default function EarlyUnstakeDialog({
   stake,
@@ -29,11 +31,32 @@ export default function EarlyUnstakeDialog({
   onConfirm,
   onCancel,
 }: EarlyUnstakeDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const onCancelRef = useRef(onCancel);
+  const busyRef = useRef(busy);
+
+  onCancelRef.current = onCancel;
+  busyRef.current = busy;
+
   const amountRaw = BigInt(stake.amountRaw);
   const { penaltyRaw, returnRaw } = calculateEarlyUnstakeReturn(
     amountRaw,
     penaltyPercent,
   );
+
+  // Trap Tab, handle Escape, restore focus to the trigger on unmount.
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+
+    return trapFocus(node, {
+      initialFocus: cancelRef.current,
+      onEscape: () => {
+        if (!busyRef.current) onCancelRef.current();
+      },
+    });
+  }, []);
 
   return (
     <div
@@ -42,10 +65,12 @@ export default function EarlyUnstakeDialog({
       onClick={busy ? undefined : onCancel}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="early-unstake-title"
-        className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0a0718] p-5 text-white shadow-2xl"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0a0718] p-5 text-white shadow-2xl outline-none"
         onClick={(event) => event.stopPropagation()}
       >
         <h2
@@ -73,12 +98,9 @@ export default function EarlyUnstakeDialog({
           </div>
         </dl>
 
-        <p
-          className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100"
-          role="status"
-        >
+        <StatusBanner tone="warning" className="mt-3 text-xs">
           {copy.earlyDialogInterestLost}
-        </p>
+        </StatusBanner>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
           <button
@@ -97,6 +119,7 @@ export default function EarlyUnstakeDialog({
             )}
           </button>
           <button
+            ref={cancelRef}
             type="button"
             className="btn-hero btn-glass w-full sm:w-auto"
             disabled={busy}
