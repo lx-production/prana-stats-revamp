@@ -60,8 +60,9 @@ export type StakingAccountSnapshot = {
 };
 
 /**
- * Signed permit captured after Sign Permit succeeds.
+ * Signed permit captured after createPermitSnapshot succeeds.
  * Invalidated when amount/duration/account/chain changes or deadline expires.
+ * Kept across a rejected stake tx so Permit & Stake can skip re-signing.
  */
 export type PermitSnapshot = {
   owner: Address;

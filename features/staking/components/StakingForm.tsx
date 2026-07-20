@@ -1,24 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
-import { Coins, Loader2, Lock } from 'lucide-react';
+import { Coins, Loader2 } from 'lucide-react';
+import TxLink from './TxLink.tsx';
+import { getStakingCopy } from '../staking.copy.ts';
+import { getStakeCtaPhase } from '../stakeCtaPhase.ts';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
+import DurationSelector from './DurationSelector.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
-import { getStakingCopy } from '../staking.copy.ts';
+import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
 import { useStakeTransaction } from '../hooks/useStakeTransaction.ts';
 import {
-  calculateTotalInterestRaw,
-  formatPranaAmount,
-  getDefaultDurationSeconds,
-  isStakeAmountInput,
   parseStakeAmount,
+  formatPranaAmount,
+  isStakeAmountInput,
+  calculateTotalInterestRaw,
+  getDefaultDurationSeconds,
 } from '../stakingMath.ts';
-import DurationSelector from './DurationSelector.tsx';
-import TxLink from './TxLink.tsx';
 
-import type { StakingAccountSnapshot, StakingConfig } from '../staking.types.ts';
+import type { StakingConfig, StakingAccountSnapshot } from '../staking.types.ts';
 
 type StakingFormProps = {
   config: StakingConfig | undefined;
@@ -32,7 +33,7 @@ type StakingFormProps = {
 };
 
 /**
- * Stake amount + duration form with Sign Permit / Stake PRANA buttons.
+ * Stake amount + duration form with a single Permit & Stake CTA.
  */
 export default function StakingForm({
   config,
@@ -67,9 +68,13 @@ export default function StakingForm({
     refetchAccount,
   });
 
+  // A known broadcast may still be pending even when receipt polling failed.
+  // Keep claim/unstake locked until that hash reaches a terminal receipt state.
+  const blocksOtherWriteActions = stakeTx.isBusy || stakeTx.hasPendingHash;
+
   useEffect(() => {
-    onBusyChange?.(stakeTx.isBusy);
-  }, [onBusyChange, stakeTx.isBusy]);
+    onBusyChange?.(blocksOtherWriteActions);
+  }, [blocksOtherWriteActions, onBusyChange]);
 
   // Clear amount only after a confirmed stake — keep success + tx hash visible.
   useEffect(() => {
@@ -129,22 +134,64 @@ export default function StakingForm({
   ]);
 
   const paused = Boolean(config?.paused);
-  const formDisabled =
-    paused || configLoading || !config || stakeTx.isBusy || actionsLocked;
+  // Freeze fields once a transaction is broadcast. The CTA remains separately
+  // enabled so the user can resume receipt confirmation without changing the
+  // amount/duration associated with the pending hash.
+  const formFieldsDisabled =
+    paused ||
+    configLoading ||
+    !config ||
+    stakeTx.isBusy ||
+    stakeTx.hasPendingHash ||
+    actionsLocked;
 
-  const canSign =
-    !formDisabled &&
+  const canPermitAndStake =
+    !formFieldsDisabled &&
     !amountError &&
     parsedAmount.ok &&
     durationSeconds != null &&
-    wallet.isConnected &&
-    !stakeTx.hasValidPermit;
+    wallet.isConnected;
 
-  const canStake =
-    !formDisabled &&
-    stakeTx.hasValidPermit &&
-    wallet.isConnected &&
-    wallet.isPolygon;
+  // Pending broadcast: allow receipt resume while the form fields stay frozen.
+  const canClickCta = stakeTx.hasPendingHash
+    ? wallet.isConnected && !stakeTx.isBusy && !actionsLocked
+    : canPermitAndStake;
+
+  const ctaPhase = getStakeCtaPhase(
+    stakeTx.status,
+    stakeTx.hasValidPermit,
+    stakeTx.hasPendingHash,
+  );
+  // After a win, amount is cleared and the button stays on "success" until the
+  // user fills the form again — then fall back to the normal idle label.
+  const displayPhase =
+    ctaPhase === 'success' && canPermitAndStake
+      ? 'permit_and_stake'
+      : ctaPhase;
+
+  const ctaLabel = (() => {
+    switch (displayPhase) {
+      case 'signing':
+        return copy.signingPermit;
+      case 'submitting':
+        return copy.stakingSubmitting;
+      case 'confirming':
+        return copy.stakingConfirming;
+      case 'resume_confirming':
+        return copy.resumeConfirming;
+      case 'success':
+        return copy.stakeSuccess;
+      case 'continue_stake':
+        return copy.continueStake;
+      default:
+        return copy.permitAndStake;
+    }
+  })();
+
+  const showCtaSpinner =
+    displayPhase === 'signing' ||
+    displayPhase === 'submitting' ||
+    displayPhase === 'confirming';
 
   const setMaxAmount = () => {
     if (!account || balanceRaw <= 0n) {
@@ -210,7 +257,9 @@ export default function StakingForm({
                 type="button"
                 className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-cyan-300 transition hover:border-cyan-400/40 hover:text-cyan-200 disabled:opacity-40"
                 onClick={setMaxAmount}
-                disabled={formDisabled || !account || balanceRaw <= 0n}
+                disabled={
+                  formFieldsDisabled || !account || balanceRaw <= 0n
+                }
               >
                 {copy.maxButton}
               </button>
@@ -223,7 +272,7 @@ export default function StakingForm({
             inputMode="decimal"
             autoComplete="off"
             value={amount}
-            disabled={formDisabled}
+            disabled={formFieldsDisabled}
             placeholder={copy.minStakeHint(minStakeFormatted)}
             onChange={(event) => {
               const value = event.target.value;
@@ -250,7 +299,7 @@ export default function StakingForm({
             options={config.durations}
             selectedSeconds={durationSeconds}
             onSelect={setDurationSeconds}
-            disabled={formDisabled}
+            disabled={formFieldsDisabled}
             labelId="duration-label"
             daysLabel={copy.durationDays}
             aprLabel={copy.aprLabel}
@@ -285,49 +334,34 @@ export default function StakingForm({
             ) : null}
           </StatusBanner>
         ) : null}
+        {stakeTx.warning ? (
+          <StatusBanner tone="warning">{stakeTx.warning}</StatusBanner>
+        ) : null}
+        {stakeTx.hasPendingHash && stakeTx.transactionHash ? (
+          <StatusBanner tone="warning">
+            {copy.transactionPending}{' '}
+            <TxLink
+              hash={stakeTx.transactionHash}
+              label={copy.viewOnPolygonscan}
+            />
+          </StatusBanner>
+        ) : null}
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            className="btn-hero btn-glass w-full sm:w-auto"
-            disabled={!canSign || actionsLocked}
-            onClick={() => void stakeTx.signPermit()}
-          >
-            {stakeTx.status === 'signing' ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                {copy.signingPermit}
-              </span>
-            ) : stakeTx.hasValidPermit ? (
-              <span className="inline-flex items-center gap-2">
-                <Lock className="h-4 w-4" aria-hidden />
-                {copy.permitSigned}
-              </span>
-            ) : (
-              copy.signPermit
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn-hero btn-gold-border w-full sm:w-auto"
-            disabled={!canStake || actionsLocked}
-            onClick={() => void stakeTx.submitStake()}
-          >
-            {stakeTx.status === 'submitting' ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                {copy.stakingSubmitting}
-              </span>
-            ) : stakeTx.status === 'confirming' ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                {copy.stakingConfirming}
-              </span>
-            ) : (
-              copy.stakeAction
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn-hero btn-gold-border w-full"
+          disabled={!canClickCta || actionsLocked}
+          onClick={() => void stakeTx.permitAndStake()}
+        >
+          {showCtaSpinner ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              {ctaLabel}
+            </span>
+          ) : (
+            ctaLabel
+          )}
+        </button>
       </div>
     </GlassPanel>
   );

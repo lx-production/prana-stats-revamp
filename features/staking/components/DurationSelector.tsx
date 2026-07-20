@@ -75,7 +75,7 @@ export default function DurationSelector({
     <div
       role="radiogroup"
       aria-labelledby={labelId}
-      className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+      className="grid grid-cols-3 gap-2"
     >
       {options.map((option, index) => {
         const selected = option.seconds === selectedSeconds;
@@ -93,7 +93,7 @@ export default function DurationSelector({
             onClick={() => onSelect(option.seconds)}
             onKeyDown={(event) => onRadioKeyDown(event, index)}
             className={`
-              rounded-2xl border px-3 py-3 text-left transition-all duration-300
+              rounded-2xl border px-3 py-3 text-center transition-all duration-300
               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5D27A]
               disabled:cursor-not-allowed disabled:opacity-50
               ${

@@ -23,12 +23,20 @@ export type StakingCopy = {
   stakesPausedBanner: string;
   loadingConfig: string;
   configError: string;
-  signPermit: string;
-  permitSigned: string;
+  /** Primary CTA: sign permit then submit stake in one flow. */
+  permitAndStake: string;
+  /** Shown when a valid permit remains after a rejected stake tx. */
+  continueStake: string;
+  /** Shown when a hash exists but receipt wait failed — retry wait only. */
+  resumeConfirming: string;
   signingPermit: string;
-  stakeAction: string;
   stakingSubmitting: string;
   stakingConfirming: string;
+  stakeSuccess: string;
+  /** Non-fatal: stake confirmed but account list/balance did not refresh. */
+  accountSyncWarning: string;
+  /** A transaction hash exists, but its receipt has not been confirmed yet. */
+  transactionPending: string;
   activeStakesHeading: string;
   noStakes: string;
   loadingStakes: string;
@@ -67,7 +75,7 @@ export type StakingCopy = {
 const vi: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA với APR cố định trên Polygon. Ký permit rồi gửi giao dịch stake.',
+    'Stake PRANA với APR cố định trên Polygon. Một nút ký Permit rồi gửi giao dịch stake.',
   backHome: 'Về trang chủ',
   viewStats: 'Xem thống kê protocol',
   connectWallet: 'Kết nối ví',
@@ -87,12 +95,17 @@ const vi: StakingCopy = {
   stakesPausedBanner: 'Hợp đồng đang tạm dừng. Claim/unstake hiện không khả dụng.',
   loadingConfig: 'Đang tải cấu hình staking…',
   configError: 'Không tải được cấu hình staking. Thử lại sau.',
-  signPermit: 'Ký Permit',
-  permitSigned: 'Permit đã ký ✓',
-  signingPermit: 'Đang ký…',
-  stakeAction: 'Stake PRANA',
-  stakingSubmitting: 'Đang gửi…',
-  stakingConfirming: 'Đang xác nhận…',
+  permitAndStake: 'Permit & Stake',
+  continueStake: 'Tiếp tục Stake',
+  resumeConfirming: 'Tiếp tục xác nhận…',
+  signingPermit: 'Đang chờ ký Permit…',
+  stakingSubmitting: 'Đang chờ xác nhận Stake…',
+  stakingConfirming: 'Đang xác nhận giao dịch…',
+  stakeSuccess: 'Stake thành công',
+  accountSyncWarning:
+    'Stake đã xác nhận on-chain, nhưng chưa đồng bộ lại số dư/danh sách. Tải lại trang nếu cần.',
+  transactionPending:
+    'Giao dịch Stake đã được gửi và đang chờ xác nhận.',
   activeStakesHeading: 'Stake đang hoạt động',
   noStakes: 'Bạn chưa có stake nào.',
   loadingStakes: 'Đang tải stake…',
@@ -145,7 +158,7 @@ const vi: StakingCopy = {
 const en: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA at a fixed APR on Polygon. Sign a permit, then submit the stake transaction.',
+    'Stake PRANA at a fixed APR on Polygon. One button signs the permit then submits the stake.',
   backHome: 'Back to home',
   viewStats: 'View protocol statistics',
   connectWallet: 'Connect wallet',
@@ -166,12 +179,17 @@ const en: StakingCopy = {
   stakesPausedBanner: 'Staking is paused. Claim/unstake are unavailable.',
   loadingConfig: 'Loading staking config…',
   configError: 'Could not load staking config. Try again later.',
-  signPermit: 'Sign Permit',
-  permitSigned: 'Permit signed ✓',
-  signingPermit: 'Signing…',
-  stakeAction: 'Stake PRANA',
-  stakingSubmitting: 'Submitting…',
-  stakingConfirming: 'Confirming…',
+  permitAndStake: 'Permit & Stake',
+  continueStake: 'Continue Stake',
+  resumeConfirming: 'Resume confirmation…',
+  signingPermit: 'Waiting for Permit signature…',
+  stakingSubmitting: 'Waiting for Stake confirmation…',
+  stakingConfirming: 'Confirming transaction…',
+  stakeSuccess: 'Stake successful',
+  accountSyncWarning:
+    'Stake confirmed on-chain, but the balance/list did not refresh. Reload if needed.',
+  transactionPending:
+    'The Stake transaction was submitted and is awaiting confirmation.',
   activeStakesHeading: 'My active stakes',
   noStakes: 'You do not have any active stakes yet.',
   loadingStakes: 'Loading stakes…',

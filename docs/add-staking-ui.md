@@ -16,10 +16,10 @@
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
-- [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (EIP-712 + `parseSignature`, invalidate permit, wait receipt); `useStakeActions` + `EarlyUnstakeDialog`; claim-before-unstake / grace rules; lỗi VI/EN chuẩn hóa; Polygonscan link; tests permit/status/errors.
+- [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
-- [x] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: nginx Pi bỏ static `/stake`; VPS chỉ cache legacy `/bond/assets/`; `NETWORK_ARCHITECTURE` + swap overview (EN/VI) mô tả `/stake/` qua Node.
+- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; rollout nginx Pi/VPS, public smoke-test và rollback window sẽ thực hiện sau khi app hoàn thiện.
 
 ## 1. Cấu trúc và phần dùng chung
 
@@ -196,28 +196,19 @@ totalInterest = interestPerSecond × duration
 
 ### Bước 5 — Harden permit và transaction flow ✅
 
-Giữ hai nút riêng theo lựa chọn:
+Giữ một nút gold full-width:
 
-1. `Sign Permit`
-2. `Stake PRANA`
+1. `Permit & Stake` (hoặc `Tiếp tục Stake` nếu còn Permit hợp lệ sau khi user từ chối tx)
 
-Permit flow:
+Luồng kết hợp:
 
-- Validate connected wallet, Polygon chain, config không paused, amount ≥ min và amount ≤ balance.
-- Refetch account ngay trước khi ký để lấy nonce mới nhất.
-- Dùng typed EIP-712 domain/message và utility parse signature của Viem.
-- Permit snapshot phải lưu address, chain, nonce, amount, duration và deadline.
+- Validate connected wallet, Polygon chain (switch nếu cần), config không paused, amount ≥ min và amount ≤ balance.
+- `createPermitSnapshot()`: **refetch account phải thành công** (không dùng cache stale), lấy nonce mới, ký EIP-712, trả `PermitSnapshot` trực tiếp (và lưu state cho retry trước broadcast).
+- `submitStakeWithPermit(snapshot)` nhận Permit qua tham số — không phụ thuộc React state đã flush; sau khi có hash chỉ resume `waitForTransactionReceipt`, không `writeContract` lần hai.
+- `permitAndStake()` điều phối resume receipt / reuse permit / create+stake; không hiện banner “Permit đã ký” giữa hai popup.
+- Chỉ `setSuccess()` sau receipt thành công; lỗi refetch account sau đó là **warning không fatal**.
+- Từ chối Permit → không gọi transaction; từ chối Stake **trước** broadcast → giữ Permit; lỗi receipt **sau** hash → CTA `Tiếp tục xác nhận` (không gửi tx mới).
 - Tự hủy permit nếu user đổi amount/duration/account/chain hoặc deadline hết hạn.
-- Hiển thị rõ trạng thái signing/rejected/signed.
-
-Stake flow:
-
-- Revalidate permit snapshot trước khi gửi.
-- Gửi `stakeWithPermit` qua wallet client.
-- Chuyển trạng thái `submitting → confirming → success/error`.
-- Chờ `waitForTransactionReceipt`; receipt reverted là lỗi.
-- Chỉ reset form, permit và refetch account sau receipt thành công.
-- Hiển thị transaction hash và Polygonscan link.
 
 Stake management:
 
@@ -254,7 +245,7 @@ Stake management:
 - Dùng Lucide `Loader2`, `Wallet`, `Lock`, `Coins`, `ExternalLink`; bỏ unicode spinner.
 - Alerts dùng chung `StatusBanner` với `role="status"` hoặc `role="alert"` và `aria-live`.
 - Mobile:
-  - Duration options thành grid 2 cột.
+  - Duration options thành grid 3 cột (mọi breakpoint).
   - Action buttons full width.
   - Stake metadata chuyển từ nhiều cột về stack.
   - Transaction hashes wrap an toàn.
@@ -288,7 +279,7 @@ Giữ lại dưới dạng mới:
 - Staking/Interest contract Polygonscan links dưới dạng compact verification links trong page header/footer.
 - Nội dung cần thiết từ README được nhập vào docs chính trước khi bỏ directory.
 
-### Bước 8 — Deployment và docs ✅
+### Bước 8 — Deployment và docs 🚧
 
 - Routing đã hoàn thành từ Bước 1: Node phục vụ `/stake/` bằng SPA shell, `/stake` redirect `308`, và Vite tạo staking thành hashed lazy chunk trong một `dist/`.
 - Đã cập nhật `NETWORK_ARCHITECTURE.md`:
@@ -298,12 +289,12 @@ Giữ lại dưới dạng mới:
   - `docs/vi/NETWORK_ARCHITECTURE.md`.
   - `docs/swap-modal-technical-overview.md`.
   - `docs/vi/swap-modal-technical-overview.md`.
-- Đã cập nhật Pi nginx (`docs/pi-prana.triethocduongpho.net`):
+- Đã chuẩn bị config Pi nginx trong repo (`docs/pi-prana.triethocduongpho.net`):
   - Xóa redirect/location/alias `/stake`.
   - Giữ một `location /` proxy Node (và giữ `/bond/` static).
-- Đã cập nhật VPS nginx (`docs/vps-prana.triethocduongpho.net`):
+- Đã chuẩn bị config VPS nginx trong repo (`docs/vps-prana.triethocduongpho.net`):
   - Bỏ `stake` khỏi legacy asset cache; chỉ còn `/bond/assets/`.
-- Rollout không downtime (áp dụng trên Pi/VPS thủ công):
+- Rollout không downtime còn pending (sẽ áp dụng trên Pi/VPS thủ công sau khi app hoàn thiện):
   1. Deploy build/server mới trong khi nginx vẫn phục vụ staking cũ.
   2. Xác minh Node `/stake/` nội bộ (`curl -I http://127.0.0.1:4173/stake/`).
   3. Copy config từ repo → `nginx -t`, rồi reload (Pi trước hoặc cùng lúc với VPS).
@@ -351,7 +342,7 @@ Browser/network acceptance:
 - Main app tiếp tục là nơi duy nhất hiển thị protocol-level staking statistics.
 - Staking page chỉ hiển thị dữ liệu cá nhân và transaction workflow.
 - Contract reads nghiệp vụ đi qua backend; public dRPC frontend chỉ dùng cho wallet coordination/receipt.
-- UI giữ hai nút Permit và Stake riêng.
+- UI dùng một nút `Permit & Stake` (tự mở popup Stake sau khi ký Permit; vẫn cần user xác nhận hai lần trong wallet).
 - Toàn bộ staking UI theo locale toggle VI/EN, không hiển thị hai ngôn ngữ trong cùng câu.
 - Không thay smart contract hoặc transaction semantics on-chain.
 - Baseline UI/shell là v2.3.1 (`FlutterShaderBackground`, `AppFooter`, legal pages, `btn-hero` classes).

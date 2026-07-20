@@ -13,6 +13,7 @@ export type StakingErrorCode =
   | 'user_rejected'
   | 'reverted'
   | 'rpc_unavailable'
+  | 'account_refetch_failed'
   | 'generic';
 
 function messageOf(error: unknown): string {
@@ -113,6 +114,8 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     user_rejected: 'Bạn đã từ chối yêu cầu trên ví.',
     reverted: 'Giao dịch bị revert trên chain.',
     rpc_unavailable: 'Không kết nối được RPC. Thử lại sau.',
+    account_refetch_failed:
+      'Không tải được số dư/nonce mới nhất. Thử lại trước khi ký.',
     generic: 'Không thể hoàn tất giao dịch. Thử lại.',
   },
   en: {
@@ -127,6 +130,8 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     user_rejected: 'You rejected the wallet request.',
     reverted: 'Transaction reverted on-chain.',
     rpc_unavailable: 'RPC unavailable. Try again later.',
+    account_refetch_failed:
+      'Could not refresh balance/nonce. Try again before signing.',
     generic: 'Could not complete the transaction. Try again.',
   },
 };
