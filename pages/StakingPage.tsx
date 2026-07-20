@@ -1,54 +1,84 @@
-import React from "react";
-import AppFooter from "../components/AppFooter";
-import LanguageToggle from "../components/LanguageToggle";
-import { usePageMetadata } from "../hooks/usePageMetadata";
-import { useSiteLanguage } from "../hooks/useSiteLanguage";
+import React from 'react';
+import AppFooter from '../components/AppFooter';
+import LanguageToggle from '../components/LanguageToggle';
+import StakingForm from '../features/staking/components/StakingForm';
+import ActiveStakes from '../features/staking/components/ActiveStakes';
+import WalletControl from '../features/staking/components/WalletControl';
+import { usePageMetadata } from '../hooks/usePageMetadata';
+import { useSiteLanguage } from '../hooks/useSiteLanguage';
+import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { getStakingCopy } from '../features/staking/staking.copy';
+import { useStakingConfig } from '../features/staking/hooks/useStakingConfig';
+import { useStakingAccount } from '../features/staking/hooks/useStakingAccount';
 
 /**
- * Placeholder for Bước 1 — routing shell only.
- * Full staking UI lands in later steps.
+ * Lazy `/stake/` page — form + account state (Bước 4).
+ * Permit / claim / unstake transaction flows land in Bước 5.
  */
 export default function StakingPage() {
   const { locale } = useSiteLanguage();
-  const isEn = locale === "en";
+  const copy = getStakingCopy(locale);
+  const wallet = useInjectedWallet();
+
+  const configQuery = useStakingConfig();
+  const accountQuery = useStakingAccount(
+    wallet.isConnected ? wallet.address : undefined,
+  );
 
   usePageMetadata(
-    "PRANA Staking | PRANA Protocol",
-    isEn
-      ? "Stake PRANA with fixed APR on Polygon — manage permits, stakes, and claims on the official PRANA Protocol page."
-      : "Stake PRANA với APR cố định trên Polygon — quản lý permit, stake và claim trên trang chính thức của PRANA Protocol.",
+    'PRANA Staking | PRANA Protocol',
+    locale === 'en'
+      ? 'Stake PRANA with fixed APR on Polygon — manage permits, stakes, and claims on the official PRANA Protocol page.'
+      : 'Stake PRANA với APR cố định trên Polygon — quản lý permit, stake và claim trên trang chính thức của PRANA Protocol.',
   );
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
 
-      <main className="relative z-10 mx-auto flex max-w-3xl flex-col justify-center gap-8 px-6 py-24">
-        <div className="space-y-3">
+      <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-6 py-20 sm:py-24">
+        <header className="space-y-3">
           <p className="text-sm uppercase tracking-[0.2em] text-white/45">
             PRANA Protocol
           </p>
           <h1 className="text-3xl font-medium tracking-wide sm:text-4xl">
-            {isEn ? "Staking" : "Staking"}
+            {copy.pageTitle}
           </h1>
-          <p className="max-w-xl text-[15px] text-white/70">
-            {isEn
-              ? "Staking UI will move here from the standalone app. Routing and the homepage split are in place."
-              : "Giao diện staking sẽ chuyển vào đây từ app riêng. Routing và tách homepage đã sẵn sàng."}
+          <p className="max-w-2xl text-[15px] text-white/70">
+            {copy.pageSubtitle}
           </p>
-        </div>
 
-        <nav
-          className="flex flex-col gap-3 sm:flex-row sm:items-center"
-          aria-label="Staking page links"
-        >
-          <a href="/" className="btn-hero btn-glass">
-            {isEn ? "Back to home" : "Về trang chủ"}
-          </a>
-          <a href="/" className="btn-hero btn-glass">
-            {isEn ? "View protocol statistics" : "Xem thống kê protocol"}
-          </a>
-        </nav>
+          <nav
+            className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center"
+            aria-label="Staking page links"
+          >
+            <a href="/" className="btn-hero btn-glass">
+              {copy.backHome}
+            </a>
+            <a href="/" className="btn-hero btn-glass">
+              {copy.viewStats}
+            </a>
+          </nav>
+        </header>
+
+        <WalletControl />
+
+        {wallet.isConnected ? (
+          <>
+            <StakingForm
+              config={configQuery.data}
+              account={accountQuery.data}
+              configLoading={configQuery.isLoading}
+              configError={configQuery.isError}
+            />
+            <ActiveStakes
+              stakes={accountQuery.data?.stakes}
+              loading={accountQuery.isLoading}
+              error={accountQuery.isError}
+              blockTimestamp={accountQuery.data?.blockTimestamp}
+            />
+          </>
+        ) : null}
       </main>
 
       <AppFooter />

@@ -33,5 +33,5 @@
     "spinningFavicon.ts",
     "vite-env.d.ts"
   ],
-  "exclude": ["dist", "node_modules", "server", "scripts"]
+  "exclude": ["dist", "node_modules", "server", "scripts", "**/*.test.ts"]
 }

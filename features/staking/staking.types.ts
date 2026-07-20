@@ -87,3 +87,18 @@ export type StakeTransactionStatus =
   | 'confirming'
   | 'success'
   | 'error';
+
+/** Why `parseStakeAmount` rejected an input string. */
+export type StakeAmountParseReason =
+  | 'empty'
+  | 'invalid'
+  | 'zero'
+  | 'negative'
+  | 'too_many_decimals';
+
+export type StakeAmountParseResult =
+  | { ok: true; raw: bigint }
+  | { ok: false; reason: StakeAmountParseReason };
+
+/** Display status for a stake card (grace-period rules land in Bước 5). */
+export type StakeDisplayStatus = 'active' | 'matured';

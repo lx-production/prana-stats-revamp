@@ -16,7 +16,7 @@
 - [x] **Closeout Bước 1**: automated route tests (`server/tests/stakeRoutes.test.ts`), `STAKE_PATH` / `STAKE_CANONICAL_PATH` dùng chung (hero + server + matcher), `AppFooter` trên placeholder, `usePageMetadata` cho title/description theo locale.
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
-- [ ] **Bước 4 — Port form và account state.**
+- [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [ ] **Bước 5 — Harden permit và transaction flow.**
 - [ ] **Bước 6 — Đồng bộ styling với main app.**
 - [ ] **Bước 7 — Xóa phần dư thừa của `staking-ui`.**
@@ -174,7 +174,7 @@ Quy tắc backend:
 - Backend tiếp tục dùng `VITE_ALCHEMY_POLYGON_MAIN` làm Polygon RPC mặc định, theo cấu hình server hiện tại. Biến này chỉ được đọc ở server; frontend main app không tham chiếu nó.
 
 Closeout: loaders `stakingConfig` / `stakingAccount` + cached config; routes trong `getApiRoutes` (GET-only 405 + `Allow: GET`); validate address trước rate-limit; `formatErrorForLog` cho console; tests `stakingApi.test.ts` + rateLimit; warmup `/api/staking/config`.
-### Bước 4 — Port form và account state
+### Bước 4 — Port form và account state ✅
 
 - Chuyển `StakingForm`, `ActiveStakes` và hooks sang TS/TSX trong feature folder.
 - Dùng React Query:
@@ -194,6 +194,7 @@ interestPerSecond = annualInterest / 31,536,000
 totalInterest = interestPerSecond × duration
 ```
 
+Closeout: `features/staking/` có `stakingMath` + tests, `stakingApi`, `staking.copy`, hooks config/account, `DurationSelector` / `StakingForm` / `ActiveStakes` / `StakeCard` / `WalletControl`; permit+stake buttons disabled chờ Bước 5; `npm run test:staking`.
 ### Bước 5 — Harden permit và transaction flow
 
 Giữ hai nút riêng theo lựa chọn:
