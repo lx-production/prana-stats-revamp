@@ -34,17 +34,32 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
       );
     }
 
-    // Markdown link: [label](https://example.com)
+    // Markdown link: [label](url) — external vs same-site paths style differently.
     const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
     if (linkMatch) {
       const [, label, href] = linkMatch;
+      const isExternal = /^https?:\/\//i.test(href);
+
+      if (isExternal) {
+        return (
+          <a
+            key={index}
+            href={href}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            className="break-all rounded bg-white/10 px-1 py-0.5 font-mono text-[0.9em] text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60"
+          >
+            {label}
+          </a>
+        );
+      }
+
+      // Internal paths (e.g. /terms, /privacy): same tab, plain text link.
       return (
         <a
           key={index}
           href={href}
-          target="_blank"
-          rel="nofollow noopener noreferrer"
-          className="break-all rounded bg-white/10 px-1 py-0.5 font-mono text-[0.9em] text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60"
+          className="text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60"
         >
           {label}
         </a>

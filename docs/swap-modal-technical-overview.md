@@ -384,7 +384,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 
 ## Terms / Risk Disclosure
 
-Public legal copy for end users lives at **`/terms`** (footer link + launch posts). Content is markdown under `data/terms-risk-vi.md` and `data/terms-risk-en.md`, rendered by `components/TermsRiskPage.tsx` via `utils/inlineMarkdown.tsx` (bold, inline code, and `[label](url)` links). The SwapRouter02 address in section 5 links to [Polygonscan token transfers](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns) (`target="_blank"`, `rel="nofollow noopener noreferrer"`). Path matching uses `constants/appRoutes.ts` (no React Router). Production and Vite SPA both fall back to `index.html` for this path.
+Public legal copy for end users lives at **`/terms`** (footer link + launch posts) and **`/privacy`**. Terms content is markdown under `data/terms-risk-vi.md` / `data/terms-risk-en.md`; privacy under `data/privacy-vi.md` / `data/privacy-en.md`. Both render through `components/LegalMarkdownPage.tsx` via `utils/inlineMarkdown.tsx` (bold, inline code, external + same-site links). Headers show the legal effective date, UI build version (`getAppBuildInfo` / same label as the footer), and a short scope note. The Swap modal shows an acceptance line under the primary action linking to `/terms`. The SwapRouter02 address in the terms links to [Polygonscan token transfers](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns). Path matching uses `constants/appRoutes.ts` (no React Router). Production and Vite SPA both fall back to `index.html` for these paths.
 
 ---
 

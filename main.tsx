@@ -13,11 +13,12 @@ import BasicStats from "./components/BasicStats";
 import { wagmiConfig } from "./utils/wagmiConfig";
 import BondingStats from "./components/BondingStats";
 import StakingStats from "./components/StakingStats";
+import PrivacyPage from "./components/PrivacyPage";
 import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
 import PranaConverter from "./components/PranaConverter";
 import { useAppPathname } from "./hooks/useAppPathname";
-import { isTermsRiskPath } from "./constants/appRoutes";
+import { isPrivacyPath, isTermsRiskPath } from "./constants/appRoutes";
 import FlutterShaderBackground from "./flutterShader.tsx";
 import PriceChartsSection from "./components/PriceChartsSection";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -71,6 +72,7 @@ function App() {
   useSpinningFavicon();
   const pathname = useAppPathname();
   const showTerms = isTermsRiskPath(pathname);
+  const showPrivacy = isPrivacyPath(pathname);
 
   return (
     <SiteLanguageProvider>
@@ -81,6 +83,11 @@ function App() {
       {showTerms ? (
         <>
           <TermsRiskPage />
+          <AppFooter />
+        </>
+      ) : showPrivacy ? (
+        <>
+          <PrivacyPage />
           <AppFooter />
         </>
       ) : (

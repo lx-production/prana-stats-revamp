@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { TERMS_RISK_PATH } from '../constants/appRoutes.ts';
 import { getAppBuildInfo } from '../utils/appBuildInfo.ts';
+import { PRIVACY_PATH, TERMS_RISK_PATH } from '../constants/appRoutes.ts';
 import { buildIdentityUrl, formatBuildLabel } from '../utils/buildInfoUrls.ts';
 
 /**
@@ -21,12 +21,21 @@ const AppFooter: React.FC = () => {
 
   return (
     <footer className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-10 pt-2 sm:px-6 lg:px-8">
-      <p className="mb-3 text-center text-xs text-white/45">
+      <p className="mb-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-white/45">
         <a
           href={TERMS_RISK_PATH}
           className="underline-offset-2 hover:text-white/75 hover:underline"
         >
           {locale === 'en' ? 'Terms / Risk Disclosure' : 'Điều khoản / Công bố rủi ro'}
+        </a>
+        <span aria-hidden="true" className="text-white/25">
+          ·
+        </span>
+        <a
+          href={PRIVACY_PATH}
+          className="underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          {locale === 'en' ? 'Privacy Policy' : 'Chính sách quyền riêng tư'}
         </a>
       </p>
       <p className="text-center text-xs text-white/35">

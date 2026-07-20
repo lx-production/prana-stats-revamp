@@ -6,16 +6,21 @@ This document applies to the official PRANA Protocol website and the **PRANA Swa
 
 PRANA Swap is a **non-custodial** technical interface that helps users interact with public smart contracts on the Polygon blockchain.
 
+PRANA Swap does not create internal trading accounts or custodial balances for users.
+
 Triết Học Đường Phố (**THĐP**):
 
 - does not custody user assets
 - does not control private keys or seed phrases
 - cannot reverse transactions once they are confirmed on-chain
-- does not operate PRANA Swap as a centralized exchange (CEX)
 
 Tokens remain in a wallet you control until you personally sign and submit a transaction.
 
-## 2. No investment advice
+## 2. Eligibility
+
+Users must have full legal capacity under applicable law and be of sufficient age to enter into transactions on their own. You may not use PRANA Swap on behalf of another person without lawful authority.
+
+## 3. No investment advice
 
 Information on the website, in product announcements, and in the PRANA Swap interface is provided only to describe the technology and how to use the product.
 
@@ -28,7 +33,7 @@ This content is **not**:
 
 You alone are responsible for every decision to buy, sell, hold, or swap assets.
 
-## 3. Key risks
+## 4. Key risks
 
 Digital assets and decentralized protocols can involve risks, including without limitation:
 
@@ -43,7 +48,7 @@ Digital assets and decentralized protocols can involve risks, including without 
 
 There is no promise regarding price, profit, liquidity availability, or trading outcomes.
 
-## 4. User responsibilities
+## 5. User responsibilities
 
 Before using the product, you are responsible for:
 
@@ -54,17 +59,22 @@ Before using the product, you are responsible for:
 
 **Do not use PRANA Swap** if doing so is restricted or prohibited under applicable law for you.
 
-## 5. Smart-contract address to verify
+## 6. Smart-contract address to verify
 
-When approving or swapping an ERC-20 token, your wallet will ask you to sign an interaction with **Uniswap SwapRouter02** on Polygon. This is the single address used for both the approve step (spender) and the swap step (`to`):
+PRANA Swap uses **Uniswap SwapRouter02** on Polygon as the execution router for swaps:
 
 [0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)
 
-If your wallet shows a different spender/`to` address, stop and do not confirm the transaction.
+What to verify in your wallet differs between the two steps:
 
-The server-side quote interface is not a contract that receives your tokens. Users only need to verify SwapRouter02 when signing approve and swap transactions.
+- **Approve (ERC-20):** the transaction `to` is the **token contract** you are approving (for example USDC or PRANA), not SwapRouter02. The address to verify is the **spender** in the `approve` call — it must be SwapRouter02 above.
+- **Swap:** the transaction `to` must be SwapRouter02 above.
 
-## 6. Exact-amount approvals
+If your wallet shows a different spender (on approve) or `to` (on swap) than the address above, stop and do not confirm the transaction.
+
+The server-side quote interface is not a contract that receives your tokens.
+
+## 7. Exact-amount approvals
 
 For ERC-20 tokens, an **approve** step is required before a swap if the current allowance is insufficient.
 
@@ -77,7 +87,9 @@ If the swap amount changes, you may need to approve again. This approach limits 
 
 For native **POL** on Polygon, no ERC-20 approve is required; the swap needs only one wallet confirmation.
 
-## 7. Fees and costs
+If a swap fails, is cancelled, or does not fully use the approved allowance, the approved spending permission may still remain on-chain. Users can check and revoke that allowance with an appropriate tool when needed.
+
+## 8. Fees and costs
 
 PRANA Swap does **not** charge a separate interface fee or routing fee.
 
@@ -89,48 +101,49 @@ You may still pay ordinary on-chain costs, for example:
 
 The WBTC/PRANA pool currently uses a **1%** LP fee. THĐP has provided liquidity for this pool since the early PRANA ecosystem; that fact does not remove liquidity or price risk.
 
-## 8. Current technical scope
+A trade may be routed through multiple pools. In that case, the quoted rate already reflects the combined effect of those pools and their corresponding liquidity fees. Price impact and slippage are not fees charged by THĐP.
+
+## 9. Current technical scope
 
 In the current version, PRANA Swap:
 
 - works on **Polygon mainnet** only
 - supports a fixed allowlist of 7 tokens: **PRANA, WBTC, POL, USDC, USDT, WETH, DAI**
 - uses a fixed **0.5%** slippage setting in the interface
-- sends transactions through Uniswap SwapRouter02 as described in section 5
+- sends transactions through Uniswap SwapRouter02 as described in section 6
 - requires an injected wallet (for example MetaMask or Rabby); you must sign every transaction yourself
 
 Users may swap between any tokens in the list; PRANA does not have to be part of the pair.
 
-## 9. What PRANA Swap is not
+## 10. Third-party services
 
-PRANA Swap is **not**:
+PRANA Swap depends on Polygon, Uniswap, wallets, RPC providers, and other third-party infrastructure. THĐP does not own or control all of these systems. Using them may also be subject to each provider’s own terms.
 
-- a centralized exchange (CEX)
-- a service that requires account registration or KYC operated by THĐP
-- a custodial service or wallet held by THĐP
-- insurance, a profit guarantee, or a promise of price / liquidity
+## 11. Data and privacy
 
-Every final trading decision requires your direct confirmation signature in a wallet you control.
+Details about technical data that may be processed when you use the website or PRANA Swap (for example operational logs, wallet addresses in quote/swap requests, and infrastructure access logs) are described in the [Privacy Policy](/privacy).
 
-## 10. No uptime guarantee and limitation of liability
+## 12. No uptime guarantee and limitation of liability
 
-The website, quote API, and interface may be interrupted, delayed, inaccurate in display, or changed without prior notice.
+PRANA Swap is provided on an “as is” and “as available” basis, without any guarantee of continuous operation, freedom from errors, or compatibility with every wallet and device.
 
-To the fullest extent permitted by applicable law, THĐP and related parties are not liable for direct or indirect damages arising from use of, or inability to use, PRANA Swap, including asset loss from on-chain transactions, network failures, wallet failures, or user decisions.
+To the maximum extent permitted by applicable law, THĐP and related parties are not liable for damages arising from use of, or inability to use, PRANA Swap, including blockchain failures, third-party smart contracts, wallets, RPCs, quote data, or transactions signed by the user.
 
-## 11. Updates to these terms
+This section does not exclude or limit any liability that applicable law does not allow to be excluded or limited.
+
+## 13. Updates to these terms
 
 THĐP may update this document over time to reflect product changes or legal requirements. The version published on the official website at `/terms` is the current version.
 
 Continued use of the website or PRANA Swap after an update means you accept the revised version, to the extent permitted by applicable law.
 
-## 12. Practical checklist before using the product
+## 14. Practical checklist before using the product
 
 Before each transaction:
 
 1. Confirm you are on the official website domain
 2. Confirm your wallet is on Polygon
-3. Verify the SwapRouter02 address in section 5
+3. Verify the correct address from section 6: spender on approve, `to` on swap
 4. Carefully read token-in / token-out amounts and the minimum received amount in your wallet
 5. Confirm only if you understand and accept the risks
 

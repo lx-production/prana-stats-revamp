@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
 import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
+import { TERMS_RISK_PATH } from '../constants/appRoutes';
 import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
 
 import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
@@ -515,6 +516,33 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                     )}
                     {actionLabel}
                   </button>
+
+                  {/* Acceptance sits directly under the primary action (Connect Wallet / Swap). */}
+                  <p className="text-center text-xs leading-relaxed text-white/45">
+                    {locale === 'en' ? (
+                      <>
+                        By connecting a wallet or using PRANA Swap, you confirm that you have read and agree to the{' '}
+                        <a
+                          href={TERMS_RISK_PATH}
+                          className="text-white/65 underline underline-offset-2 transition hover:text-white/85"
+                        >
+                          Terms of Use and Risk Disclosure
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        Bằng việc kết nối ví hoặc sử dụng PRANA Swap, bạn xác nhận đã đọc và đồng ý với{' '}
+                        <a
+                          href={TERMS_RISK_PATH}
+                          className="text-white/65 underline underline-offset-2 transition hover:text-white/85"
+                        >
+                          Điều khoản sử dụng và Công bố rủi ro
+                        </a>
+                        .
+                      </>
+                    )}
+                  </p>
 
                   <p className="text-center text-xs leading-relaxed text-white/45">
                     {locale === 'en'

@@ -400,7 +400,7 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 ## Điều khoản / Công bố rủi ro
 
-Bản pháp lý công khai cho người dùng dùng ở **`/terms`** (link footer + bài launch). Nội dung nằm trong `data/terms-risk-vi.md` và `data/terms-risk-en.md`, render bởi `components/TermsRiskPage.tsx` qua `utils/inlineMarkdown.tsx` (bold, inline code, và link `[label](url)`). Địa chỉ SwapRouter02 ở mục 5 link tới [Polygonscan token transfers](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns) (`target="_blank"`, `rel="nofollow noopener noreferrer"`). Path match qua `constants/appRoutes.ts` (không dùng React Router). Production và Vite SPA đều fallback `index.html` cho path này.
+Bản pháp lý công khai cho người dùng dùng ở **`/terms`** (link footer + bài launch) và **`/privacy`**. Nội dung terms nằm trong `data/terms-risk-vi.md` / `data/terms-risk-en.md`; privacy trong `data/privacy-vi.md` / `data/privacy-en.md`. Cả hai render qua `components/LegalMarkdownPage.tsx` và `utils/inlineMarkdown.tsx` (bold, inline code, link ngoài + cùng site). Header hiển thị ngày có hiệu lực, phiên bản build UI (`getAppBuildInfo` / cùng nhãn với footer), và ghi chú phạm vi. Modal Swap có câu chấp nhận ngay dưới nút hành động chính, link tới `/terms`. Địa chỉ SwapRouter02 trong terms link tới [Polygonscan token transfers](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns). Path match qua `constants/appRoutes.ts` (không dùng React Router). Production và Vite SPA đều fallback `index.html` cho các path này.
 
 ---
 
