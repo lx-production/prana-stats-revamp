@@ -1,5 +1,9 @@
 import type { SiteLocale } from '../../types/locale.types.ts';
-import type { StakeAmountParseReason, StakeDisplayStatus } from './staking.types.ts';
+import type {
+  StakeActionKind,
+  StakeAmountParseReason,
+  StakeDisplayStatus,
+} from './staking.types.ts';
 
 export type StakingCopy = {
   pageTitle: string;
@@ -33,6 +37,7 @@ export type StakingCopy = {
   stakingSubmitting: string;
   stakingConfirming: string;
   stakeSuccess: string;
+  stakeConfirmed: string;
   /** Non-fatal: stake confirmed but account list/balance did not refresh. */
   accountSyncWarning: string;
   /** A transaction hash exists, but its receipt has not been confirmed yet. */
@@ -56,6 +61,9 @@ export type StakingCopy = {
   claimFirstHint: string;
   graceExpiredWarning: string;
   processing: string;
+  actionSuccess: Record<StakeActionKind, string>;
+  actionAccountSyncWarning: string;
+  actionTransactionPending: string;
   viewOnPolygonscan: string;
   minStakeHint: (amount: string) => string;
   exceedsBalance: string;
@@ -102,6 +110,7 @@ const vi: StakingCopy = {
   stakingSubmitting: 'Đang chờ xác nhận Stake…',
   stakingConfirming: 'Đang xác nhận giao dịch…',
   stakeSuccess: 'Stake thành công',
+  stakeConfirmed: 'Stake đã được xác nhận trên Polygon.',
   accountSyncWarning:
     'Stake đã xác nhận on-chain, nhưng chưa đồng bộ lại số dư/danh sách. Tải lại trang nếu cần.',
   transactionPending:
@@ -131,6 +140,15 @@ const vi: StakingCopy = {
   graceExpiredWarning:
     'Đã hết grace period — lãi chưa claim không thể nhận nữa.',
   processing: 'Đang xử lý…',
+  actionSuccess: {
+    claim: 'Claim lãi đã được xác nhận.',
+    unstake: 'Unstake đã được xác nhận.',
+    unstakeEarly: 'Unstake sớm đã được xác nhận.',
+  },
+  actionAccountSyncWarning:
+    'Giao dịch đã xác nhận on-chain, nhưng chưa đồng bộ lại danh sách stake. Tải lại trang trước khi thao tác tiếp.',
+  actionTransactionPending:
+    'Giao dịch quản lý stake đã được gửi và đang chờ xác nhận.',
   viewOnPolygonscan: 'Xem trên Polygonscan',
   minStakeHint: (amount) => `Tối thiểu ${amount} PRANA`,
   exceedsBalance: 'Số lượng vượt quá số dư ví.',
@@ -170,7 +188,7 @@ const en: StakingCopy = {
   balanceLabel: 'Balance',
   maxButton: 'MAX',
   durationLabel: 'Choose duration',
-  projectedInterestLabel: 'Guaranteed interest at maturity',
+  projectedInterestLabel: 'Projected interest at maturity',
   projectedInterestHint: 'Uses on-chain integer rounding order.',
   pausedBanner: 'Staking is paused. New stakes are disabled.',
   stakesConfigPending:
@@ -186,6 +204,7 @@ const en: StakingCopy = {
   stakingSubmitting: 'Waiting for Stake confirmation…',
   stakingConfirming: 'Confirming transaction…',
   stakeSuccess: 'Stake successful',
+  stakeConfirmed: 'Stake confirmed on Polygon.',
   accountSyncWarning:
     'Stake confirmed on-chain, but the balance/list did not refresh. Reload if needed.',
   transactionPending:
@@ -215,6 +234,15 @@ const en: StakingCopy = {
   graceExpiredWarning:
     'Grace period ended — unclaimed interest can no longer be claimed.',
   processing: 'Processing…',
+  actionSuccess: {
+    claim: 'Interest claim confirmed.',
+    unstake: 'Unstake confirmed.',
+    unstakeEarly: 'Early unstake confirmed.',
+  },
+  actionAccountSyncWarning:
+    'The transaction confirmed on-chain, but the stake list did not refresh. Reload before taking another action.',
+  actionTransactionPending:
+    'The stake-management transaction was submitted and is awaiting confirmation.',
   viewOnPolygonscan: 'View on Polygonscan',
   minStakeHint: (amount) => `Min ${amount} PRANA`,
   exceedsBalance: 'Amount exceeds wallet balance.',

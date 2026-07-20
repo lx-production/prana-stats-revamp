@@ -8,6 +8,7 @@ export type StakingErrorCode =
   | 'invalid_amount'
   | 'below_min'
   | 'insufficient_balance'
+  | 'insufficient_gas'
   | 'expired_permit'
   | 'invalid_permit'
   | 'user_rejected'
@@ -67,8 +68,13 @@ export function classifyStakingError(error: unknown): StakingErrorCode {
     return 'wrong_chain';
   }
 
+  // Wallet/provider "insufficient funds" errors refer to the native gas token
+  // (POL), not the PRANA balance already validated by the form.
+  if (combined.includes('insufficient funds')) {
+    return 'insufficient_gas';
+  }
+
   if (
-    combined.includes('insufficient funds') ||
     combined.includes('insufficient balance') ||
     combined.includes('exceeds balance')
   ) {
@@ -109,6 +115,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     invalid_amount: 'Số lượng không hợp lệ.',
     below_min: 'Số lượng thấp hơn mức stake tối thiểu.',
     insufficient_balance: 'Số dư PRANA không đủ.',
+    insufficient_gas: 'Số dư POL không đủ để trả phí gas.',
     expired_permit: 'Permit đã hết hạn. Hãy ký lại.',
     invalid_permit: 'Permit không còn hợp lệ. Hãy ký lại.',
     user_rejected: 'Bạn đã từ chối yêu cầu trên ví.',
@@ -125,6 +132,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     invalid_amount: 'Enter a valid amount.',
     below_min: 'Amount is below the minimum stake.',
     insufficient_balance: 'Insufficient PRANA balance.',
+    insufficient_gas: 'Insufficient POL balance for gas.',
     expired_permit: 'Permit expired. Sign again.',
     invalid_permit: 'Permit is no longer valid. Sign again.',
     user_rejected: 'You rejected the wallet request.',

@@ -138,14 +138,10 @@ export function useStakeTransaction({
       setPermit(null);
       setStatus('success');
       setError(null);
-      setSuccess(
-        locale === 'en'
-          ? 'Stake confirmed on Polygon.'
-          : 'Stake đã được xác nhận trên Polygon.',
-      );
+      setSuccess(copy.stakeConfirmed);
       setWarning(syncFailed ? copy.accountSyncWarning : null);
     },
-    [copy.accountSyncWarning, locale],
+    [copy.accountSyncWarning, copy.stakeConfirmed],
   );
 
   /**

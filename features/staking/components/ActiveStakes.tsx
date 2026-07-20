@@ -61,12 +61,14 @@ export default function ActiveStakes({
     onBusyChange?.(stakeActions.isBusy);
   }, [onBusyChange, stakeActions.isBusy]);
 
-  // Close early-unstake dialog after a confirmed receipt.
+  // Once the early-unstake transaction is broadcast, the modal is no longer
+  // the right control surface; close it so a pending receipt can be resumed
+  // from the transaction banner.
   useEffect(() => {
-    if (stakeActions.status === 'success') {
+    if (stakeActions.transactionHash) {
       setEarlyStake(null);
     }
-  }, [stakeActions.status]);
+  }, [stakeActions.transactionHash]);
 
   const [earlyStake, setEarlyStake] = useState<StakeRecord | null>(null);
 
@@ -141,6 +143,41 @@ export default function ActiveStakes({
               />
             </>
           ) : null}
+        </StatusBanner>
+      ) : null}
+      {stakeActions.warning ? (
+        <StatusBanner tone="warning" className="mt-3">
+          {stakeActions.warning}
+        </StatusBanner>
+      ) : null}
+      {stakeActions.hasPendingHash && stakeActions.transactionHash ? (
+        <StatusBanner tone="warning" className="mt-3">
+          <div className="space-y-2">
+            <div>
+              {copy.actionTransactionPending}{' '}
+              <TxLink
+                hash={stakeActions.transactionHash}
+                label={copy.viewOnPolygonscan}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-hero btn-glass w-full sm:w-auto"
+              disabled={
+                actionsLocked || stakeActions.status === 'confirming'
+              }
+              onClick={() => void stakeActions.resumePendingReceipt()}
+            >
+              {stakeActions.status === 'confirming' ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {copy.stakingConfirming}
+                </span>
+              ) : (
+                copy.resumeConfirming
+              )}
+            </button>
+          </div>
         </StatusBanner>
       ) : null}
 

@@ -40,3 +40,11 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 
 
 Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.
+
+## Staking contract license
+
+The PRANA staking and interest contracts are MIT-licensed. Smart-contract author: `prana@triethocduongpho`. Other vendored or protocol contracts retain their own SPDX license headers.
+
+## Contact
+
+PRANA Protocol: `thdp@triethocduongpho.net`

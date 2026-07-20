@@ -17,6 +17,10 @@ test('classifyStakingError maps common wallet/provider failures', () => {
   );
   assert.equal(
     classifyStakingError(new Error('insufficient funds for gas')),
+    'insufficient_gas',
+  );
+  assert.equal(
+    classifyStakingError(new Error('transfer amount exceeds balance')),
     'insufficient_balance',
   );
   assert.equal(

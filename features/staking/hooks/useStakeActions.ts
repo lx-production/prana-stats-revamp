@@ -9,6 +9,8 @@ import {
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getPolygonWalletClient } from '../getPolygonWalletClient.ts';
+import { getStakingCopy } from '../staking.copy.ts';
+import { confirmStakeReceipt } from '../stakeTransactionFlow.ts';
 import {
   formatStakingError,
   getStakingErrorMessage,
@@ -38,6 +40,7 @@ export function useStakeActions({
   configReady = true,
 }: UseStakeActionsInput) {
   const { locale } = useSiteLanguage();
+  const copy = getStakingCopy(locale);
   const wallet = useInjectedWallet();
   const publicClient = usePublicClient({ chainId: POLYGON_CHAIN_ID });
 
@@ -47,13 +50,81 @@ export function useStakeActions({
     kind: StakeActionKind;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
+  const [syncRequired, setSyncRequired] = useState(false);
+
+  /** A known hash is non-terminal until receipt success/revert is observed. */
+  const hasPendingHash =
+    transactionHash != null && status !== 'success';
 
   const isBusy =
     externallyBusy ||
     status === 'submitting' ||
-    status === 'confirming';
+    status === 'confirming' ||
+    hasPendingHash ||
+    syncRequired;
+
+  /**
+   * Wait for a broadcast action without ever calling writeContract again.
+   * Account refresh failure after a successful receipt is a warning, not a
+   * transaction failure, so stale action buttons remain locked behind reload.
+   */
+  const confirmActionReceipt = useCallback(
+    async (
+      hash: Hex,
+      pendingAction: { stakeId: number; kind: StakeActionKind },
+    ) => {
+      if (!publicClient) {
+        setStatus('error');
+        setError(getStakingErrorMessage('rpc_unavailable', locale));
+        return;
+      }
+
+      setStatus('confirming');
+      setError(null);
+      setWarning(null);
+
+      const outcome = await confirmStakeReceipt(hash, {
+        waitForReceipt: (txHash) =>
+          publicClient.waitForTransactionReceipt({ hash: txHash }),
+        refetchAccount,
+      });
+
+      if (outcome.kind === 'reverted') {
+        setTransactionHash(null);
+        setAction(null);
+        setStatus('error');
+        setError(getStakingErrorMessage('reverted', locale));
+        return;
+      }
+
+      if (outcome.kind === 'receipt_pending') {
+        // Keep hash + action so the dedicated resume button only waits again.
+        setTransactionHash(hash);
+        setAction(pendingAction);
+        setStatus('error');
+        setError(formatStakingError(outcome.error, locale));
+        return;
+      }
+
+      setTransactionHash(hash);
+      setAction(null);
+      setStatus('success');
+      setError(null);
+      setSuccess(copy.actionSuccess[pendingAction.kind]);
+      setWarning(outcome.syncFailed ? copy.actionAccountSyncWarning : null);
+      setSyncRequired(outcome.syncFailed);
+    },
+    [
+      copy.actionAccountSyncWarning,
+      copy.actionSuccess,
+      locale,
+      publicClient,
+      refetchAccount,
+    ],
+  );
 
   const runWrite = useCallback(
     async (stakeId: number, kind: StakeActionKind) => {
@@ -62,14 +133,18 @@ export function useStakeActions({
         !configReady ||
         paused ||
         status === 'submitting' ||
-        status === 'confirming'
+        status === 'confirming' ||
+        hasPendingHash ||
+        syncRequired
       ) {
         return;
       }
 
       setError(null);
+      setWarning(null);
       setSuccess(null);
       setTransactionHash(null);
+      setSyncRequired(false);
 
       if (!wallet.isConnected || !wallet.address) {
         setError(getStakingErrorMessage('not_connected', locale));
@@ -105,6 +180,7 @@ export function useStakeActions({
       setAction({ stakeId, kind });
       setStatus('submitting');
 
+      let hash: Hex;
       try {
         // Switch chain first, then resolve a fresh wallet client.
         if (!wallet.isPolygon) {
@@ -115,7 +191,7 @@ export function useStakeActions({
           throw new Error('RPC unavailable');
         }
 
-        const hash = await walletClient.writeContract({
+        hash = await walletClient.writeContract({
           chain: polygon,
           account: wallet.address,
           address: STAKING_CONTRACT_ADDRESS,
@@ -123,48 +199,43 @@ export function useStakeActions({
           functionName,
           args: [stakeId],
         } as never);
-
-        setTransactionHash(hash);
-        setStatus('confirming');
-
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        if (receipt.status === 'reverted') {
-          throw new Error('Transaction reverted');
-        }
-
-        setStatus('success');
-        setSuccess(
-          locale === 'en'
-            ? kind === 'claim'
-              ? 'Interest claim confirmed.'
-              : kind === 'unstake'
-                ? 'Unstake confirmed.'
-                : 'Early unstake confirmed.'
-            : kind === 'claim'
-              ? 'Claim lãi đã được xác nhận.'
-              : kind === 'unstake'
-                ? 'Unstake đã được xác nhận.'
-                : 'Unstake sớm đã được xác nhận.',
-        );
-        await refetchAccount();
       } catch (err) {
+        // No hash exists: this is a pre-broadcast rejection/failure and retry
+        // may safely call writeContract again.
+        setAction(null);
+        setTransactionHash(null);
         setStatus('error');
         setError(formatStakingError(err, locale));
-      } finally {
-        setAction(null);
+        return;
       }
+
+      setTransactionHash(hash);
+      await confirmActionReceipt(hash, { stakeId, kind });
     },
     [
+      confirmActionReceipt,
       configReady,
       externallyBusy,
+      hasPendingHash,
       locale,
       paused,
       publicClient,
-      refetchAccount,
       status,
+      syncRequired,
       wallet,
     ],
   );
+
+  const resumePendingReceipt = useCallback(async () => {
+    if (
+      !transactionHash ||
+      !action ||
+      status === 'success' ||
+      status === 'submitting' ||
+      status === 'confirming'
+    ) return;
+    await confirmActionReceipt(transactionHash, action);
+  }, [action, confirmActionReceipt, status, transactionHash]);
 
   const claimInterest = useCallback(
     (stakeId: number) => runWrite(stakeId, 'claim'),
@@ -185,9 +256,13 @@ export function useStakeActions({
     status,
     action,
     error,
+    warning,
     success,
     transactionHash,
+    hasPendingHash,
+    syncRequired,
     isBusy,
+    resumePendingReceipt,
     claimInterest,
     unstake,
     unstakeEarly,
