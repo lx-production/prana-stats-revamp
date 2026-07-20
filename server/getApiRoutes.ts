@@ -2,22 +2,31 @@ import { createServerCache } from './helpers/cacheHelpers.ts';
 import { loadVersionInfo } from './loaders/version.ts';
 import { loadPranaStats } from './loaders/pranaStats.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
+import { formatErrorForLog } from './helpers/logRedaction.ts';
 import { sendJson, sendText } from './helpers/requestHelpers.ts';
+import { loadStakingAccount } from './loaders/stakingAccount.ts';
+import { parseChecksumAddress } from './helpers/addressHelpers.ts';
 import { loadCachedCapital } from './loaders/cached/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
+import { loadCachedStakingConfig } from './loaders/cached/stakingConfigCached.ts';
 import { loadCachedTopHoldingAddresses, TOP_HOLDERS_PAGE_SIZE } from './loaders/topHoldingAddresses.ts';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
 
+import type { Address } from '../types/blockchain.types.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
+import type { SwapRateLimiters } from './rateLimit.ts';
+import type { StakingAccountSnapshot, StakingConfig } from '../features/staking/staking.types.ts';
 
 // Browser Cache-Control values for readonly GET responses
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
+const READONLY_STAKING_CONFIG_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
+const STAKING_ACCOUNT_CACHE_CONTROL = 'private, no-store';
 // Version identity is fixed for the process lifetime; allow short public reuse.
 const VERSION_API_CACHE_CONTROL = `public, max-age=${BROWSER_CACHE_TTL_SECONDS.versionApiResponseBrowserHttp}`;
 
@@ -25,8 +34,22 @@ const VERSION_API_CACHE_CONTROL = `public, max-age=${BROWSER_CACHE_TTL_SECONDS.v
 export const pranaStatsCache = createServerCache(SERVER_CACHE_TTL_MS.apiResponse);
 export const summaryCache = createServerCache<string>(SERVER_CACHE_TTL_MS.summaryApiResponse);
 
-// Handles readonly GET API routes (stats, capital, summary, etc.)
-export function createGetApiRouteHandler(): RequestHandler {
+/** Optional loader overrides so route tests do not need a live RPC. */
+export type StakingApiLoaders = {
+  loadConfig: () => Promise<StakingConfig>;
+  loadAccount: (address: Address) => Promise<StakingAccountSnapshot>;
+};
+
+const DEFAULT_STAKING_API_LOADERS: StakingApiLoaders = {
+  loadConfig: loadCachedStakingConfig,
+  loadAccount: loadStakingAccount,
+};
+
+// Handles readonly GET API routes (stats, capital, summary, staking config/account, etc.)
+export function createGetApiRouteHandler(
+  rateLimiters: SwapRateLimiters,
+  stakingLoaders: StakingApiLoaders = DEFAULT_STAKING_API_LOADERS,
+): RequestHandler {
   return async function handleGetApiRequest(req, res, url): Promise<boolean> {
     // Public deploy identity — compare with GitHub `main` and the UI footer SHA.
     if (url.pathname === '/api/version') {
@@ -64,6 +87,72 @@ export function createGetApiRouteHandler(): RequestHandler {
     if (url.pathname === '/api/staking-stats') {
       const result = await loadCachedStakingStats();
       sendJson(res, 200, result, { cacheControl: READONLY_STAKING_API_CACHE_CONTROL });
+      return true;
+    }
+
+    // Protocol config for the /stake/ UI — 30s browser + server cache.
+    if (url.pathname === '/api/staking/config') {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use GET for staking config.',
+        });
+        return true;
+      }
+
+      try {
+        const result = await stakingLoaders.loadConfig();
+        sendJson(res, 200, result, { cacheControl: READONLY_STAKING_CONFIG_CACHE_CONTROL });
+      } catch (err) {
+        console.error('Failed to load staking config:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to load staking config.',
+        });
+      }
+      return true;
+    }
+
+    // Wallet-specific stakes/balance — no-store, rate-limited, requires valid address.
+    if (url.pathname === '/api/staking/account') {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use GET for staking account.',
+        });
+        return true;
+      }
+
+      // Validate before rate-limit so junk addresses do not spend IP/global RPC quota.
+      const address = parseChecksumAddress(url.searchParams.get('address'));
+      if (!address) {
+        sendJson(res, 400, {
+          error: 'invalid_address',
+          message: 'Provide a valid wallet address.',
+        });
+        return true;
+      }
+
+      if (rateLimiters.isStakingAccountRateLimited(req)) {
+        sendJson(res, 429, {
+          error: 'rate_limited',
+          message: 'Too many staking account requests.',
+        });
+        return true;
+      }
+
+      try {
+        const result = await stakingLoaders.loadAccount(address);
+        sendJson(res, 200, result, { cacheControl: STAKING_ACCOUNT_CACHE_CONTROL });
+      } catch (err) {
+        console.error('Failed to load staking account:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to load staking account.',
+        });
+      }
       return true;
     }
 

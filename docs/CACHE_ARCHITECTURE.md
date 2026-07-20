@@ -12,9 +12,10 @@ The goal is to keep caching:
 
 ### 1. One source of truth per data type
 - Raw generated datasets stay as root JSON files such as `data_*.json`, `bonds_v2.json`, and `buy_dips.json`.
-- Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, `/api/bond-metrics`, and `/api/summary` (markdown for agents and link previews, not the React UI).
+- Computed app snapshots stay behind API routes such as `/api/prana-stats`, `/api/staking-stats`, `/api/staking/config`, `/api/bond-metrics`, and `/api/summary` (markdown for agents and link previews, not the React UI).
 - Bond refresh side effects run inside `/api/bond-metrics`, before the server reads the computed bond snapshot.
 - Top holding addresses are loaded live via `/api/top-holding-addresses` (paginated) with per-page server memory cache (no JSON file handoff).
+- Wallet-specific staking account data is live via `/api/staking/account` (`private, no-store`, rate-limited; not a shared protocol snapshot).
 
 ### 2. Short-lived data should have short-lived caches
 - Root JSON files can be reused briefly by the browser before revalidation.
@@ -277,9 +278,12 @@ API response caches:
 - `/api/capital`
 - `/api/lp-capital` (TTL = `SERVER_CACHE_TTL_MS.lpCapitalApiResponse`, 1h)
 - `/api/bond-metrics` (TTL = `SERVER_CACHE_TTL_MS.bondMetricsApiResponse`, 24h)
+- `/api/staking/config` (TTL = `SERVER_CACHE_TTL_MS.apiResponse`, 30s)
 
 Staking stats response cache:
 - `/api/staking-stats` (TTL = `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
+
+`/api/staking/account` is **not** server-cached (always live; `Cache-Control: private, no-store`).
 
 Bond refresh request dedupe:
 - `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run used by `/api/bond-metrics` and does not keep a TTL cache after it completes
@@ -311,12 +315,13 @@ Warmup loads these API caches in parallel via `Promise.allSettled`:
 
 - `/api/summary`
 - `/api/staking-stats`
+- `/api/staking/config`
 - `/api/lp-capital`
 - `/api/bond-metrics`
 
 Each entry uses the same loader path as a real HTTP request (for example `summaryCache(() => loadSummaryMarkdown())` for summary). Failures are logged with `console.warn` and do not prevent the server from running; the first client request after a failed warmup will populate that cache normally.
 
-Other endpoints (`/api/prana-stats`, `/api/capital`, `/api/top-holding-addresses`) populate on first request.
+Other endpoints (`/api/prana-stats`, `/api/capital`, `/api/top-holding-addresses`, `/api/staking/account`) populate on first request.
 
 Purpose: avoid a cold-start burst where the first visitors (or bots hitting `/api/summary`) pay the full cost of the heavier loaders at once. Restart clears in-memory server caches (including LP token id cache); warmup repopulates the warmed API response caches immediately after listen.
 
@@ -355,6 +360,8 @@ Routes (each uses one of the header shapes above, as wired in `server/getApiRout
 - `/api/summary` — `max-age=30` (`text/markdown`)
 - `/api/prana-stats` — `max-age=30`
 - `/api/staking-stats` — `max-age=24h`
+- `/api/staking/config` — `max-age=30`
+- `/api/staking/account` — `private, no-store` (wallet-specific; rate-limited 30/IP/min + 120/server/min)
 - `/api/capital` — `max-age=30`
 - `/api/lp-capital` — `max-age=1h`
 - `/api/bond-metrics` — `max-age=24h`

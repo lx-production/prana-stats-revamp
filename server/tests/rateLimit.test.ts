@@ -237,3 +237,56 @@ test('getClientIp uses the same trusted proxy hop logic as rate limits', () => {
     '198.51.100.91',
   );
 });
+
+function spendStakingAccountBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 30,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isStakingAccountRateLimited(req), false);
+  }
+}
+
+test('staking account limiter enforces 30 requests per IP per minute', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendStakingAccountBudget(limiter, mockRequest('198.51.100.120'));
+  assert.equal(limiter.isStakingAccountRateLimited(mockRequest('198.51.100.120')), true);
+  assert.equal(limiter.isStakingAccountRateLimited(mockRequest('198.51.100.121')), false);
+});
+
+test('staking account limiter has a global all-clients budget of 120', () => {
+  const limiter = createSwapRateLimiters();
+
+  for (let index = 0; index < 120; index += 1) {
+    assert.equal(
+      limiter.isStakingAccountRateLimited(mockRequest(`203.0.113.${index % 200}`)),
+      false,
+    );
+  }
+
+  assert.equal(
+    limiter.isStakingAccountRateLimited(mockRequest('198.51.100.200')),
+    true,
+  );
+});
+
+test('per-IP staking account rejections do not spend the global account budget', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendStakingAccountBudget(limiter, mockRequest('198.51.100.130'));
+  assert.equal(limiter.isStakingAccountRateLimited(mockRequest('198.51.100.130')), true);
+
+  for (let index = 0; index < 90; index += 1) {
+    assert.equal(
+      limiter.isStakingAccountRateLimited(mockRequest(`203.0.113.${index}`)),
+      false,
+    );
+  }
+
+  assert.equal(
+    limiter.isStakingAccountRateLimited(mockRequest('203.0.113.200')),
+    true,
+  );
+});

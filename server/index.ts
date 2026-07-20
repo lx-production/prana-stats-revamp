@@ -13,7 +13,7 @@ const HOST = env.HOST ?? '127.0.0.1';
 const rateLimiters = createSwapRateLimiters();
 
 // Split API handlers: readonly GET routes vs POST-only swap routes
-const handleGetApiRequest = createGetApiRouteHandler();
+const handleGetApiRequest = createGetApiRouteHandler(rateLimiters);
 const handlePostApiRequest = createPostApiRouteHandler(rateLimiters);
 
 rateLimiters.startCleanupTimer();

@@ -15,7 +15,7 @@
 - [x] **Bước 1 — Tách homepage và thiết lập lazy `/stake/`** (`40e0da1`): frontend/server typecheck pass, 70 server tests pass, production build pass; `StatsPage` và `StakingPage` đã thành chunk riêng, `/stake` redirect `308` giữ query string và direct refresh `/stake/` trả SPA shell.
 - [x] **Closeout Bước 1**: automated route tests (`server/tests/stakeRoutes.test.ts`), `STAKE_PATH` / `STAKE_CANONICAL_PATH` dùng chung (hero + server + matcher), `AppFooter` trên placeholder, `usePageMetadata` cho title/description theo locale.
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
-- [ ] **Bước 3 — Tạo backend staking read API.**
+- [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [ ] **Bước 4 — Port form và account state.**
 - [ ] **Bước 5 — Harden permit và transaction flow.**
 - [ ] **Bước 6 — Đồng bộ styling với main app.**
@@ -109,7 +109,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 - Đảm bảo Tailwind/TypeScript config scan/include `pages/**` và `features/**` (Bước 1 có thể đã thêm `pages/**`).
 
 Closeout: `POLYGON_CHAIN_ID` / `SECONDS_PER_*` sống trong `constants/network.ts` (swap re-export để tương thích); `PRANA_TOKEN_ABI` tối thiểu + typed `STAKING_CONTRACT_ABI as const`; types tại `features/staking/staking.types.ts` (permit domain derive từ constants; `Address`/`Hex` từ `blockchain.types`); `staking-ui` constants chỉ còn thin re-export; route tests inject fixture `distDir` qua `createStaticRequestHandler`; `npm test` → `test:server`.
-### Bước 3 — Tạo backend staking read API
+### Bước 3 — Tạo backend staking read API ✅
 
 Thêm hai GET endpoint:
 
@@ -171,8 +171,9 @@ Quy tắc backend:
 - Thêm rate limit `/account`: 30 request/IP/phút và 120 request/phút trên toàn server để bảo vệ Pi/Alchemy.
 - Upstream RPC failure trả lỗi chung `502`, không trả URL/key hoặc raw provider error.
 - Không tạo generic JSON-RPC proxy.
-- Backend dùng `POLYGON_RPC_URL`; giữ fallback env cũ trong một giai đoạn deploy nhưng không có `VITE_*` nào được tham chiếu từ frontend.
+- Backend tiếp tục dùng `VITE_ALCHEMY_POLYGON_MAIN` làm Polygon RPC mặc định, theo cấu hình server hiện tại. Biến này chỉ được đọc ở server; frontend main app không tham chiếu nó.
 
+Closeout: loaders `stakingConfig` / `stakingAccount` + cached config; routes trong `getApiRoutes` (GET-only 405 + `Allow: GET`); validate address trước rate-limit; `formatErrorForLog` cho console; tests `stakingApi.test.ts` + rateLimit; warmup `/api/staking/config`.
 ### Bước 4 — Port form và account state
 
 - Chuyển `StakingForm`, `ActiveStakes` và hooks sang TS/TSX trong feature folder.

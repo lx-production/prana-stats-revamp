@@ -18,6 +18,10 @@ const SWAP_GLOBAL_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests:
 const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
 const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 
+// Staking account reads hit Alchemy/Pi — tighter than public config, looser than quotes.
+const STAKING_ACCOUNT_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
+const STAKING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+
 // How often we delete expired per-IP buckets so memory does not grow forever.
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000; // 1 minute
 
@@ -136,9 +140,11 @@ export function createSwapRateLimiters() {
   const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
+  const stakingAccountRateLimits = new Map<string, RateLimitBucket>();
 
   let globalSwapQuoteRateLimit: RateLimitBucket | null = null;
-  // let is used because globalSwapQuoteRateLimit gets reassigned, while the others only get mutated
+  let globalStakingAccountRateLimit: RateLimitBucket | null = null;
+  // let is used because global* buckets get reassigned, while the Maps only get mutated
 
   return {
     // Quote requests hit both a per-IP cap and a global cap across all clients.
@@ -160,6 +166,27 @@ export function createSwapRateLimiters() {
       return isRateLimited(req, swapVerifyRateLimits, SWAP_VERIFY_RATE_LIMIT, trustedProxyHopCount);
     },
 
+    // Wallet account snapshots: 30/IP/min + 120/server/min to protect Pi/Alchemy.
+    isStakingAccountRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          stakingAccountRateLimits,
+          STAKING_ACCOUNT_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalStakingAccountRateLimit,
+        STAKING_ACCOUNT_GLOBAL_RATE_LIMIT,
+      );
+      globalStakingAccountRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
     getClientIp(req: IncomingMessage): string {
       return getRequestIp(req, trustedProxyHopCount);
     },
@@ -168,7 +195,7 @@ export function createSwapRateLimiters() {
       const rateLimitCleanupTimer = setInterval(() => {
         const now = Date.now();
         sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
-        
+
         if (
           globalSwapQuoteRateLimit &&
           now - globalSwapQuoteRateLimit.windowStartedAt > SWAP_GLOBAL_QUOTE_RATE_LIMIT.windowMs
@@ -178,6 +205,15 @@ export function createSwapRateLimiters() {
 
         sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(stakingAccountRateLimits, now, STAKING_ACCOUNT_RATE_LIMIT.windowMs);
+
+        if (
+          globalStakingAccountRateLimit &&
+          now - globalStakingAccountRateLimit.windowStartedAt >
+            STAKING_ACCOUNT_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalStakingAccountRateLimit = null;
+        }
       }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
 
       // Let Node exit even if this interval is still running.

@@ -3,11 +3,13 @@ import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
+import { loadCachedStakingConfig } from './loaders/cached/stakingConfigCached.ts';
 
 export async function warmApiCaches() {
   const warmups = [
     { name: '/api/summary', load: () => summaryCache(() => loadSummaryMarkdown()) },
     { name: '/api/staking-stats', load: () => loadCachedStakingStats() },
+    { name: '/api/staking/config', load: () => loadCachedStakingConfig() },
     { name: '/api/lp-capital', load: () => loadCachedLpCapital() },
     { name: '/api/bond-metrics', load: () => loadCachedBondMetrics() },
   ];
