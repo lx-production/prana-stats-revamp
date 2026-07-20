@@ -46,6 +46,18 @@ export function sendText(
   res.end(body);
 }
 
+export function sendRedirect(
+  res: ServerResponse,
+  statusCode: 301 | 302 | 307 | 308,
+  location: string,
+): void {
+  res.statusCode = statusCode;
+  setSecurityHeaders(res);
+  res.setHeader('Location', location);
+  res.setHeader('Cache-Control', 'no-cache');
+  res.end();
+}
+
 // Used in postApiRoutes.ts for POST endpoints (swap quote, swap log, swap verify), each with its own maxBytes constant
 // req is a readable stream. Data arrives in pieces (“chunks”)
 export async function readJsonBody<T>(req: IncomingMessage, maxBytes = 16 * 1024): Promise<T> {

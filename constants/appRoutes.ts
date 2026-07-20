@@ -4,6 +4,9 @@ export const TERMS_RISK_PATH = "/terms";
 /** Client path for the Privacy Policy page. */
 export const PRIVACY_PATH = "/privacy";
 
+/** Client path for the staking page (trailing slash is the canonical URL). */
+export const STAKE_PATH = "/stake";
+
 function normalizePathname(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
@@ -14,4 +17,9 @@ export function isTermsRiskPath(pathname: string): boolean {
 
 export function isPrivacyPath(pathname: string): boolean {
   return normalizePathname(pathname) === PRIVACY_PATH;
+}
+
+/** True for `/stake` and any path under `/stake/` (lazy staking page). */
+export function isStakePath(pathname: string): boolean {
+  return pathname === STAKE_PATH || pathname.startsWith(`${STAKE_PATH}/`);
 }

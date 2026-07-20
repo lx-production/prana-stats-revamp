@@ -138,7 +138,7 @@ Both are useful:
 These share the same current snapshot source:
 - `/api/prana-stats`
 
-On app start, `utils/prefetchInitialJson.ts` (called from `main.tsx`) warms `/api/prana-stats` once before hooks mount. Bond metrics are not prefetched there; see [bond metrics](#computed-api-snapshot-bond-metrics).
+On stats homepage load, `utils/prefetchInitialJson.ts` (called from `pages/StatsPage.tsx`) warms `/api/prana-stats` once before hooks mount. The `/stake/` lazy page does not call it. Bond metrics are not prefetched there; see [bond metrics](#computed-api-snapshot-bond-metrics).
 
 This endpoint returns **pricing and market cap only** (no performance percentages):
 - `btcPriceUsd`, `btcPriceVnd`, `usdToVndRate`, `latestSatPrice`, `marketCapVnd`

@@ -80,9 +80,7 @@ export default function PranaHero() {
             SWAP
           </button>
           <a
-            href="https://prana.triethocduongpho.net/stake/"
-            target="_blank"
-            rel="noopener"
+            href="/stake/"
             title="Lãi suất cố định 15% APR"
             className="btn-hero btn-glass"
           >

@@ -3,8 +3,9 @@
 ## Tóm tắt kiến trúc
 
 - Dùng chung một Vite app, `WagmiProvider`, React Query, locale, favicon và design system.
-- `/` và `/stake/` là hai page được `React.lazy`; người vào trang stats không tải code staking.
-- Không thêm React Router: bootstrap chọn page theo `window.location.pathname`; link `/stake/` dùng navigation thông thường.
+- Một SPA, nhiều path (không React Router): `/` (stats), `/stake/` (staking), `/terms`, `/privacy` — chọn page theo `window.location.pathname` (`useAppPathname` + `constants/appRoutes`).
+- `/` và `/stake/` là `React.lazy`; người vào trang stats không tải code staking; `/terms` và `/privacy` giữ page nhỏ eager như hiện tại.
+- Link `/stake/` dùng navigation thông thường (full URL), không client-side router library.
 - Contract reads đi qua backend API chuyên biệt; Alchemy key chỉ tồn tại server-side.
 - Ví người dùng vẫn ký permit và gửi transaction trực tiếp.
 - Chuyển toàn bộ staking sang TypeScript, bigint chính xác và chỉ báo thành công sau khi receipt được xác nhận.
@@ -48,13 +49,16 @@ Các phần dùng chung:
 | Wagmi/React Query providers | `main.tsx` hiện tại |
 | Connect, disconnect, switch Polygon | `useInjectedWallet` |
 | Locale VI/EN | `SiteLanguageProvider`, `useSiteLanguage`, `LanguageToggle` |
-| Polygon chain ID/RPC | Chuyển chain ID về `constants/network.ts`; dùng `wagmiConfig` hiện tại |
-| PRANA address/decimals | `constants/sharedContracts.ts` |
-| Staking/Interest address và ABI | Một nguồn chuẩn duy nhất trong `constants/stakingContracts.ts` |
+| Path matching (`/terms`, `/privacy`, `/stake`) | `constants/appRoutes.ts` + `useAppPathname` |
+| Polygon RPC (frontend public) | `constants/network.ts` + `wagmiConfig` hiện tại |
+| PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
+| Staking/Interest address và ABI | Chuẩn hóa tiếp `constants/stakingContracts.ts` (đã có file; hiện ABI human-readable tối thiểu cho stats) |
 | Format số/ngày giờ | Mở rộng `utils/formatters.ts` |
-| Rút gọn wallet address | Chuyển `formatCompactAddress` sang `utils/walletFormatting.ts`; Swap và Staking cùng dùng |
+| Rút gọn wallet address | Reuse `formatCompactAddress` trong `utils/swapTokenFormatting.ts` (Swap đã dùng); chỉ tách `walletFormatting.ts` nếu muốn tách concern rõ hơn |
 | Favicon | `useSpinningFavicon` hiện tại |
-| Background/glass/gold CTA | `NeuralShaderBackground` và các UI primitive mới |
+| Background | `FlutterShaderBackground` (homepage/legal shell); staking dùng cùng shader với brightness thấp hơn |
+| Glass / gold CTA | Class hero hiện có (`btn-hero`, `btn-gold-border`, `btn-glass`) + UI primitive mới khi cần |
+| Footer / legal | `AppFooter`, `/terms`, `/privacy` giữ nguyên trên homepage shell |
 | Transaction receipt pattern | Theo mô hình đã dùng trong `useUniswapSwap` |
 
 ABI staking chuẩn hóa thành object ABI `as const`, đủ cho cả Viem/Wagmi và Ethers. Bao gồm các read/write function thực sự dùng; bỏ ABI admin và event không cần thiết khỏi frontend bundle.
@@ -63,32 +67,33 @@ ABI staking chuẩn hóa thành object ABI `as const`, đủ cho cả Viem/Wagmi
 
 ### Bước 1 — Tách homepage khỏi entrypoint
 
-- Chuyển toàn bộ homepage JSX hiện tại từ `main.tsx` sang `pages/StatsPage.tsx`.
-- `main.tsx` chỉ giữ:
-  - Global CSS.
-  - `WagmiProvider`.
-  - `QueryClientProvider`.
-  - `SiteLanguageProvider`.
-  - Route resolver và `Suspense`.
-- Path `/stake` được server redirect `308` sang `/stake/`; mọi path bắt đầu bằng `/stake/` lazy-load `StakingPage`.
-- Các path khác giữ hành vi homepage hiện tại.
-- Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` không tải dữ liệu stats.
-- Gỡ preload `model-viewer` và `prana-coin.glb` khỏi HTML chung; kích hoạt chúng từ `StatsPage`/hero để trang staking không tải GLB 2.6 MB.
-- Đổi CTA STAKE trong hero thành `href="/stake/"`, mở cùng tab.
-- Staking page có link quay về `/` và link xem protocol statistics.
+Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.tsx` (shell chung: `LanguageToggle` + `FlutterShaderBackground` + `AppFooter`).
+
+- Chuyển content homepage (`HomePage`) từ `main.tsx` sang `pages/StatsPage.tsx` (main + `AppFooter`; **không** nhét lại shader/language toggle vào StatsPage — chúng thuộc shell).
+- Mở rộng resolver hiện có:
+  - `/stake` và mọi path bắt đầu bằng `/stake/` → lazy `StakingPage` (không dùng shell homepage, để tránh prefetch stats / GLB).
+  - `/terms`, `/privacy` giữ hành vi hiện tại.
+  - Còn lại → lazy `StatsPage`.
+- `main.tsx` giữ: global CSS, providers, favicon, path resolver, `Suspense`, shell homepage/legal.
+- Thêm `isStakePath` (và hằng path nếu cần) vào `constants/appRoutes.ts`.
+- Path `/stake` được server redirect `308` sang `/stake/`; `/stake/` serve `dist/index.html`.
+- Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` (và legal pages) không tải dữ liệu stats.
+- Gỡ preload `model-viewer` và `prana-coin.glb` khỏi HTML chung; kích hoạt chúng từ `StatsPage`/hero.
+- Đổi CTA STAKE trong hero thành `href="/stake/"`, mở cùng tab (giữ class `btn-hero btn-glass`).
+- Staking placeholder: link về `/` và link xem protocol statistics; dùng class button hiện có khi có UI tạm.
 
 ### Bước 2 — Chuẩn hóa constants, ABI và types
 
-- Hợp nhất PRANA, staking và interest contract addresses vào constants hiện tại; xóa bản sao trong `staking-ui`.
-- Thay ABI human-readable/ABI lớn bằng một typed ABI tối thiểu dùng chung.
-- Bổ sung các constants:
-  - Polygon chain ID.
+- Hợp nhất/chuẩn hóa tiếp trên nền đã có: `sharedContracts.ts`, `stakingContracts.ts`, `network.ts`; xóa bản sao trong `staking-ui`.
+- Thay ABI human-readable/ABI lớn bằng một typed ABI tối thiểu dùng chung (đủ stake/claim/unstake/permit reads+writes cho UI mới; stats loader có thể dùng chung hoặc subset).
+- Bổ sung constants còn thiếu (không hardcode lại những gì `network` / shared đã có):
+  - Polygon chain ID (nếu chưa export từ một nguồn chuẩn).
   - Permit domain name `Prana_v2`, version `1`.
   - Permit deadline 1 giờ.
   - Seconds per day/year.
 - Không hardcode duration/APR, min stake, grace period hoặc penalty trong client; lấy từ backend/on-chain.
 - Tạo TypeScript types cho config, account snapshot, stake record, permit snapshot và transaction status.
-- Mở rộng Tailwind/TypeScript config để scan/include `pages/**` và `features/**`.
+- Đảm bảo Tailwind/TypeScript config scan/include `pages/**` và `features/**` (Bước 1 có thể đã thêm `pages/**`).
 
 ### Bước 3 — Tạo backend staking read API
 
@@ -219,7 +224,7 @@ Stake management:
 - Bỏ hoàn toàn light theme và `ThemeContext`; staking dùng dark theme của main app.
 - Page shell:
   - `bg-[#050116]`, text trắng.
-  - Dùng `NeuralShaderBackground` với brightness thấp hơn homepage.
+  - Dùng `FlutterShaderBackground` với brightness thấp hơn homepage (không dùng lại `NeuralShaderBackground` trừ khi có lý do riêng).
   - Container responsive khoảng `max-w-5xl/6xl`.
 - Panel/form/stake card:
   - `rounded-2xl`.
@@ -227,8 +232,8 @@ Stake management:
   - `bg-white/5`.
   - `backdrop-blur-md`.
   - Hover/focus border giống `StatCard`.
-- Primary CTA dùng gold gradient hiện có ở hero/SwapModal.
-- Secondary/claim dùng cyan–emerald; early unstake dùng red nhưng giữ cùng border/glass language.
+- Primary CTA dùng class gold hiện có (`btn-hero btn-gold-border` / tương đương SwapModal).
+- Secondary/claim dùng cyan–emerald hoặc `btn-glass`; early unstake dùng red nhưng giữ cùng border/glass language.
 - Input dùng nền trong suốt, border trắng mờ, focus ring vàng/cyan.
 - Progress bar dùng cyan/gold gradient; status dùng pill `Active`, `Matured`, `Claim first`, `Grace expired`.
 - Dùng Lucide `Loader2`, `Wallet`, `Lock`, `Coins`, `ExternalLink`; bỏ unicode spinner.
@@ -238,7 +243,7 @@ Stake management:
   - Action buttons full width.
   - Stake metadata chuyển từ nhiều cột về stack.
   - Transaction hashes wrap an toàn.
-- `LanguageToggle` hỗ trợ placement `fixed` cho homepage và `inline` trong staking header.
+- `LanguageToggle`: homepage/legal giữ placement `fixed` trong shell `main.tsx`; staking header dùng `inline` (mở rộng prop nếu cần).
 - Toàn bộ copy nằm trong `staking.copy.ts`, chọn đúng một ngôn ngữ theo toggle; bỏ các câu trộn Việt–Anh.
 
 ### Bước 7 — Xóa phần dư thừa của `staking-ui`
@@ -269,7 +274,7 @@ Giữ lại dưới dạng mới:
 
 ### Bước 8 — Routing, deployment và docs
 
-- Node static handler phục vụ `dist/index.html` rõ ràng cho `/stake/` và SPA fallback.
+- Node static handler phục vụ `dist/index.html` rõ ràng cho `/stake/` và SPA fallback (cùng pattern với `/terms`, `/privacy`).
 - `/stake` redirect `308` sang `/stake/`.
 - Vite chỉ tạo một `dist/`; staking là hashed lazy chunk.
 - Cập nhật `NETWORK_ARCHITECTURE.md`:
@@ -311,6 +316,7 @@ Browser/network acceptance:
 
 - Vào `/` không tải staking chunk và không gọi staking account/config API.
 - Vào `/stake/` không prefetch homepage JSON, model-viewer hoặc `prana-coin.glb`.
+- `/terms` và `/privacy` vẫn hoạt động sau khi thêm `/stake/`.
 - Refresh trực tiếp `/stake/` không 404.
 - Sai network yêu cầu switch Polygon trước khi ký/gửi.
 - Reject signature/transaction giữ form state và hiển thị lỗi đúng ngôn ngữ.
@@ -323,10 +329,11 @@ Browser/network acceptance:
 ## 4. Giả định đã khóa
 
 - `/stake/` là lazy route chung, không phải Vite entry riêng.
-- Không thêm React Router; navigation `/` ↔ `/stake/` dùng URL thật.
+- Không thêm React Router; navigation giữa `/`, `/stake/`, `/terms`, `/privacy` dùng URL thật + path helpers hiện có.
 - Main app tiếp tục là nơi duy nhất hiển thị protocol-level staking statistics.
 - Staking page chỉ hiển thị dữ liệu cá nhân và transaction workflow.
 - Contract reads nghiệp vụ đi qua backend; public dRPC frontend chỉ dùng cho wallet coordination/receipt.
 - UI giữ hai nút Permit và Stake riêng.
 - Toàn bộ staking UI theo locale toggle VI/EN, không hiển thị hai ngôn ngữ trong cùng câu.
 - Không thay smart contract hoặc transaction semantics on-chain.
+- Baseline UI/shell là v2.3.1 (`FlutterShaderBackground`, `AppFooter`, legal pages, `btn-hero` classes).

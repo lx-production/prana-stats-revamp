@@ -1,11 +1,28 @@
 import path from 'node:path';
 import { tryServeFile } from './helpers/tryServeFile.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import { rootDataJsonFilenameFromPathname, sendJson } from './helpers/requestHelpers.ts';
+import {
+  sendJson,
+  sendRedirect,
+  rootDataJsonFilenameFromPathname,
+} from './helpers/requestHelpers.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
 
 export const handleStaticRequest: RequestHandler = async function handleStaticRequest(req, res, url): Promise<boolean> {
+  // Lazy staking route lives in the main SPA; normalize trailing slash.
+  if (url.pathname === '/stake') {
+    sendRedirect(res, 308, `/stake/${url.search}`);
+    return true;
+  }
+
+  // Serve the SPA shell for /stake/ (and unknown subpaths) so refresh does not 404.
+  if (url.pathname === '/stake/' || url.pathname.startsWith('/stake/')) {
+    const stakeShell = path.join(DIST_DIR, 'index.html');
+    if (await tryServeFile(req, res, stakeShell)) return true;
+    return false;
+  }
+
   // Serve data JSON directly from project root so live updates are visible
   // without rebuilding dist/.
   const rootDataFilename = rootDataJsonFilenameFromPathname(url.pathname);

@@ -11,7 +11,9 @@ export default {
     path.join(root, 'index.html'),
     path.join(root, '*.{js,jsx,ts,tsx}'),
     path.join(root, 'components/**/*.{js,jsx,ts,tsx}'),
+    path.join(root, 'features/**/*.{js,jsx,ts,tsx}'),
     path.join(root, 'hooks/**/*.{js,jsx,ts,tsx}'),
+    path.join(root, 'pages/**/*.{js,jsx,ts,tsx}'),
     path.join(root, 'utils/**/*.{js,jsx,ts,tsx}'),
   ],
   theme: {

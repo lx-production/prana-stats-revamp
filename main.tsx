@@ -1,101 +1,69 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import "./index.css";
 import ReactDOM from "react-dom/client";
 import { WagmiProvider } from "wagmi";
-import PranaHero from "./hero3.tsx";
-import Supply from "./components/Supply";
-import Capital from "./components/Capital";
-import Liquidity from "./components/Liquidity";
-import Timeline from "./components/Timeline";
 import AppFooter from "./components/AppFooter";
-import FaqSection from "./components/FaqSection";
-import BasicStats from "./components/BasicStats";
 import { wagmiConfig } from "./utils/wagmiConfig";
-import BondingStats from "./components/BondingStats";
-import StakingStats from "./components/StakingStats";
 import PrivacyPage from "./components/PrivacyPage";
 import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
-import PranaConverter from "./components/PranaConverter";
 import { useAppPathname } from "./hooks/useAppPathname";
-import { isPrivacyPath, isTermsRiskPath } from "./constants/appRoutes";
 import FlutterShaderBackground from "./flutterShader.tsx";
-import PriceChartsSection from "./components/PriceChartsSection";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
-import { prefetchInitialJson } from "./utils/prefetchInitialJson.ts";
-import TopHoldingAddresses from "./components/TopHoldingAddresses";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import DoublePranaAbsorptionFlow from "./components/DoublePranaAbsorptionFlow";
-import PranaPerformanceSection from "./components/PranaPerformanceSection";
-import { TopHoldingAddressesProvider } from "./hooks/useTopHoldingAddresses";
+import {
+  isStakePath,
+  isPrivacyPath,
+  isTermsRiskPath,
+} from "./constants/appRoutes";
 
-prefetchInitialJson();
+const StatsPage = lazy(() => import("./pages/StatsPage"));
+const StakingPage = lazy(() => import("./pages/StakingPage"));
 
 const queryClient = new QueryClient();
 
-function HomePage() {
-  return (
-    <>
-      <main className="relative z-10 flex flex-col gap-6 pb-24">
-        <PranaHero />
-        <TopHoldingAddressesProvider>
-          <section className="relative z-20 mx-auto mt-12 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-              <BasicStats />
-              <BondingStats />
-              <StakingStats />
-            </div>
-          </section>
-          <Liquidity />
-          <section className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-              <PranaPerformanceSection />
-            </div>
-          </section>
-          <PranaConverter />
-          <DoublePranaAbsorptionFlow />
-          <Capital />
-          <TopHoldingAddresses />
-          <Supply />
-        </TopHoldingAddressesProvider>
-        <PriceChartsSection />
-        <Timeline />
-        <FaqSection />
-      </main>
-      <AppFooter />
-    </>
-  );
-}
+const pageFallback = (
+  <div
+    className="min-h-screen bg-[#050116]"
+    aria-busy="true"
+    aria-label="Loading"
+  />
+);
 
 function App() {
   useSpinningFavicon();
   const pathname = useAppPathname();
-  const showTerms = isTermsRiskPath(pathname);
-  const showPrivacy = isPrivacyPath(pathname);
 
-  return (
-    <SiteLanguageProvider>
+  // Staking is its own lazy page (no shared homepage shell / stats prefetch).
+  const body = isStakePath(pathname) ? (
+    <Suspense fallback={pageFallback}>
+      <StakingPage />
+    </Suspense>
+  ) : (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
       <FlutterShaderBackground />
 
-      {showTerms ? (
+      {isTermsRiskPath(pathname) ? (
         <>
           <TermsRiskPage />
           <AppFooter />
         </>
-      ) : showPrivacy ? (
+      ) : isPrivacyPath(pathname) ? (
         <>
           <PrivacyPage />
           <AppFooter />
         </>
       ) : (
-        <HomePage />
+        <Suspense fallback={pageFallback}>
+          <StatsPage />
+        </Suspense>
       )}
     </div>
-    </SiteLanguageProvider>
   );
+
+  return <SiteLanguageProvider>{body}</SiteLanguageProvider>;
 }
 
 const rootElement = document.getElementById("root");
