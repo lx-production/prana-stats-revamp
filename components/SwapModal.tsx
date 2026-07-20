@@ -543,12 +543,6 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                       </>
                     )}
                   </p>
-
-                  <p className="text-center text-xs leading-relaxed text-white/45">
-                    {locale === 'en'
-                      ? "Quotes are prepared by PRANA's backend with Uniswap routing. Your wallet still signs every approval and swap."
-                      : 'Giá được PRANA backend lấy từ Uniswap routing on-chain. Ví của bạn vẫn ký mọi lệnh approve và swap.'}
-                  </p>
                 </>
               )}
             </div>
