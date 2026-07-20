@@ -1,5 +1,7 @@
 import React from "react";
+import AppFooter from "../components/AppFooter";
 import LanguageToggle from "../components/LanguageToggle";
+import { usePageMetadata } from "../hooks/usePageMetadata";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 
 /**
@@ -10,11 +12,18 @@ export default function StakingPage() {
   const { locale } = useSiteLanguage();
   const isEn = locale === "en";
 
+  usePageMetadata(
+    "PRANA Staking | PRANA Protocol",
+    isEn
+      ? "Stake PRANA with fixed APR on Polygon — manage permits, stakes, and claims on the official PRANA Protocol page."
+      : "Stake PRANA với APR cố định trên Polygon — quản lý permit, stake và claim trên trang chính thức của PRANA Protocol.",
+  );
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-24">
+      <main className="relative z-10 mx-auto flex max-w-3xl flex-col justify-center gap-8 px-6 py-24">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.2em] text-white/45">
             PRANA Protocol
@@ -41,6 +50,8 @@ export default function StakingPage() {
           </a>
         </nav>
       </main>
+
+      <AppFooter />
     </div>
   );
 }

@@ -1,9 +1,12 @@
-// Duration options in days with corresponding seconds
-export const DURATION_OPTIONS = [
-  { days: 1, label: '1 ngày', seconds: 86400 },
-  { days: 7, label: '7 ngày', seconds: 604800 },
-  { days: 30, label: '30 ngày', seconds: 2592000 },
-  { days: 90, label: '90 ngày', seconds: 7776000 },
-  { days: 180, label: '180 ngày', seconds: 15552000 },
-  { days: 365, label: '365 ngày', seconds: 31536000 }
-]; 
+/**
+ * Display labels for the legacy DurationSlider only.
+ * APR / duration list for the new /stake/ UI comes from backend/on-chain — do not
+ * treat this as protocol config. Removed with staking-ui in step 7.
+ */
+import { SECONDS_PER_DAY } from '../../../constants/network.ts'
+
+export const DURATION_OPTIONS = [1, 7, 30, 90, 180, 365].map((days) => ({
+  days,
+  label: `${days} ngày`,
+  seconds: days * SECONDS_PER_DAY,
+}))

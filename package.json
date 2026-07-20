@@ -8,6 +8,8 @@
     "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
     "preview": "vite preview --config config/vite.config.js",
     "typecheck": "tsc --noEmit",
+    "test": "npm run test:server",
+    "test:server": "node --import tsx --test 'server/tests/**/*.test.ts'",
     "test:rate-limit": "node --import tsx --test server/tests/rateLimit.test.ts",
     "fetch:staking-stats": "tsx scripts/fetch-staking-stats.ts",
     "scan:bonds:v2": "tsx scripts/scan-bonds-v2.ts",

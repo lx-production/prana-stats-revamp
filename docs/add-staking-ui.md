@@ -10,6 +10,18 @@
 - Ví người dùng vẫn ký permit và gửi transaction trực tiếp.
 - Chuyển toàn bộ staking sang TypeScript, bigint chính xác và chỉ báo thành công sau khi receipt được xác nhận.
 
+## Tiến độ
+
+- [x] **Bước 1 — Tách homepage và thiết lập lazy `/stake/`** (`40e0da1`): frontend/server typecheck pass, 70 server tests pass, production build pass; `StatsPage` và `StakingPage` đã thành chunk riêng, `/stake` redirect `308` giữ query string và direct refresh `/stake/` trả SPA shell.
+- [x] **Closeout Bước 1**: automated route tests (`server/tests/stakeRoutes.test.ts`), `STAKE_PATH` / `STAKE_CANONICAL_PATH` dùng chung (hero + server + matcher), `AppFooter` trên placeholder, `usePageMetadata` cho title/description theo locale.
+- [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
+- [ ] **Bước 3 — Tạo backend staking read API.**
+- [ ] **Bước 4 — Port form và account state.**
+- [ ] **Bước 5 — Harden permit và transaction flow.**
+- [ ] **Bước 6 — Đồng bộ styling với main app.**
+- [ ] **Bước 7 — Xóa phần dư thừa của `staking-ui`.**
+- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành.**
+
 ## 1. Cấu trúc và phần dùng chung
 
 Cấu trúc đích:
@@ -52,20 +64,20 @@ Các phần dùng chung:
 | Path matching (`/terms`, `/privacy`, `/stake`) | `constants/appRoutes.ts` + `useAppPathname` |
 | Polygon RPC (frontend public) | `constants/network.ts` + `wagmiConfig` hiện tại |
 | PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
-| Staking/Interest address và ABI | Chuẩn hóa tiếp `constants/stakingContracts.ts` (đã có file; hiện ABI human-readable tối thiểu cho stats) |
+| Staking/Interest address và ABI | `constants/stakingContracts.ts` (typed ABI `as const`, tối thiểu cho stats + UI) |
 | Format số/ngày giờ | Mở rộng `utils/formatters.ts` |
 | Rút gọn wallet address | Reuse `formatCompactAddress` trong `utils/swapTokenFormatting.ts` (Swap đã dùng); chỉ tách `walletFormatting.ts` nếu muốn tách concern rõ hơn |
 | Favicon | `useSpinningFavicon` hiện tại |
 | Background | `FlutterShaderBackground` (homepage/legal shell); staking dùng cùng shader với brightness thấp hơn |
 | Glass / gold CTA | Class hero hiện có (`btn-hero`, `btn-gold-border`, `btn-glass`) + UI primitive mới khi cần |
-| Footer / legal | `AppFooter`, `/terms`, `/privacy` giữ nguyên trên homepage shell |
+| Footer / legal | Reuse `AppFooter` trên homepage, legal pages và staking page; contract links của staking đặt riêng trong page content |
 | Transaction receipt pattern | Theo mô hình đã dùng trong `useUniswapSwap` |
 
 ABI staking chuẩn hóa thành object ABI `as const`, đủ cho cả Viem/Wagmi và Ethers. Bao gồm các read/write function thực sự dùng; bỏ ABI admin và event không cần thiết khỏi frontend bundle.
 
 ## 2. Các bước triển khai
 
-### Bước 1 — Tách homepage khỏi entrypoint
+### Bước 1 — Tách homepage khỏi entrypoint ✅
 
 Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.tsx` (shell chung: `LanguageToggle` + `FlutterShaderBackground` + `AppFooter`).
 
@@ -75,14 +87,15 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
   - `/terms`, `/privacy` giữ hành vi hiện tại.
   - Còn lại → lazy `StatsPage`.
 - `main.tsx` giữ: global CSS, providers, favicon, path resolver, `Suspense`, shell homepage/legal.
-- Thêm `isStakePath` (và hằng path nếu cần) vào `constants/appRoutes.ts`.
+- Thêm `isStakePath` vào `constants/appRoutes.ts`; dùng chung `STAKE_PATH = "/stake"` và `STAKE_CANONICAL_PATH = "/stake/"` trong hero, client matcher và server redirect để tránh route string bị drift.
 - Path `/stake` được server redirect `308` sang `/stake/`; `/stake/` serve `dist/index.html`.
 - Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` (và legal pages) không tải dữ liệu stats.
 - Gỡ preload `model-viewer` và `prana-coin.glb` khỏi HTML chung; kích hoạt chúng từ `StatsPage`/hero.
 - Đổi CTA STAKE trong hero thành `href="/stake/"`, mở cùng tab (giữ class `btn-hero btn-glass`).
-- Staking placeholder: link về `/` và link xem protocol statistics; dùng class button hiện có khi có UI tạm.
+- Staking placeholder: link về `/`, link xem protocol statistics và shared `AppFooter`; dùng class button hiện có khi có UI tạm.
+- Trước Bước 2, thêm automated tests cho `isStakePath`, redirect `/stake` (kể cả query string), direct refresh `/stake/`, `/stake/*` SPA fallback và negative case `/staking`.
 
-### Bước 2 — Chuẩn hóa constants, ABI và types
+### Bước 2 — Chuẩn hóa constants, ABI và types ✅
 
 - Hợp nhất/chuẩn hóa tiếp trên nền đã có: `sharedContracts.ts`, `stakingContracts.ts`, `network.ts`; xóa bản sao trong `staking-ui`.
 - Thay ABI human-readable/ABI lớn bằng một typed ABI tối thiểu dùng chung (đủ stake/claim/unstake/permit reads+writes cho UI mới; stats loader có thể dùng chung hoặc subset).
@@ -95,6 +108,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 - Tạo TypeScript types cho config, account snapshot, stake record, permit snapshot và transaction status.
 - Đảm bảo Tailwind/TypeScript config scan/include `pages/**` và `features/**` (Bước 1 có thể đã thêm `pages/**`).
 
+Closeout: `POLYGON_CHAIN_ID` / `SECONDS_PER_*` sống trong `constants/network.ts` (swap re-export để tương thích); `PRANA_TOKEN_ABI` tối thiểu + typed `STAKING_CONTRACT_ABI as const`; types tại `features/staking/staking.types.ts` (permit domain derive từ constants; `Address`/`Hex` từ `blockchain.types`); `staking-ui` constants chỉ còn thin re-export; route tests inject fixture `distDir` qua `createStaticRequestHandler`; `npm test` → `test:server`.
 ### Bước 3 — Tạo backend staking read API
 
 Thêm hai GET endpoint:
@@ -154,7 +168,7 @@ Quy tắc backend:
 - Token amounts/nonces serialize thành decimal string, không convert qua `number`.
 - `/config`: server/browser cache 30 giây.
 - `/account`: `private, no-store`; chỉ fetch khi wallet đã kết nối và refetch sau receipt.
-- Thêm rate limit `/account` 30 request/IP/phút và global cap để bảo vệ Pi/Alchemy.
+- Thêm rate limit `/account`: 30 request/IP/phút và 120 request/phút trên toàn server để bảo vệ Pi/Alchemy.
 - Upstream RPC failure trả lỗi chung `502`, không trả URL/key hoặc raw provider error.
 - Không tạo generic JSON-RPC proxy.
 - Backend dùng `POLYGON_RPC_URL`; giữ fallback env cũ trong một giai đoạn deploy nhưng không có `VITE_*` nào được tham chiếu từ frontend.
@@ -245,6 +259,7 @@ Stake management:
   - Transaction hashes wrap an toàn.
 - `LanguageToggle`: homepage/legal giữ placement `fixed` trong shell `main.tsx`; staking header dùng `inline` (mở rộng prop nếu cần).
 - Toàn bộ copy nằm trong `staking.copy.ts`, chọn đúng một ngôn ngữ theo toggle; bỏ các câu trộn Việt–Anh.
+- Staking page metadata: Closeout Bước 1 đã thêm `usePageMetadata` (title + description theo locale, restore khi unmount). Giữ hành vi đó khi port UI đầy đủ. Open Graph/Twitter vẫn là metadata chung của PRANA Protocol (một HTML shell).
 
 ### Bước 7 — Xóa phần dư thừa của `staking-ui`
 
@@ -272,14 +287,16 @@ Giữ lại dưới dạng mới:
 - Staking/Interest contract Polygonscan links dưới dạng compact verification links trong page header/footer.
 - Nội dung cần thiết từ README được nhập vào docs chính trước khi bỏ directory.
 
-### Bước 8 — Routing, deployment và docs
+### Bước 8 — Deployment và docs
 
-- Node static handler phục vụ `dist/index.html` rõ ràng cho `/stake/` và SPA fallback (cùng pattern với `/terms`, `/privacy`).
-- `/stake` redirect `308` sang `/stake/`.
-- Vite chỉ tạo một `dist/`; staking là hashed lazy chunk.
+- Routing đã hoàn thành từ Bước 1: Node phục vụ `/stake/` bằng SPA shell, `/stake` redirect `308`, và Vite tạo staking thành hashed lazy chunk trong một `dist/`.
 - Cập nhật `NETWORK_ARCHITECTURE.md`:
   - `/stake/` đi qua Node giống `/`.
   - Không còn static staking directory riêng.
+- Cập nhật đồng bộ các tài liệu còn mô tả `/stake/` là static legacy SPA:
+  - `docs/vi/NETWORK_ARCHITECTURE.md`.
+  - `docs/swap-modal-technical-overview.md`.
+  - `docs/vi/swap-modal-technical-overview.md`.
 - Cập nhật Pi nginx:
   - Xóa redirect/location/alias `/stake`.
   - Giữ một `location /` proxy Node.
@@ -303,7 +320,7 @@ Automated checks:
 - Test amount parsing: rỗng, zero, âm, quá 9 decimals, dưới min, quá balance.
 - Test permit invalidation khi đổi amount/duration/address/chain hoặc hết deadline.
 - Test config/account API validation, serialization, cache headers, error redaction và rate limit.
-- Test `/stake` redirect, direct refresh `/stake/` và static asset cache.
+- Test `isStakePath` và `/stake` redirect, gồm query preservation, direct refresh `/stake/`, `/stake/*` fallback, negative case `/staking` và static asset cache.
 - Chạy:
   - `npm run typecheck`
   - `npx tsc -p server --noEmit`

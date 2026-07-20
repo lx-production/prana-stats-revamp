@@ -1,8 +1,10 @@
+import type { HexAddress } from './blockchain.types.ts';
+
+export type { HexAddress };
+
 export type SwapTokenSymbol = 'PRANA' | 'WBTC' | 'POL' | 'USDC' | 'USDT' | 'WETH' | 'DAI';
 
 export type SwapTokenKind = 'native' | 'erc20';
-
-export type HexAddress = `0x${string}`;
 
 export type SwapToken = {
   symbol: SwapTokenSymbol;

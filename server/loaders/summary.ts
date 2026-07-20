@@ -7,6 +7,7 @@ import { loadCachedStakingStats } from './cached/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './topHoldingAddresses.ts';
 
 import { PROJECT_ROOT } from '../projectRoot.ts';
+import { STAKE_CANONICAL_PATH } from '../../constants/appRoutes.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { parseFaqMarkdown } from '../../utils/faqParser.ts';
 import { TIMELINE_COPY_EN } from '../../data/timelineCopy.ts';
@@ -112,7 +113,7 @@ export async function loadSummaryMarkdown(): Promise<string> {
     mdList([
       'PRANA is designed around 100% Bitcoin-denominated value, fixed supply, transparent on-chain liquidity, staking, bonding, and protocol-level buy-the-dips behavior.',
       `Hero message: ${formatHeroMessage(heroHeadlinesByLocale.en)}`,
-      `Primary actions: Swap (Official UI from PRANA Protocol), Stake (${origin}/stake/), Bond (${origin}/bond/).`,
+      `Primary actions: Swap (Official UI from PRANA Protocol), Stake (${origin}${STAKE_CANONICAL_PATH}), Bond (${origin}/bond/).`,
     ]),
     '',
     '## Investment Thesis',

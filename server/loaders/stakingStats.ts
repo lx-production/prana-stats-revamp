@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { erc20Abi } from 'viem';
 import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { asBigInt } from '../../utils/pranaStatsUtils.ts';
+import { SECONDS_PER_DAY } from '../../constants/network.ts';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
 import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
@@ -101,7 +102,7 @@ async function loadStakingSnapshot() {
 
   // Days left until the farthest stake matures (floored at 0 if already past).
   const daysUntilLatestMaturity = latestMatureTime
-    ? Math.max((latestMatureTime - snapshotBlockTimestamp) / 86_400, 0)
+    ? Math.max((latestMatureTime - snapshotBlockTimestamp) / SECONDS_PER_DAY, 0)
     : null;
 
   // Runway = days until last maturity + extra days surplus can cover after that.

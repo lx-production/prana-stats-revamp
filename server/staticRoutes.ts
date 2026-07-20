@@ -6,65 +6,85 @@ import {
   sendRedirect,
   rootDataJsonFilenameFromPathname,
 } from './helpers/requestHelpers.ts';
+import {
+  STAKE_PATH,
+  isStakePath,
+  STAKE_CANONICAL_PATH,
+} from '../constants/appRoutes.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
 
-export const handleStaticRequest: RequestHandler = async function handleStaticRequest(req, res, url): Promise<boolean> {
-  // Lazy staking route lives in the main SPA; normalize trailing slash.
-  if (url.pathname === '/stake') {
-    sendRedirect(res, 308, `/stake/${url.search}`);
-    return true;
-  }
-
-  // Serve the SPA shell for /stake/ (and unknown subpaths) so refresh does not 404.
-  if (url.pathname === '/stake/' || url.pathname.startsWith('/stake/')) {
-    const stakeShell = path.join(DIST_DIR, 'index.html');
-    if (await tryServeFile(req, res, stakeShell)) return true;
-    return false;
-  }
-
-  // Serve data JSON directly from project root so live updates are visible
-  // without rebuilding dist/.
-  const rootDataFilename = rootDataJsonFilenameFromPathname(url.pathname);
-  if (rootDataFilename) {
-    const rootDataPath = path.join(PROJECT_ROOT, rootDataFilename);
-    if (await tryServeFile(req, res, rootDataPath)) return true;
-    sendJson(res, 404, { error: 'not_found' });
-    return true;
-  }
-
-  if (url.pathname === '/bonds_v2.json') {
-    const rootBondsPath = path.join(PROJECT_ROOT, 'bonds_v2.json');
-    if (await tryServeFile(req, res, rootBondsPath)) return true;
-    sendJson(res, 404, { error: 'not_found' });
-    return true;
-  }
-
-  if (url.pathname === '/buy_dips.json') {
-    const rootBuyDipsPath = path.join(PROJECT_ROOT, 'buy_dips.json');
-    if (await tryServeFile(req, res, rootBuyDipsPath)) return true;
-    sendJson(res, 404, { error: 'not_found' });
-    return true;
-  }
-
-  // Keep legacy fallback image URL working by serving the current icon asset.
-  // This avoids falling back to index.html (no-cache) for the missing PNG file.
-  if (url.pathname === '/prana-coin-fallback.png') {
-    const fallbackIconPath = path.join(PUBLIC_DIR, 'assets', 'icons', 'prana.svg');
-    if (await tryServeFile(req, res, fallbackIconPath)) return true;
-  }
-
-  // Static build: serve from dist/ first.
-  const requested = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
-  const distPath = path.join(DIST_DIR, requested);
-  if (await tryServeFile(req, res, distPath)) return true;
-
-  // Public assets should still work even if dist/ is stale or missing a copied file.
-  const publicPath = path.join(PUBLIC_DIR, requested);
-  if (await tryServeFile(req, res, publicPath)) return true;
-
-  const fallback = path.join(DIST_DIR, 'index.html');
-  if (await tryServeFile(req, res, fallback)) return true;
-
-  return false;
+/** Optional overrides so tests can point at a fixture dist/ without a real build. */
+export type StaticRouteOptions = {
+  distDir?: string;
 };
+
+/**
+ * Builds the static/SPA request handler.
+ * Production uses DIST_DIR; tests inject a temp dir with index.html.
+ */
+export function createStaticRequestHandler(options: StaticRouteOptions = {}): RequestHandler {
+  const distDir = options.distDir ?? DIST_DIR;
+
+  return async function handleStaticRequest(req, res, url): Promise<boolean> {
+    // Lazy staking route lives in the main SPA; normalize trailing slash.
+    if (url.pathname === STAKE_PATH) {
+      sendRedirect(res, 308, `${STAKE_CANONICAL_PATH}${url.search}`);
+      return true;
+    }
+
+    // Serve the SPA shell for /stake/ (and unknown subpaths) so refresh does not 404.
+    if (isStakePath(url.pathname)) {
+      const stakeShell = path.join(distDir, 'index.html');
+      if (await tryServeFile(req, res, stakeShell)) return true;
+      return false;
+    }
+
+    // Serve data JSON directly from project root so live updates are visible
+    // without rebuilding dist/.
+    const rootDataFilename = rootDataJsonFilenameFromPathname(url.pathname);
+    if (rootDataFilename) {
+      const rootDataPath = path.join(PROJECT_ROOT, rootDataFilename);
+      if (await tryServeFile(req, res, rootDataPath)) return true;
+      sendJson(res, 404, { error: 'not_found' });
+      return true;
+    }
+
+    if (url.pathname === '/bonds_v2.json') {
+      const rootBondsPath = path.join(PROJECT_ROOT, 'bonds_v2.json');
+      if (await tryServeFile(req, res, rootBondsPath)) return true;
+      sendJson(res, 404, { error: 'not_found' });
+      return true;
+    }
+
+    if (url.pathname === '/buy_dips.json') {
+      const rootBuyDipsPath = path.join(PROJECT_ROOT, 'buy_dips.json');
+      if (await tryServeFile(req, res, rootBuyDipsPath)) return true;
+      sendJson(res, 404, { error: 'not_found' });
+      return true;
+    }
+
+    // Keep legacy fallback image URL working by serving the current icon asset.
+    // This avoids falling back to index.html (no-cache) for the missing PNG file.
+    if (url.pathname === '/prana-coin-fallback.png') {
+      const fallbackIconPath = path.join(PUBLIC_DIR, 'assets', 'icons', 'prana.svg');
+      if (await tryServeFile(req, res, fallbackIconPath)) return true;
+    }
+
+    // Static build: serve from dist/ first.
+    const requested = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
+    const distPath = path.join(distDir, requested);
+    if (await tryServeFile(req, res, distPath)) return true;
+
+    // Public assets should still work even if dist/ is stale or missing a copied file.
+    const publicPath = path.join(PUBLIC_DIR, requested);
+    if (await tryServeFile(req, res, publicPath)) return true;
+
+    const fallback = path.join(distDir, 'index.html');
+    if (await tryServeFile(req, res, fallback)) return true;
+
+    return false;
+  };
+}
+
+export const handleStaticRequest = createStaticRequestHandler();

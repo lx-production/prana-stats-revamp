@@ -8,6 +8,7 @@ import { getServerPolygonProvider } from '../utils/providers.ts';
 import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
 import { formatPranaFloatFromRaw } from '../../utils/formatters.ts';
 import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
+import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../constants/network.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 import { formatUnixSecondsToHuman, isRateLimitError, sleep, toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 
@@ -18,8 +19,8 @@ const ACTIVE_STAKES_PATH = path.join(PROJECT_ROOT, ACTIVE_STAKES_FILENAME);
 
 // Align disk snapshot freshness with /api/staking-stats cache TTL.
 const ACTIVE_STAKES_MAX_AGE_MS = SERVER_CACHE_TTL_MS.stakingStatsApiResponse;
-const SECONDS_PER_DAY = 86_400n;
-const SECONDS_PER_YEAR = 365n * SECONDS_PER_DAY;
+const SECONDS_PER_DAY_BI = BigInt(SECONDS_PER_DAY);
+const SECONDS_PER_YEAR_BI = BigInt(SECONDS_PER_YEAR);
 const PERCENT_SCALE = 100n;
 
 function isUsableSnapshot(snapshot: ActiveStakesResult | null): snapshot is ActiveStakesResult {
@@ -61,7 +62,7 @@ function calculateInterestRaw(amountRaw: bigint, apr: number, seconds: bigint): 
   if (amountRaw <= 0n || apr <= 0 || seconds <= 0n) return 0n;
 
   const annualInterestRaw = (amountRaw * BigInt(apr)) / PERCENT_SCALE;
-  const interestPerSecondRaw = annualInterestRaw / SECONDS_PER_YEAR;
+  const interestPerSecondRaw = annualInterestRaw / SECONDS_PER_YEAR_BI;
   return interestPerSecondRaw * seconds;
 }
 
@@ -121,7 +122,7 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
         now >= endTime && now <= endTime + gracePeriod && lastClaimTime < endTime;
 
       if (isActive) {
-        dailyInterestRaw += calculateInterestRaw(amountRaw, apr, SECONDS_PER_DAY);
+        dailyInterestRaw += calculateInterestRaw(amountRaw, apr, SECONDS_PER_DAY_BI);
         latestMatureTime = latestMatureTime === null || endTime > latestMatureTime
           ? endTime
           : latestMatureTime;
@@ -154,7 +155,7 @@ export async function fetchActiveStakesSnapshot(): Promise<ActiveStakesResult> {
         startTimeIso: startHuman.iso,
         startTimeLocal: startHuman.local,
         durationSeconds: duration.toString(),
-        durationDays: Number(duration) / 86400,
+        durationDays: Number(duration) / SECONDS_PER_DAY,
         apr,
         lastClaimTime: lastClaimTime.toString(),
         matureTime: endTime.toString(),

@@ -4,6 +4,7 @@ import SwapModal from "./components/SwapModal";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";
+import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
 
 export default function PranaHero() {
   const { locale } = useSiteLanguage();
@@ -80,7 +81,7 @@ export default function PranaHero() {
             SWAP
           </button>
           <a
-            href="/stake/"
+            href={STAKE_CANONICAL_PATH}
             title="Lãi suất cố định 15% APR"
             className="btn-hero btn-glass"
           >

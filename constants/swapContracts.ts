@@ -1,9 +1,15 @@
-import type { HexAddress, SwapToken, SwapTokenSymbol } from '../types/swap.types.ts';
+import {
+  POLYGON_CHAIN_ID,
+  POLYGON_CHAIN_NAME,
+  POLYGONSCAN_TX_BASE_URL,
+} from './network.ts';
 import { PRANA_ADDRESS, PRANA_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_V3_POOL } from './sharedContracts.ts';
 
-export const POLYGON_CHAIN_ID = 137;
-export const POLYGON_CHAIN_NAME = 'Polygon';
-export const POLYGONSCAN_TX_BASE_URL = 'https://polygonscan.com/tx';
+import type { HexAddress, SwapToken, SwapTokenSymbol } from '../types/swap.types.ts';
+
+// Re-export network constants so existing swap imports keep working.
+export { POLYGON_CHAIN_ID, POLYGON_CHAIN_NAME, POLYGONSCAN_TX_BASE_URL };
+
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
 export const SWAP_QUOTE_DEBOUNCE_MS = 650; // waits 650ms after the last change before fetching
 export const SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS = 60_000;
