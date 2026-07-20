@@ -18,8 +18,8 @@
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (EIP-712 + `parseSignature`, invalidate permit, wait receipt); `useStakeActions` + `EarlyUnstakeDialog`; claim-before-unstake / grace rules; lỗi VI/EN chuẩn hóa; Polygonscan link; tests permit/status/errors.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
-- [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này. (Nginx / NETWORK_ARCHITECTURE còn mô tả static `/stake/` → Bước 8.)
-- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành.**
+- [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
+- [x] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: nginx Pi bỏ static `/stake`; VPS chỉ cache legacy `/bond/assets/`; `NETWORK_ARCHITECTURE` + swap overview (EN/VI) mô tả `/stake/` qua Node.
 
 ## 1. Cấu trúc và phần dùng chung
 
@@ -288,29 +288,27 @@ Giữ lại dưới dạng mới:
 - Staking/Interest contract Polygonscan links dưới dạng compact verification links trong page header/footer.
 - Nội dung cần thiết từ README được nhập vào docs chính trước khi bỏ directory.
 
-Closeout: directory `staking-ui/` đã xóa khỏi repo. UI mới: `pages/StakingPage.tsx` + `features/staking/**`. Contract nguồn chuẩn: root `contracts/StakingContract.sol` + `InterestContract.sol` (SPDX MIT; bản copy trong staking-ui trước đây giống hệt). Từ README legacy (Heo Đất PRANA 3.0): smart contracts author `prana@triethocduongpho`, contact `thdp@triethocduongpho.net`, MIT. Root `README.md` liệt kê `/stake/` và doc này. Cập nhật nginx + NETWORK_ARCHITECTURE (bỏ static `/stake/`) thuộc Bước 8.
-
-### Bước 8 — Deployment và docs
+### Bước 8 — Deployment và docs ✅
 
 - Routing đã hoàn thành từ Bước 1: Node phục vụ `/stake/` bằng SPA shell, `/stake` redirect `308`, và Vite tạo staking thành hashed lazy chunk trong một `dist/`.
-- Cập nhật `NETWORK_ARCHITECTURE.md`:
+- Đã cập nhật `NETWORK_ARCHITECTURE.md`:
   - `/stake/` đi qua Node giống `/`.
   - Không còn static staking directory riêng.
-- Cập nhật đồng bộ các tài liệu còn mô tả `/stake/` là static legacy SPA:
+- Đã cập nhật đồng bộ các tài liệu còn mô tả `/stake/` là static legacy SPA:
   - `docs/vi/NETWORK_ARCHITECTURE.md`.
   - `docs/swap-modal-technical-overview.md`.
   - `docs/vi/swap-modal-technical-overview.md`.
-- Cập nhật Pi nginx:
+- Đã cập nhật Pi nginx (`docs/pi-prana.triethocduongpho.net`):
   - Xóa redirect/location/alias `/stake`.
-  - Giữ một `location /` proxy Node.
-- Cập nhật VPS nginx:
-  - Bỏ `stake` khỏi regex cache legacy assets; tiếp tục giữ `/bond/assets/`.
-- Rollout không downtime:
+  - Giữ một `location /` proxy Node (và giữ `/bond/` static).
+- Đã cập nhật VPS nginx (`docs/vps-prana.triethocduongpho.net`):
+  - Bỏ `stake` khỏi legacy asset cache; chỉ còn `/bond/assets/`.
+- Rollout không downtime (áp dụng trên Pi/VPS thủ công):
   1. Deploy build/server mới trong khi nginx vẫn phục vụ staking cũ.
-  2. Xác minh Node `/stake/` nội bộ.
-  3. `nginx -t`, sau đó bỏ staking locations và reload.
+  2. Xác minh Node `/stake/` nội bộ (`curl -I http://127.0.0.1:4173/stake/`).
+  3. Copy config từ repo → `nginx -t`, rồi reload (Pi trước hoặc cùng lúc với VPS).
   4. Smoke-test public `/stake/`.
-  5. Giữ static staking cũ trong một rollback window rồi mới xóa ngoài repo.
+  5. Giữ static staking cũ trong một rollback window rồi mới xóa `/var/www/html/prana/stake/`.
 
 ## 3. Kiểm thử và tiêu chí hoàn thành
 

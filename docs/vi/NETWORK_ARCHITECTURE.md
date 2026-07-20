@@ -43,14 +43,13 @@ Internet
 │  • nginx :80 (default_server)                                    │
 │  • Server name: prana.triethocduongpho.net                       │
 │                                                                  │
-│  /           → proxy tới 127.0.0.1:4173 (Node app)               │
-│  /stake/     → static files từ /var/www/html/prana/stake/       │
+│  /           → proxy tới 127.0.0.1:4173 (Node: stats, /stake/, API) │
 │  /bond/      → static files từ /var/www/html/prana/bond/        │
 └─────────────────────────────────────────────────────────────────┘
     │
     ▼
   Node server (server/index.ts) trên port 4173
-  • Phục vụ HTML, API và JSON cho stats app chính
+  • Phục vụ HTML, API và JSON cho SPA chính (gồm lazy /stake/)
 ```
 
 **Định danh IP cho rate-limit trên Node:** vì cả VPS nginx và Pi nginx đều append vào
@@ -71,7 +70,7 @@ từ chuỗi proxy hai hop, thay vì hop localhost của Pi nginx.
 - **Rate limiting:** 50 req/s mỗi IP (`burst=40 nodelay`), 20 kết nối đồng thời mỗi IP; 429 và trang tùy chỉnh `rate_limited.html` cho request bị chặn.
 - **Bảo mật:** Chặn các path quét phổ biến (ví dụ `.env`, `wp-`, `phpunit`, …) bằng đóng kết nối ngay (444).
 - **Gzip:** Bật cho text, JS, JSON, SVG, v.v. ở edge VPS.
-- **Proxy:** Mọi request (gồm `/`, `/assets/`, `/stake/`, `/bond/`) được gửi tới `http://127.0.0.1:9000` với header chuẩn (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache proxy tắt rõ ràng ở location chính để Pi/app kiểm soát caching.
+- **Proxy:** Mọi request (gồm `/`, `/assets/`, `/stake/`, `/bond/`) được gửi tới `http://127.0.0.1:9000` với header chuẩn (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache proxy tắt rõ ràng ở location chính để Pi/app kiểm soát caching. Legacy `/bond/assets/` nhận header cache dài hạn ở edge VPS; asset của `/stake/` nằm dưới location `/assets/` chính.
 
 Vậy VPS **không** chạy app; nó chỉ terminate TLS và forward vào tunnel.
 
@@ -103,13 +102,12 @@ Từ góc nhìn internet: user hit VPS:443 → nginx trên VPS gửi tới 127.0
 
 **Tham chiếu cấu hình:** `docs/pi-prana.triethocduongpho.net`
 
-**Vai trò:** Chạy nginx trên port 80 và Node app trên 4173; phục vụ stats app chính và các SPA stake/bond cũ.
+**Vai trò:** Chạy nginx trên port 80 và Node app trên 4173; phục vụ SPA chính (stats + lazy `/stake/`) và SPA bond cũ.
 
 - **Port 80:** nginx `default_server` cho `prana.triethocduongpho.net`.
-- **`/`:** Proxy tới `http://127.0.0.1:4173` (Node server từ `server/index.ts`, port lấy từ env `PORT` hoặc 4173). Phục vụ stats app mới (HTML, API, JSON).
-- **`/stake/`:** Phục vụ từ `/var/www/html/prana/stake/` (React SPA, try_files về `index.html`). Header no-cache cho HTML.
-- **`/bond/`:** Cùng ý tưởng từ `/var/www/html/prana/bond/`.
-- **`/stake/assets/` và `/bond/assets/`:** Static asset từ disk với cache dài hạn và CORS.
+- **`/`:** Proxy tới `http://127.0.0.1:4173` (Node server từ `server/index.ts`, port lấy từ env `PORT` hoặc 4173). Phục vụ SPA shell, API và JSON — gồm `/stake/` (lazy route; Node redirect bare `/stake` → `/stake/` với `308`).
+- **`/bond/`:** Phục vụ từ `/var/www/html/prana/bond/` (React SPA cũ, try_files về `index.html`). Header no-cache cho HTML.
+- **`/bond/assets/`:** Static asset từ disk với cache dài hạn và CORS.
 
 Vậy **chỉ** port **80** (nginx) cần reach được từ tunnel. Node app (4173) chỉ được nginx trên localhost dùng.
 
@@ -123,8 +121,8 @@ Vậy **chỉ** port **80** (nginx) cần reach được từ tunnel. Node app (
 4. Process lắng nghe trên VPS:9000 là SSH server (reverse tunnel). Nó forward request sang Pi qua kết nối SSH sẵn có.
 5. Trên Pi, kết nối đó xuất hiện như request tới `127.0.0.1:80` (nginx).
 6. Pi nginx:
-   - Với `/`: proxy tới `http://127.0.0.1:4173` (Node app).
-   - Với `/stake/` hoặc `/bond/`: phục vụ từ disk.
+   - Với `/` và `/stake/` (và hầu hết path khác): proxy tới `http://127.0.0.1:4173` (Node app).
+   - Với `/bond/`: phục vụ từ disk.
 7. Response đi ngược lại: Node hoặc disk → Pi nginx → tunnel → VPS nginx → user.
 
 ---

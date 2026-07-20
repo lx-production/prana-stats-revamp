@@ -41,14 +41,13 @@ Internet
 │  • nginx :80 (default_server)                                    │
 │  • Server name: prana.triethocduongpho.net                       │
 │                                                                  │
-│  /           → proxy to 127.0.0.1:4173 (Node app)                │
-│  /stake/     → static files from /var/www/html/prana/stake/     │
+│  /           → proxy to 127.0.0.1:4173 (Node: stats, /stake/, API)│
 │  /bond/      → static files from /var/www/html/prana/bond/      │
 └─────────────────────────────────────────────────────────────────┘
     │
     ▼
   Node server (server/index.ts) on port 4173
-  • Serves HTML, API, and JSON data for the main stats app
+  • Serves HTML, API, and JSON for the main SPA (including lazy /stake/)
 ```
 
 **Node rate-limit identity:** because both the VPS nginx and Pi nginx append to
@@ -69,7 +68,7 @@ IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
 - **Rate limiting:** 50 req/s per IP (`burst=40 nodelay`), 20 concurrent connections per IP; 429 and a custom `rate_limited.html` for blocked requests.
 - **Security:** Block common scan paths (e.g. `.env`, `wp-`, `phpunit`, etc.) with immediate close (444).
 - **Gzip:** Enabled for text, JS, JSON, SVG, etc., at the VPS edge.
-- **Proxy:** Every request (including `/`, `/assets/`, `/stake/`, `/bond/`) is sent to `http://127.0.0.1:9000` with standard headers (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache is explicitly off for the main location so the Pi/app control caching.
+- **Proxy:** Every request (including `/`, `/assets/`, `/stake/`, `/bond/`) is sent to `http://127.0.0.1:9000` with standard headers (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache is explicitly off for the main location so the Pi/app control caching. Legacy `/bond/assets/` gets long-lived cache headers at the VPS edge; `/stake/` assets live under the main `/assets/` location.
 
 So the VPS does **not** run the app; it only terminates TLS and forwards to the tunnel.
 
@@ -101,13 +100,12 @@ So from the internet’s perspective: user hits VPS:443 → nginx on VPS sends t
 
 **Config reference:** `docs/pi-prana.triethocduongpho.net`
 
-**Role:** Run nginx on port 80 and the Node app on 4173; serve the main stats app and the legacy stake/bond SPAs.
+**Role:** Run nginx on port 80 and the Node app on 4173; serve the main SPA (stats + lazy `/stake/`) and the legacy bond SPA.
 
 - **Port 80:** nginx `default_server` for `prana.triethocduongpho.net`.
-- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the new stats app (HTML, API, JSON).
-- **`/stake/`:** Served from `/var/www/html/prana/stake/` (React SPA, try_files to `index.html`). No-cache headers for HTML.
-- **`/bond/`:** Same idea from `/var/www/html/prana/bond/`.
-- **`/stake/assets/` and `/bond/assets/`:** Static assets from disk with long-lived cache and CORS.
+- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the main SPA shell, API, and JSON — including `/stake/` (lazy route; Node redirects bare `/stake` → `/stake/` with `308`).
+- **`/bond/`:** Served from `/var/www/html/prana/bond/` (legacy React SPA, try_files to `index.html`). No-cache headers for HTML.
+- **`/bond/assets/`:** Static assets from disk with long-lived cache and CORS.
 
 So the **only** port that needs to be reachable from the tunnel is **80** (nginx). The Node app (4173) is only used by nginx on localhost.
 
@@ -121,8 +119,8 @@ So the **only** port that needs to be reachable from the tunnel is **80** (nginx
 4. The process listening on VPS:9000 is the SSH server (reverse tunnel). It forwards the request to the Pi over the existing SSH connection.
 5. On the Pi, that connection appears as a request to `127.0.0.1:80` (nginx).
 6. Pi nginx:
-   - For `/`: proxies to `http://127.0.0.1:4173` (Node app).
-   - For `/stake/` or `/bond/`: serves from disk.
+   - For `/` and `/stake/` (and most other paths): proxies to `http://127.0.0.1:4173` (Node app).
+   - For `/bond/`: serves from disk.
 7. Response goes back: Node or disk → Pi nginx → tunnel → VPS nginx → user.
 
 ---

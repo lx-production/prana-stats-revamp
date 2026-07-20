@@ -305,8 +305,7 @@ VPS (IP public, DNS, Let’s Encrypt)
    ▼
 Raspberry Pi (sau NAT)
   nginx :80
-    /        → 127.0.0.1:4173  (Node app: static + API)
-    /stake/  → static SPA cũ
+    /        → 127.0.0.1:4173  (Node app: static + API, gồm lazy /stake/)
     /bond/   → static SPA cũ
 ```
 

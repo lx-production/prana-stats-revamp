@@ -293,8 +293,7 @@ VPS (public IP, DNS, Let’s Encrypt)
    ▼
 Raspberry Pi (behind NAT)
   nginx :80
-    /        → 127.0.0.1:4173  (Node app: static + API)
-    /stake/  → static legacy SPA
+    /        → 127.0.0.1:4173  (Node app: static + API, incl. lazy /stake/)
     /bond/   → static legacy SPA
 ```
 

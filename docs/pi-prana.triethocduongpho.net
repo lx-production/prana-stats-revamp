@@ -2,7 +2,7 @@ server {
     listen 80 default_server;
     server_name prana.triethocduongpho.net;
 
-    # New stats app at /
+    # Main app (stats + lazy /stake/ + API) — Node serves the SPA shell
     location / {
         proxy_pass http://127.0.0.1:4173;
         proxy_http_version 1.1;
@@ -18,39 +18,11 @@ server {
     }
 
     # Redirect bare path to trailing slash
-    location = /stake {
-        return 301 /stake/;
-    }
-
-    # React Staking app
-    location ^~ /stake/ {
-        alias /var/www/html/prana/stake/;
-        try_files $uri $uri/ /stake/index.html;
-        gzip_static on;
-
-        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
-        add_header Pragma "no-cache" always;
-        add_header Expires "0" always;
-    }
-
-    # React Staking assets
-    location ^~ /stake/assets/ {
-        alias /var/www/html/prana/stake/assets/;
-        gzip_static on;
-        gzip_types application/javascript;
-
-        expires max;
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        etag on;
-        add_header Access-Control-Allow-Origin "*" always;
-    }
-
-    # Redirect bare path to trailing slash
     location = /bond {
         return 301 /bond/;
     }
 
-    # React Bonding app
+    # React Bonding app (legacy static SPA)
     location ^~ /bond/ {
         alias /var/www/html/prana/bond/;
         try_files $uri $uri/ /bond/index.html;
