@@ -34,7 +34,9 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md)                   | How prod is exposed (VPS ↔ Pi)             |
 | [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md)                       | API/data caching, including `/api/version` |
 | [docs/swap-modal-technical-overview.md](docs/swap-modal-technical-overview.md) | Swap quote / verify flow                   |
+| [docs/add-staking-ui.md](docs/add-staking-ui.md)                               | Lazy `/stake/` staking UI integration      |
 | `/terms`                                                                       | Terms / Risk Disclosure page (footer link) |
+| `/stake/`                                                                      | Personal staking (permit, stake, claim)    |
 
 
 Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.

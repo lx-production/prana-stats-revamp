@@ -18,7 +18,7 @@
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (EIP-712 + `parseSignature`, invalidate permit, wait receipt); `useStakeActions` + `EarlyUnstakeDialog`; claim-before-unstake / grace rules; lỗi VI/EN chuẩn hóa; Polygonscan link; tests permit/status/errors.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
-- [ ] **Bước 7 — Xóa phần dư thừa của `staking-ui`.**
+- [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này. (Nginx / NETWORK_ARCHITECTURE còn mô tả static `/stake/` → Bước 8.)
 - [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành.**
 
 ## 1. Cấu trúc và phần dùng chung
@@ -262,7 +262,7 @@ Stake management:
 - Toàn bộ copy nằm trong `staking.copy.ts`, chọn đúng một ngôn ngữ theo toggle; bỏ các câu trộn Việt–Anh.
 - Staking page metadata: Closeout Bước 1 đã thêm `usePageMetadata` (title + description theo locale, restore khi unmount). Giữ hành vi đó khi port UI đầy đủ. Open Graph/Twitter vẫn là metadata chung của PRANA Protocol (một HTML shell).
 
-### Bước 7 — Xóa phần dư thừa của `staking-ui`
+### Bước 7 — Xóa phần dư thừa của `staking-ui` ✅
 
 Xóa hoàn toàn:
 
@@ -287,6 +287,8 @@ Giữ lại dưới dạng mới:
 - Claim, unstake và early-unstake actions.
 - Staking/Interest contract Polygonscan links dưới dạng compact verification links trong page header/footer.
 - Nội dung cần thiết từ README được nhập vào docs chính trước khi bỏ directory.
+
+Closeout: directory `staking-ui/` đã xóa khỏi repo. UI mới: `pages/StakingPage.tsx` + `features/staking/**`. Contract nguồn chuẩn: root `contracts/StakingContract.sol` + `InterestContract.sol` (SPDX MIT; bản copy trong staking-ui trước đây giống hệt). Từ README legacy (Heo Đất PRANA 3.0): smart contracts author `prana@triethocduongpho`, contact `thdp@triethocduongpho.net`, MIT. Root `README.md` liệt kê `/stake/` và doc này. Cập nhật nginx + NETWORK_ARCHITECTURE (bỏ static `/stake/`) thuộc Bước 8.
 
 ### Bước 8 — Deployment và docs
 
