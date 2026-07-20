@@ -1,7 +1,7 @@
 import type { SiteLocale } from '../../types/locale.types.ts';
-import type { StakeAmountParseReason } from './staking.types.ts';
+import type { StakeAmountParseReason, StakeDisplayStatus } from './staking.types.ts';
 
-type StakingCopy = {
+export type StakingCopy = {
   pageTitle: string;
   pageSubtitle: string;
   backHome: string;
@@ -18,18 +18,23 @@ type StakingCopy = {
   projectedInterestLabel: string;
   projectedInterestHint: string;
   pausedBanner: string;
+  stakesConfigPending: string;
+  stakesConfigError: string;
+  stakesPausedBanner: string;
   loadingConfig: string;
   configError: string;
   signPermit: string;
+  permitSigned: string;
+  signingPermit: string;
   stakeAction: string;
-  txComingSoon: string;
+  stakingSubmitting: string;
+  stakingConfirming: string;
   activeStakesHeading: string;
   noStakes: string;
   loadingStakes: string;
   accountError: string;
   stakeId: (id: number) => string;
-  statusActive: string;
-  statusMatured: string;
+  statusLabel: Record<StakeDisplayStatus, string>;
   aprLabel: (apr: number) => string;
   durationDays: (days: number) => string;
   started: string;
@@ -37,16 +42,30 @@ type StakingCopy = {
   progressComplete: (percent: number) => string;
   accruedInterest: string;
   maturityInterest: string;
-  actionsComingSoon: string;
+  claimInterest: string;
+  unstake: string;
+  unstakeEarly: (penaltyPercent: number) => string;
+  claimFirstHint: string;
+  graceExpiredWarning: string;
+  processing: string;
+  viewOnPolygonscan: string;
   minStakeHint: (amount: string) => string;
   exceedsBalance: string;
   amountReasons: Record<StakeAmountParseReason, string>;
+  earlyDialogTitle: string;
+  earlyDialogBody: (penaltyPercent: number) => string;
+  earlyDialogPenalty: string;
+  earlyDialogReturn: string;
+  earlyDialogInterestLost: string;
+  earlyDialogConfirm: string;
+  earlyDialogCancel: string;
+  switchPolygonFirst: string;
 };
 
 const vi: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA với APR cố định trên Polygon. Permit và gửi giao dịch sẽ được hoàn thiện ở bước tiếp theo.',
+    'Stake PRANA với APR cố định trên Polygon. Ký permit rồi gửi giao dịch stake.',
   backHome: 'Về trang chủ',
   viewStats: 'Xem thống kê protocol',
   connectWallet: 'Kết nối ví',
@@ -61,26 +80,43 @@ const vi: StakingCopy = {
   projectedInterestLabel: 'Lãi dự kiến khi đáo hạn',
   projectedInterestHint: 'Tính theo công thức on-chain (làm tròn integer).',
   pausedBanner: 'Hợp đồng staking đang tạm dừng. Không thể mở stake mới.',
+  stakesConfigPending: 'Đang tải cấu hình — tạm khóa claim/unstake để tránh mất lãi.',
+  stakesConfigError: 'Không tải được cấu hình — tạm khóa claim/unstake.',
+  stakesPausedBanner: 'Hợp đồng đang tạm dừng. Claim/unstake hiện không khả dụng.',
   loadingConfig: 'Đang tải cấu hình staking…',
   configError: 'Không tải được cấu hình staking. Thử lại sau.',
   signPermit: 'Ký Permit',
+  permitSigned: 'Permit đã ký ✓',
+  signingPermit: 'Đang ký…',
   stakeAction: 'Stake PRANA',
-  txComingSoon: 'Luồng ký permit và gửi giao dịch sẽ có ở bước tiếp theo.',
+  stakingSubmitting: 'Đang gửi…',
+  stakingConfirming: 'Đang xác nhận…',
   activeStakesHeading: 'Stake đang hoạt động',
   noStakes: 'Bạn chưa có stake nào.',
   loadingStakes: 'Đang tải stake…',
   accountError: 'Không tải được dữ liệu tài khoản. Thử lại sau.',
   stakeId: (id) => `Stake #${id}`,
-  statusActive: 'Đang chạy',
-  statusMatured: 'Đã đáo hạn',
+  statusLabel: {
+    active: 'Đang chạy',
+    matured: 'Đã đáo hạn',
+    claim_first: 'Claim trước',
+    grace_expired: 'Hết grace',
+  },
   aprLabel: (apr) => `${apr}% APR`,
   durationDays: (days) => `${days} ngày`,
   started: 'Bắt đầu',
   ends: 'Kết thúc',
   progressComplete: (percent) => `${percent}% hoàn thành`,
-  accruedInterest: 'Lãi đã tích lũy',
+  accruedInterest: 'Lãi chưa claim',
   maturityInterest: 'Lãi khi đáo hạn',
-  actionsComingSoon: 'Claim / unstake sẽ có ở bước tiếp theo.',
+  claimInterest: 'Claim lãi',
+  unstake: 'Unstake',
+  unstakeEarly: (penaltyPercent) => `Unstake sớm (−${penaltyPercent}%)`,
+  claimFirstHint: 'Hãy claim lãi trước khi unstake để không mất lãi.',
+  graceExpiredWarning:
+    'Đã hết grace period — lãi chưa claim không thể nhận nữa.',
+  processing: 'Đang xử lý…',
+  viewOnPolygonscan: 'Xem trên Polygonscan',
   minStakeHint: (amount) => `Tối thiểu ${amount} PRANA`,
   exceedsBalance: 'Số lượng vượt quá số dư ví.',
   amountReasons: {
@@ -90,12 +126,22 @@ const vi: StakingCopy = {
     negative: 'Số lượng không được âm.',
     too_many_decimals: 'Tối đa 9 chữ số thập phân.',
   },
+  earlyDialogTitle: 'Unstake sớm?',
+  earlyDialogBody: (penaltyPercent) =>
+    `Unstake sớm sẽ bị trừ ${penaltyPercent}% vốn gốc theo hợp đồng.`,
+  earlyDialogPenalty: 'Phạt',
+  earlyDialogReturn: 'Nhận lại ước tính',
+  earlyDialogInterestLost:
+    'Toàn bộ lãi đã tích lũy sẽ bị mất (không claim được).',
+  earlyDialogConfirm: 'Xác nhận unstake sớm',
+  earlyDialogCancel: 'Hủy',
+  switchPolygonFirst: 'Hãy chuyển sang Polygon trước.',
 };
 
 const en: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA at a fixed APR on Polygon. Permit signing and transactions land in the next step.',
+    'Stake PRANA at a fixed APR on Polygon. Sign a permit, then submit the stake transaction.',
   backHome: 'Back to home',
   viewStats: 'View protocol statistics',
   connectWallet: 'Connect wallet',
@@ -110,26 +156,44 @@ const en: StakingCopy = {
   projectedInterestLabel: 'Guaranteed interest at maturity',
   projectedInterestHint: 'Uses on-chain integer rounding order.',
   pausedBanner: 'Staking is paused. New stakes are disabled.',
+  stakesConfigPending:
+    'Loading config — claim/unstake locked to avoid losing interest.',
+  stakesConfigError: 'Could not load config — claim/unstake locked.',
+  stakesPausedBanner: 'Staking is paused. Claim/unstake are unavailable.',
   loadingConfig: 'Loading staking config…',
   configError: 'Could not load staking config. Try again later.',
   signPermit: 'Sign Permit',
+  permitSigned: 'Permit signed ✓',
+  signingPermit: 'Signing…',
   stakeAction: 'Stake PRANA',
-  txComingSoon: 'Permit signing and stake submission land in the next step.',
+  stakingSubmitting: 'Submitting…',
+  stakingConfirming: 'Confirming…',
   activeStakesHeading: 'My active stakes',
   noStakes: 'You do not have any active stakes yet.',
   loadingStakes: 'Loading stakes…',
   accountError: 'Could not load account data. Try again later.',
   stakeId: (id) => `Stake #${id}`,
-  statusActive: 'Active',
-  statusMatured: 'Matured',
+  statusLabel: {
+    active: 'Active',
+    matured: 'Matured',
+    claim_first: 'Claim first',
+    grace_expired: 'Grace expired',
+  },
   aprLabel: (apr) => `${apr}% APR`,
   durationDays: (days) => `${days} days`,
   started: 'Started',
   ends: 'Ends',
   progressComplete: (percent) => `${percent}% complete`,
-  accruedInterest: 'Accrued interest',
+  accruedInterest: 'Unclaimed interest',
   maturityInterest: 'Interest at maturity',
-  actionsComingSoon: 'Claim / unstake actions land in the next step.',
+  claimInterest: 'Claim interest',
+  unstake: 'Unstake',
+  unstakeEarly: (penaltyPercent) => `Unstake early (−${penaltyPercent}%)`,
+  claimFirstHint: 'Claim interest before unstaking so you do not lose it.',
+  graceExpiredWarning:
+    'Grace period ended — unclaimed interest can no longer be claimed.',
+  processing: 'Processing…',
+  viewOnPolygonscan: 'View on Polygonscan',
   minStakeHint: (amount) => `Min ${amount} PRANA`,
   exceedsBalance: 'Amount exceeds wallet balance.',
   amountReasons: {
@@ -139,6 +203,16 @@ const en: StakingCopy = {
     negative: 'Amount cannot be negative.',
     too_many_decimals: 'At most 9 decimal places.',
   },
+  earlyDialogTitle: 'Unstake early?',
+  earlyDialogBody: (penaltyPercent) =>
+    `Early unstaking applies a ${penaltyPercent}% principal penalty from the contract.`,
+  earlyDialogPenalty: 'Penalty',
+  earlyDialogReturn: 'Estimated return',
+  earlyDialogInterestLost:
+    'All accrued interest will be lost (it cannot be claimed).',
+  earlyDialogConfirm: 'Confirm early unstake',
+  earlyDialogCancel: 'Cancel',
+  switchPolygonFirst: 'Switch to Polygon first.',
 };
 
 export function getStakingCopy(locale: SiteLocale): StakingCopy {

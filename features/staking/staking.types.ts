@@ -100,5 +100,12 @@ export type StakeAmountParseResult =
   | { ok: true; raw: bigint }
   | { ok: false; reason: StakeAmountParseReason };
 
-/** Display status for a stake card (grace-period rules land in Bước 5). */
-export type StakeDisplayStatus = 'active' | 'matured';
+/** Display / action status for a stake card (includes grace-period rules). */
+export type StakeDisplayStatus =
+  | 'active'
+  | 'matured'
+  | 'claim_first'
+  | 'grace_expired';
+
+/** Which stake-management write is in flight (locks other actions). */
+export type StakeActionKind = 'claim' | 'unstake' | 'unstakeEarly';

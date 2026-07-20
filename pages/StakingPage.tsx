@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import AppFooter from '../components/AppFooter';
 import LanguageToggle from '../components/LanguageToggle';
 import StakingForm from '../features/staking/components/StakingForm';
@@ -12,8 +12,7 @@ import { useStakingConfig } from '../features/staking/hooks/useStakingConfig';
 import { useStakingAccount } from '../features/staking/hooks/useStakingAccount';
 
 /**
- * Lazy `/stake/` page — form + account state (Bước 4).
- * Permit / claim / unstake transaction flows land in Bước 5.
+ * Lazy `/stake/` page — form, account state, and hardened tx flows (Bước 5).
  */
 export default function StakingPage() {
   const { locale } = useSiteLanguage();
@@ -23,6 +22,14 @@ export default function StakingPage() {
   const configQuery = useStakingConfig();
   const accountQuery = useStakingAccount(
     wallet.isConnected ? wallet.address : undefined,
+  );
+
+  const [formBusy, setFormBusy] = useState(false);
+  const [actionsBusy, setActionsBusy] = useState(false);
+
+  const refetchAccount = useCallback(
+    () => accountQuery.refetch(),
+    [accountQuery.refetch],
   );
 
   usePageMetadata(
@@ -70,12 +77,21 @@ export default function StakingPage() {
               account={accountQuery.data}
               configLoading={configQuery.isLoading}
               configError={configQuery.isError}
+              refetchAccount={refetchAccount}
+              actionsLocked={actionsBusy}
+              onBusyChange={setFormBusy}
             />
             <ActiveStakes
               stakes={accountQuery.data?.stakes}
               loading={accountQuery.isLoading}
               error={accountQuery.isError}
               blockTimestamp={accountQuery.data?.blockTimestamp}
+              config={configQuery.data}
+              configLoading={configQuery.isLoading}
+              configError={configQuery.isError}
+              refetchAccount={refetchAccount}
+              actionsLocked={formBusy}
+              onBusyChange={setActionsBusy}
             />
           </>
         ) : null}

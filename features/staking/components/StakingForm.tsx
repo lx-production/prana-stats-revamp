@@ -3,7 +3,9 @@ import { formatUnits } from 'viem';
 import { Loader2 } from 'lucide-react';
 import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
 import { getStakingCopy } from '../staking.copy.ts';
+import { useStakeTransaction } from '../hooks/useStakeTransaction.ts';
 import {
   calculateTotalInterestRaw,
   formatPranaAmount,
@@ -12,6 +14,7 @@ import {
   parseStakeAmount,
 } from '../stakingMath.ts';
 import DurationSelector from './DurationSelector.tsx';
+import TxLink from './TxLink.tsx';
 
 import type { StakingAccountSnapshot, StakingConfig } from '../staking.types.ts';
 
@@ -20,21 +23,27 @@ type StakingFormProps = {
   account: StakingAccountSnapshot | undefined;
   configLoading: boolean;
   configError: boolean;
+  refetchAccount: () => Promise<unknown>;
+  /** Lock form while claim/unstake is running. */
+  actionsLocked?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 };
 
 /**
- * Stake amount + duration form.
- * Balance and MAX live in the amount header (no separate PranaBalance card).
- * Permit / stake submission is wired in Bước 5 — buttons stay disabled here.
+ * Stake amount + duration form with Sign Permit / Stake PRANA buttons.
  */
 export default function StakingForm({
   config,
   account,
   configLoading,
   configError,
+  refetchAccount,
+  actionsLocked = false,
+  onBusyChange,
 }: StakingFormProps) {
   const { locale } = useSiteLanguage();
   const copy = getStakingCopy(locale);
+  const wallet = useInjectedWallet();
 
   const [amount, setAmount] = useState('');
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
@@ -44,6 +53,28 @@ export default function StakingForm({
     if (durationSeconds != null || !config?.durations.length) return;
     setDurationSeconds(getDefaultDurationSeconds(config.durations));
   }, [config, durationSeconds]);
+
+  const parsedAmount = parseStakeAmount(amount);
+  const amountRaw = parsedAmount.ok ? parsedAmount.raw : null;
+
+  const stakeTx = useStakeTransaction({
+    config,
+    account,
+    amountRaw,
+    durationSeconds,
+    refetchAccount,
+  });
+
+  useEffect(() => {
+    onBusyChange?.(stakeTx.isBusy);
+  }, [onBusyChange, stakeTx.isBusy]);
+
+  // Clear amount only after a confirmed stake — keep success + tx hash visible.
+  useEffect(() => {
+    if (stakeTx.status === 'success') {
+      setAmount('');
+    }
+  }, [stakeTx.status]);
 
   const balanceRaw = account ? BigInt(account.balanceRaw) : 0n;
   const balanceFormatted = account
@@ -56,11 +87,11 @@ export default function StakingForm({
     : '—';
 
   const selectedDuration = useMemo(
-    () => config?.durations.find((option) => option.seconds === durationSeconds) ?? null,
+    () =>
+      config?.durations.find((option) => option.seconds === durationSeconds) ??
+      null,
     [config, durationSeconds],
   );
-
-  const parsedAmount = parseStakeAmount(amount);
 
   const projectedInterest = useMemo(() => {
     if (!parsedAmount.ok || !selectedDuration) return '0';
@@ -96,7 +127,22 @@ export default function StakingForm({
   ]);
 
   const paused = Boolean(config?.paused);
-  const formDisabled = paused || configLoading || !config;
+  const formDisabled =
+    paused || configLoading || !config || stakeTx.isBusy || actionsLocked;
+
+  const canSign =
+    !formDisabled &&
+    !amountError &&
+    parsedAmount.ok &&
+    durationSeconds != null &&
+    wallet.isConnected &&
+    !stakeTx.hasValidPermit;
+
+  const canStake =
+    !formDisabled &&
+    stakeTx.hasValidPermit &&
+    wallet.isConnected &&
+    wallet.isPolygon;
 
   const setMaxAmount = () => {
     if (!account || balanceRaw <= 0n) {
@@ -139,6 +185,15 @@ export default function StakingForm({
           role="status"
         >
           {copy.pausedBanner}
+        </p>
+      ) : null}
+
+      {!wallet.isPolygon ? (
+        <p
+          className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
+          role="status"
+        >
+          {copy.switchPolygonFirst}
         </p>
       ) : null}
 
@@ -218,26 +273,63 @@ export default function StakingForm({
           <p className="mt-1 text-xs text-white/45">{copy.projectedInterestHint}</p>
         </div>
 
-        <p className="text-xs text-white/45" role="status">
-          {copy.txComingSoon}
-        </p>
+        {stakeTx.error ? (
+          <p className="text-sm text-red-300" role="alert">
+            {stakeTx.error}
+          </p>
+        ) : null}
+        {stakeTx.success ? (
+          <p className="text-sm text-emerald-300" role="status">
+            {stakeTx.success}
+            {stakeTx.transactionHash ? (
+              <>
+                {' '}
+                <TxLink
+                  hash={stakeTx.transactionHash}
+                  label={copy.viewOnPolygonscan}
+                />
+              </>
+            ) : null}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             className="btn-hero btn-glass w-full sm:w-auto"
-            disabled
-            title={copy.txComingSoon}
+            disabled={!canSign || actionsLocked}
+            onClick={() => void stakeTx.signPermit()}
           >
-            {copy.signPermit}
+            {stakeTx.status === 'signing' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.signingPermit}
+              </span>
+            ) : stakeTx.hasValidPermit ? (
+              copy.permitSigned
+            ) : (
+              copy.signPermit
+            )}
           </button>
           <button
             type="button"
             className="btn-hero btn-gold-border w-full sm:w-auto"
-            disabled
-            title={copy.txComingSoon}
+            disabled={!canStake || actionsLocked}
+            onClick={() => void stakeTx.submitStake()}
           >
-            {copy.stakeAction}
+            {stakeTx.status === 'submitting' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.stakingSubmitting}
+              </span>
+            ) : stakeTx.status === 'confirming' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.stakingConfirming}
+              </span>
+            ) : (
+              copy.stakeAction
+            )}
           </button>
         </div>
       </div>

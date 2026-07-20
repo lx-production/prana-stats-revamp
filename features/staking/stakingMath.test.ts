@@ -4,9 +4,11 @@ import { parseUnits } from 'viem';
 import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
 import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../constants/network.ts';
 import {
+  calculateEarlyUnstakeReturn,
   calculateTotalInterestRaw,
   getDefaultDurationSeconds,
   getEffectiveAccruedSeconds,
+  getStakeActionState,
   parseStakeAmount,
 } from './stakingMath.ts';
 
@@ -108,4 +110,74 @@ test('getEffectiveAccruedSeconds starts from lastClaimTime, not startTime', () =
     getEffectiveAccruedSeconds(stake, afterMaturity),
     20 * SECONDS_PER_DAY,
   );
+});
+
+test('getStakeActionState enforces claim-before-unstake and grace expiry', () => {
+  const startTime = 1_700_000_000;
+  const durationSeconds = 30 * SECONDS_PER_DAY;
+  const gracePeriodSeconds = 7 * SECONDS_PER_DAY;
+  const endTime = startTime + durationSeconds;
+
+  const stake: StakeRecord = {
+    id: 1,
+    amountRaw: parseUnits('1000', PRANA_DECIMALS).toString(),
+    startTime,
+    durationSeconds,
+    apr: 12,
+    lastClaimTime: startTime,
+  };
+
+  // Active: early unstake + claim, no mature unstake.
+  const active = getStakeActionState(
+    stake,
+    startTime + 5 * SECONDS_PER_DAY,
+    gracePeriodSeconds,
+  );
+  assert.equal(active.status, 'active');
+  assert.equal(active.canClaim, true);
+  assert.equal(active.canUnstakeEarly, true);
+  assert.equal(active.canUnstake, false);
+  assert.equal(active.mustClaimBeforeUnstake, false);
+
+  // Matured inside grace with unclaimed interest → claim first.
+  const claimFirst = getStakeActionState(
+    stake,
+    endTime + SECONDS_PER_DAY,
+    gracePeriodSeconds,
+  );
+  assert.equal(claimFirst.status, 'claim_first');
+  assert.equal(claimFirst.canClaim, true);
+  assert.equal(claimFirst.canUnstake, false);
+  assert.equal(claimFirst.mustClaimBeforeUnstake, true);
+  assert.equal(claimFirst.canUnstakeEarly, false);
+
+  // Fully claimed up to maturity → matured, unstake allowed.
+  const claimed: StakeRecord = { ...stake, lastClaimTime: endTime };
+  const matured = getStakeActionState(
+    claimed,
+    endTime + SECONDS_PER_DAY,
+    gracePeriodSeconds,
+  );
+  assert.equal(matured.status, 'matured');
+  assert.equal(matured.canClaim, false);
+  assert.equal(matured.canUnstake, true);
+  assert.equal(matured.mustClaimBeforeUnstake, false);
+
+  // After grace with unclaimed interest → unstake ok, claim blocked, warn.
+  const graceExpired = getStakeActionState(
+    stake,
+    endTime + gracePeriodSeconds + 1,
+    gracePeriodSeconds,
+  );
+  assert.equal(graceExpired.status, 'grace_expired');
+  assert.equal(graceExpired.canClaim, false);
+  assert.equal(graceExpired.canUnstake, true);
+  assert.equal(graceExpired.warnUnclaimedExpired, true);
+});
+
+test('calculateEarlyUnstakeReturn applies integer penalty percent', () => {
+  const amountRaw = parseUnits('1000', PRANA_DECIMALS);
+  const { penaltyRaw, returnRaw } = calculateEarlyUnstakeReturn(amountRaw, 10);
+  assert.equal(penaltyRaw, amountRaw / 10n);
+  assert.equal(returnRaw, amountRaw - penaltyRaw);
 });

@@ -3,6 +3,7 @@ import { Loader2, LogOut, Wallet } from 'lucide-react';
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage';
 import { formatCompactAddress } from '../../../utils/swapTokenFormatting';
+import { formatStakingError } from '../stakingErrors';
 import { getStakingCopy } from '../staking.copy';
 
 /**
@@ -22,7 +23,7 @@ export default function WalletControl() {
     try {
       await wallet.connectWallet();
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.connectWallet);
+      setError(formatStakingError(err, locale));
     } finally {
       setBusy(false);
     }
@@ -34,7 +35,7 @@ export default function WalletControl() {
     try {
       await wallet.ensurePolygon();
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.switchPolygon);
+      setError(formatStakingError(err, locale));
     } finally {
       setBusy(false);
     }

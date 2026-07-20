@@ -1,37 +1,35 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 import {
   calculateAccruedInterestRaw,
   calculateTotalInterestRaw,
   daysFromSeconds,
   formatPranaAmount,
   getEffectiveAccruedSeconds,
+  getStakeActionState,
   getStakeDisplayStatus,
   getStakeEndTime,
   getStakeProgressPercent,
 } from '../stakingMath.ts';
 
 import type { SiteLocale } from '../../../types/locale.types.ts';
-import type { StakeRecord } from '../staking.types.ts';
-
-type StakeCardCopy = {
-  stakeId: (id: number) => string;
-  statusActive: string;
-  statusMatured: string;
-  aprLabel: (apr: number) => string;
-  durationDays: (days: number) => string;
-  started: string;
-  ends: string;
-  progressComplete: (percent: number) => string;
-  accruedInterest: string;
-  maturityInterest: string;
-  actionsComingSoon: string;
-};
+import type { StakingCopy } from '../staking.copy.ts';
+import type { StakeActionKind, StakeRecord } from '../staking.types.ts';
 
 type StakeCardProps = {
   stake: StakeRecord;
   nowSeconds: number;
+  gracePeriodSeconds: number;
+  penaltyPercent: number;
   locale: SiteLocale;
-  copy: StakeCardCopy;
+  copy: StakingCopy;
+  /** False until config is loaded and not paused — hides write actions. */
+  actionsEnabled: boolean;
+  actionsLocked: boolean;
+  activeAction: { stakeId: number; kind: StakeActionKind } | null;
+  onClaim: (stakeId: number) => void;
+  onUnstake: (stakeId: number) => void;
+  onUnstakeEarly: (stakeId: number) => void;
 };
 
 function formatStakeDate(unixSeconds: number, locale: SiteLocale): string {
@@ -49,31 +47,74 @@ function formatStakeDate(unixSeconds: number, locale: SiteLocale): string {
   );
 }
 
+function statusPillClass(status: string): string {
+  switch (status) {
+    case 'claim_first':
+      return 'bg-amber-400/15 text-amber-200';
+    case 'grace_expired':
+      return 'bg-red-400/15 text-red-300';
+    case 'matured':
+      return 'bg-emerald-400/15 text-emerald-300';
+    default:
+      return 'bg-cyan-400/15 text-cyan-300';
+  }
+}
+
 /**
- * Read-only stake summary for Bước 4.
- * Claim / unstake / early-unstake actions arrive in Bước 5.
+ * Stake summary + claim / unstake / early-unstake actions.
  */
 export default function StakeCard({
   stake,
   nowSeconds,
+  gracePeriodSeconds,
+  penaltyPercent,
   locale,
   copy,
+  actionsEnabled,
+  actionsLocked,
+  activeAction,
+  onClaim,
+  onUnstake,
+  onUnstakeEarly,
 }: StakeCardProps) {
-  const status = getStakeDisplayStatus(stake, nowSeconds);
+  // Without a real config grace period, only show active/matured — never invent rules.
+  const actionState = actionsEnabled
+    ? getStakeActionState(stake, nowSeconds, gracePeriodSeconds)
+    : null;
+  const status = actionState?.status ?? getStakeDisplayStatus(stake, nowSeconds);
+  const accruedRaw =
+    actionState?.accruedRaw ??
+    calculateAccruedInterestRaw(
+      BigInt(stake.amountRaw),
+      stake.apr,
+      getEffectiveAccruedSeconds(stake, nowSeconds),
+    );
+  const canClaim = Boolean(actionsEnabled && actionState?.canClaim);
+  const canUnstake = Boolean(actionsEnabled && actionState?.canUnstake);
+  const canUnstakeEarly = Boolean(actionsEnabled && actionState?.canUnstakeEarly);
+  const mustClaimBeforeUnstake = Boolean(
+    actionsEnabled && actionState?.mustClaimBeforeUnstake,
+  );
+  const warnUnclaimedExpired = Boolean(
+    actionsEnabled && actionState?.warnUnclaimedExpired,
+  );
+
   const progress = getStakeProgressPercent(stake, nowSeconds);
   const endTime = getStakeEndTime(stake);
   const amountRaw = BigInt(stake.amountRaw);
-
-  const accruedRaw = calculateAccruedInterestRaw(
-    amountRaw,
-    stake.apr,
-    getEffectiveAccruedSeconds(stake, nowSeconds),
-  );
   const maturityRaw = calculateTotalInterestRaw(
     amountRaw,
     stake.apr,
     stake.durationSeconds,
   );
+
+  const isThisBusy =
+    activeAction?.stakeId === stake.id &&
+    (activeAction.kind === 'claim' ||
+      activeAction.kind === 'unstake' ||
+      activeAction.kind === 'unstakeEarly');
+  const buttonsDisabled =
+    !actionsEnabled || actionsLocked || Boolean(activeAction);
 
   return (
     <article className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:border-white/20">
@@ -82,13 +123,9 @@ export default function StakeCard({
           {copy.stakeId(stake.id)}
         </h3>
         <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            status === 'matured'
-              ? 'bg-emerald-400/15 text-emerald-300'
-              : 'bg-cyan-400/15 text-cyan-300'
-          }`}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusPillClass(status)}`}
         >
-          {status === 'matured' ? copy.statusMatured : copy.statusActive}
+          {copy.statusLabel[status]}
         </span>
       </div>
 
@@ -141,7 +178,75 @@ export default function StakeCard({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-white/40">{copy.actionsComingSoon}</p>
+      {mustClaimBeforeUnstake ? (
+        <p className="mt-3 text-xs text-amber-200" role="status">
+          {copy.claimFirstHint}
+        </p>
+      ) : null}
+
+      {warnUnclaimedExpired ? (
+        <p className="mt-3 text-xs text-red-300" role="status">
+          {copy.graceExpiredWarning}
+        </p>
+      ) : null}
+
+      {actionsEnabled ? (
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        {canClaim ? (
+          <button
+            type="button"
+            className="btn-hero btn-glass w-full sm:w-auto"
+            disabled={buttonsDisabled}
+            onClick={() => onClaim(stake.id)}
+          >
+            {isThisBusy && activeAction?.kind === 'claim' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.processing}
+              </span>
+            ) : (
+              copy.claimInterest
+            )}
+          </button>
+        ) : null}
+
+        {canUnstake ? (
+          <button
+            type="button"
+            className="btn-hero btn-glass w-full sm:w-auto"
+            disabled={buttonsDisabled}
+            onClick={() => onUnstake(stake.id)}
+          >
+            {isThisBusy && activeAction?.kind === 'unstake' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.processing}
+              </span>
+            ) : (
+              copy.unstake
+            )}
+          </button>
+        ) : null}
+
+        {canUnstakeEarly ? (
+          <button
+            type="button"
+            className="btn-hero w-full border border-red-400/40 bg-red-500/10 text-red-200 sm:w-auto"
+            disabled={buttonsDisabled}
+            onClick={() => onUnstakeEarly(stake.id)}
+          >
+            {isThisBusy && activeAction?.kind === 'unstakeEarly' ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.processing}
+              </span>
+            ) : (
+              copy.unstakeEarly(penaltyPercent)
+            )}
+          </button>
+        ) : null}
+      </div>
+      ) : null}
     </article>
   );
 }

@@ -31,7 +31,7 @@ export function calculateTotalInterestRaw(
 
 /**
  * Accrued interest for `timePassedSeconds` using the same integer division order.
- * Callers should cap time at maturity (and later at grace rules in Bước 5).
+ * Callers should cap time at maturity (and grace rules via getStakeActionState).
  */
 export function calculateAccruedInterestRaw(
   amountRaw: bigint,
@@ -101,21 +101,11 @@ export function getStakeEndTime(stake: StakeRecord): number {
   return stake.startTime + stake.durationSeconds;
 }
 
-export function getStakeDisplayStatus(
+export function getGraceDeadline(
   stake: StakeRecord,
-  nowSeconds: number,
-): StakeDisplayStatus {
-  return nowSeconds >= getStakeEndTime(stake) ? 'matured' : 'active';
-}
-
-/** Progress 0–100 toward maturity. */
-export function getStakeProgressPercent(
-  stake: StakeRecord,
-  nowSeconds: number,
+  gracePeriodSeconds: number,
 ): number {
-  if (stake.durationSeconds <= 0) return 100;
-  const elapsed = Math.max(0, nowSeconds - stake.startTime);
-  return Math.min(100, Math.floor((elapsed / stake.durationSeconds) * 100));
+  return getStakeEndTime(stake) + gracePeriodSeconds;
 }
 
 /**
@@ -131,4 +121,110 @@ export function getEffectiveAccruedSeconds(
   const claimStart = Math.max(stake.lastClaimTime, stake.startTime);
   const effectiveNow = Math.min(nowSeconds, endTime);
   return Math.max(0, effectiveNow - claimStart);
+}
+
+/** Progress 0–100 toward maturity. */
+export function getStakeProgressPercent(
+  stake: StakeRecord,
+  nowSeconds: number,
+): number {
+  if (stake.durationSeconds <= 0) return 100;
+  const elapsed = Math.max(0, nowSeconds - stake.startTime);
+  return Math.min(100, Math.floor((elapsed / stake.durationSeconds) * 100));
+}
+
+export type StakeActionState = {
+  status: StakeDisplayStatus;
+  isMatured: boolean;
+  withinGrace: boolean;
+  afterGrace: boolean;
+  hasClaimableInterest: boolean;
+  canClaim: boolean;
+  canUnstake: boolean;
+  canUnstakeEarly: boolean;
+  mustClaimBeforeUnstake: boolean;
+  warnUnclaimedExpired: boolean;
+  accruedRaw: bigint;
+  endTime: number;
+  graceDeadline: number;
+};
+
+/**
+ * Claim / unstake / early-unstake eligibility from chain time + grace period.
+ * - Matured + claimable in grace → claim allowed, unstake blocked (claim first).
+ * - After grace → claim disabled; unstake principal allowed; warn if interest expired.
+ */
+export function getStakeActionState(
+  stake: StakeRecord,
+  nowSeconds: number,
+  gracePeriodSeconds: number,
+): StakeActionState {
+  const endTime = getStakeEndTime(stake);
+  const graceDeadline = endTime + gracePeriodSeconds;
+  const isMatured = nowSeconds >= endTime;
+  const withinGrace = nowSeconds <= graceDeadline;
+  const afterGrace = nowSeconds > graceDeadline;
+
+  const accruedSeconds = getEffectiveAccruedSeconds(stake, nowSeconds);
+  const accruedRaw = calculateAccruedInterestRaw(
+    BigInt(stake.amountRaw),
+    stake.apr,
+    accruedSeconds,
+  );
+  const hasClaimableInterest = accruedRaw > 0n;
+
+  const canClaim = hasClaimableInterest && withinGrace;
+  const canUnstakeEarly = !isMatured;
+  const mustClaimBeforeUnstake =
+    isMatured && hasClaimableInterest && withinGrace;
+  const canUnstake = isMatured && !mustClaimBeforeUnstake;
+  const warnUnclaimedExpired =
+    isMatured && afterGrace && stake.lastClaimTime < endTime;
+
+  let status: StakeDisplayStatus;
+  if (!isMatured) {
+    status = 'active';
+  } else if (mustClaimBeforeUnstake) {
+    status = 'claim_first';
+  } else if (warnUnclaimedExpired) {
+    status = 'grace_expired';
+  } else {
+    status = 'matured';
+  }
+
+  return {
+    status,
+    isMatured,
+    withinGrace,
+    afterGrace,
+    hasClaimableInterest,
+    canClaim,
+    canUnstake,
+    canUnstakeEarly,
+    mustClaimBeforeUnstake,
+    warnUnclaimedExpired,
+    accruedRaw,
+    endTime,
+    graceDeadline,
+  };
+}
+
+/** Early-unstake penalty + principal returned (Solidity integer division). */
+export function calculateEarlyUnstakeReturn(
+  amountRaw: bigint,
+  penaltyPercent: number,
+): { penaltyRaw: bigint; returnRaw: bigint } {
+  const penaltyRaw = (amountRaw * BigInt(penaltyPercent)) / 100n;
+  return {
+    penaltyRaw,
+    returnRaw: amountRaw - penaltyRaw,
+  };
+}
+
+/** @deprecated Prefer getStakeActionState(...).status */
+export function getStakeDisplayStatus(
+  stake: StakeRecord,
+  nowSeconds: number,
+): StakeDisplayStatus {
+  return nowSeconds >= getStakeEndTime(stake) ? 'matured' : 'active';
 }

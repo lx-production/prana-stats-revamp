@@ -17,7 +17,7 @@
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
-- [ ] **Bước 5 — Harden permit và transaction flow.**
+- [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (EIP-712 + `parseSignature`, invalidate permit, wait receipt); `useStakeActions` + `EarlyUnstakeDialog`; claim-before-unstake / grace rules; lỗi VI/EN chuẩn hóa; Polygonscan link; tests permit/status/errors.
 - [ ] **Bước 6 — Đồng bộ styling với main app.**
 - [ ] **Bước 7 — Xóa phần dư thừa của `staking-ui`.**
 - [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành.**
@@ -195,7 +195,7 @@ totalInterest = interestPerSecond × duration
 ```
 
 Closeout: `features/staking/` có `stakingMath` + tests, `stakingApi`, `staking.copy`, hooks config/account, `DurationSelector` / `StakingForm` / `ActiveStakes` / `StakeCard` / `WalletControl`; permit+stake buttons disabled chờ Bước 5; `npm run test:staking`.
-### Bước 5 — Harden permit và transaction flow
+### Bước 5 — Harden permit và transaction flow ✅
 
 Giữ hai nút riêng theo lựa chọn:
 
@@ -235,6 +235,7 @@ Stake management:
 - Mỗi action chờ receipt rồi mới refetch; khóa các action khác trong lúc một transaction đang chạy.
 - Chuẩn hóa lỗi VI/EN cho user rejection, wrong chain, insufficient balance, expired permit, revert và RPC unavailable; không render nguyên raw wallet/provider error.
 
+Closeout: `useStakeTransaction` / `useStakeActions` / `EarlyUnstakeDialog` / `getStakeActionState`; `permitUtils` + `stakingErrors`; mutual busy lock form↔stakes; `test:staking` gồm permit invalidation, claim-before-unstake, grace expiry, error classification.
 ### Bước 6 — Đồng bộ styling với main app
 
 - Bỏ hoàn toàn light theme và `ThemeContext`; staking dùng dark theme của main app.
