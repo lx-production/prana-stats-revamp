@@ -68,13 +68,10 @@ PRANA Swap uses **Uniswap SwapRouter02** on Polygon as the execution router for 
 What to verify in your wallet differs between the two steps:
 
 - **Approve (ERC-20):** technically, the transaction `to` is the **token contract** you are approving (for example USDC or PRANA), not SwapRouter02. On its confirmation screen, a wallet may emphasize or show only the token, amount, and **spender**/“Approve to”; the technical `to` may be absent or available only in transaction details. The address to verify is the **spender** in the `approve` call — it must exactly match SwapRouter02 above. If the wallet shows `to` or “Interacting with” for an approval, that can be the token contract, not the router.
+
 - **Swap:** the transaction `to` must be SwapRouter02 above.
 
 If your wallet shows a different spender (on approve) or `to` (on swap) than the address above, stop and do not confirm the transaction.
-
-Do not treat a displayed name such as “Uniswap SwapRouter02” as sufficient proof that an approval is safe; compare the complete spender address. Labels and the details shown can vary by wallet, wallet version, and detail view.
-
-The server-side quote interface is not a contract that receives your tokens.
 
 ## 7. Exact-amount approvals
 
