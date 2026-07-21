@@ -10,9 +10,9 @@ import {
   getEffectiveAccruedSeconds,
   getStakeActionState,
   parseStakeAmount,
-} from './stakingMath.ts';
+} from '../staking/stakingMath.ts';
 
-import type { StakeRecord, StakingDurationOption } from './staking.types.ts';
+import type { StakeRecord, StakingDurationOption } from '../staking/staking.types.ts';
 
 test('parseStakeAmount rejects empty, zero, negative, and invalid input', () => {
   assert.deepEqual(parseStakeAmount(''), { ok: false, reason: 'empty' });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { classifyStakingError } from './stakingErrors.ts';
+import { classifyStakingError } from '../staking/stakingErrors.ts';
 
 test('classifyStakingError maps common wallet/provider failures', () => {
   assert.equal(

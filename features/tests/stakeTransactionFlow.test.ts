@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accountFromSuccessfulRefetch } from './accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../staking/accountRefetch.ts';
 import {
   confirmStakeReceipt,
   resolvePermitAndStakeAction,
   runPermitThenStake,
   submitStakeWithPermitFlow,
-} from './stakeTransactionFlow.ts';
+} from '../staking/stakeTransactionFlow.ts';
 
 import type { Hex } from '../../types/blockchain.types.ts';
-import type { StakingAccountSnapshot } from './staking.types.ts';
+import type { StakingAccountSnapshot } from '../staking/staking.types.ts';
 
 const HASH = '0xabc' as Hex;
 

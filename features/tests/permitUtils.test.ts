@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import {
   getPermitInvalidReason,
   isPermitSnapshotValid,
-} from './permitUtils.ts';
+} from '../staking/permitUtils.ts';
 
 import type { Address, Hex } from '../../types/blockchain.types.ts';
-import type { PermitSnapshot } from './staking.types.ts';
+import type { PermitSnapshot } from '../staking/staking.types.ts';
 
 const OWNER = '0x0000000000000000000000000000000000000001' as Address;
 const OTHER = '0x0000000000000000000000000000000000000002' as Address;
