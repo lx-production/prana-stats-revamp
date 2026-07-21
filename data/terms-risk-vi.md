@@ -67,10 +67,12 @@ PRANA Swap dùng **Uniswap SwapRouter02** trên Polygon làm router thực thi s
 
 Cách đối chiếu trên ví khác nhau giữa hai bước:
 
-- **Approve (ERC-20):** trường `to` của giao dịch là **contract của token** bạn đang approve (ví dụ USDC, PRANA), không phải SwapRouter02. Địa chỉ cần đối chiếu là **spender** trong lời gọi `approve` phải là SwapRouter02 ở trên.
+- **Approve (ERC-20):** về mặt kỹ thuật, trường `to` của giao dịch là **contract của token** bạn đang approve (ví dụ USDC, PRANA), không phải SwapRouter02. Trên màn hình xác nhận, ví có thể ưu tiên hoặc chỉ hiển thị token, số lượng và **spender**/“Approve to”; `to` kỹ thuật có thể không hiện hoặc chỉ nằm trong phần chi tiết. Địa chỉ cần đối chiếu là **spender** trong lời gọi `approve`, phải khớp chính xác SwapRouter02 ở trên. Nếu ví có hiển thị `to` hoặc “Interacting with” cho bước approve, đó có thể là contract token, không phải router.
 - **Swap:** trường `to` của giao dịch phải là SwapRouter02 ở trên.
 
 Nếu ví hiển thị spender (khi approve) hoặc `to` (khi swap) khác địa chỉ trên, hãy dừng lại và không xác nhận giao dịch.
+
+Không suy ra rằng một approve là an toàn chỉ từ tên hiển thị như “Uniswap SwapRouter02”; hãy đối chiếu đầy đủ địa chỉ spender. Cách gọi nhãn và các chi tiết được hiển thị có thể khác nhau giữa ví, phiên bản ví và chế độ xem chi tiết.
 
 Giao diện quote phía máy chủ không phải contract mà bạn gửi token tới.
 
@@ -143,7 +145,7 @@ Trước mỗi giao dịch:
 
 1. Kiểm tra đúng tên miền website chính thức
 2. Kiểm tra mạng ví đang ở Polygon
-3. Đối chiếu đúng địa chỉ ở mục 6: spender khi approve, `to` khi swap
+3. Đối chiếu đúng địa chỉ ở mục 6: spender/“Approve to” khi approve, `to` khi swap
 4. Đọc kỹ số lượng token in/out và mức tối thiểu nhận được trên ví
 5. Chỉ xác nhận khi bạn hiểu và chấp nhận rủi ro
 
