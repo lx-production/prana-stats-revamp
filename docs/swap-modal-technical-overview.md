@@ -210,6 +210,8 @@ Implemented in `hooks/useUniswapSwap.ts`.
 4. `walletClient.sendTransaction` to SwapRouter02 with server calldata
 5. Wait for swap receipt; reverted receipts are treated as failures
 
+Wallet / viem failures are sanitized before they reach the modal (`utils/sanitizeSwapWalletError.ts`). User cancellations show **Transaction canceled.**; unknown internals collapse to a short approval/swap fallback so long calldata never overflows the UI. Full error details still go to lifecycle logs.
+
 Balances and allowances use the **browser** RPC. Routing and verification use the **server** RPC.
 
 ---
@@ -350,6 +352,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `hooks/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `hooks/useUniswapQuote.ts` | Debounced quote fetch |
 | `hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
+| `utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
 | `utils/wagmiConfig.ts` | Polygon + injected connectors |
 | `utils/swapTransactionLogs.ts` | Log vs verify client routing |
 | `utils/swapTokenFormatting.ts` | Amount parse/format helpers |

@@ -480,7 +480,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   </div>
 
                   {(actionError || quoteState.error || swapState.error || swapState.hasInsufficientBalance || swapState.isQuoteExpired) && (
-                    <div className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                    <div className="break-words rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
                       {swapState.hasInsufficientBalance
                         ? `Insufficient ${tokenIn.symbol} balance.`
                         : actionError ?? swapState.error ?? quoteState.error ?? (locale === 'en' ? 'Quote expired. Refresh to continue.' : 'Quote đã hết hạn. Refresh để tiếp tục.')}

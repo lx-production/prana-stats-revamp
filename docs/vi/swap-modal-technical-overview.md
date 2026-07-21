@@ -216,6 +216,8 @@ Implement trong `hooks/useUniswapSwap.ts`.
 4. `walletClient.sendTransaction` tới SwapRouter02 với calldata từ server
 5. Chờ swap receipt; receipt reverted được coi là thất bại
 
+Lỗi wallet / viem được sanitize trước khi hiện trên modal (`utils/sanitizeSwapWalletError.ts`). User hủy tx hiện **Transaction canceled.**; lỗi nội bộ không rõ thu gọn thành fallback approve/swap ngắn để calldata dài không overflow UI. Chi tiết đầy đủ vẫn ghi vào lifecycle logs.
+
 Balance và allowance dùng RPC **browser**. Routing và verification dùng RPC **server**.
 
 ---
@@ -363,6 +365,7 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `hooks/useInjectedWallet.ts`   | Connect / disconnect / chuyển sang Polygon |
 | `hooks/useUniswapQuote.ts`     | Fetch quote có debounce                    |
 | `hooks/useUniswapSwap.ts`      | Balance, approve, swap, máy trạng thái     |
+| `utils/sanitizeSwapWalletError.ts` | Map lỗi wallet/viem thành message UI ngắn |
 | `utils/wagmiConfig.ts`         | Polygon + injected connector               |
 | `utils/swapTransactionLogs.ts` | Routing client log vs verify               |
 | `utils/swapTokenFormatting.ts` | Helper parse/format amount                 |

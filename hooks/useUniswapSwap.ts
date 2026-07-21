@@ -3,6 +3,7 @@ import { usePublicClient, useWalletClient } from 'wagmi';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
+import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
 import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../constants/swapContracts';
 
 import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../types/swap.types';
@@ -297,7 +298,13 @@ export function useUniswapSwap({
       }
 
       setStatus('error');
-      setError(err instanceof Error ? err.message : 'Swap failed.');
+      // Never dump raw viem/wallet error text into the modal (long calldata overflows the UI).
+      setError(
+        sanitizeSwapWalletError(
+          err,
+          swapStarted ? 'Swap failed. Please try again.' : 'Approval failed. Please try again.',
+        ),
+      );
     }
   }, [
     approveIfNeeded,
