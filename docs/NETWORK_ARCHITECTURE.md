@@ -66,7 +66,7 @@ IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
 
 - **Port 80:** Redirect to `https://prana.triethocduongpho.net`.
 - **Port 443:** HTTPS with TLS 1.2/1.3 and Let’s Encrypt cert (path references `content.triethocduongpho.net`; may be a multi-domain cert).
-- **Rate limiting:** 35 req/s per IP, 10 concurrent connections per IP; 429 and a custom `rate_limited.html` for blocked requests.
+- **Rate limiting:** 50 req/s per IP (`burst=40 nodelay`), 20 concurrent connections per IP; 429 and a custom `rate_limited.html` for blocked requests.
 - **Security:** Block common scan paths (e.g. `.env`, `wp-`, `phpunit`, etc.) with immediate close (444).
 - **Gzip:** Enabled for text, JS, JSON, SVG, etc., at the VPS edge.
 - **Proxy:** Every request (including `/`, `/assets/`, `/stake/`, `/bond/`) is sent to `http://127.0.0.1:9000` with standard headers (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache is explicitly off for the main location so the Pi/app control caching.

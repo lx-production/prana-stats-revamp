@@ -1,5 +1,5 @@
 # Define rate limiting zones
-limit_req_zone $binary_remote_addr zone=ip_req_limit:10m rate=35r/s;
+limit_req_zone $binary_remote_addr zone=ip_req_limit:10m rate=50r/s;
 limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
 
 # Redirect common bots/scrapers on / to the markdown summary API
@@ -22,8 +22,8 @@ server {
     server_name prana.triethocduongpho.net;
 
     # Rate limiting
-    limit_req zone=ip_req_limit burst=20 nodelay;
-    limit_conn conn_limit 10;
+    limit_req zone=ip_req_limit burst=40 nodelay;
+    limit_conn conn_limit 20;
     limit_req_status 429;
     limit_conn_status 429;
 

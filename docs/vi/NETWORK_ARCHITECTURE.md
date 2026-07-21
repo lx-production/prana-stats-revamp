@@ -68,7 +68,7 @@ từ chuỗi proxy hai hop, thay vì hop localhost của Pi nginx.
 
 - **Port 80:** Redirect sang `https://prana.triethocduongpho.net`.
 - **Port 443:** HTTPS với TLS 1.2/1.3 và cert Let’s Encrypt (đường dẫn tham chiếu `content.triethocduongpho.net`; có thể là cert multi-domain).
-- **Rate limiting:** 35 req/s mỗi IP, 10 kết nối đồng thời mỗi IP; 429 và trang tùy chỉnh `rate_limited.html` cho request bị chặn.
+- **Rate limiting:** 50 req/s mỗi IP (`burst=40 nodelay`), 20 kết nối đồng thời mỗi IP; 429 và trang tùy chỉnh `rate_limited.html` cho request bị chặn.
 - **Bảo mật:** Chặn các path quét phổ biến (ví dụ `.env`, `wp-`, `phpunit`, …) bằng đóng kết nối ngay (444).
 - **Gzip:** Bật cho text, JS, JSON, SVG, v.v. ở edge VPS.
 - **Proxy:** Mọi request (gồm `/`, `/assets/`, `/stake/`, `/bond/`) được gửi tới `http://127.0.0.1:9000` với header chuẩn (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache proxy tắt rõ ràng ở location chính để Pi/app kiểm soát caching.

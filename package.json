@@ -1,5 +1,5 @@
 {
-  "name": "prana-stats",
+  "name": "prana-protocol",
   "type": "module",
   "scripts": {
     "dev": "vite --config config/vite.config.js",
