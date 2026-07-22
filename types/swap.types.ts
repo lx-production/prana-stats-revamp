@@ -136,17 +136,6 @@ export type SwapModalProps = {
   onClose: () => void;
 };
 
-export type UseInjectedWalletResult = {
-  address?: HexAddress;
-  chainId?: number;
-  isConnected: boolean;
-  isConnecting: boolean;
-  isPolygon: boolean;
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-  ensurePolygon: () => Promise<boolean>;
-};
-
 export type UseUniswapQuoteInput = {
   tokenInSymbol: SwapTokenSymbol;
   tokenOutSymbol: SwapTokenSymbol;

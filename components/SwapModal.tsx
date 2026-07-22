@@ -8,7 +8,8 @@ import { useUniswapQuote } from '../hooks/useUniswapQuote';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useInjectedWallet } from '../hooks/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
-import { formatCompactAddress, formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
+import { formatCompactAddress } from '../features/web3/walletFormatting';
+import { formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
 import { TERMS_RISK_PATH } from '../constants/appRoutes';
 import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
 

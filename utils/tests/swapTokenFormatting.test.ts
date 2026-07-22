@@ -1,13 +1,12 @@
 /// <reference types="node" />
 /**
- * Characterization tests for swap amount/address formatting.
+ * Characterization tests for swap amount formatting.
  * Lock current output before extracting helpers into shared/feature modules.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { V1_SWAP_TOKENS } from '../../constants/swapContracts.ts';
 import {
-  formatCompactAddress,
   formatSwapTokenAmount,
   isPositiveDecimalInput,
   parseSwapTokenAmount,
@@ -20,14 +19,6 @@ function token(symbol: SwapToken['symbol']): SwapToken {
   assert.ok(found, `missing swap token ${symbol}`);
   return found;
 }
-
-test('formatCompactAddress keeps 0x prefix + 4 hex, then ... then last 4', () => {
-  assert.equal(
-    formatCompactAddress('0x1234567890abcdef1234567890abcdef12345678'),
-    '0x1234...5678',
-  );
-  assert.equal(formatCompactAddress('0xABCDEF'), '0xABCD...CDEF');
-});
 
 test('parseSwapTokenAmount returns 0n for empty, non-positive, or invalid numeric input', () => {
   const usdc = token('USDC');

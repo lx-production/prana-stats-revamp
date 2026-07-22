@@ -351,12 +351,15 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `hooks/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `hooks/useUniswapQuote.ts` | Debounced quote fetch |
 | `hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
+| `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking) |
+| `features/web3/web3.types.ts` | Shared wallet hook result type |
 | `utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
 | `utils/wagmiConfig.ts` | Polygon + injected connectors |
 | `utils/swapTransactionLogs.ts` | Log vs verify client routing |
-| `utils/swapTokenFormatting.ts` | Amount parse/format helpers |
+| `utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
+| `utils/tokenAmounts.ts` | Pure bigint ↔ decimal helpers (no ethers/viem) |
 | `constants/swapContracts.ts` | Tokens, router, deadlines, ABIs |
-| `types/swap.types.ts` | Shared API and UI types |
+| `types/swap.types.ts` | Shared Swap API and UI types |
 
 ### Backend
 

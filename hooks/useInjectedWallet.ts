@@ -3,7 +3,8 @@ import { POLYGON_CHAIN_ID } from '../constants/swapContracts';
 import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain, ProviderNotFoundError } from 'wagmi';
 
 import type { Connector } from 'wagmi';
-import type { HexAddress, UseInjectedWalletResult } from '../types/swap.types';
+import type { HexAddress } from '../types/blockchain.types';
+import type { UseInjectedWalletResult } from '../features/web3/web3.types';
 
 const NO_INJECTED_WALLET_MESSAGE =
   'No injected wallet was found. Please install MetaMask, Rabby, or another browser wallet.';

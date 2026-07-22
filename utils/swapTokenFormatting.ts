@@ -23,10 +23,6 @@ export function formatSwapTokenAmount(rawAmount: bigint | string, token: SwapTok
   });
 }
 
-export function formatCompactAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 export function isPositiveDecimalInput(value: string): boolean {
   return /^\d*(?:\.\d*)?$/.test(value);
 }

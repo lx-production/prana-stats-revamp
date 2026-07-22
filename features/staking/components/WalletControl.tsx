@@ -3,7 +3,7 @@ import { Loader2, LogOut, Wallet } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner';
 import { useInjectedWallet } from '../../../hooks/useInjectedWallet';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage';
-import { formatCompactAddress } from '../../../utils/swapTokenFormatting';
+import { formatCompactAddress } from '../../web3/walletFormatting';
 import { formatStakingError } from '../stakingErrors';
 import { getStakingCopy } from '../staking.copy';
 

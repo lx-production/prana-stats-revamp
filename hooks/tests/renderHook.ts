@@ -18,14 +18,15 @@ export function ensureDom(): void {
 
   // Delegate to whatever is currently on globalThis so `mock.timers.enable()`
   // (which replaces the globals later) still drives `window.setTimeout` calls.
+  // happy-dom types timer IDs as NodeJS.Timeout; browsers use number — bridge via unknown.
   window.setTimeout = ((handler: unknown, timeout?: number, ...args: unknown[]) =>
-    globalThis.setTimeout(handler as never, timeout, ...(args as never[]))) as typeof window.setTimeout;
-  window.clearTimeout = ((id?: number) =>
-    globalThis.clearTimeout(id)) as typeof window.clearTimeout;
+    globalThis.setTimeout(handler as never, timeout, ...(args as never[]))) as unknown as typeof window.setTimeout;
+  window.clearTimeout = ((id?: ReturnType<typeof globalThis.setTimeout>) =>
+    globalThis.clearTimeout(id as never)) as unknown as typeof window.clearTimeout;
   window.setInterval = ((handler: unknown, timeout?: number, ...args: unknown[]) =>
-    globalThis.setInterval(handler as never, timeout, ...(args as never[]))) as typeof window.setInterval;
-  window.clearInterval = ((id?: number) =>
-    globalThis.clearInterval(id)) as typeof window.clearInterval;
+    globalThis.setInterval(handler as never, timeout, ...(args as never[]))) as unknown as typeof window.setInterval;
+  window.clearInterval = ((id?: ReturnType<typeof globalThis.setInterval>) =>
+    globalThis.clearInterval(id as never)) as unknown as typeof window.clearInterval;
 
   Object.assign(globalThis, {
     window,

@@ -98,8 +98,8 @@ utils/
 
 ### Thứ tự refactor an toàn
 
-1. **Khóa behavior bằng tests:** ~~thêm characterization tests cho address/amount formatting, wallet error sanitization và provider-dependent hooks hiện tại; ghi baseline bundle + network requests.~~ **Done**
-2. **Tách pure shared trước:** tạo `walletFormatting`, `tokenAmounts`, chuyển shared wallet types khỏi `swap.types`; cập nhật imports nhưng chưa đổi lazy/provider topology. Chạy typecheck/tests để bắt circular import hoặc output drift.
+1. **Khóa behavior bằng tests:** thêm characterization tests cho address/amount formatting, wallet error sanitization và provider-dependent hooks hiện tại; ghi baseline bundle + network requests. ✅
+2. **Tách pure shared trước:** tạo `walletFormatting`, `tokenAmounts`, chuyển shared wallet types khỏi `swap.types`; cập nhật imports nhưng chưa đổi lazy/provider topology. Chạy typecheck/tests để bắt circular import hoặc output drift. ✅
 3. **Gom Swap feature:** move modal/hooks/utils riêng của Swap vào `features/swap/`, giữ API/types dùng chung với backend ngoài feature. Dùng direct imports trong lúc move, chưa tạo barrel file.
 4. **Tạo provider boundary:** chuyển Wagmi config + wallet hook vào `features/web3/`; tạo `Web3Providers` với thứ tự `WagmiProvider → QueryClientProvider → children`. Khởi tạo `QueryClient` ngoài render của provider để đóng/mở modal không tạo cache mới.
 5. **Thêm hai lazy composition roots:** `SwapEntry` bọc `SwapModal`; `StakingEntry` bọc `StakingPage`. Đổi `hero3.tsx` và route resolver import entry tương ứng, sau đó gỡ providers/config khỏi `main.tsx`.

@@ -1,10 +1,11 @@
-import { ethers } from 'ethers';
+import { formatTokenFloatFromRaw } from './tokenAmounts.ts';
 import { PRANA_DECIMALS } from '../constants/sharedContracts.ts';
 
 const MISSING_VALUE = 'N/A';
 
+/** PRANA raw units (9 decimals) → Number; pure bigint path via tokenAmounts. */
 export const formatPranaFloatFromRaw = (val: bigint) =>
-  parseFloat(ethers.formatUnits(val, PRANA_DECIMALS));
+  formatTokenFloatFromRaw(val, PRANA_DECIMALS);
 
 export const formatCurrency = (value: number | null, currency: 'VND' | 'PRANA') => {
   if (value === null || value === undefined) return 'Loading...';

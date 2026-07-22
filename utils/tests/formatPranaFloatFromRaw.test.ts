@@ -1,8 +1,8 @@
 /// <reference types="node" />
 /**
  * Characterization tests for PRANA raw→float formatting.
- * Current implementation uses ethers.formatUnits + parseFloat (9 decimals).
- * Keep these outputs stable when replacing ethers with a pure bigint helper.
+ * Implementation is pure bigint via tokenAmounts (no ethers in formatters).
+ * Keep these outputs stable vs parseFloat(ethers.formatUnits(raw, 9)).
  */
 import { test } from 'node:test';
 import { ethers } from 'ethers';

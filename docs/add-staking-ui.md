@@ -65,7 +65,7 @@ Các phần dùng chung:
 | PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
 | Staking/Interest address và ABI | `constants/stakingContracts.ts` (typed ABI `as const`, tối thiểu cho stats + UI) |
 | Format số/ngày giờ | Mở rộng `utils/formatters.ts` |
-| Rút gọn wallet address | Reuse `formatCompactAddress` trong `utils/swapTokenFormatting.ts` (Swap đã dùng); chỉ tách `walletFormatting.ts` nếu muốn tách concern rõ hơn |
+| Rút gọn wallet address | `formatCompactAddress` trong `features/web3/walletFormatting.ts` (Swap + staking dùng chung) |
 | Favicon | `useSpinningFavicon` hiện tại |
 | Background | `FlutterShaderBackground` (homepage/legal shell); staking dùng cùng shader với brightness thấp hơn |
 | Glass / gold CTA | Class hero hiện có (`btn-hero`, `btn-gold-border`, `btn-glass`) + UI primitive mới khi cần |
