@@ -1,9 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import "./index.css";
 import ReactDOM from "react-dom/client";
-import { WagmiProvider } from "wagmi";
 import AppFooter from "./components/AppFooter";
-import { wagmiConfig } from "./utils/wagmiConfig";
 import PrivacyPage from "./components/PrivacyPage";
 import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
@@ -11,7 +9,7 @@ import { useAppPathname } from "./hooks/useAppPathname";
 import FlutterShaderBackground from "./flutterShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Web3Providers } from "./features/web3/Web3Providers";
 import {
   isStakePath,
   isPrivacyPath,
@@ -20,8 +18,6 @@ import {
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
 const StakingPage = lazy(() => import("./pages/StakingPage"));
-
-const queryClient = new QueryClient();
 
 const pageFallback = (
   <div
@@ -73,9 +69,7 @@ if (!rootElement) {
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <WagmiProvider config={wagmiConfig}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </WagmiProvider>,
+  <Web3Providers>
+    <App />
+  </Web3Providers>,
 );

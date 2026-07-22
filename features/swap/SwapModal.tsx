@@ -6,7 +6,7 @@ import { useUniswapSwap } from './hooks/useUniswapSwap';
 import { useSiteLanguage } from '../../hooks/useSiteLanguage';
 import { useUniswapQuote } from './hooks/useUniswapQuote';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useInjectedWallet } from '../../hooks/useInjectedWallet';
+import { useInjectedWallet } from '../web3/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
 import { formatCompactAddress } from '../web3/walletFormatting';
 import { formatSwapTokenAmount, isPositiveDecimalInput } from './utils/swapTokenFormatting';

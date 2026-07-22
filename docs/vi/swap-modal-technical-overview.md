@@ -281,7 +281,7 @@ flowchart LR
 
 | Bên dùng                                      | RPC                                                                       | Cấu hình                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
-| Frontend (balance, allowance, send/wait)      | Public `https://polygon.drpc.org`                                         | `constants/network.ts` → `utils/wagmiConfig.ts` |
+| Frontend (balance, allowance, send/wait)      | Public `https://polygon.drpc.org`                                         | `constants/network.ts` → `features/web3/wagmiConfig.ts` |
 | Backend (AlphaRouter, QuoterV2, verification) | Ưu tiên Alchemy, không thì `POLYGON_RPC_URL`, không thì `polygon-rpc.com` | `server/utils/providers.ts`                     |
 
 
@@ -361,13 +361,14 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | ------------------------------ | ------------------------------------------ |
 | `hero3.tsx`                    | Entry TRADE; mount modal                   |
 | `features/swap/SwapModal.tsx`  | Điều phối UI                               |
-| `hooks/useInjectedWallet.ts`   | Connect / disconnect / chuyển sang Polygon |
+| `features/web3/useInjectedWallet.ts` | Connect / disconnect / chuyển sang Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Fetch quote có debounce              |
 | `features/swap/hooks/useUniswapSwap.ts` | Balance, approve, swap, máy trạng thái |
 | `features/web3/walletFormatting.ts` | Helper rút gọn address thuần (Swap + staking) |
 | `features/web3/web3.types.ts`   | Type kết quả hook wallet dùng chung        |
+| `features/web3/Web3Providers.tsx` | Boundary Wagmi + React Query (Swap + staking) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map lỗi wallet/viem thành message UI ngắn |
-| `utils/wagmiConfig.ts`         | Polygon + injected connector               |
+| `features/web3/wagmiConfig.ts`  | Polygon + injected connector               |
 | `features/swap/utils/swapTransactionLogs.ts` | Routing client log vs verify         |
 | `features/swap/utils/swapTokenFormatting.ts` | Helper parse/format amount Swap (viem) |
 | `utils/tokenAmounts.ts`        | Helper bigint ↔ decimal thuần (không ethers/viem) |

@@ -8,7 +8,7 @@ import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import DurationSelector from './DurationSelector.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
+import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
 import { useStakeTransaction } from '../hooks/useStakeTransaction.ts';
 import {

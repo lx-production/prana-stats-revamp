@@ -270,7 +270,7 @@ flowchart LR
 
 | Consumer | RPC | Config |
 | --- | --- | --- |
-| Frontend (balances, allowance, send/wait) | Public `https://polygon.drpc.org` | `constants/network.ts` → `utils/wagmiConfig.ts` |
+| Frontend (balances, allowance, send/wait) | Public `https://polygon.drpc.org` | `constants/network.ts` → `features/web3/wagmiConfig.ts` |
 | Backend (AlphaRouter, QuoterV2, verification) | Alchemy preferred, else `POLYGON_RPC_URL`, else `polygon-rpc.com` | `server/utils/providers.ts` |
 
 CSP `connect-src` allows same-origin API calls plus the frontend RPC host (`server/securityHeaders.ts`).
@@ -348,13 +348,14 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | --- | --- |
 | `hero3.tsx` | TRADE entry; mounts modal |
 | `features/swap/SwapModal.tsx` | UI orchestration |
-| `hooks/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
+| `features/web3/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Debounced quote fetch |
 | `features/swap/hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
 | `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking) |
 | `features/web3/web3.types.ts` | Shared wallet hook result type |
+| `features/web3/Web3Providers.tsx` | Wagmi + React Query boundary (Swap + staking) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
-| `utils/wagmiConfig.ts` | Polygon + injected connectors |
+| `features/web3/wagmiConfig.ts` | Polygon + injected connectors |
 | `features/swap/utils/swapTransactionLogs.ts` | Log vs verify client routing |
 | `features/swap/utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
 | `utils/tokenAmounts.ts` | Pure bigint ↔ decimal helpers (no ethers/viem) |

@@ -8,7 +8,7 @@ import ActiveStakes from '../features/staking/components/ActiveStakes';
 import WalletControl from '../features/staking/components/WalletControl';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { useInjectedWallet } from '../features/web3/useInjectedWallet';
 import { getStakingCopy } from '../features/staking/staking.copy';
 import FlutterShaderBackground from '../flutterShader.tsx';
 import { useStakingConfig } from '../features/staking/hooks/useStakingConfig';

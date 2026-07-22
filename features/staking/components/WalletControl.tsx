@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2, LogOut, Wallet } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner';
-import { useInjectedWallet } from '../../../hooks/useInjectedWallet';
+import { useInjectedWallet } from '../../web3/useInjectedWallet';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage';
 import { formatCompactAddress } from '../../web3/walletFormatting';
 import { formatStakingError } from '../stakingErrors';

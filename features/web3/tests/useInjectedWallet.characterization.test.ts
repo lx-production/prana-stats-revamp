@@ -5,8 +5,8 @@
  */
 import { mock, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { POLYGON_CHAIN_ID } from '../../constants/swapContracts.ts';
-import { ensureDom, renderHook } from './renderHook.ts';
+import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
+import { ensureDom, renderHook } from '../../../hooks/tests/renderHook.ts';
 
 ensureDom();
 

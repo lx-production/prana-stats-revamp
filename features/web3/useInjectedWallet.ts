@@ -1,10 +1,17 @@
 import { useCallback } from 'react';
-import { POLYGON_CHAIN_ID } from '../constants/swapContracts';
-import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain, ProviderNotFoundError } from 'wagmi';
+import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
+import {
+  useConnect,
+  useConnection,
+  useConnectors,
+  useDisconnect,
+  useSwitchChain,
+  ProviderNotFoundError,
+} from 'wagmi';
 
 import type { Connector } from 'wagmi';
-import type { HexAddress } from '../types/blockchain.types';
-import type { UseInjectedWalletResult } from '../features/web3/web3.types';
+import type { HexAddress } from '../../types/blockchain.types.ts';
+import type { UseInjectedWalletResult } from './web3.types.ts';
 
 const NO_INJECTED_WALLET_MESSAGE =
   'No injected wallet was found. Please install MetaMask, Rabby, or another browser wallet.';
@@ -38,6 +45,7 @@ async function getInjectedConnector(connectors: readonly Connector[]): Promise<C
   return null;
 }
 
+/** Shared injected-wallet hook for Swap and staking (must run under Web3Providers). */
 export function useInjectedWallet(): UseInjectedWalletResult {
   const connect = useConnect();
   const disconnect = useDisconnect();

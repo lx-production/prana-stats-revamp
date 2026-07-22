@@ -6,7 +6,7 @@ import {
   STAKING_CONTRACT_ABI,
   STAKING_CONTRACT_ADDRESS,
 } from '../../../constants/stakingContracts.ts';
-import { useInjectedWallet } from '../../../hooks/useInjectedWallet.ts';
+import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getPolygonWalletClient } from '../getPolygonWalletClient.ts';
 import { getStakingCopy } from '../staking.copy.ts';
