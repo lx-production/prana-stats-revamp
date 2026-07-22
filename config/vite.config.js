@@ -1,8 +1,9 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { resolveBuildInfo } from '../utils/resolveBuildInfo.ts'
+import { compression, defineAlgorithm } from 'vite-plugin-compression2'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,7 +29,19 @@ const rootDataJsonFiles = [
 export default defineConfig({
   // Keep project root at repo root even though this config lives in config/
   root: path.resolve(__dirname, '..'),
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Emit `*.gz` next to build assets (level 9 once at build). Node/nginx
+    // serve these via Accept-Encoding — no per-request CPU compression.
+    compression({
+      threshold: 1024,
+      // Match nginx gzip_min_length; keep originals for non-gzip clients.
+      deleteOriginalAssets: false,
+      // Skip already-dense binaries (png/webp/glb); gzip barely helps and wastes disk.
+      include: /\.(js|mjs|cjs|css|html|json|svg|txt|md|xml|wasm)$/i,
+      algorithms: [defineAlgorithm('gzip', { level: 9 })],
+    }),
+  ],
   // Frontend footer reads this constant; must stay JSON-serializable.
   define: {
     __APP_BUILD_INFO__: JSON.stringify(appBuildInfo),

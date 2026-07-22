@@ -386,6 +386,8 @@ Hashed built assets use:
 
 This is safe because their filenames change when content changes.
 
+Production also ships Vite-precompressed siblings (`*.gz`, gzip level 9) next to eligible `dist/` files. When the client sends `Accept-Encoding: gzip`, `server/serveFile.ts` returns the `.gz` body with `Content-Encoding: gzip` and `Vary: Accept-Encoding`. VPS nginx keeps dynamic gzip only as a fallback for responses that are not already encoded. See `docs/NETWORK_ARCHITECTURE.md` §3b.
+
 ## Dev vs Prod Behavior
 
 `config/vite.config.js` proxies both API routes and root JSON files to the Node server:

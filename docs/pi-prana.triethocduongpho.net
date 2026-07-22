@@ -2,7 +2,9 @@ server {
     listen 80 default_server;
     server_name prana.triethocduongpho.net;
 
-    # Main app (stats + lazy /stake/ + API) — Node serves the SPA shell
+    # Main app (stats + lazy /stake/ + API) — Node serves the SPA shell and
+    # Vite `dist/` assets. When Accept-Encoding includes gzip, Node prefers
+    # sibling `*.gz` files produced at build (gzip level 9).
     location / {
         proxy_pass http://127.0.0.1:4173;
         proxy_http_version 1.1;
@@ -11,6 +13,8 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # Preserve client Accept-Encoding so Node can select precompressed bodies.
+        proxy_set_header Accept-Encoding $http_accept_encoding;
 
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
@@ -23,6 +27,8 @@ server {
     }
 
     # React Bonding app (legacy static SPA)
+    # Prefer on-disk `*.gz` via gzip_static (precompress at bond build time).
+    # Without a sibling .gz, nginx falls back to the uncompressed file.
     location ^~ /bond/ {
         alias /var/www/html/prana/bond/;
         try_files $uri $uri/ /bond/index.html;
@@ -33,11 +39,11 @@ server {
         add_header Expires "0" always;
     }
 
-    # React Bonding assets
+    # React Bonding assets — hashed files should ship with `*.gz` siblings.
     location ^~ /bond/assets/ {
         alias /var/www/html/prana/bond/assets/;
         gzip_static on;
-        gzip_types application/javascript;
+        gzip_types application/javascript text/css text/javascript;
 
         expires max;
         add_header Cache-Control "public, max-age=31536000, immutable" always;

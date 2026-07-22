@@ -27,7 +27,8 @@ Internet
 │  • nginx :443 (HTTPS), :80 → redirect to HTTPS                   │
 │  • Server name: prana.triethocduongpho.net                       │
 │  • SSL: Let’s Encrypt (e.g. content.triethocduongpho.net cert)   │
-│  • Rate limiting, gzip, security blocks                           │
+│  • Rate limiting, security blocks                                 │
+│  • Gzip: fallback only; prefer origin precompressed `*.gz`        │
 │                                                                  │
 │  All HTTPS traffic is proxied to 127.0.0.1:9000                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -42,12 +43,13 @@ Internet
 │  • Server name: prana.triethocduongpho.net                       │
 │                                                                  │
 │  /           → proxy to 127.0.0.1:4173 (Node: stats, /stake/, API)│
-│  /bond/      → static files from /var/www/html/prana/bond/      │
+│  /bond/      → static files + gzip_static from disk               │
 └─────────────────────────────────────────────────────────────────┘
     │
     ▼
   Node server (server/index.ts) on port 4173
   • Serves HTML, API, and JSON for the main SPA (including lazy /stake/)
+  • Serves Vite `dist/` assets; prefers sibling `*.gz` (build level 9)
 ```
 
 **Node rate-limit identity:** because both the VPS nginx and Pi nginx append to
@@ -61,13 +63,13 @@ IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
 
 **Config reference:** `docs/vps-prana.triethocduongpho.net`
 
-**Role:** Terminate HTTPS, apply security and compression, then forward everything to the tunnel (localhost:9000).
+**Role:** Terminate HTTPS, apply security, then forward everything to the tunnel (localhost:9000). Compression for hashed assets is done **once at build** (gzip level 9); the VPS only applies dynamic gzip as a fallback for responses that are not already `Content-Encoding: gzip`.
 
 - **Port 80:** Redirect to `https://prana.triethocduongpho.net`.
 - **Port 443:** HTTPS with TLS 1.2/1.3 and Let’s Encrypt cert (path references `content.triethocduongpho.net`; may be a multi-domain cert).
 - **Rate limiting:** 50 req/s per IP (`burst=40 nodelay`), 20 concurrent connections per IP; 429 and a custom `rate_limited.html` for blocked requests.
 - **Security:** Block common scan paths (e.g. `.env`, `wp-`, `phpunit`, etc.) with immediate close (444).
-- **Gzip:** Enabled for text, JS, JSON, SVG, etc., at the VPS edge.
+- **Gzip:** `gzip on` with `gzip_comp_level 1` as fallback for API/HTML/legacy bodies without a `.gz` sibling. **Do not** strip `Accept-Encoding` on proxy — origin must see the client encoding so it can return precompressed `*.gz` (smaller payloads over the SSH tunnel, zero compress CPU per asset request).
 - **Proxy:** Every request (including `/`, `/assets/`, `/stake/`, `/bond/`) is sent to `http://127.0.0.1:9000` with standard headers (Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto). Cache is explicitly off for the main location so the Pi/app control caching. Legacy `/bond/assets/` gets long-lived cache headers at the VPS edge; `/stake/` assets live under the main `/assets/` location.
 
 So the VPS does **not** run the app; it only terminates TLS and forwards to the tunnel.
@@ -103,25 +105,37 @@ So from the internet’s perspective: user hits VPS:443 → nginx on VPS sends t
 **Role:** Run nginx on port 80 and the Node app on 4173; serve the main SPA (stats + lazy `/stake/`) and the legacy bond SPA.
 
 - **Port 80:** nginx `default_server` for `prana.triethocduongpho.net`.
-- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the main SPA shell, API, and JSON — including `/stake/` (lazy route; Node redirects bare `/stake` → `/stake/` with `308`).
-- **`/bond/`:** Served from `/var/www/html/prana/bond/` (legacy React SPA, try_files to `index.html`). No-cache headers for HTML.
-- **`/bond/assets/`:** Static assets from disk with long-lived cache and CORS.
+- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the main SPA shell, API, and JSON — including `/stake/` (lazy route; Node redirects bare `/stake` → `/stake/` with `308`). Forwards `Accept-Encoding` so Node can select Vite-precompressed `dist/**/*.gz`.
+- **`/bond/`:** Served from `/var/www/html/prana/bond/` (legacy React SPA, try_files to `index.html`) with `gzip_static on`. No-cache headers for HTML.
+- **`/bond/assets/`:** Static assets from disk with `gzip_static on`, long-lived cache, and CORS. Deploy bond builds with `*.gz` siblings next to hashed JS/CSS so static gzip can win.
 
 So the **only** port that needs to be reachable from the tunnel is **80** (nginx). The Node app (4173) is only used by nginx on localhost.
 
 ---
 
+## 3b. Precompressed static assets (gzip level 9)
+
+**Build (main app):** `vite-plugin-compression2` in `config/vite.config.js` writes `*.gz` next to eligible `dist/` files at **gzip level 9** (threshold 1024 bytes). Originals are kept for clients that do not accept gzip.
+
+**Serve (main app):** `server/serveFile.ts` checks `Accept-Encoding` and, when a sibling `.gz` exists, sends that body with `Content-Encoding: gzip` and `Vary: Accept-Encoding`.
+
+**Serve (bond):** Pi nginx `gzip_static on` does the same for `/bond/` when `.gz` files are present on disk.
+
+**Why not VPS `gzip_comp_level 6`:** on-the-fly compression burns CPU every request and used to force uncompressed bytes across the tunnel (`Accept-Encoding` was stripped). Precompress once at build is smaller than dynamic level 6 and cheaper at request time.
+
+---
+
 ## 4. Request flow (end to end)
 
-1. User requests `https://prana.triethocduongpho.net/` (or any path).
+1. User requests `https://prana.triethocduongpho.net/` (or any path) with `Accept-Encoding: gzip`.
 2. DNS resolves to the VPS public IP.
-3. VPS nginx accepts on 443, terminates SSL, applies rate limit and security rules, then `proxy_pass` to `http://127.0.0.1:9000`.
+3. VPS nginx accepts on 443, terminates SSL, applies rate limit and security rules, then `proxy_pass` to `http://127.0.0.1:9000` **without clearing Accept-Encoding**.
 4. The process listening on VPS:9000 is the SSH server (reverse tunnel). It forwards the request to the Pi over the existing SSH connection.
 5. On the Pi, that connection appears as a request to `127.0.0.1:80` (nginx).
 6. Pi nginx:
-   - For `/` and `/stake/` (and most other paths): proxies to `http://127.0.0.1:4173` (Node app).
-   - For `/bond/`: serves from disk.
-7. Response goes back: Node or disk → Pi nginx → tunnel → VPS nginx → user.
+   - For `/` and `/stake/` (and most other paths): proxies to `http://127.0.0.1:4173` (Node app), which may return a precompressed `*.gz` body.
+   - For `/bond/`: serves from disk, preferring `gzip_static` when a `.gz` sibling exists.
+7. Response goes back: Node or disk → Pi nginx → tunnel (already gzip for precompressed assets) → VPS nginx → user. VPS dynamic gzip skips bodies that already have `Content-Encoding`.
 
 ---
 
