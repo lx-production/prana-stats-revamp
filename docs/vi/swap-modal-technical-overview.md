@@ -122,7 +122,7 @@ sequenceDiagram
 
 ### Từng bước
 
-1. **Mở** — `hero3.tsx` set `isSwapOpen`; `SwapModal` mount với WBTC → PRANA.
+1. **Mở** — `hero3.tsx` set `isSwapOpen`; `SwapModal` mount với WBTC → PRANA. Focus bị trap trong dialog (`utils/focusTrap.ts`, `restoreFocus: false`) nên Escape / đóng không trả focus về nút SWAP (giữ style idle mặc định).
 2. **Kết nối** — `useInjectedWallet.connectWallet()` chọn injected connector đầu tiên có sẵn.
 3. **Mạng** — nếu `chainId !== 137`, `ensurePolygon()` gọi wagmi `switchChain`.
 4. **Quote** — khi đã connect, đang trên Polygon, và amount > 0, `useUniswapQuote` xóa quote cũ ngay, chờ **650ms**, rồi `POST /api/swap/quote`.

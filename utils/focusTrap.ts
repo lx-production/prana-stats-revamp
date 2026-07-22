@@ -21,13 +21,14 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 /**
- * Trap Tab inside `container`, handle Escape, restore focus on cleanup.
+ * Trap Tab inside `container`, handle Escape, optionally restore focus on cleanup.
  * Returns a disposer — call it when the dialog closes/unmounts.
  */
 export function trapFocus(
   container: HTMLElement,
   options: FocusTrapOptions = {},
 ): () => void {
+  const shouldRestoreFocus = options.restoreFocus !== false;
   const previouslyFocused =
     document.activeElement instanceof HTMLElement
       ? document.activeElement
@@ -76,6 +77,16 @@ export function trapFocus(
   return () => {
     window.clearTimeout(focusTimer);
     document.removeEventListener('keydown', onKeyDown);
+
+    if (!shouldRestoreFocus) {
+      // Drop focus so the trigger (e.g. SWAP) stays in its default unfocused style.
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && container.contains(active)) {
+        active.blur();
+      }
+      return;
+    }
+
     previouslyFocused?.focus?.();
   };
 }

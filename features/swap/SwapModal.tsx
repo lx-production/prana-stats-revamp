@@ -2,10 +2,11 @@ import { formatUnits } from 'viem';
 import InfoTooltip from '../../components/InfoTooltip';
 import { getSwapToken } from '../../utils/swapTokens';
 import { AnimatePresence, motion } from 'framer-motion';
+import { trapFocus } from '../../utils/focusTrap';
 import { useUniswapSwap } from './hooks/useUniswapSwap';
 import { useSiteLanguage } from '../../hooks/useSiteLanguage';
 import { useUniswapQuote } from './hooks/useUniswapQuote';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useInjectedWallet } from '../web3/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
 import { formatCompactAddress } from '../web3/walletFormatting';
@@ -82,6 +83,12 @@ function formatEstimatedGasLabel(estimatedGasUsed?: string, gasPriceWei?: string
 
 export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const { locale } = useSiteLanguage();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  // Keep latest onClose without re-binding the focus trap every render.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   const [tokenInSymbol, setTokenInSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_IN_SYMBOL);
   const [tokenOutSymbol, setTokenOutSymbol] = useState<SwapTokenSymbol>(DEFAULT_SWAP_TOKEN_OUT_SYMBOL);
   const [amountIn, setAmountIn] = useState('');
@@ -145,16 +152,21 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     ((!canSwap && !swapState.isQuoteExpired) || !hasAmount)
   );
 
+  // Trap Tab inside the dialog and close on Escape.
+  // Do not restore focus to SWAP — Esc would leave a :focus-visible ring on the hero CTA.
   useEffect(() => {
     if (!isOpen) return;
+    const node = dialogRef.current;
+    if (!node) return;
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onClose]);
+    return trapFocus(node, {
+      restoreFocus: false,
+      initialFocus: closeButtonRef.current,
+      onEscape: () => {
+        onCloseRef.current();
+      },
+    });
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -284,10 +296,12 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+          ref={dialogRef}
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 outline-none"
           role="dialog"
           aria-modal="true"
           aria-labelledby="swap-title"
+          tabIndex={-1}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -323,6 +337,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   </h2>
                 </div>
                 <button
+                  ref={closeButtonRef}
                   type="button"
                   onClick={onClose}
                   aria-label={closeLabel}

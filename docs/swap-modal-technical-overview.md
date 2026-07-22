@@ -118,7 +118,7 @@ sequenceDiagram
 
 ### Step by step
 
-1. **Open** — `hero3.tsx` sets `isSwapOpen`; `SwapModal` mounts with WBTC → PRANA.
+1. **Open** — `hero3.tsx` sets `isSwapOpen`; `SwapModal` mounts with WBTC → PRANA. Focus is trapped in the dialog (`utils/focusTrap.ts`, `restoreFocus: false`) so Escape / close leave the SWAP trigger unfocused (default idle style).
 2. **Connect** — `useInjectedWallet.connectWallet()` picks the first available injected connector.
 3. **Network** — if `chainId !== 137`, `ensurePolygon()` calls wagmi `switchChain`.
 4. **Quote** — when connected, on Polygon, and amount &gt; 0, `useUniswapQuote` clears any previous quote immediately, waits **650ms**, then `POST /api/swap/quote`.

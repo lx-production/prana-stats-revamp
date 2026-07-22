@@ -1,5 +1,6 @@
 import { Loader2, X } from 'lucide-react';
-import React, { Component, useEffect } from 'react';
+import { trapFocus } from '../../utils/focusTrap';
+import React, { Component, useEffect, useRef } from 'react';
 
 import type { ErrorInfo, ReactNode } from 'react';
 
@@ -11,21 +12,33 @@ type ShellProps = {
 
 /** Shared modal chrome for Swap lazy loading / load-error UI (no Web3 imports). */
 function SwapLazyShell({ onClose, title, children }: ShellProps) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  // Same focus trap as SwapModal; no restore so SWAP stays visually idle after Esc.
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+
+    return trapFocus(node, {
+      restoreFocus: false,
+      initialFocus: closeButtonRef.current,
+      onEscape: () => {
+        onCloseRef.current();
+      },
+    });
+  }, []);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 outline-none"
       role="dialog"
       aria-modal="true"
       aria-labelledby="swap-lazy-title"
+      tabIndex={-1}
     >
       <button
         type="button"
@@ -44,6 +57,7 @@ function SwapLazyShell({ onClose, title, children }: ShellProps) {
               </h2>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
               aria-label="Close swap dialog"

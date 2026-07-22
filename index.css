@@ -44,6 +44,8 @@
     @apply inline-flex min-w-[200px] justify-center rounded-2xl px-10 py-3 font-semibold;
     @apply transition duration-300;
     @apply hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
+    /* Kill browser default outline; gold ring only for keyboard focus */
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60;
   }
 
   /* Primary: dark fill with spinning gold conic border */
