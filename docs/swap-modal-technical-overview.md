@@ -372,6 +372,8 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `constants/swapContracts.ts` | Tokens, router, deadlines, ABIs |
 | `types/swap.types.ts` | Shared Swap API and UI types |
 
+No temporary re-export shims remain at old paths (`utils/wagmiConfig`, `hooks/useInjectedWallet`, etc.); call sites import `features/web3` / `features/swap` directly.
+
 ### Backend
 
 | Path | Role |

@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatCompactAddress } from '../../features/web3/walletFormatting.ts';
+import { formatCompactAddress } from '../walletFormatting.ts';
 
 test('formatCompactAddress keeps 0x prefix + 4 hex, then ... then last 4', () => {
   assert.equal(

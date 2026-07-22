@@ -57,11 +57,11 @@ Các phần dùng chung:
 
 | Nhu cầu | Nguồn dùng chung |
 |---|---|
-| Wagmi/React Query providers | `main.tsx` hiện tại |
-| Connect, disconnect, switch Polygon | `useInjectedWallet` |
+| Wagmi/React Query providers | `features/web3/Web3Providers.tsx` (lazy via `StakingEntry` / `SwapEntry`; not root `main.tsx`) |
+| Connect, disconnect, switch Polygon | `features/web3/useInjectedWallet.ts` |
 | Locale VI/EN | `SiteLanguageProvider`, `useSiteLanguage`, `LanguageToggle` |
 | Path matching (`/terms`, `/privacy`, `/stake`) | `constants/appRoutes.ts` + `useAppPathname` |
-| Polygon RPC (frontend public) | `constants/network.ts` + `wagmiConfig` hiện tại |
+| Polygon RPC (frontend public) | `constants/network.ts` + `features/web3/wagmiConfig.ts` |
 | PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
 | Staking/Interest address và ABI | `constants/stakingContracts.ts` (typed ABI `as const`, tối thiểu cho stats + UI) |
 | Format số/ngày giờ | Mở rộng `utils/formatters.ts` |
@@ -82,10 +82,10 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 
 - Chuyển content homepage (`HomePage`) từ `main.tsx` sang `pages/StatsPage.tsx` (main + `AppFooter`; **không** nhét lại shader/language toggle vào StatsPage — chúng thuộc shell).
 - Mở rộng resolver hiện có:
-  - `/stake` và mọi path bắt đầu bằng `/stake/` → lazy `StakingPage` (không dùng shell homepage, để tránh prefetch stats / GLB).
+  - `/stake` và mọi path bắt đầu bằng `/stake/` → lazy `StakingEntry` → `StakingPage` (không dùng shell homepage, để tránh prefetch stats / GLB).
   - `/terms`, `/privacy` giữ hành vi hiện tại.
   - Còn lại → lazy `StatsPage`.
-- `main.tsx` giữ: global CSS, providers, favicon, path resolver, `Suspense`, shell homepage/legal.
+- `main.tsx` giữ: global CSS, `SiteLanguageProvider`, favicon, path resolver, `Suspense`, shell homepage/legal. Web3 providers sống trong lazy `StakingEntry` / `SwapEntry`.
 - Thêm `isStakePath` vào `constants/appRoutes.ts`; dùng chung `STAKE_PATH = "/stake"` và `STAKE_CANONICAL_PATH = "/stake/"` trong hero, client matcher và server redirect để tránh route string bị drift.
 - Path `/stake` được server redirect `308` sang `/stake/`; `/stake/` serve `dist/index.html`.
 - Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` (và legal pages) không tải dữ liệu stats.

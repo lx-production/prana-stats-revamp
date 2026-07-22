@@ -140,7 +140,7 @@ Chủ yếu nằm trong `features/swap/hooks/useUniswapQuote.ts` và `features/s
 | Approval | Approve đúng `amountInRaw` cho SwapRouter02 khi allowance chưa đủ (không unlimited); native POL bỏ qua approve |
 | Execution | `walletClient.sendTransaction` với `to` / `data` / `value` do server cung cấp; receipt reverted được coi là thất bại |
 
-Kết nối ví dùng injected connector đầu tiên có sẵn (`useInjectedWallet`).
+Kết nối ví dùng injected connector đầu tiên có sẵn (`features/web3/useInjectedWallet`).
 
 ---
 

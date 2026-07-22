@@ -383,6 +383,7 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `constants/swapContracts.ts`   | Token, router, deadline, ABI               |
 | `types/swap.types.ts`          | Type API và UI Swap dùng chung             |
 
+Không còn re-export tạm ở path cũ (`utils/wagmiConfig`, `hooks/useInjectedWallet`, …); call site import thẳng `features/web3` / `features/swap`.
 
 ### Backend
 

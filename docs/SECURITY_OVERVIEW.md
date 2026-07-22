@@ -139,7 +139,7 @@ Implemented mainly in `features/swap/hooks/useUniswapQuote.ts` and `features/swa
 | Approvals | Exact `amountInRaw` approve to SwapRouter02 when allowance is insufficient (not unlimited); native POL skips approve |
 | Execution | `walletClient.sendTransaction` with server-provided `to` / `data` / `value`; reverted receipts treated as failure |
 
-Wallet connection uses the first available injected connector (`useInjectedWallet`).
+Wallet connection uses the first available injected connector (`features/web3/useInjectedWallet`).
 
 ---
 
