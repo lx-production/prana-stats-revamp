@@ -1,8 +1,9 @@
+/// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseUnits } from 'viem';
-import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
-import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../constants/network.ts';
+import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
+import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../../constants/network.ts';
 import {
   calculateEarlyUnstakeReturn,
   calculateTotalInterestRaw,
@@ -10,9 +11,9 @@ import {
   getEffectiveAccruedSeconds,
   getStakeActionState,
   parseStakeAmount,
-} from '../staking/stakingMath.ts';
+} from '../stakingMath.ts';
 
-import type { StakeRecord, StakingDurationOption } from '../staking/staking.types.ts';
+import type { StakeRecord, StakingDurationOption } from '../staking.types.ts';
 
 test('parseStakeAmount rejects empty, zero, negative, and invalid input', () => {
   assert.deepEqual(parseStakeAmount(''), { ok: false, reason: 'empty' });

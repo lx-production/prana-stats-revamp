@@ -1,12 +1,13 @@
+/// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   getPermitInvalidReason,
   isPermitSnapshotValid,
-} from '../staking/permitUtils.ts';
+} from '../permitUtils.ts';
 
-import type { Address, Hex } from '../../types/blockchain.types.ts';
-import type { PermitSnapshot } from '../staking/staking.types.ts';
+import type { PermitSnapshot } from '../staking.types.ts';
+import type { Address, Hex } from '../../../types/blockchain.types.ts';
 
 const OWNER = '0x0000000000000000000000000000000000000001' as Address;
 const OTHER = '0x0000000000000000000000000000000000000002' as Address;

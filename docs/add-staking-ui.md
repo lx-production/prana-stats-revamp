@@ -305,7 +305,7 @@ Giữ lại dưới dạng mới:
 
 Automated checks:
 
-- Thêm `test:staking` dùng `node:test` + `tsx`, không thêm frontend test framework mới.
+- Thêm `test:staking` dùng `node:test` + `tsx`, không thêm frontend test framework mới. Tests nằm ở `features/staking/tests/` (có `tsconfig.json` riêng với `types: ["node"]`); mỗi file test cũng `/// <reference types="node" />` vì root tsconfig chỉ load `vite/client`.
 - Test bigint interest đúng thứ tự Solidity và không có floating-point rounding.
 - Test trạng thái active/matured/within-grace/after-grace.
 - Test rule claim-before-unstake và early penalty.

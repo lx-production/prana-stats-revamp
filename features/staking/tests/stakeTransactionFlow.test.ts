@@ -1,15 +1,16 @@
+/// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accountFromSuccessfulRefetch } from '../staking/accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
 import {
   confirmStakeReceipt,
   resolvePermitAndStakeAction,
   runPermitThenStake,
   submitStakeWithPermitFlow,
-} from '../staking/stakeTransactionFlow.ts';
+} from '../stakeTransactionFlow.ts';
 
-import type { Hex } from '../../types/blockchain.types.ts';
-import type { StakingAccountSnapshot } from '../staking/staking.types.ts';
+import type { Hex } from '../../../types/blockchain.types.ts';
+import type { StakingAccountSnapshot } from '../staking.types.ts';
 
 const HASH = '0xabc' as Hex;
 

@@ -1,6 +1,7 @@
+/// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getStakeCtaPhase } from '../staking/stakeCtaPhase.ts';
+import { getStakeCtaPhase } from '../stakeCtaPhase.ts';
 
 test('getStakeCtaPhase prefers live wallet statuses over leftover permit', () => {
   assert.equal(getStakeCtaPhase('signing', true), 'signing');
