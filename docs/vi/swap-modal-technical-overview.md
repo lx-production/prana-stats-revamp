@@ -40,7 +40,9 @@ Stack này **không** dùng LiFi, 0x, RainbowKit hay WalletConnect. Chỉ Wagmi 
 
 ```mermaid
 flowchart TD
-  hero["hero3.tsx TRADE"] --> modal["SwapModal.tsx"]
+  hero["hero3.tsx SWAP click"] --> lazyEntry["lazy SwapEntry"]
+  lazyEntry --> providers["Web3Providers"]
+  providers --> modal["SwapModal"]
   modal --> wallet["useInjectedWallet"]
   modal --> quoteHook["useUniswapQuote"]
   modal --> swapHook["useUniswapSwap"]
@@ -65,6 +67,7 @@ flowchart TD
   wallet --> publicRpc["Public Polygon RPC drpc.org"]
 ```
 
+Homepage chỉ tải UI stats. Lần bấm **SWAP** đầu tiên mới mount lazy `SwapEntry` trong `Suspense` (shell modal + spinner) và error boundary (đóng / thử lại / reload khi asset hash cũ sau deploy). Sau khi chunk tải xong, `SwapEntry` giữ mounted khi đóng/mở để lifecycle form giống modal eager trước đây. Đóng trong lúc đang tải sẽ ẩn fallback ngay và không tự mở lại khi import hoàn tất.
 
 
 ### Phân tách trust
@@ -359,7 +362,9 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 
 | Path                           | Vai trò                                    |
 | ------------------------------ | ------------------------------------------ |
-| `hero3.tsx`                    | Entry TRADE; mount modal                   |
+| `hero3.tsx`                    | Entry TRADE; lazy-mount `SwapEntry` khi bấm SWAP lần đầu |
+| `features/swap/SwapEntry.tsx`  | Lazy root: `Web3Providers` → `SwapModal` |
+| `features/swap/SwapLazyShell.tsx` | Suspense fallback + error boundary lazy-load (không Web3) |
 | `features/swap/SwapModal.tsx`  | Điều phối UI                               |
 | `features/web3/useInjectedWallet.ts` | Connect / disconnect / chuyển sang Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Fetch quote có debounce              |
@@ -369,6 +374,7 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `features/web3/Web3Providers.tsx` | Boundary Wagmi + React Query (Swap + staking) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map lỗi wallet/viem thành message UI ngắn |
 | `features/web3/wagmiConfig.ts`  | Polygon + injected connector               |
+| `features/staking/StakingEntry.tsx` | Lazy root `/stake/`: `Web3Providers` → `StakingPage` |
 | `features/swap/utils/swapTransactionLogs.ts` | Routing client log vs verify         |
 | `features/swap/utils/swapTokenFormatting.ts` | Helper parse/format amount Swap (viem) |
 | `utils/tokenAmounts.ts`        | Helper bigint ↔ decimal thuần (không ethers/viem) |

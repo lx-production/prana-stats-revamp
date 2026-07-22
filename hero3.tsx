@@ -1,10 +1,21 @@
-import React, { useRef, useState } from "react";
+import React, { Suspense, lazy, useRef, useState } from "react";
 import Covenants from "./components/Covenants";
-import SwapModal from "./features/swap/SwapModal";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";
 import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
+import {
+  SwapLazyFallback,
+  SwapLazyErrorBoundary,
+} from "./features/swap/SwapLazyShell";
+
+import type { ComponentType } from "react";
+import type { SwapModalProps } from "./types/swap.types";
+
+/** Fresh lazy() factory so "Try again" can re-request a failed chunk import. */
+function createLazySwapEntry() {
+  return lazy(() => import("./features/swap/SwapEntry"));
+}
 
 export default function PranaHero() {
   const { locale } = useSiteLanguage();
@@ -14,6 +25,28 @@ export default function PranaHero() {
   const heroRef = useRef<HTMLElement | null>(null);
   const [isCovenantsOpen, setIsCovenantsOpen] = useState(false);
   const [isSwapOpen, setIsSwapOpen] = useState(false);
+  // First SWAP click mounts the lazy tree; later open/close keep it mounted.
+  const [hasRequestedSwap, setHasRequestedSwap] = useState(false);
+  const [LazySwapEntry, setLazySwapEntry] = useState<ComponentType<SwapModalProps>>(
+    () => createLazySwapEntry(),
+  );
+  // Bumps to remount the error boundary after a failed lazy import retry.
+  const [swapGateKey, setSwapGateKey] = useState(0);
+
+  const openSwap = () => {
+    setHasRequestedSwap(true);
+    setIsSwapOpen(true);
+  };
+
+  const closeSwap = () => {
+    setIsSwapOpen(false);
+  };
+
+  const retrySwapLoad = () => {
+    setLazySwapEntry(() => createLazySwapEntry());
+    setSwapGateKey((key) => key + 1);
+    setIsSwapOpen(true);
+  };
 
   return (
     <section
@@ -75,7 +108,7 @@ export default function PranaHero() {
         <div className="mt-12 flex flex-col sm:flex-row gap-4 sm:justify-center">
           <button
             type="button"
-            onClick={() => setIsSwapOpen(true)}
+            onClick={openSwap}
             className="btn-hero btn-gold-border"
           >
             SWAP
@@ -108,10 +141,18 @@ export default function PranaHero() {
         isOpen={isCovenantsOpen}
         onClose={() => setIsCovenantsOpen(false)}
       />
-      <SwapModal
-        isOpen={isSwapOpen}
-        onClose={() => setIsSwapOpen(false)}
-      />
+      {hasRequestedSwap && (
+        <SwapLazyErrorBoundary
+          key={swapGateKey}
+          isOpen={isSwapOpen}
+          onClose={closeSwap}
+          onRetry={retrySwapLoad}
+        >
+          <Suspense fallback={isSwapOpen ? <SwapLazyFallback onClose={closeSwap} /> : null}>
+            <LazySwapEntry isOpen={isSwapOpen} onClose={closeSwap} />
+          </Suspense>
+        </SwapLazyErrorBoundary>
+      )}
     </section>
   );
 }

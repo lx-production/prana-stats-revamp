@@ -9,7 +9,6 @@ import { useAppPathname } from "./hooks/useAppPathname";
 import FlutterShaderBackground from "./flutterShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
-import { Web3Providers } from "./features/web3/Web3Providers";
 import {
   isStakePath,
   isPrivacyPath,
@@ -17,7 +16,7 @@ import {
 } from "./constants/appRoutes";
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
-const StakingPage = lazy(() => import("./pages/StakingPage"));
+const StakingEntry = lazy(() => import("./features/staking/StakingEntry"));
 
 const pageFallback = (
   <div
@@ -34,7 +33,7 @@ function App() {
   // Staking is its own lazy page (no shared homepage shell / stats prefetch).
   const body = isStakePath(pathname) ? (
     <Suspense fallback={pageFallback}>
-      <StakingPage />
+      <StakingEntry />
     </Suspense>
   ) : (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
@@ -68,8 +67,5 @@ if (!rootElement) {
   throw new Error('Root element with id "root" was not found.');
 }
 
-ReactDOM.createRoot(rootElement).render(
-  <Web3Providers>
-    <App />
-  </Web3Providers>,
-);
+// Web3 providers live under lazy SwapEntry / StakingEntry — not the root shell.
+ReactDOM.createRoot(rootElement).render(<App />);

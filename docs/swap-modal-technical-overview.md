@@ -40,7 +40,9 @@ This stack does **not** use LiFi, 0x, RainbowKit, or WalletConnect. Wagmi + inje
 
 ```mermaid
 flowchart TD
-  hero["hero3.tsx TRADE"] --> modal["SwapModal.tsx"]
+  hero["hero3.tsx SWAP click"] --> lazyEntry["lazy SwapEntry"]
+  lazyEntry --> providers["Web3Providers"]
+  providers --> modal["SwapModal"]
   modal --> wallet["useInjectedWallet"]
   modal --> quoteHook["useUniswapQuote"]
   modal --> swapHook["useUniswapSwap"]
@@ -65,6 +67,7 @@ flowchart TD
   wallet --> publicRpc["Public Polygon RPC drpc.org"]
 ```
 
+Homepage loads stats UI only. The first **SWAP** click mounts a lazy `SwapEntry` behind `Suspense` (modal shell + spinner) and an error boundary (close / try again / reload for stale hashed assets). After the chunk loads, `SwapEntry` stays mounted across open/close so form lifecycle matches the previous eager modal. Closing while the chunk is still loading hides the fallback immediately and does not reopen when the import finishes.
 ### Trust split
 
 | Layer | Responsibility |
@@ -346,7 +349,9 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 
 | Path | Role |
 | --- | --- |
-| `hero3.tsx` | TRADE entry; mounts modal |
+| `hero3.tsx` | TRADE entry; lazy-mounts `SwapEntry` on first SWAP click |
+| `features/swap/SwapEntry.tsx` | Lazy root: `Web3Providers` → `SwapModal` |
+| `features/swap/SwapLazyShell.tsx` | Suspense fallback + lazy-load error boundary (no Web3) |
 | `features/swap/SwapModal.tsx` | UI orchestration |
 | `features/web3/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Debounced quote fetch |
@@ -356,6 +361,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `features/web3/Web3Providers.tsx` | Wagmi + React Query boundary (Swap + staking) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
 | `features/web3/wagmiConfig.ts` | Polygon + injected connectors |
+| `features/staking/StakingEntry.tsx` | Lazy `/stake/` root: `Web3Providers` → `StakingPage` |
 | `features/swap/utils/swapTransactionLogs.ts` | Log vs verify client routing |
 | `features/swap/utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
 | `utils/tokenAmounts.ts` | Pure bigint ↔ decimal helpers (no ethers/viem) |
