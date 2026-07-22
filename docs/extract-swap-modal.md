@@ -37,13 +37,4 @@
 
 - Chạy `npm run typecheck`, `npm test`, `npm run test:staking` và `npm run build` sau mỗi phase.
 - So sánh build output trước/sau; ghi lại kích thước gzip của entry, `StatsPage`, Swap và Web3/staking chunks. Không đặt budget số byte giả định trước khi có output mới.
-- Kiểm tra Network trên `/`: không request `SwapModal`, Web3/Wagmi, React Query hoặc chunk phụ thuộc chỉ dành cho chúng; stats API/UI vẫn hoạt động.
-- Bấm **SWAP** lần đầu: loading shell hiện ngay, sau đó mới request Swap + Web3 chunks; đóng/mở lại không request lại; connect, switch Polygon, quote, approve và swap vẫn hoạt động.
-- Vào `/stake/`: chỉ tại đây mới request React Query/Web3 chunks; wallet, account query, permit/stake/claim/unstake regression pass.
-- Thử mạng chậm/offline và dynamic chunk 404: homepage còn hoạt động, modal có thể đóng và có recovery/reload path.
 - Cập nhật `docs/swap-modal-technical-overview.md` và bản VI với kiến trúc `hero → lazy Swap entry → Web3Providers → SwapModal`, source map mới và behavior loading/error.
-
-## Giả định
-
-- Phạm vi bao gồm cả Phase 1 và Phase 2, triển khai/verify tuần tự để dễ đo lợi ích và rollback.
-- Browser RPC chỉ còn cần khi user dùng Swap hoặc staking; homepage stats tiếp tục dựa vào backend API.
