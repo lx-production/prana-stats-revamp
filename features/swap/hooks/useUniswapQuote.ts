@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { SWAP_QUOTE_DEBOUNCE_MS, SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS } from '../constants/swapContracts';
+import { SWAP_QUOTE_DEBOUNCE_MS, SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS } from '../../../constants/swapContracts';
 
-import type { SwapQuoteErrorResponse, SwapQuoteResponse, UseUniswapQuoteInput, UseUniswapQuoteResult } from '../types/swap.types';
+import type { SwapQuoteErrorResponse, SwapQuoteResponse, UseUniswapQuoteInput, UseUniswapQuoteResult } from '../../../types/swap.types';
 
 /**
  * Calls our backend `/api/swap/quote` endpoint.

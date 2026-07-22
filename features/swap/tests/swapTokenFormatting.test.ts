@@ -5,14 +5,14 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { V1_SWAP_TOKENS } from '../../constants/swapContracts.ts';
+import { V1_SWAP_TOKENS } from '../../../constants/swapContracts.ts';
 import {
   formatSwapTokenAmount,
   isPositiveDecimalInput,
   parseSwapTokenAmount,
-} from '../swapTokenFormatting.ts';
+} from '../utils/swapTokenFormatting.ts';
 
-import type { SwapToken } from '../../types/swap.types.ts';
+import type { SwapToken } from '../../../types/swap.types.ts';
 
 function token(symbol: SwapToken['symbol']): SwapToken {
   const found = V1_SWAP_TOKENS.find((entry) => entry.symbol === symbol);

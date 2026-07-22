@@ -10,7 +10,7 @@ Sizes use **decimal kB** (÷ 1000), matching Vite’s build reporter.
 | Vite gzip | Build reporter estimate (zlib default ≈ level 6) — useful vs older notes / `extract-swap-modal.md` |
 | On-disk `.gz` | `vite-plugin-compression2` sibling at **gzip level 9** — what Node serves when `Accept-Encoding` includes gzip (see `NETWORK_ARCHITECTURE.md` §3b) |
 
-Characterization tests that lock formatting / wallet sanitization / provider hooks before the extract live under `utils/tests/` and `hooks/tests/` (`npm run test:client`). Pure shared extracts from step 2: `features/web3/walletFormatting.ts`, `features/web3/web3.types.ts`, `utils/tokenAmounts.ts` (`formatPranaFloatFromRaw` no longer imports `ethers`).
+Characterization tests that lock formatting / wallet sanitization / provider hooks before the extract live under `utils/tests/`, `hooks/tests/`, and `features/swap/tests/` (`npm run test:client`). Pure shared extracts from step 2: `features/web3/walletFormatting.ts`, `features/web3/web3.types.ts`, `utils/tokenAmounts.ts` (`formatPranaFloatFromRaw` no longer imports `ethers`). Step 3 moved Swap-local modal/hooks/utils into `features/swap/` (shared `types/swap.types.ts`, `constants/swapContracts.ts`, and `utils/swapTokens.ts` stay outside).
 
 ## Bundle sizes
 

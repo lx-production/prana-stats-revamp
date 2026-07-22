@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import Covenants from "./components/Covenants";
-import SwapModal from "./components/SwapModal";
+import SwapModal from "./features/swap/SwapModal";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";

@@ -1,5 +1,6 @@
 import { formatUnits, parseUnits } from 'viem';
-import type { SwapToken } from '../types/swap.types';
+
+import type { SwapToken } from '../../../types/swap.types';
 
 export function parseSwapTokenAmount(amount: string, token: SwapToken): bigint {
   const normalizedAmount = amount.trim();

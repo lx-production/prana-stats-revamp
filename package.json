@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run test:server && npm run test:client",
     "test:server": "node --import tsx --test 'server/tests/**/*.test.ts'",
-    "test:client": "node --import tsx --test --experimental-test-module-mocks 'utils/tests/**/*.test.ts' 'hooks/tests/**/*.test.ts'",
+    "test:client": "node --import tsx --test --experimental-test-module-mocks 'utils/tests/**/*.test.ts' 'hooks/tests/**/*.test.ts' 'features/swap/tests/**/*.test.ts'",
     "test:staking": "node --import tsx --test 'features/staking/tests/**/*.test.ts'",
     "test:rate-limit": "node --import tsx --test server/tests/rateLimit.test.ts",
     "fetch:staking-stats": "tsx scripts/fetch-staking-stats.ts",

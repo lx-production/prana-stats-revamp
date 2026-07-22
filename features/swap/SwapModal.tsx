@@ -1,19 +1,19 @@
 import { formatUnits } from 'viem';
-import InfoTooltip from './InfoTooltip';
-import { getSwapToken } from '../utils/swapTokens';
+import InfoTooltip from '../../components/InfoTooltip';
+import { getSwapToken } from '../../utils/swapTokens';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useUniswapSwap } from '../hooks/useUniswapSwap';
-import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { useUniswapQuote } from '../hooks/useUniswapQuote';
+import { useUniswapSwap } from './hooks/useUniswapSwap';
+import { useSiteLanguage } from '../../hooks/useSiteLanguage';
+import { useUniswapQuote } from './hooks/useUniswapQuote';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useInjectedWallet } from '../hooks/useInjectedWallet';
+import { useInjectedWallet } from '../../hooks/useInjectedWallet';
 import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X } from 'lucide-react';
-import { formatCompactAddress } from '../features/web3/walletFormatting';
-import { formatSwapTokenAmount, isPositiveDecimalInput } from '../utils/swapTokenFormatting';
-import { TERMS_RISK_PATH } from '../constants/appRoutes';
-import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../constants/swapContracts';
+import { formatCompactAddress } from '../web3/walletFormatting';
+import { formatSwapTokenAmount, isPositiveDecimalInput } from './utils/swapTokenFormatting';
+import { TERMS_RISK_PATH } from '../../constants/appRoutes';
+import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../../constants/swapContracts';
 
-import type { SwapModalProps, SwapTokenSymbol } from '../types/swap.types';
+import type { SwapModalProps, SwapTokenSymbol } from '../../types/swap.types';
 
 const backdropVariants = {
   hidden: { opacity: 0 },

@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
-import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../constants/swapContracts';
+import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../../constants/swapContracts';
 
-import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../types/swap.types';
+import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../../../types/swap.types';
 
 // Treat the quote as expired a few seconds early so we don't send a tx
 // that fails right as the Uniswap deadline passes.

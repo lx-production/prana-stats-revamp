@@ -5,7 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeSwapWalletError } from '../sanitizeSwapWalletError.ts';
+import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError.ts';
 
 test('sanitizeSwapWalletError passes through known swap UI messages', () => {
   const known = [

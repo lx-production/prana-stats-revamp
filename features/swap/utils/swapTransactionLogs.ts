@@ -4,7 +4,7 @@ import type {
   SwapTransactionLogEvent,
   SwapTransactionLogRequest,
   SwapTransactionVerificationRequest,
-} from '../types/swap.types';
+} from '../../../types/swap.types';
 
 function getErrorMessage(error: unknown): string | undefined {
   if (!error) return undefined;

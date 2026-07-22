@@ -9,10 +9,10 @@ import assert from 'node:assert/strict';
 import {
   SWAP_QUOTE_DEBOUNCE_MS,
   SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS,
-} from '../../constants/swapContracts.ts';
-import { ensureDom, renderHook } from './renderHook.ts';
+} from '../../../constants/swapContracts.ts';
+import { ensureDom, renderHook } from '../../../hooks/tests/renderHook.ts';
 
-import type { UseUniswapQuoteInput } from '../../types/swap.types.ts';
+import type { UseUniswapQuoteInput } from '../../../types/swap.types.ts';
 
 ensureDom();
 
@@ -31,7 +31,7 @@ function baseInput(overrides: Partial<UseUniswapQuoteInput> = {}): UseUniswapQuo
 }
 
 test('useUniswapQuote clears state when disabled or amount is not ready', async () => {
-  const { useUniswapQuote } = await import('../useUniswapQuote.ts');
+  const { useUniswapQuote } = await import('../hooks/useUniswapQuote.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapQuote(baseInput({ enabled: false, amountIn: '10' })),
   );
@@ -82,7 +82,7 @@ test('useUniswapQuote debounces fetch to /api/swap/quote with expected JSON body
   mock.timers.enable({ apis: ['setTimeout'], now: Date.now() });
 
   try {
-    const { useUniswapQuote } = await import('../useUniswapQuote.ts');
+    const { useUniswapQuote } = await import('../hooks/useUniswapQuote.ts');
     const { result, unmount } = await renderHook(() => useUniswapQuote(baseInput()));
 
     assert.equal(result.current.isLoading, true);
@@ -128,7 +128,7 @@ test('useUniswapQuote surfaces a clear error when backend returns non-JSON', asy
   mock.timers.enable({ apis: ['setTimeout'], now: Date.now() });
 
   try {
-    const { useUniswapQuote } = await import('../useUniswapQuote.ts');
+    const { useUniswapQuote } = await import('../hooks/useUniswapQuote.ts');
     const { result, unmount } = await renderHook(() => useUniswapQuote(baseInput()));
 
     await act(async () => {
@@ -189,7 +189,7 @@ test('useUniswapQuote.refetch ignores clicks while cooldown is active', async ()
   });
 
   try {
-    const { useUniswapQuote } = await import('../useUniswapQuote.ts');
+    const { useUniswapQuote } = await import('../hooks/useUniswapQuote.ts');
     const { result, unmount } = await renderHook(() => useUniswapQuote(baseInput()));
 
     await act(async () => {

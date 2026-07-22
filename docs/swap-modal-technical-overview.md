@@ -195,7 +195,7 @@ If the user edits amount or tokens after a quote arrives, they must get a fresh 
 
 ## Approval and swap execution
 
-Implemented in `hooks/useUniswapSwap.ts`.
+Implemented in `features/swap/hooks/useUniswapSwap.ts`.
 
 **Native POL in**
 
@@ -210,7 +210,7 @@ Implemented in `hooks/useUniswapSwap.ts`.
 4. `walletClient.sendTransaction` to SwapRouter02 with server calldata
 5. Wait for swap receipt; reverted receipts are treated as failures
 
-Wallet / viem failures are sanitized before they reach the modal (`utils/sanitizeSwapWalletError.ts`). User cancellations show **Transaction canceled.**; unknown internals collapse to a short approval/swap fallback so long calldata never overflows the UI. Full error details still go to lifecycle logs.
+Wallet / viem failures are sanitized before they reach the modal (`features/swap/utils/sanitizeSwapWalletError.ts`). User cancellations show **Transaction canceled.**; unknown internals collapse to a short approval/swap fallback so long calldata never overflows the UI. Full error details still go to lifecycle logs.
 
 Balances and allowances use the **browser** RPC. Routing and verification use the **server** RPC.
 
@@ -347,17 +347,18 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | Path | Role |
 | --- | --- |
 | `hero3.tsx` | TRADE entry; mounts modal |
-| `components/SwapModal.tsx` | UI orchestration |
+| `features/swap/SwapModal.tsx` | UI orchestration |
 | `hooks/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
-| `hooks/useUniswapQuote.ts` | Debounced quote fetch |
-| `hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
+| `features/swap/hooks/useUniswapQuote.ts` | Debounced quote fetch |
+| `features/swap/hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
 | `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking) |
 | `features/web3/web3.types.ts` | Shared wallet hook result type |
-| `utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
+| `features/swap/utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
 | `utils/wagmiConfig.ts` | Polygon + injected connectors |
-| `utils/swapTransactionLogs.ts` | Log vs verify client routing |
-| `utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
+| `features/swap/utils/swapTransactionLogs.ts` | Log vs verify client routing |
+| `features/swap/utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
 | `utils/tokenAmounts.ts` | Pure bigint ↔ decimal helpers (no ethers/viem) |
+| `utils/swapTokens.ts` | Shared token lookup (frontend + backend) |
 | `constants/swapContracts.ts` | Tokens, router, deadlines, ABIs |
 | `types/swap.types.ts` | Shared Swap API and UI types |
 

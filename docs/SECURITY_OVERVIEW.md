@@ -115,7 +115,7 @@ Clients cannot produce a verified confirmation log without a matching on-chain t
 ### 2.9 Logging vs telemetry
 
 - `/api/swap/log` accepts browser events: `approval_*`, `swap_submitted`, `swap_failed` (and related). Treated as untrusted telemetry.
-- Confirmed swaps from the browser are routed client-side (`utils/swapTransactionLogs.ts`) to `/api/swap/verify-transaction` instead of the plain log endpoint.
+- Confirmed swaps from the browser are routed client-side (`features/swap/utils/swapTransactionLogs.ts`) to `/api/swap/verify-transaction` instead of the plain log endpoint.
 - Server logs (`server/loaders/swapLogs.ts`) redact `http(s)://` URLs and Alchemy key-like path segments; truncate string fields; attach sanitized request metadata (IP, host, origin, user-agent).
 
 ### 2.10 Error sanitization (`sanitizeSwapErrorMessage`)
@@ -126,7 +126,7 @@ Only a fixed allowlist of validation messages is returned to the client. Other e
 
 ## 3. Frontend swap guards
 
-Implemented mainly in `hooks/useUniswapQuote.ts` and `hooks/useUniswapSwap.ts`.
+Implemented mainly in `features/swap/hooks/useUniswapQuote.ts` and `features/swap/hooks/useUniswapSwap.ts`.
 
 | Mechanism | Behavior |
 | --- | --- |
@@ -184,5 +184,5 @@ Multi-instance deploys would need a shared secret and shared replay store for HM
 | Server RPC | `server/utils/providers.ts` |
 | Token / router constants | `constants/swapContracts.ts`, `utils/swapTokens.ts` |
 | Frontend RPC | `constants/network.ts` |
-| Swap UI hooks | `hooks/useUniswapQuote.ts`, `hooks/useUniswapSwap.ts`, `utils/swapTransactionLogs.ts` |
+| Swap UI hooks | `features/swap/hooks/useUniswapQuote.ts`, `features/swap/hooks/useUniswapSwap.ts`, `features/swap/utils/swapTransactionLogs.ts` |
 | Related tests | `server/tests/apiBoundary.test.ts`, `rateLimit.test.ts`, `securityHeaders.test.ts`, `swapQuote.test.ts`, `swapTransactionVerification.test.ts`, `swapLogs.test.ts` |

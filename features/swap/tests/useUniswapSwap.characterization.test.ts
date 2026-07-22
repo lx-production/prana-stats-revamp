@@ -6,10 +6,10 @@
 import { act } from 'react';
 import { mock, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { V1_SWAP_TOKENS } from '../../constants/swapContracts.ts';
-import { ensureDom, renderHook } from './renderHook.ts';
+import { V1_SWAP_TOKENS } from '../../../constants/swapContracts.ts';
+import { ensureDom, renderHook } from '../../../hooks/tests/renderHook.ts';
 
-import type { SwapQuoteResponse, SwapToken } from '../../types/swap.types.ts';
+import type { SwapQuoteResponse, SwapToken } from '../../../types/swap.types.ts';
 
 ensureDom();
 
@@ -40,7 +40,7 @@ mock.module('wagmi', {
 });
 
 // Avoid real network logging during characterization.
-mock.module('../../utils/swapTransactionLogs.ts', {
+mock.module('../utils/swapTransactionLogs.ts', {
   namedExports: {
     logSwapTransactionEvent: () => {},
   },
@@ -81,7 +81,7 @@ test('useUniswapSwap idle shape with no quote / no wallet clients', async () => 
   publicClientStub = null;
   walletClientStub = null;
 
-  const { useUniswapSwap } = await import('../useUniswapSwap.ts');
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapSwap({
       quote: null,
@@ -113,7 +113,7 @@ test('useUniswapSwap.executeSwap requires a quote first', async () => {
   publicClientStub = null;
   walletClientStub = { sendTransaction: async () => '0xhash' };
 
-  const { useUniswapSwap } = await import('../useUniswapSwap.ts');
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapSwap({
       quote: null,
@@ -141,7 +141,7 @@ test('useUniswapSwap.executeSwap asks to connect wallet when quote is current bu
   };
   walletClientStub = null;
 
-  const { useUniswapSwap } = await import('../useUniswapSwap.ts');
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapSwap({
       quote: makeQuote(),
@@ -177,7 +177,7 @@ test('useUniswapSwap.executeSwap reports insufficient balance with token symbol'
     sendTransaction: async () => '0xswap',
   };
 
-  const { useUniswapSwap } = await import('../useUniswapSwap.ts');
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapSwap({
       quote: makeQuote(),
@@ -209,7 +209,7 @@ test('useUniswapSwap.resetSwapState returns to idle and clears error/hash', asyn
   publicClientStub = null;
   walletClientStub = null;
 
-  const { useUniswapSwap } = await import('../useUniswapSwap.ts');
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
   const { result, unmount } = await renderHook(() =>
     useUniswapSwap({
       quote: null,
