@@ -12,7 +12,7 @@ Tài liệu liên quan:
 
 ## Đây là gì
 
-Nút **TRADE** trên hero mở swap modal trong app thay vì đưa user sang UI Uniswap bên ngoài. User kết nối browser wallet (MetaMask, Rabby, …), chỉ ở **Polygon mainnet**, và swap trong allowlist cố định gồm bảy token.
+Nút **SWAP** trên hero mở swap modal trong app thay vì đưa user sang UI Uniswap bên ngoài. User kết nối browser wallet (MetaMask, Rabby, …), chỉ ở **Polygon mainnet**, và swap trong allowlist cố định gồm bảy token.
 
 Cặp mặc định khi mở modal: **WBTC → PRANA**.
 

@@ -12,7 +12,7 @@ Related docs:
 
 ## What it is
 
-The hero **TRADE** button opens an in-app swap modal instead of sending users to an external Uniswap UI. Users connect an injected browser wallet (MetaMask, Rabby, etc.), stay on **Polygon mainnet only**, and swap among a fixed allowlist of seven tokens.
+The hero **SWAP** button opens an in-app swap modal instead of sending users to an external Uniswap UI. Users connect an injected browser wallet (MetaMask, Rabby, etc.), stay on **Polygon mainnet only**, and swap among a fixed allowlist of seven tokens.
 
 Default pair when the modal opens: **WBTC → PRANA**.
 
