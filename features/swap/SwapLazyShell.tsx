@@ -1,5 +1,5 @@
 import { Loader2, X } from 'lucide-react';
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 
 import type { ErrorInfo, ReactNode } from 'react';
 
@@ -11,6 +11,15 @@ type ShellProps = {
 
 /** Shared modal chrome for Swap lazy loading / load-error UI (no Web3 imports). */
 function SwapLazyShell({ onClose, title, children }: ShellProps) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
@@ -37,9 +46,10 @@ function SwapLazyShell({ onClose, title, children }: ShellProps) {
             <button
               type="button"
               onClick={onClose}
+              aria-label="Close swap dialog"
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white/75 transition hover:bg-white/10 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>

@@ -325,9 +325,10 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 <button
                   type="button"
                   onClick={onClose}
+                  aria-label={closeLabel}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white/75 transition hover:bg-white/10 hover:text-white"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
