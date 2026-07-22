@@ -69,6 +69,7 @@ flowchart TD
 
 Homepage chỉ tải UI stats. Lần bấm **SWAP** đầu tiên mới mount lazy `SwapEntry` trong `Suspense` (shell modal + spinner) và error boundary (đóng / thử lại / reload khi asset hash cũ sau deploy). Sau khi chunk tải xong, `SwapEntry` giữ mounted khi đóng/mở để lifecycle form giống modal eager trước đây. Đóng trong lúc đang tải sẽ ẩn fallback ngay và không tự mở lại khi import hoàn tất.
 
+Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` không chứa Wagmi / viem / TanStack Query / Swap hooks. **SWAP** tải `SwapEntry-*.js` cùng async `Web3Providers-*.js` dùng chung; `/stake/` tải `StakingEntry-*.js` và có thể tái sử dụng chunk Web3 đó. Số đo và ghi chú scan: [`extract-swap-modal-baseline.md`](../extract-swap-modal-baseline.md).
 
 ### Phân tách trust
 

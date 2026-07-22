@@ -101,9 +101,9 @@ utils/
 1. **Khóa behavior bằng tests:** thêm characterization tests cho address/amount formatting, wallet error sanitization và provider-dependent hooks hiện tại; ghi baseline bundle + network requests. ✅
 2. **Tách pure shared trước:** tạo `walletFormatting`, `tokenAmounts`, chuyển shared wallet types khỏi `swap.types`; cập nhật imports nhưng chưa đổi lazy/provider topology. Chạy typecheck/tests để bắt circular import hoặc output drift. ✅
 3. **Gom Swap feature:** move modal/hooks/utils riêng của Swap vào `features/swap/`, giữ API/types dùng chung với backend ngoài feature. Dùng direct imports trong lúc move, chưa tạo barrel file. ✅
-4. **Tạo provider boundary:** chuyển Wagmi config + wallet hook vào `features/web3/`; tạo `Web3Providers` với thứ tự `WagmiProvider → QueryClientProvider → children`. Khởi tạo `QueryClient` ngoài render của provider để đóng/mở modal không tạo cache mới.
-5. **Thêm hai lazy composition roots:** `SwapEntry` bọc `SwapModal`; `StakingEntry` bọc `StakingPage`. Đổi `hero3.tsx` và route resolver import entry tương ứng, sau đó gỡ providers/config khỏi `main.tsx`.
-6. **Kiểm tra import graph và chunks:** dùng build manifest/source map để xác nhận entry/homepage không còn `wagmi`, `viem`, `@tanstack/react-query`, `ethers`, Swap hooks hoặc staking hooks. Việc Vite tạo một shared async Web3 vendor chunk cho hai entry là hợp lệ.
+4. **Tạo provider boundary:** chuyển Wagmi config + wallet hook vào `features/web3/`; tạo `Web3Providers` với thứ tự `WagmiProvider → QueryClientProvider → children`. Khởi tạo `QueryClient` ngoài render của provider để đóng/mở modal không tạo cache mới.✅
+5. **Thêm hai lazy composition roots:** `SwapEntry` bọc `SwapModal`; `StakingEntry` bọc `StakingPage`. Đổi `hero3.tsx` và route resolver import entry tương ứng, sau đó gỡ providers/config khỏi `main.tsx`.✅
+6. **Kiểm tra import graph và chunks:** dùng build manifest/source map để xác nhận entry/homepage không còn `wagmi`, `viem`, `@tanstack/react-query`, `ethers`, Swap hooks hoặc staking hooks. Việc Vite tạo một shared async Web3 vendor chunk cho hai entry là hợp lệ.✅
 7. **Dọn compatibility imports cuối cùng:** xóa file cũ hoặc để re-export tạm chỉ khi re-export đó không được homepage import; cập nhật technical overview và bỏ alias sau khi toàn bộ call site đã chuyển.
 
 Không refactor đồng thời transaction semantics, API payload hoặc UX state machine với việc đổi ownership/import boundary. Mỗi bước chỉ thay vị trí/composition, chạy đủ test rồi mới sang bước tiếp theo để lỗi bundle topology không bị trộn với lỗi giao dịch.

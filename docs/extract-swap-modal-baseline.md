@@ -63,3 +63,55 @@ Homepage does **not** call `/api/swap/*` until the user opens Swap and enters a 
 - `/` must not download Swap feature code or Web3 vendor until **SWAP** is clicked
 - `/stake/` may share an async Web3 vendor chunk with Swap; that is OK
 - `main.tsx` / homepage must not import `Web3Providers`, `wagmiConfig`, or Swap hooks
+
+---
+
+## Post-refactor (after step 5 lazy roots) — 2026-07-22
+
+Recorded from `npm run build` (Vite 8.1.0) after `SwapEntry` / `StakingEntry` + root providers removed.
+
+### Bundle sizes
+
+| Asset | Raw | Vite gzip | On-disk `.gz` (level 9) | Notes |
+|---|---|---|---|---|
+| `index-*.js` | 232.17 kB | 75.95 kB | 75.04 kB | Eager entry: **no** Wagmi / React Query / `wagmiConfig` |
+| `StatsPage-*.js` | 443.91 kB | 132.84 kB | 131.61 kB | Homepage + Swap lazy shell/error UI; **no** Swap hooks / Web3 vendor body |
+| `SwapEntry-*.js` | 24.32 kB | 8.57 kB | 8.53 kB | Lazy on first **SWAP** click |
+| `StakingEntry-*.js` | 46.84 kB | 13.79 kB | 13.71 kB | Lazy `/stake/` composition root (was `StakingPage-*.js`) |
+| `Web3Providers-*.js` | 349.21 kB | 103.39 kB | 102.32 kB | Shared async Web3 vendor (Wagmi + TanStack Query + viem); OK for Swap + staking |
+| `proxy-*.js` | 115.21 kB | 38.13 kB | 37.69 kB | Shared `framer-motion` (homepage + Swap UI) — not Web3 |
+| `fetchJson-*.js` | 1.47 kB | 0.86 kB | 0.85 kB | Shared async helper (much smaller than pre-refactor) |
+| `ccip-*.js` | 2.84 kB | 1.32 kB | 1.31 kB | Loaded with Web3 graph only (not homepage) |
+| `utils-*.js` | 2.62 kB | 1.18 kB | 1.17 kB | Small shared bigint helper chunk |
+| `index-*.css` | 46.44 kB | 9.43 kB | 9.24 kB | Shared Tailwind stylesheet (eager) |
+| `index.html` | 2.44 kB | 0.91 kB | 0.92 kB | Still only references entry JS + CSS |
+
+Delta vs pre-refactor baseline (Raw): **entry −84.88 kB**, **StatsPage −134.82 kB**. Web3 weight moved into `Web3Providers-*.js` + feature entries.
+
+### Import graph / chunk checks (step 6)
+
+Scanned `index-*.js`, `StatsPage-*.js`, and homepage-shared `fetchJson` / `proxy` / `utils` / `ccip` for runtime markers:
+
+- **Absent from entry + StatsPage bodies:** `wagmi`, `viem`, `@tanstack/react-query`, `QueryClient`, `WagmiProvider`, `wagmiConfig`, `useInjectedWallet`, `useUniswapQuote`, `useUniswapSwap`, `useStakingConfig`, `useStakingAccount`, real `ethers` package usage
+- **`/api/swap`** strings live in `SwapEntry-*.js` only (not StatsPage)
+- **`index.html`** still only boots `index-*.js` + `index-*.css`
+- Dynamic graph: `index` → lazy `StatsPage` | lazy `StakingEntry`; `StatsPage` (hero) → lazy `SwapEntry` → `Web3Providers`; `StakingEntry` → `Web3Providers`
+- String hits for `Web3Providers` inside `index` / `StatsPage` are Vite `__vite__mapDeps` preload path lists for those lazy imports — not a static module edge
+- `ethers` substring inside `Web3Providers-*.js` is Polygonscan / Etherscan API URL config, not the `ethers` npm package on the homepage path
+
+### Network requests (expected after refactor)
+
+### Homepage `/` (first paint / StatsPage load)
+
+- Eager: `/assets/index-*.js`, `/assets/index-*.css` (plus `index.html`)
+- Lazy page: `/assets/StatsPage-*.js` (+ `fetchJson` / `proxy` / shared helpers as imported)
+- **Must not** request `SwapEntry-*`, `Web3Providers-*`, `StakingEntry-*`, or `ccip-*` until user action / route change
+
+### Swap (first **SWAP** click)
+
+- `/assets/SwapEntry-*.js` + `/assets/Web3Providers-*.js` (+ shared deps)
+- Then quote/approve/swap API + wallet RPC as before
+
+### `/stake/`
+
+- `/assets/StakingEntry-*.js` + shared `Web3Providers-*.js` (may already be cached if Swap was opened earlier)
