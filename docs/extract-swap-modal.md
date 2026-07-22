@@ -1,8 +1,15 @@
 # Extract Swap modal and Web3 dependencies from the stats bundle
 
+## Tóm tắt refactor (đã hoàn thành)
+
+- **Mục tiêu đạt:** `/` chỉ tải stats UI; Swap/Web3 chỉ tải khi bấm **SWAP**; `/stake/` tải Web3 qua lazy `StakingEntry`. API `/api/swap/*`, quote/approve/swap flow và state machine không đổi.
+- **Cấu trúc:** `hero3` → lazy `SwapEntry` → `Web3Providers` → `SwapModal`; `main` → lazy `StakingEntry` → `Web3Providers` → `StakingPage`. Root chỉ giữ `SiteLanguageProvider`.
+- **Bundle (Raw):** entry 317 → **232 kB** (−85); StatsPage 579 → **444 kB** (−135). Web3 nằm ở shared async `Web3Providers-*.js` (~349 kB). Chi tiết before/after: [`extract-swap-modal-baseline.md`](./extract-swap-modal-baseline.md).
+- **Đã xác nhận:** entry/StatsPage không chứa Wagmi / viem / TanStack Query / Swap·staking hooks; không còn re-export tạm ở path cũ. Overview: [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md).
+
 ## Mục tiêu và baseline
 
-- Production build hiện tại đặt toàn bộ Swap frontend trong `StatsPage`: 578.73 kB, 177.61 kB gzip. Entry bundle vẫn eager-load Wagmi config, `WagmiProvider` và `QueryClientProvider`.
+- Production build **trước refactor** đặt toàn bộ Swap frontend trong `StatsPage`: 578.73 kB, 177.61 kB gzip. Entry bundle vẫn eager-load Wagmi config, `WagmiProvider` và `QueryClientProvider`.
 - Homepage chỉ lấy protocol stats qua API backend; không dùng Wagmi, React Query hay browser RPC. `@uniswap/*` đã là server-only.
 - Sau refactor, user vào `/` chỉ tải stats UI/data. Code Swap và Web3 chỉ được tải khi bấm **SWAP**; `/stake/` chỉ tải Web3 và React Query khi vào route đó.
 - Không đổi API `/api/swap/*`, quote/approval/swap flow, token allowlist, contract addresses, slippage hoặc transaction state machine.
