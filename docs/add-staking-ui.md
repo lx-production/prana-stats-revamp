@@ -19,7 +19,7 @@
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
-- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; rollout nginx Pi/VPS, public smoke-test và rollback window sẽ thực hiện sau khi app hoàn thiện.
+- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; rollout nginx Pi/VPS, public smoke-test và rollback window sẽ thực hiện sau khi app hoàn thiện. Hero STAKE tạm thời vẫn link prod legacy (`https://prana.triethocduongpho.net/stake/`) cho đến khi review xong in-app UI.
 
 ## 1. Cấu trúc và phần dùng chung
 
@@ -90,7 +90,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 - Path `/stake` được server redirect `308` sang `/stake/`; `/stake/` serve `dist/index.html`.
 - Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` (và legal pages) không tải dữ liệu stats.
 - Gỡ preload `model-viewer` và `prana-coin.glb` khỏi HTML chung; kích hoạt chúng từ `StatsPage`/hero.
-- Đổi CTA STAKE trong hero thành `href="/stake/"`, mở cùng tab (giữ class `btn-hero btn-glass`).
+- CTA STAKE trong hero: **tạm thời** trỏ prod legacy app `https://prana.triethocduongpho.net/stake/` (`target="_blank"`, giống Bond) — chờ review xong in-app UI rồi mới đổi lại `href="/stake/"` cùng tab.
 - Staking placeholder: link về `/`, link xem protocol statistics và shared `AppFooter`; dùng class button hiện có khi có UI tạm.
 - Trước Bước 2, thêm automated tests cho `isStakePath`, redirect `/stake` (kể cả query string), direct refresh `/stake/`, `/stake/*` SPA fallback và negative case `/staking`.
 

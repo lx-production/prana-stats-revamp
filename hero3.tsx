@@ -3,7 +3,6 @@ import Covenants from "./components/Covenants";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";
-import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
 import {
   SwapLazyFallback,
   SwapLazyErrorBoundary,
@@ -113,8 +112,11 @@ export default function PranaHero() {
           >
             SWAP
           </button>
+          {/* Temporary: legacy prod staking app until in-app /stake/ UI review is done */}
           <a
-            href={STAKE_CANONICAL_PATH}
+            href="https://prana.triethocduongpho.net/stake/"
+            target="_blank"
+            rel="noopener"
             title="Lãi suất cố định 15% APR"
             className="btn-hero btn-glass"
           >
