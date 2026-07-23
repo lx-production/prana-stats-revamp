@@ -19,7 +19,7 @@
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
-- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; rollout nginx Pi/VPS, public smoke-test và rollback window sẽ thực hiện sau khi app hoàn thiện. Hero STAKE tạm thời vẫn link prod legacy (`https://prana.triethocduongpho.net/stake/`) cho đến khi review xong in-app UI.
+- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; code review sau refactor Swap đã hoàn tất và Hero STAKE đã trỏ vào lazy route `/stake/`; rollout nginx Pi/VPS, public smoke-test và rollback window vẫn thực hiện sau khi deploy.
 
 ## 1. Cấu trúc và phần dùng chung
 
@@ -90,7 +90,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 - Path `/stake` được server redirect `308` sang `/stake/`; `/stake/` serve `dist/index.html`.
 - Chuyển `prefetchInitialJson()` vào `StatsPage` để `/stake/` (và legal pages) không tải dữ liệu stats.
 - Gỡ preload `model-viewer` và `prana-coin.glb` khỏi HTML chung; kích hoạt chúng từ `StatsPage`/hero.
-- CTA STAKE trong hero: **tạm thời** trỏ prod legacy app `https://prana.triethocduongpho.net/stake/` (`target="_blank"`, giống Bond) — chờ review xong in-app UI rồi mới đổi lại `href="/stake/"` cùng tab.
+- CTA STAKE trong hero trỏ `STAKE_CANONICAL_PATH` (`/stake/`) cùng tab; đã chuyển khỏi prod legacy sau code review hậu refactor Swap.
 - Staking placeholder: link về `/`, link xem protocol statistics và shared `AppFooter`; dùng class button hiện có khi có UI tạm.
 - Trước Bước 2, thêm automated tests cho `isStakePath`, redirect `/stake` (kể cả query string), direct refresh `/stake/`, `/stake/*` SPA fallback và negative case `/staking`.
 
@@ -184,6 +184,7 @@ Quy tắc backend:
 - Parse amount bằng `parseUnits(..., PRANA_DECIMALS)`; reject quá 9 chữ số thập phân.
 - Min stake, paused state, APR và duration dùng dữ liệu config.
 - Duration mặc định là 30 ngày nếu tồn tại, nếu không dùng option đầu tiên.
+- Khi config refresh loại bỏ kỳ hạn đang chọn, form chuyển sang option hợp lệ; CTA và transaction hook đều chặn kỳ hạn không còn trong snapshot mới nhất.
 - Thay MUI slider bằng grid button/chip rời rạc; mỗi option hiển thị số ngày và APR, dùng được bằng keyboard.
 - Projected interest dùng bigint và đúng thứ tự làm tròn của Solidity:
 
@@ -203,8 +204,9 @@ Giữ một nút gold full-width:
 Luồng kết hợp:
 
 - Validate connected wallet, Polygon chain (switch nếu cần), config không paused, amount ≥ min và amount ≤ balance.
-- `createPermitSnapshot()`: **refetch account phải thành công** (không dùng cache stale), lấy nonce mới, ký EIP-712, trả `PermitSnapshot` trực tiếp (và lưu state cho retry trước broadcast).
+- `createPermitSnapshot()`: **refetch account phải thành công và đúng wallet đang thao tác** (không dùng cache stale/cross-account), lấy nonce mới, ký EIP-712, trả `PermitSnapshot` trực tiếp (và lưu state cho retry trước broadcast).
 - `submitStakeWithPermit(snapshot)` nhận Permit qua tham số — không phụ thuộc React state đã flush; sau khi có hash chỉ resume `waitForTransactionReceipt`, không `writeContract` lần hai.
+- Trước ký và trước broadcast, kiểm tra lại duration/min stake theo config hiện tại để config đổi giữa hai popup không tạo giao dịch chắc chắn revert.
 - `permitAndStake()` điều phối resume receipt / reuse permit / create+stake; không hiện banner “Permit đã ký” giữa hai popup.
 - Chỉ `setSuccess()` sau receipt thành công; lỗi refetch account sau đó là **warning không fatal**.
 - Từ chối Permit → không gọi transaction; từ chối Stake **trước** broadcast → giữ Permit; lỗi receipt **sau** hash → CTA `Tiếp tục xác nhận` (không gửi tx mới).

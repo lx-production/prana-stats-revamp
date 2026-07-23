@@ -8,6 +8,7 @@ import {
   calculateEarlyUnstakeReturn,
   calculateTotalInterestRaw,
   getDefaultDurationSeconds,
+  getConfiguredDuration,
   getEffectiveAccruedSeconds,
   getStakeActionState,
   parseStakeAmount,
@@ -81,6 +82,23 @@ test('getDefaultDurationSeconds prefers 30 days then falls back to first', () =>
   assert.equal(getDefaultDurationSeconds(withoutThirty), 7 * SECONDS_PER_DAY);
 
   assert.equal(getDefaultDurationSeconds([]), null);
+});
+
+test('getConfiguredDuration rejects a duration removed by refreshed config', () => {
+  const durations: StakingDurationOption[] = [
+    { seconds: 7 * SECONDS_PER_DAY, days: 7, apr: 9 },
+    { seconds: 30 * SECONDS_PER_DAY, days: 30, apr: 12 },
+  ];
+
+  assert.deepEqual(
+    getConfiguredDuration(durations, 30 * SECONDS_PER_DAY),
+    durations[1],
+  );
+  assert.equal(
+    getConfiguredDuration(durations, 90 * SECONDS_PER_DAY),
+    null,
+  );
+  assert.equal(getConfiguredDuration(durations, null), null);
 });
 
 test('getEffectiveAccruedSeconds starts from lastClaimTime, not startTime', () => {

@@ -17,6 +17,7 @@ import {
   isStakeAmountInput,
   calculateTotalInterestRaw,
   getDefaultDurationSeconds,
+  getConfiguredDuration,
 } from '../stakingMath.ts';
 
 import type { StakingConfig, StakingAccountSnapshot } from '../staking.types.ts';
@@ -51,9 +52,15 @@ export default function StakingForm({
   const [amount, setAmount] = useState('');
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
 
-  // Default to 30 days when present, else the first config option.
+  // Default to 30 days when present. If refreshed config removes the selected
+  // duration, move to a valid option instead of submitting a guaranteed revert.
   useEffect(() => {
-    if (durationSeconds != null || !config?.durations.length) return;
+    if (!config) return;
+    const configuredDuration = getConfiguredDuration(
+      config.durations,
+      durationSeconds,
+    );
+    if (configuredDuration) return;
     setDurationSeconds(getDefaultDurationSeconds(config.durations));
   }, [config, durationSeconds]);
 
@@ -94,9 +101,7 @@ export default function StakingForm({
     : '—';
 
   const selectedDuration = useMemo(
-    () =>
-      config?.durations.find((option) => option.seconds === durationSeconds) ??
-      null,
+    () => getConfiguredDuration(config?.durations ?? [], durationSeconds),
     [config, durationSeconds],
   );
 
@@ -149,7 +154,7 @@ export default function StakingForm({
     !formFieldsDisabled &&
     !amountError &&
     parsedAmount.ok &&
-    durationSeconds != null &&
+    selectedDuration != null &&
     wallet.isConnected;
 
   // Pending broadcast: allow receipt resume while the form fields stay frozen.

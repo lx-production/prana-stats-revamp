@@ -7,6 +7,7 @@ import {
   SwapLazyFallback,
   SwapLazyErrorBoundary,
 } from "./features/swap/SwapLazyShell";
+import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
 
 /** Module-level lazy entry — remount retry not needed; failed loads use full page reload. */
 const LazySwapEntry = lazy(() => import("./features/swap/SwapEntry"));
@@ -96,12 +97,8 @@ export default function PranaHero() {
           >
             SWAP
           </button>
-          {/* Temporary: legacy prod staking app until in-app /stake/ UI review is done */}
           <a
-            href="https://prana.triethocduongpho.net/stake/"
-            target="_blank"
-            rel="noopener"
-            title="Lãi suất cố định 15% APR"
+            href={STAKE_CANONICAL_PATH}
             className="btn-hero btn-glass"
           >
             STAKE

@@ -93,6 +93,17 @@ export function getDefaultDurationSeconds(
   return (thirtyDay ?? durations[0]).seconds;
 }
 
+/** Resolve a duration against the latest on-chain config snapshot. */
+export function getConfiguredDuration(
+  durations: StakingDurationOption[],
+  durationSeconds: number | null,
+): StakingDurationOption | null {
+  if (durationSeconds == null) return null;
+  return (
+    durations.find((option) => option.seconds === durationSeconds) ?? null
+  );
+}
+
 export function daysFromSeconds(seconds: number): number {
   return Math.floor(seconds / SECONDS_PER_DAY);
 }

@@ -15,6 +15,7 @@ import { getStakingCopy } from '../staking.copy.ts';
 import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
 import { getPolygonWalletClient } from '../getPolygonWalletClient.ts';
 import { isPermitSnapshotValid } from '../permitUtils.ts';
+import { getConfiguredDuration } from '../stakingMath.ts';
 import {
   formatStakingError,
   getStakingErrorMessage,
@@ -212,6 +213,12 @@ export function useStakeTransaction({
         return null;
       }
 
+      if (!getConfiguredDuration(config.durations, durationSeconds)) {
+        setError(getStakingErrorMessage('invalid_duration', locale));
+        setStatus('error');
+        return null;
+      }
+
       const minStakeRaw = BigInt(config.minStakeRaw);
       if (amountRaw < minStakeRaw) {
         setError(getStakingErrorMessage('below_min', locale));
@@ -227,6 +234,7 @@ export function useStakeTransaction({
         // Must be a successful refetch — never fall back to cached nonce/balance.
         const accountSnapshot = accountFromSuccessfulRefetch(
           await refetchAccount(),
+          wallet.address,
         );
 
         if (!accountSnapshot) {
@@ -322,6 +330,20 @@ export function useStakeTransaction({
         return;
       }
 
+      if (!getConfiguredDuration(config.durations, snapshot.durationSeconds)) {
+        setPermit(null);
+        setError(getStakingErrorMessage('invalid_duration', locale));
+        setStatus('error');
+        return;
+      }
+
+      if (BigInt(snapshot.amountRaw) < BigInt(config.minStakeRaw)) {
+        setPermit(null);
+        setError(getStakingErrorMessage('below_min', locale));
+        setStatus('error');
+        return;
+      }
+
       setStatus('submitting');
 
       try {
@@ -353,6 +375,8 @@ export function useStakeTransaction({
             return publicClient!.waitForTransactionReceipt({ hash });
           },
           isPermitStillValid: (freshAccount) =>
+            freshAccount.address.toLowerCase() ===
+              snapshot.owner.toLowerCase() &&
             isPermitSnapshotValid(snapshot, {
               owner: wallet.address,
               chainId: POLYGON_CHAIN_ID,

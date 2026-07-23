@@ -6,6 +6,7 @@ export type StakingErrorCode =
   | 'wrong_chain'
   | 'paused'
   | 'invalid_amount'
+  | 'invalid_duration'
   | 'below_min'
   | 'insufficient_balance'
   | 'insufficient_gas'
@@ -113,6 +114,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     wrong_chain: 'Hãy chuyển ví sang Polygon Mainnet (chainId 137).',
     paused: 'Hợp đồng staking đang tạm dừng.',
     invalid_amount: 'Số lượng không hợp lệ.',
+    invalid_duration: 'Kỳ hạn đã chọn không còn khả dụng. Hãy chọn lại.',
     below_min: 'Số lượng thấp hơn mức stake tối thiểu.',
     insufficient_balance: 'Số dư PRANA không đủ.',
     insufficient_gas: 'Số dư POL không đủ để trả phí gas.',
@@ -130,6 +132,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     wrong_chain: 'Switch your wallet to Polygon Mainnet (chainId 137).',
     paused: 'Staking is currently paused.',
     invalid_amount: 'Enter a valid amount.',
+    invalid_duration: 'The selected duration is no longer available. Choose again.',
     below_min: 'Amount is below the minimum stake.',
     insufficient_balance: 'Insufficient PRANA balance.',
     insufficient_gas: 'Insufficient POL balance for gas.',

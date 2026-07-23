@@ -42,8 +42,18 @@ test('accountFromSuccessfulRefetch ignores failed refetch with stale data', () =
   assert.equal(accountFromSuccessfulRefetch(undefined), undefined);
   assert.equal(accountFromSuccessfulRefetch({ data: sampleAccount }), undefined);
   assert.deepEqual(
-    accountFromSuccessfulRefetch(successRefetch()),
+    accountFromSuccessfulRefetch(
+      successRefetch(),
+      '0x1111111111111111111111111111111111111111',
+    ),
     sampleAccount,
+  );
+  assert.equal(
+    accountFromSuccessfulRefetch(
+      successRefetch(),
+      '0x2222222222222222222222222222222222222222',
+    ),
+    undefined,
   );
 });
 
