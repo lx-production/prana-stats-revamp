@@ -180,6 +180,7 @@ Quy tắc backend:
   - `['staking-config']`, stale time 30 giây.
   - `['staking-account', address]`, chỉ enabled với address hợp lệ, không polling.
 - `PranaBalance` không còn là card riêng; đưa balance và nút MAX vào header của amount input.
+- Amount input và projected interest nằm cạnh nhau (2 cột trên `sm+`, stack trên mobile); duration selector vẫn full width bên dưới.
 - Bỏ giới hạn UI hardcode 10 triệu PRANA; max hợp lệ là số dư hiện tại.
 - Parse amount bằng `parseUnits(..., PRANA_DECIMALS)`; reject quá 9 chữ số thập phân.
 - Min stake, paused state, APR và duration dùng dữ liệu config.

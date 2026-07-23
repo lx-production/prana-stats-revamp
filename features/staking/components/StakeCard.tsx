@@ -193,11 +193,11 @@ export default function StakeCard({
       ) : null}
 
       {actionsEnabled ? (
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <div className="mt-4 flex gap-2">
         {canClaim ? (
           <button
             type="button"
-            className="btn-hero btn-glass w-full sm:w-auto"
+            className="btn-hero btn-gold-border min-w-0 flex-1"
             disabled={buttonsDisabled}
             onClick={() => onClaim(stake.id)}
           >
@@ -215,7 +215,7 @@ export default function StakeCard({
         {canUnstake ? (
           <button
             type="button"
-            className="btn-hero btn-glass w-full sm:w-auto"
+            className="btn-hero btn-gold-border min-w-0 flex-1"
             disabled={buttonsDisabled}
             onClick={() => onUnstake(stake.id)}
           >
@@ -233,7 +233,7 @@ export default function StakeCard({
         {canUnstakeEarly ? (
           <button
             type="button"
-            className="btn-hero w-full border border-red-400/40 bg-red-500/10 text-red-200 sm:w-auto"
+            className="btn-hero min-w-0 flex-1 border border-red-400/40 bg-red-500/10 text-red-200"
             disabled={buttonsDisabled}
             onClick={() => onUnstakeEarly(stake.id)}
           >

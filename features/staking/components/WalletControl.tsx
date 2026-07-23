@@ -89,10 +89,12 @@ export default function WalletControl() {
 
         <button
           type="button"
-          className="btn-hero btn-glass inline-flex w-full items-center justify-center gap-2 sm:w-auto"
           onClick={() => wallet.disconnectWallet()}
+          disabled={busy}
+          aria-label={`${copy.disconnect} wallet`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/65 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/10 disabled:hover:bg-white/[0.04] disabled:hover:text-white/65"
         >
-          <LogOut className="h-4 w-4" aria-hidden />
+          <LogOut className="h-3.5 w-3.5" aria-hidden />
           {copy.disconnect}
         </button>
       </div>

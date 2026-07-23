@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Coins, ExternalLink, Lock } from 'lucide-react';
+import { ArrowLeft, Coins, ExternalLink, Lock } from 'lucide-react';
 import AppFooter from '../components/AppFooter';
 import LanguageToggle from '../components/LanguageToggle';
 import GlassPanel from '../components/ui/GlassPanel';
@@ -56,6 +56,14 @@ export default function StakingPage() {
         <header className="space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-3">
+              {/* Subtle text link back to homepage — no button chrome */}
+              <a
+                href="/"
+                className="inline-flex items-center gap-1.5 text-sm text-white/45 transition hover:text-white/80"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                {copy.backHome}
+              </a>
               <p className="text-sm uppercase tracking-[0.2em] text-white/45">
                 PRANA Protocol
               </p>
@@ -69,18 +77,6 @@ export default function StakingPage() {
             </div>
             <LanguageToggle placement="inline" />
           </div>
-
-          <nav
-            className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center"
-            aria-label="Staking page links"
-          >
-            <a href="/" className="btn-hero btn-glass w-full sm:w-auto">
-              {copy.backHome}
-            </a>
-            <a href="/" className="btn-hero btn-glass w-full sm:w-auto">
-              {copy.viewStats}
-            </a>
-          </nav>
 
           {/* Compact contract verification links */}
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/50">

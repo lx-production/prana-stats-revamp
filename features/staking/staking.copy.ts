@@ -8,8 +8,8 @@ import type {
 export type StakingCopy = {
   pageTitle: string;
   pageSubtitle: string;
+  /** Compact text link (with arrow) back to the homepage. */
   backHome: string;
-  viewStats: string;
   connectWallet: string;
   disconnect: string;
   switchPolygon: string;
@@ -83,9 +83,8 @@ export type StakingCopy = {
 const vi: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA với APR cố định trên Polygon. Một nút ký Permit rồi gửi giao dịch stake.',
-  backHome: 'Về trang chủ',
-  viewStats: 'Xem thống kê protocol',
+    'Stake PRANA với APR cố định trên Polygon. Ký Permit (off-chain) và Stake (on-chain) chỉ với một nút.',
+  backHome: 'Trang chủ',
   connectWallet: 'Kết nối ví',
   disconnect: 'Ngắt kết nối',
   switchPolygon: 'Chuyển sang Polygon',
@@ -176,9 +175,8 @@ const vi: StakingCopy = {
 const en: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA at a fixed APR on Polygon. One button signs the permit then submits the stake.',
-  backHome: 'Back to home',
-  viewStats: 'View protocol statistics',
+    'Stake PRANA at a fixed APR on Polygon. Sign the Permit (off-chain) and Stake (on-chain) with just one button.',
+  backHome: 'Home',
   connectWallet: 'Connect wallet',
   disconnect: 'Disconnect',
   switchPolygon: 'Switch to Polygon',

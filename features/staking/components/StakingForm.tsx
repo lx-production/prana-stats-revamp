@@ -245,52 +245,68 @@ export default function StakingForm({
       ) : null}
 
       <div className="mt-5 space-y-5">
-        <div>
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <label
-              htmlFor="stake-amount"
-              className="text-sm font-medium text-white/70"
-            >
-              {copy.amountLabel}
-            </label>
-            <div className="flex items-center gap-2 text-xs text-white/55">
-              <span>
-                {copy.balanceLabel}:{' '}
-                <span className="text-white/85">{balanceFormatted}</span> PRANA
-              </span>
-              <button
-                type="button"
-                className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-cyan-300 transition hover:border-cyan-400/40 hover:text-cyan-200 disabled:opacity-40"
-                onClick={setMaxAmount}
-                disabled={
-                  formFieldsDisabled || !account || balanceRaw <= 0n
-                }
+        {/* Amount input (left) + projected interest (right) on sm+ */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor="stake-amount"
+                className="text-sm font-medium text-white/70"
               >
-                {copy.maxButton}
-              </button>
+                {copy.amountLabel}
+              </label>
+              <div className="flex items-center gap-2 text-xs text-white/55">
+                <span>
+                  {copy.balanceLabel}:{' '}
+                  <span className="text-white/85">{balanceFormatted}</span>{' '}
+                  PRANA
+                </span>
+                <button
+                  type="button"
+                  className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-cyan-300 transition hover:border-cyan-400/40 hover:text-cyan-200 disabled:opacity-40"
+                  onClick={setMaxAmount}
+                  disabled={
+                    formFieldsDisabled || !account || balanceRaw <= 0n
+                  }
+                >
+                  {copy.maxButton}
+                </button>
+              </div>
             </div>
+
+            <input
+              id="stake-amount"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={amount}
+              disabled={formFieldsDisabled}
+              placeholder={copy.minStakeHint(minStakeFormatted)}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (isStakeAmountInput(value)) setAmount(value);
+              }}
+              className="w-full rounded-2xl border border-white/15 bg-transparent px-4 py-3 text-white placeholder:text-white/30 focus:border-[#F5D27A]/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40 disabled:opacity-50"
+            />
+
+            {amountError ? (
+              <StatusBanner tone="error" className="mt-2 text-xs">
+                {amountError}
+              </StatusBanner>
+            ) : null}
           </div>
 
-          <input
-            id="stake-amount"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={amount}
-            disabled={formFieldsDisabled}
-            placeholder={copy.minStakeHint(minStakeFormatted)}
-            onChange={(event) => {
-              const value = event.target.value;
-              if (isStakeAmountInput(value)) setAmount(value);
-            }}
-            className="w-full rounded-2xl border border-white/15 bg-transparent px-4 py-3 text-white placeholder:text-white/30 focus:border-[#F5D27A]/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40 disabled:opacity-50"
-          />
-
-          {amountError ? (
-            <StatusBanner tone="error" className="mt-2 text-xs">
-              {amountError}
-            </StatusBanner>
-          ) : null}
+          <div className="flex min-w-0 flex-col">
+            <div className="mb-2 text-sm font-medium text-white/70">
+              {copy.projectedInterestLabel}
+            </div>
+            <div className="flex flex-1 items-center rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+              <div className="text-xl font-semibold text-white">
+                ≈ {projectedInterest}{' '}
+                <span className="text-sm font-normal text-white/55">PRANA</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -309,17 +325,6 @@ export default function StakingForm({
             daysLabel={copy.durationDays}
             aprLabel={copy.aprLabel}
           />
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-          <div className="text-xs uppercase tracking-wide text-white/45">
-            {copy.projectedInterestLabel}
-          </div>
-          <div className="mt-1 text-xl font-semibold text-white">
-            ≈ {projectedInterest}{' '}
-            <span className="text-sm font-normal text-white/55">PRANA</span>
-          </div>
-          <p className="mt-1 text-xs text-white/45">{copy.projectedInterestHint}</p>
         </div>
 
         {stakeTx.error ? (
