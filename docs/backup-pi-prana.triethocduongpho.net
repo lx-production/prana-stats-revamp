@@ -1,0 +1,78 @@
+server {
+    listen 80 default_server;
+    server_name prana.triethocduongpho.net;
+
+    # New stats app at /
+    location / {
+        proxy_pass http://127.0.0.1:4173;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+
+    # Redirect bare path to trailing slash
+    location = /stake {
+        return 301 /stake/;
+    }
+
+    # React Staking app
+    location ^~ /stake/ {
+        alias /var/www/html/prana/stake/;
+        try_files $uri $uri/ /stake/index.html;
+        gzip_static on;
+
+        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    # React Staking assets
+    location ^~ /stake/assets/ {
+        alias /var/www/html/prana/stake/assets/;
+        gzip_static on;
+        gzip_types application/javascript;
+
+        expires max;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        etag on;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # Redirect bare path to trailing slash
+    location = /bond {
+        return 301 /bond/;
+    }
+
+    # React Bonding app
+    location ^~ /bond/ {
+        alias /var/www/html/prana/bond/;
+        try_files $uri $uri/ /bond/index.html;
+        gzip_static on;
+
+        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    # React Bonding assets
+    location ^~ /bond/assets/ {
+        alias /var/www/html/prana/bond/assets/;
+        gzip_static on;
+        gzip_types application/javascript;
+
+        expires max;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        etag on;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    access_log /var/log/nginx/prana.access.log;
+    error_log /var/log/nginx/prana.error.log;
+}
