@@ -94,6 +94,21 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.45),
       0 16px 38px rgba(0, 0, 0, 0.45);
   }
+
+  /* Compact stake-card action — shared size for equal 50/50 row */
+  .btn-stake {
+    @apply inline-flex w-full min-w-0 items-center justify-center whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-semibold;
+    @apply transition duration-200 active:scale-[0.98];
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60;
+  }
+
+  /* Destructive / early-unstake colors (pair with .btn-stake) */
+  .btn-danger {
+    @apply border border-red-400/40 bg-red-500/10 text-red-200;
+    @apply hover:border-red-400/60 hover:bg-red-500/20 hover:text-red-100;
+    @apply focus-visible:ring-red-400/50;
+  }
 }
 
 /* Accessibility: freeze decorative motion when OS requests reduced motion */

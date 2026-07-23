@@ -105,7 +105,7 @@ export default function EarlyUnstakeDialog({
         <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
           <button
             type="button"
-            className="btn-hero w-full border border-red-400/40 bg-red-500/15 text-red-200 sm:w-auto"
+            className="btn-stake btn-danger w-full sm:w-auto"
             disabled={busy}
             onClick={onConfirm}
           >

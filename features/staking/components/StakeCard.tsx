@@ -193,11 +193,12 @@ export default function StakeCard({
       ) : null}
 
       {actionsEnabled ? (
+      /* basis-0 + flex-1 → equal columns (50/50) regardless of label length */
       <div className="mt-4 flex gap-2">
         {canClaim ? (
           <button
             type="button"
-            className="btn-hero btn-gold-border min-w-0 flex-1"
+            className="btn-stake btn-gold-border basis-0 flex-1"
             disabled={buttonsDisabled}
             onClick={() => onClaim(stake.id)}
           >
@@ -215,7 +216,7 @@ export default function StakeCard({
         {canUnstake ? (
           <button
             type="button"
-            className="btn-hero btn-gold-border min-w-0 flex-1"
+            className="btn-stake btn-gold-border basis-0 flex-1"
             disabled={buttonsDisabled}
             onClick={() => onUnstake(stake.id)}
           >
@@ -233,7 +234,7 @@ export default function StakeCard({
         {canUnstakeEarly ? (
           <button
             type="button"
-            className="btn-hero min-w-0 flex-1 border border-red-400/40 bg-red-500/10 text-red-200"
+            className="btn-stake btn-danger basis-0 flex-1"
             disabled={buttonsDisabled}
             onClick={() => onUnstakeEarly(stake.id)}
           >
