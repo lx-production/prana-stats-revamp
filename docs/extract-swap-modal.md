@@ -21,7 +21,7 @@
 - Thay static import ở `hero3.tsx` bằng `React.lazy`. Dùng `isSwapOpen` + `hasRequestedSwap`: click đầu tiên mới render lazy entry; sau khi tải xong, giữ entry mounted khi đóng/mở để không thay đổi lifecycle form hiện tại.
 - Không prefetch theo hover, viewport hoặc khi tải `StatsPage`.
 - Thêm `Suspense` fallback là modal shell có spinner, `aria-busy` và nút đóng. Đóng trong khi tải phải ẩn fallback ngay; request JS có thể hoàn tất nền nhưng không tự mở lại modal.
-- Bọc lazy entry bằng error boundary để lỗi import không làm hỏng homepage. Cho đóng, thử lại với lỗi transient và nút reload trang cho case asset hash cũ đã bị xóa sau deploy.
+- Bọc lazy entry bằng error boundary để lỗi import không làm hỏng homepage. Cho đóng và nút reload trang (đủ cho lỗi transient lẫn case asset hash cũ đã bị xóa sau deploy).
 - Để Vite tự tạo async `SwapModal-[hash].js`; không thêm `manualChunks`. CSS Tailwind vẫn là stylesheet chung, giống lazy staking route.
 
 ## Phase 2 — Lazy Web3 and React Query providers

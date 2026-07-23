@@ -8,13 +8,8 @@ import {
   SwapLazyErrorBoundary,
 } from "./features/swap/SwapLazyShell";
 
-import type { ComponentType } from "react";
-import type { SwapModalProps } from "./types/swap.types";
-
-/** Fresh lazy() factory so "Try again" can re-request a failed chunk import. */
-function createLazySwapEntry() {
-  return lazy(() => import("./features/swap/SwapEntry"));
-}
+/** Module-level lazy entry — remount retry not needed; failed loads use full page reload. */
+const LazySwapEntry = lazy(() => import("./features/swap/SwapEntry"));
 
 export default function PranaHero() {
   const { locale } = useSiteLanguage();
@@ -26,11 +21,6 @@ export default function PranaHero() {
   const [isSwapOpen, setIsSwapOpen] = useState(false);
   // First SWAP click mounts the lazy tree; later open/close keep it mounted.
   const [hasRequestedSwap, setHasRequestedSwap] = useState(false);
-  const [LazySwapEntry, setLazySwapEntry] = useState<ComponentType<SwapModalProps>>(
-    () => createLazySwapEntry(),
-  );
-  // Bumps to remount the error boundary after a failed lazy import retry.
-  const [swapGateKey, setSwapGateKey] = useState(0);
 
   const openSwap = () => {
     setHasRequestedSwap(true);
@@ -39,12 +29,6 @@ export default function PranaHero() {
 
   const closeSwap = () => {
     setIsSwapOpen(false);
-  };
-
-  const retrySwapLoad = () => {
-    setLazySwapEntry(() => createLazySwapEntry());
-    setSwapGateKey((key) => key + 1);
-    setIsSwapOpen(true);
   };
 
   return (
@@ -144,12 +128,7 @@ export default function PranaHero() {
         onClose={() => setIsCovenantsOpen(false)}
       />
       {hasRequestedSwap && (
-        <SwapLazyErrorBoundary
-          key={swapGateKey}
-          isOpen={isSwapOpen}
-          onClose={closeSwap}
-          onRetry={retrySwapLoad}
-        >
+        <SwapLazyErrorBoundary isOpen={isSwapOpen} onClose={closeSwap}>
           <Suspense fallback={isSwapOpen ? <SwapLazyFallback onClose={closeSwap} /> : null}>
             <LazySwapEntry isOpen={isSwapOpen} onClose={closeSwap} />
           </Suspense>

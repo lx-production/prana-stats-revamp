@@ -98,7 +98,6 @@ type ErrorBoundaryProps = {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
-  onRetry: () => void;
 };
 
 type ErrorBoundaryState = {
@@ -107,7 +106,7 @@ type ErrorBoundaryState = {
 
 /**
  * Catches lazy-import failures so homepage stays usable.
- * Retry remounts the lazy tree; reload covers stale hashed assets after deploy.
+ * Reload fetches fresh assets (covers stale hashed chunks after deploy).
  */
 export class SwapLazyErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
@@ -135,19 +134,15 @@ export class SwapLazyErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     return (
       <SwapLazyShell onClose={this.props.onClose} title="Swap unavailable">
         <p className="text-sm text-white/75">
-          The swap UI failed to load. You can try again, or reload the page if a new deploy
-          replaced the old script.
+          The swap UI failed to load. Reload the page to fetch the latest script.
         </p>
         <div className="flex flex-col gap-3">
-          <button type="button" onClick={this.props.onRetry} className={primaryActionClassName}>
-            Try again
-          </button>
           <button
             type="button"
             onClick={() => {
               window.location.reload();
             }}
-            className={secondaryActionClassName}
+            className={primaryActionClassName}
           >
             Reload page
           </button>

@@ -67,7 +67,7 @@ flowchart TD
   wallet --> publicRpc["Public Polygon RPC drpc.org"]
 ```
 
-Homepage loads stats UI only. The first **SWAP** click mounts a lazy `SwapEntry` behind `Suspense` (modal shell + spinner) and an error boundary (close / try again / reload for stale hashed assets). After the chunk loads, `SwapEntry` stays mounted across open/close so form lifecycle matches the previous eager modal. Closing while the chunk is still loading hides the fallback immediately and does not reopen when the import finishes.
+Homepage loads stats UI only. The first **SWAP** click mounts a lazy `SwapEntry` behind `Suspense` (modal shell + spinner) and an error boundary (close / reload page for stale hashed assets). After the chunk loads, `SwapEntry` stays mounted across open/close so form lifecycle matches the previous eager modal. Closing while the chunk is still loading hides the fallback immediately and does not reopen when the import finishes.
 
 Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` stay free of Wagmi / viem / TanStack Query / Swap hooks. **SWAP** loads `SwapEntry-*.js` plus shared async `Web3Providers-*.js`; `/stake/` loads `StakingEntry-*.js` and may reuse that same Web3 chunk. Measured sizes and scan notes: [`extract-swap-modal-baseline.md`](./extract-swap-modal-baseline.md).
 
