@@ -57,6 +57,11 @@ server {
         return 444;
     }
 
+    # Prana is not WordPress — block WP scanner paths explicitly
+    location = /xmlrpc.php {
+        return 404;
+    }
+
     error_page 429 /rate_limited.html;
     location = /rate_limited.html {
         root /var/www/html/prana;
