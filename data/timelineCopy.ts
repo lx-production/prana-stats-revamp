@@ -65,7 +65,12 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
   event_14: {
     title: "Khai trương PRANA Swap",
     description:
-      "PRANA Swap chính thức đi vào hoạt động. Swap ngay trên trang nhà PRANA Protocol",
+      "PRANA Swap chính thức đi vào hoạt động. Swap ngay trên trang nhà PRANA Protocol.",
+  },
+  event_15: {
+    title: "Tích hợp Staking UI vào main app",
+    description:
+      "Migrate staking app/UI cũ sang giao diện mới, Stake ngay trên app hiện tại.",
   },
 };
 
@@ -134,5 +139,10 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
     title: "PRANA Swap Launch",
     description:
       "PRANA Swap is now officially live. Swap now on the PRANA Protocol homepage.",
+  },
+  event_15: {
+    title: "Staking UI Integration",
+    description:
+      "Migrated the legacy staking app/UI into the new interface. Stake directly on the current app.",
   },
 };
