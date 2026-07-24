@@ -83,7 +83,7 @@ export type StakingCopy = {
 const vi: StakingCopy = {
   pageTitle: 'Staking',
   pageSubtitle:
-    'Stake PRANA với APR cố định trên Polygon. Ký Permit (off-chain) và Stake (on-chain) chỉ với một nút.',
+    'Stake PRANA với lãi suất cố định trên Polygon. Ký Permit (off-chain) và Stake (on-chain) chỉ với một nút.',
   backHome: 'Trang chủ',
   connectWallet: 'Kết nối ví',
   disconnect: 'Ngắt kết nối',

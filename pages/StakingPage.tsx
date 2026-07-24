@@ -1,27 +1,21 @@
-import React, { useCallback, useState } from 'react';
-import { ArrowLeft, DollarSign, ExternalLink, Lock, ScrollText } from 'lucide-react';
 import AppFooter from '../components/AppFooter';
-import LanguageToggle from '../components/LanguageToggle';
+import React, { useCallback, useState } from 'react';
 import GlassPanel from '../components/ui/GlassPanel';
-import StakingForm from '../features/staking/components/StakingForm';
-import ActiveStakes from '../features/staking/components/ActiveStakes';
-import WalletControl from '../features/staking/components/WalletControl';
+import LanguageToggle from '../components/LanguageToggle';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import { useInjectedWallet } from '../features/web3/useInjectedWallet';
-import { getStakingCopy } from '../features/staking/staking.copy';
 import FlutterShaderBackground from '../flutterShader.tsx';
+import { getStakingCopy } from '../features/staking/staking.copy';
+import StakingForm from '../features/staking/components/StakingForm';
+import ActiveStakes from '../features/staking/components/ActiveStakes';
+import { useInjectedWallet } from '../features/web3/useInjectedWallet';
+import WalletControl from '../features/staking/components/WalletControl';
 import { useStakingConfig } from '../features/staking/hooks/useStakingConfig';
 import { useStakingAccount } from '../features/staking/hooks/useStakingAccount';
 import { POLYGONSCAN_ADDRESS_BASE_URL } from '../constants/network.ts';
-import {
-  INTEREST_CONTRACT_ADDRESS,
-  STAKING_CONTRACT_ADDRESS,
-} from '../constants/stakingContracts.ts';
+import { ArrowLeft, DollarSign, ExternalLink, Lock, ScrollText } from 'lucide-react';
+import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.ts';
 
-/**
- * Lazy `/stake/` page — dark main-app shell, lower-brightness shader (Bước 6).
- */
 export default function StakingPage() {
   const { locale } = useSiteLanguage();
   const copy = getStakingCopy(locale);
@@ -44,7 +38,7 @@ export default function StakingPage() {
     'PRANA Staking | PRANA Protocol',
     locale === 'en'
       ? 'Stake PRANA with fixed APR on Polygon — manage permits, stakes, and claims on the official PRANA Protocol page.'
-      : 'Stake PRANA với APR cố định trên Polygon — quản lý permit, stake và claim trên trang chính thức của PRANA Protocol.',
+      : 'Stake PRANA với lãi suất cố định trên Polygon — quản lý permit, stake và claim trên trang chính thức của PRANA Protocol.',
   );
 
   return (
@@ -72,7 +66,7 @@ export default function StakingPage() {
               <Lock className="h-7 w-7 shrink-0 text-[#F5D27A]" aria-hidden />
               {copy.pageTitle}
             </h1>
-            <p className="max-w-2xl text-[15px] text-white/70">
+            <p className="max-w-3xl text-[15px] text-white/70">
               {copy.pageSubtitle}
             </p>
           </div>
