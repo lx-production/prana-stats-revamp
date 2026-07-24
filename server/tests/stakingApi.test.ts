@@ -268,7 +268,7 @@ test('GET /api/staking/account returns 429 when rate limited', async () => {
   });
 
   const req = mockRequest('198.51.100.50');
-  for (let index = 0; index < 30; index += 1) {
+  for (let index = 0; index < 10; index += 1) {
     const ok = mockResponse();
     await handleGet(
       req,

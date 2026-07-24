@@ -14,7 +14,7 @@
 
 - [x] **Bước 1 — Tách homepage và thiết lập lazy `/stake/`** (`40e0da1`): frontend/server typecheck pass, 70 server tests pass, production build pass; `StatsPage` và `StakingPage` đã thành chunk riêng, `/stake` redirect `308` giữ query string và direct refresh `/stake/` trả SPA shell.
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
-- [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 30/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
+- [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 10/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
@@ -167,7 +167,7 @@ Quy tắc backend:
 - Token amounts/nonces serialize thành decimal string, không convert qua `number`.
 - `/config`: server/browser cache 30 giây.
 - `/account`: `private, no-store`; chỉ fetch khi wallet đã kết nối và refetch sau receipt.
-- Thêm rate limit `/account`: 30 request/IP/phút và 120 request/phút trên toàn server để bảo vệ Pi/Alchemy.
+- Thêm rate limit `/account`: 10 request/IP/phút và 120 request/phút trên toàn server để bảo vệ Pi/Alchemy.
 - Upstream RPC failure trả lỗi chung `502`, không trả URL/key hoặc raw provider error.
 - Không tạo generic JSON-RPC proxy.
 - Backend tiếp tục dùng `VITE_ALCHEMY_POLYGON_MAIN` làm Polygon RPC mặc định, theo cấu hình server hiện tại. Biến này chỉ được đọc ở server; frontend main app không tham chiếu nó.

@@ -365,7 +365,7 @@ Routes (each uses one of the header shapes above, as wired in `server/getApiRout
 - `/api/prana-stats` — `max-age=30`
 - `/api/staking-stats` — `max-age=24h`
 - `/api/staking/config` — `max-age=30`
-- `/api/staking/account` — `private, no-store` (wallet-specific; rate-limited 30/IP/min + 120/server/min)
+- `/api/staking/account` — `private, no-store` (wallet-specific; rate-limited 10/IP/min + 120/server/min)
 - `/api/capital` — `max-age=30`
 - `/api/lp-capital` — `max-age=1h`
 - `/api/bond-metrics` — `max-age=24h`

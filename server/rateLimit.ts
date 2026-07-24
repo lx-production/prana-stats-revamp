@@ -19,7 +19,7 @@ const SWAP_LOG_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
 const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 
 // Staking account reads hit Alchemy/Pi — tighter than public config, looser than quotes.
-const STAKING_ACCOUNT_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
+const STAKING_ACCOUNT_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const STAKING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
 
 // How often we delete expired per-IP buckets so memory does not grow forever.
@@ -166,7 +166,7 @@ export function createSwapRateLimiters() {
       return isRateLimited(req, swapVerifyRateLimits, SWAP_VERIFY_RATE_LIMIT, trustedProxyHopCount);
     },
 
-    // Wallet account snapshots: 30/IP/min + 120/server/min to protect Pi/Alchemy.
+    // Wallet account snapshots: 10/IP/min + 120/server/min to protect Pi/Alchemy.
     isStakingAccountRateLimited(req: IncomingMessage): boolean {
       if (
         isRateLimited(
