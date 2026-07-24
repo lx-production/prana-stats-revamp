@@ -20,7 +20,7 @@ const PrivacyPage: React.FC = () => {
       metaNote={
         locale === "en"
           ? "This policy describes technical data processing for the current website and PRANA Interfaces build."
-          : "Chính sách này mô tả việc xử lý dữ liệu kỹ thuật cho website và bản PRANA Swap hiện hành."
+          : "Chính sách này mô tả việc xử lý dữ liệu kỹ thuật cho website và Giao diện PRANA hiện hành."
       }
     />
   );

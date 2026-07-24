@@ -21,7 +21,7 @@ const TermsRiskPage: React.FC = () => {
       metaNote={
         locale === "en"
           ? "Technical parameters in this document apply to the current PRANA Interfaces as of the update date."
-          : "Các thông số kỹ thuật trong tài liệu này chỉ áp dụng cho phiên bản PRANA Swap hiện hành tại ngày cập nhật."
+          : "Các thông số kỹ thuật trong tài liệu này chỉ áp dụng cho Giao diện PRANA hiện hành tại ngày cập nhật."
       }
     />
   );
