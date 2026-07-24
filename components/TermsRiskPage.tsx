@@ -20,7 +20,7 @@ const TermsRiskPage: React.FC = () => {
       effectiveDateIso={TERMS_RISK_EFFECTIVE_DATE}
       metaNote={
         locale === "en"
-          ? "Technical parameters in this document apply only to the current PRANA Swap version as of the update date."
+          ? "Technical parameters in this document apply to the current PRANA Interfaces as of the update date."
           : "Các thông số kỹ thuật trong tài liệu này chỉ áp dụng cho phiên bản PRANA Swap hiện hành tại ngày cập nhật."
       }
     />

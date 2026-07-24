@@ -1,149 +1,201 @@
 # Điều Khoản & Công Bố Rủi Ro
 
-Tài liệu này áp dụng cho website chính thức của PRANA Protocol và giao diện **PRANA Swap**. Vui lòng đọc kỹ trước khi kết nối ví hoặc xác nhận bất kỳ giao dịch nào.
+Tài liệu này áp dụng cho website chính thức của PRANA Protocol và các giao diện giao dịch của website, bao gồm **PRANA Swap** và **PRANA Staking** (gọi chung là **Giao diện PRANA**). Vui lòng đọc kỹ trước khi kết nối ví, ký thông điệp, hoặc xác nhận giao dịch.
 
-## 1. Bản chất sản phẩm
+Khi sử dụng một Giao diện PRANA, bạn xác nhận rằng bạn đã hiểu và chấp nhận các điều khoản này cùng các rủi ro được mô tả dưới đây. Nếu bạn không đồng ý, vui lòng không sử dụng Giao diện PRANA.
 
-PRANA Swap là giao diện kỹ thuật **non-custodial** (không lưu ký) phục vụ việc tương tác với các smart contract công khai trên blockchain Polygon.
+## 1. Bản chất của Giao diện PRANA
 
-PRANA Swap không tạo tài khoản giao dịch nội bộ hoặc số dư lưu ký cho người dùng.
+Giao diện PRANA là các giao diện kỹ thuật, **non-custodial** (không lưu ký), giúp người dùng tương tác với các smart contract công khai trên blockchain Polygon.
 
 Triết Học Đường Phố (**THĐP**):
 
-- không lưu ký tài sản của người dùng
-- không kiểm soát private key hoặc seed phrase
-- không thể đảo ngược giao dịch đã được xác nhận on-chain
+- không tạo tài khoản giao dịch hoặc staking nội bộ cho bạn
+- không kiểm soát ví, private key, hoặc seed phrase của bạn
+- không thể ký giao dịch thay bạn
+- không thể đảo ngược, hủy, hoặc khôi phục giao dịch sau khi giao dịch đã được xác nhận on-chain
 
-Token luôn nằm trong ví do bạn kiểm soát cho đến khi bạn tự ký và gửi giao dịch.
+Bạn vẫn kiểm soát ví của mình. Tuy nhiên, khi bạn stake PRANA, số dư gốc được stake sẽ được chuyển từ ví của bạn sang Staking Contract và sau đó chịu sự điều chỉnh của contract đó cho đến khi được trả lại theo quy tắc của contract.
 
-## 2. Điều kiện sử dụng
+Smart contract không giống tài khoản ngân hàng hoặc tài khoản lưu ký. Tài sản nằm trong smart contract có thể chịu rủi ro từ contract, blockchain, cấu hình, và vận hành.
 
-Người sử dụng phải có đầy đủ năng lực hành vi theo pháp luật áp dụng và đủ tuổi để tự mình xác lập giao dịch. Không được sử dụng PRANA Swap thay mặt người khác khi không có thẩm quyền hợp pháp.
+## 2. Điều kiện đủ tư cách và sử dụng hợp pháp
 
-## 3. Không phải tư vấn đầu tư
+Bạn phải có đầy đủ năng lực hành vi theo pháp luật áp dụng và đủ tuổi để tự mình xác lập giao dịch. Bạn không được sử dụng Giao diện PRANA thay mặt người khác khi không có thẩm quyền hợp pháp.
 
-Thông tin trên website, trong thông báo sản phẩm và trên giao diện PRANA Swap chỉ nhằm giới thiệu công nghệ và cách sử dụng sản phẩm.
+Bạn có trách nhiệm tự xác định xem việc sử dụng PRANA, swap, staking, và Giao diện PRANA có hợp pháp theo quốc tịch, nơi cư trú, và khu vực pháp lý của mình hay không.
 
-Nội dung này **không phải**:
+**Không sử dụng Giao diện PRANA** nếu việc sử dụng đó bị hạn chế hoặc bị cấm theo pháp luật áp dụng.
 
-- tư vấn đầu tư
+## 3. Không phải tư vấn đầu tư, pháp lý, hoặc thuế
+
+Thông tin trên website, trong thông báo sản phẩm, và trên Giao diện PRANA chỉ nhằm mô tả PRANA Protocol, dữ liệu công khai của protocol, và các tương tác kỹ thuật sẵn có.
+
+Thông tin này **không phải**:
+
+- tư vấn đầu tư hoặc tư vấn tài chính
 - tư vấn pháp lý
 - tư vấn thuế
-- khuyến nghị tài chính dành riêng cho bất kỳ cá nhân nào
+- khuyến nghị hoặc bảo đảm dành cho bất kỳ cá nhân nào
 
-Bạn tự chịu trách nhiệm về mọi quyết định mua, bán, giữ hoặc swap tài sản.
+Bạn tự chịu trách nhiệm quyết định có mua, bán, giữ, swap, stake, claim, hoặc unstake tài sản mã hóa hay không. Bạn nên tham vấn chuyên gia độc lập khi thích hợp.
 
-## 4. Rủi ro chính
+## 4. Rủi ro chung của tài sản mã hóa và blockchain
 
-Tài sản mã hóa và các giao thức phi tập trung có thể phát sinh rủi ro, bao gồm nhưng không giới hạn:
+Tài sản mã hóa và các giao thức phi tập trung liên quan đến rủi ro đáng kể, bao gồm nhưng không giới hạn:
 
-- biến động giá mạnh trong thời gian ngắn
-- thanh khoản thấp hoặc thay đổi đột ngột
-- slippage và price impact
-- lỗi, lỗ hổng hoặc hành vi ngoài dự kiến của smart contract
-- sự cố mạng blockchain, tắc nghẽn hoặc phí gas bất thường
-- mất quyền kiểm soát ví, phishing, malware hoặc lỗi thao tác của người dùng
-- token giả mạo, địa chỉ contract giả hoặc giao diện giả mạo
-- mất mát tài sản **không thể phục hồi**
+- biến động giá mạnh và mất giá trị thị trường
+- thanh khoản mỏng, không sẵn có, hoặc thay đổi đột ngột
+- lỗi, lỗ hổng, khai thác, hoặc hành vi ngoài dự kiến của smart contract
+- tái tổ chức blockchain, sự cố, tắc nghẽn, xác nhận chậm, hoặc phí gas bất thường
+- dữ liệu sai, chậm, cũ, hoặc không sẵn có từ RPC hoặc các nhà cung cấp hạ tầng khác
+- bị chiếm quyền ví, phishing, malware, phê duyệt độc hại, hoặc lỗi thao tác của người dùng
+- token giả, địa chỉ contract giả mạo, website giả danh, hoặc giao diện bị chỉnh sửa
+- thay đổi về quy định, thuế, hoặc pháp lý
+- giao dịch hoặc mất mát tài sản không thể đảo ngược hoặc khôi phục
 
-Không có cam kết nào về giá, lợi nhuận, khả năng thanh khoản hoặc kết quả giao dịch.
+Không có bảo đảm nào về giá, lợi nhuận, lợi suất, thanh khoản, thu hồi gốc, thanh toán lãi, hoặc kết quả giao dịch.
 
-## 5. Trách nhiệm của người dùng
+## 5. Tóm tắt PRANA Swap và rủi ro riêng
 
-Trước khi sử dụng, bạn có trách nhiệm:
+PRANA Swap giúp người dùng yêu cầu tuyến đường và gửi giao dịch swap qua các smart contract Uniswap trên Polygon. Trong giao diện hiện tại:
 
-- tự đánh giá rủi ro phù hợp với hoàn cảnh của mình
-- kiểm tra toàn bộ thông tin giao dịch trên ví trước khi ký (token, số lượng, địa chỉ contract, mạng)
-- xác nhận website đúng tên miền chính thức trước khi kết nối ví
-- xác định việc sử dụng PRANA Swap có phù hợp với pháp luật áp dụng đối với quốc tịch, nơi cư trú và khu vực pháp lý của mình hay không
+- swap được thực thi qua Uniswap SwapRouter02
+- các tài sản được hỗ trợ do giao diện lựa chọn
+- giao diện dùng mức slippage cố định
+- swap ERC-20 có thể cần một giao dịch approve riêng
+- swap POL native không cần approve ERC-20
 
-**Không sử dụng PRANA Swap** nếu hoạt động đó bị hạn chế hoặc bị cấm theo pháp luật áp dụng đối với bạn.
+Quote swap chỉ là ước tính, không phải bảo đảm. Kết quả cuối cùng có thể khác hoặc giao dịch có thể thất bại vì slippage, biến động giá, thay đổi thanh khoản, ước tính gas, định tuyến, hành vi token, MEV, điều kiện blockchain, hoặc sự cố bên thứ ba.
 
-## 6. Địa chỉ smart contract cần đối chiếu
+Đối với swap ERC-20, PRANA Swap hiện yêu cầu approve đúng số lượng đầu vào, không phải unlimited approval. Allowance chưa dùng hoặc dùng một phần vẫn có thể còn tồn tại on-chain sau khi swap bị hủy hoặc thất bại. Bạn có trách nhiệm kiểm tra và thu hồi allowance khi thích hợp.
 
-PRANA Swap dùng **Uniswap SwapRouter02** trên Polygon làm router thực thi swap:
-
-[0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45#tokentxns)
-
-Cách đối chiếu trên ví khác nhau giữa hai bước:
-
-- **Approve (ERC-20):** về mặt kỹ thuật, trường `to` của giao dịch là **contract của token** bạn đang approve (ví dụ USDC, PRANA), không phải SwapRouter02. Trên màn hình xác nhận, ví có thể ưu tiên hoặc chỉ hiển thị token, số lượng và **spender**/“Approve to”; `to` kỹ thuật có thể không hiện hoặc chỉ nằm trong phần chi tiết. Địa chỉ cần đối chiếu là **spender** trong lời gọi `approve`, phải khớp chính xác SwapRouter02 ở trên. Nếu ví có hiển thị `to` hoặc “Interacting with” cho bước approve, đó có thể là contract token, không phải router.
-
-- **Swap:** trường `to` của giao dịch phải là SwapRouter02 ở trên.
-
-Nếu ví hiển thị spender (khi approve) hoặc `to` (khi swap) khác địa chỉ trên, hãy dừng lại và không xác nhận giao dịch.
-
-## 7. Approve đúng số lượng cần giao dịch
-
-Với token ERC-20, bạn cần thực hiện bước **approve** trước khi swap nếu allowance chưa đủ.
-
-PRANA Swap yêu cầu approve **đúng số lượng** của giao dịch hiện tại (không phải unlimited approval):
-
-- Swap 100 USDC → approve 100 USDC
-- Swap 50 PRANA → approve 50 PRANA
-
-Mỗi lần số lượng swap thay đổi, bạn có thể cần approve lại. Cách tiếp cận này giới hạn quyền chi tiêu theo từng giao dịch.
-
-Với **POL** (native token của Polygon), không cần approve ERC-20; giao dịch swap chỉ cần một lần xác nhận trên ví.
-
-Nếu giao dịch swap thất bại, bị hủy hoặc không sử dụng hết allowance, quyền chi tiêu đã approve có thể vẫn còn tồn tại on-chain. Người dùng có thể kiểm tra và thu hồi allowance bằng công cụ phù hợp khi cần thiết.
-
-## 8. Phí và chi phí
-
-PRANA Swap **không thu** phí giao diện hay phí định tuyến riêng.
-
-Bạn vẫn có thể phải trả các chi phí on-chain thông thường, ví dụ:
+PRANA Swap hiện không thu phí giao diện hoặc phí định tuyến riêng. Bạn vẫn có thể phải trả:
 
 - gas mạng Polygon
-- phí thanh khoản (LP fee) của pool Uniswap được sử dụng
-- price impact khi quy mô giao dịch lớn so với thanh khoản
+- phí nhà cung cấp thanh khoản trong các pool mà tuyến đường sử dụng
+- price impact và slippage
 
-Pool WBTC/PRANA hiện dùng phí LP **1%**. THĐP đã cung cấp thanh khoản cho pool này từ giai đoạn khởi đầu của hệ sinh thái PRANA; điều đó không loại trừ rủi ro thanh khoản hoặc biến động giá.
+Pool WBTC/PRANA hiện dùng phí nhà cung cấp thanh khoản 1%, và THĐP đã cung cấp thanh khoản cho pool đó. Điều này không loại trừ rủi ro về giá, thanh khoản, xung đột lợi ích, hoặc mất mát. Một tuyến đường có thể dùng nhiều hơn một pool, và quote có thể phản ánh nhiều khoản phí pool.
 
-Một giao dịch có thể được định tuyến qua nhiều pool. Trong trường hợp đó, tỷ giá quote đã phản ánh tác động tổng hợp của các pool và phí thanh khoản tương ứng. Price impact và slippage không phải là khoản phí do THĐP thu.
+## 6. Tóm tắt PRANA Staking và rủi ro riêng
 
-## 9. Phạm vi kỹ thuật hiện tại
+PRANA Staking giúp người dùng tạo và quản lý các vị thế stake PRANA qua Staking Contract trên Polygon.
 
-Trong phiên bản hiện tại, PRANA Swap:
+**Cách tạo một vị thế stake**
 
-- chỉ hoạt động trên **Polygon mainnet**
-- hỗ trợ allowlist cố định gồm 7 token: **PRANA, WBTC, POL, USDC, USDT, WETH, DAI**
-- dùng slippage cố định **0,5%** trên giao diện
-- gửi giao dịch qua Uniswap SwapRouter02 như nêu ở mục 6
-- yêu cầu ví injected (ví dụ MetaMask, Rabby); bạn phải tự ký mọi giao dịch
+Giao diện dùng chữ ký EIP-2612 Permit cho đúng số lượng PRANA, sau đó gửi giao dịch `stakeWithPermit`. Chữ ký Permit diễn ra off-chain, nhưng giao dịch Stake là on-chain và cần một lần xác nhận ví riêng. Vì vậy, một nút “Permit & Stake” có thể kích hoạt hai lời nhắc trên ví.
 
-Người dùng có thể swap giữa các token trong danh sách, không bắt buộc cặp giao dịch phải có PRANA.
+Khi giao dịch Stake thành công:
 
-## 10. Dịch vụ bên thứ ba
+- số dư gốc PRANA đã chọn được chuyển vào Staking Contract
+- thời hạn và APR của vị thế đó được ghi nhận on-chain
+- số dư gốc bị khóa đến khi đáo hạn, trừ khi bạn dùng early unstake
 
-PRANA Swap phụ thuộc vào Polygon, Uniswap, ví, RPC provider và các hạ tầng bên thứ ba. THĐP không sở hữu hoặc kiểm soát toàn bộ các hệ thống này. Việc sử dụng chúng có thể đồng thời chịu điều khoản riêng của từng bên.
+Chữ ký Permit là một ủy quyền. Hãy đọc spender, token, số lượng, chain, nonce, và deadline mà ví hiển thị trước khi ký. Từ chối chữ ký nếu bất kỳ chi tiết nào bất thường.
 
-## 11. Dữ liệu và quyền riêng tư
+**APR và lãi**
 
-Chi tiết về dữ liệu kỹ thuật có thể được xử lý khi bạn dùng website hoặc PRANA Swap (ví dụ log vận hành, địa chỉ ví trong request quote/swap, và access log của hạ tầng) được mô tả tại [Chính sách quyền riêng tư](/privacy).
+APR là tỷ lệ quy năm mà contract dùng để tính lãi denominated bằng PRANA. Đó không phải bảo đảm về giá trị fiat, lợi nhuận thị trường, sức mua, hoặc lợi nhuận.
 
-## 12. Không đảm bảo liên tục và không bồi thường
+Lãi dự kiến hoặc lãi đã tích lũy được hiển thị chỉ là ước tính dựa trên dữ liệu contract công khai và công thức làm tròn số nguyên của contract. Số lượng cuối cùng on-chain có thể hơi khác vì timestamp khối, làm tròn số nguyên, thay đổi cấu hình, hoặc dữ liệu giao diện cũ.
 
-PRANA Swap được cung cấp trên cơ sở “nguyên trạng” và “tùy khả năng sẵn có”, không bảo đảm hoạt động liên tục, không có lỗi hoặc luôn tương thích với mọi ví và thiết bị.
+Việc thanh toán lãi phụ thuộc vào Interest Contract còn đủ PRANA và hoạt động đúng như kỳ vọng. Một giao dịch claim có thể thất bại nếu contract bị tạm dừng, Interest Contract không đủ quỹ, mạng hoặc RPC không sẵn có, hoặc lời gọi contract bị revert vì lý do khác. THĐP không bảo đảm mọi khoản lãi dự kiến sẽ sẵn có hoặc được thanh toán thành công.
 
-Trong phạm vi tối đa được pháp luật áp dụng cho phép, THĐP và các bên liên quan không chịu trách nhiệm đối với thiệt hại phát sinh từ việc sử dụng hoặc không thể sử dụng PRANA Swap, bao gồm sự cố blockchain, smart contract bên thứ ba, ví, RPC, dữ liệu quote hoặc giao dịch do người dùng ký.
+**Claim, đáo hạn, và thời gian ân hạn**
 
-Điều khoản này không loại trừ hoặc hạn chế những trách nhiệm mà pháp luật áp dụng không cho phép loại trừ hoặc hạn chế.
+Lãi chỉ tích lũy theo quy tắc của Staking Contract. Bạn có thể claim lãi đủ điều kiện khi vị thế còn hiệu lực và, sau đáo hạn, chỉ đến khi thời gian ân hạn áp dụng kết thúc.
 
-## 13. Cập nhật điều khoản
+Nếu bạn unstake một vị thế đã đáo hạn trước khi claim phần lãi còn đủ điều kiện, bản ghi stake sẽ bị xóa và phần lãi chưa claim đó có thể bị mất. Vì vậy, giao diện chính thức yêu cầu bạn claim lãi đủ điều kiện trước khi unstake trong thời gian ân hạn.
 
-THĐP có thể cập nhật tài liệu này theo thời gian để phản ánh thay đổi sản phẩm hoặc yêu cầu pháp lý. Phiên bản đăng trên website chính thức tại đường dẫn `/terms` là phiên bản hiện hành.
+Sau khi thời gian ân hạn kết thúc, lãi chưa claim không còn được claim nữa, dù số dư gốc vẫn có thể đủ điều kiện unstake theo quy tắc contract. Bạn có trách nhiệm theo dõi đáo hạn và claim đúng hạn.
 
-Việc tiếp tục sử dụng website hoặc PRANA Swap sau khi điều khoản được cập nhật đồng nghĩa với việc bạn chấp nhận phiên bản mới, trong phạm vi pháp luật áp dụng cho phép.
+**Early unstake**
 
-## 14. Liên hệ thực tế khi dùng sản phẩm
+Early unstake trả lại ít hơn số dư gốc ban đầu:
 
-Trước mỗi giao dịch:
+- mức phạt early-unstake đã cấu hình được trừ vào gốc
+- toàn bộ lãi đã tích lũy nhưng chưa claim của vị thế đó bị mất
+- khoản phạt được Staking Contract chuyển sang Interest Contract
+- bạn cũng phải trả gas Polygon
 
-1. Kiểm tra đúng tên miền website chính thức
-2. Kiểm tra mạng ví đang ở Polygon
-3. Đối chiếu đúng địa chỉ ở mục 6: spender/“Approve to” khi approve, `to` khi swap
-4. Đọc kỹ số lượng token in/out và mức tối thiểu nhận được trên ví
-5. Chỉ xác nhận khi bạn hiểu và chấp nhận rủi ro
+Phạt early-unstake là quy tắc của smart contract, không phải phí giao diện riêng do THĐP thu. Hãy xem tỷ lệ phần trăm và số nhận ước tính đang hiển thị trước khi xác nhận.
 
-Nếu bạn không đồng ý với các điều khoản và rủi ro trong tài liệu này, vui lòng không kết nối ví và không sử dụng PRANA Swap.
+**Kiểm soát cấu hình và quản trị**
+
+Staking Contract có các hàm do owner kiểm soát. Trong phạm vi contract đã triển khai cho phép, owner có thể tạm dừng các hành động của contract và thay đổi các APR sẵn có, mức stake tối thiểu, thời gian ân hạn, và phạt early-unstake.
+
+APR được lưu cho một vị thế stake hiện hữu được xác định tại thời điểm tạo vị thế đó. Các thiết lập toàn cục khác và trạng thái tạm dừng có thể ảnh hưởng đến các hành động thực hiện sau này. Các giá trị hiện tại hiển thị trên giao diện được đọc từ blockchain và có thể thay đổi; đừng dựa vào ảnh chụp màn hình cũ, thông báo cũ, hoặc giá trị đã cache.
+
+Khóa quản trị, quyền sở hữu contract, thay đổi cấu hình, và khả năng sẵn có của Interest Contract là các rủi ro bổ sung. Hãy xem xét trạng thái on-chain hiện tại trước khi hành động.
+
+## 7. Địa chỉ contract cần đối chiếu
+
+Các giao diện chính thức hiện tại xác định các contract trên Polygon sau:
+
+- **Token PRANA:** [0x928277e774F34272717EADFafC3fd802dAfBD0F5](https://polygonscan.com/address/0x928277e774f34272717eadfafc3fd802dafbd0f5)
+- **Uniswap SwapRouter02:** [0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45)
+- **PRANA Staking Contract:** [0x714425A4F4d624ef83fEff810a0EEC30B0847868](https://polygonscan.com/address/0x714425a4f4d624ef83feff810a0eec30b0847868)
+- **PRANA Interest Contract:** [0x1DE1E9BEF781fb3440C2c22E8ca1bF61BD26f69d](https://polygonscan.com/address/0x1de1e9bef781fb3440c2c22e8ca1bf61bd26f69d)
+
+Với approve ERC-20 của Swap, trường `to` của giao dịch có thể là contract token; **spender** phải là SwapRouter02. Với chính giao dịch Swap, trường `to` phải là SwapRouter02.
+
+Với Permit PRANA dùng cho Staking, token được xác minh phải là token PRANA, spender phải là Staking Contract, và value phải là số lượng stake dự định. Các giao dịch Stake, Claim, Unstake, hoặc Early Unstake tiếp theo phải tương tác với Staking Contract.
+
+Luôn đối chiếu địa chỉ từng ký tự. Nếu ví hiển thị chain, token, spender, contract, số lượng, hoặc hàm bất thường, hãy dừng lại và từ chối yêu cầu.
+
+## 8. Trách nhiệm của người dùng
+
+Trước khi ký hoặc gửi bất kỳ hành động nào, bạn có trách nhiệm:
+
+- xác nhận bạn đang ở đúng tên miền website chính thức
+- dùng Polygon mainnet và ví tương thích
+- đối chiếu contract, token, spender, hàm, số lượng, và người nhận liên quan
+- xem lại gas, mức tối thiểu nhận được, price impact, thời hạn, APR, đáo hạn, thời gian ân hạn, và thông tin phạt áp dụng cho hành động đó
+- giữ đủ POL cho mọi giao dịch cần thiết, gồm cả claim hoặc unstake sau này
+- bảo vệ thiết bị, ví, private key, seed phrase, và phương thức khôi phục
+- tự kiểm tra trạng thái on-chain nếu giao diện bị chậm hoặc không sẵn có
+- hiểu hệ quả thuế và pháp lý của các giao dịch của bạn
+
+Không bao giờ chia sẻ seed phrase hoặc private key với THĐP hoặc bất kỳ ai tự nhận hỗ trợ PRANA. THĐP không cần cả hai để hỗ trợ một giao dịch công khai.
+
+## 9. Dịch vụ bên thứ ba và dữ liệu blockchain công khai
+
+Giao diện PRANA phụ thuộc vào Polygon, Uniswap, ví, nhà cung cấp RPC, nhà cung cấp hosting, và các hệ thống bên thứ ba khác. THĐP không sở hữu hoặc kiểm soát toàn bộ các hệ thống này và không chịu trách nhiệm về khả năng sẵn có, bảo mật, độ chính xác, hoặc điều khoản của chúng.
+
+Giao dịch blockchain và hoạt động ví là công khai. Địa chỉ ví, số lượng token, tương tác contract, mã băm giao dịch, và timestamp có thể hiển thị vĩnh viễn và có thể bị bên thứ ba phân tích hoặc liên kết với thông tin khác.
+
+## 10. Quyền riêng tư
+
+Dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website hoặc dùng Giao diện PRANA, bao gồm log vận hành và hạ tầng, địa chỉ ví có trong request, dữ liệu quote và giao dịch Swap, và dữ liệu đọc tài khoản Staking.
+
+Xem chi tiết tại [Chính sách quyền riêng tư](/privacy).
+
+## 11. Không bảo đảm uptime hoặc tính năng liên tục
+
+Website và Giao diện PRANA được cung cấp trên cơ sở “nguyên trạng” và “tùy khả năng sẵn có”. THĐP không bảo đảm hoạt động liên tục, dữ liệu không lỗi, tương thích với mọi ví hoặc thiết bị, hỗ trợ liên tục cho bất kỳ tài sản hoặc tính năng nào, hoặc truy cập không gián đoạn tới bất kỳ smart contract nào.
+
+Một giao diện có thể được thay đổi, tạm dừng, hạn chế, hoặc ngừng cung cấp. Việc ngừng website không xóa các smart contract công khai hoặc bản ghi blockchain, nhưng có thể yêu cầu bạn dùng công cụ tương thích khác để tương tác với chúng.
+
+## 12. Giới hạn trách nhiệm
+
+Trong phạm vi tối đa được pháp luật áp dụng cho phép, THĐP và các bên liên quan không chịu trách nhiệm đối với tổn thất hoặc thiệt hại phát sinh từ việc sử dụng, hoặc không thể sử dụng, website hoặc Giao diện PRANA, bao gồm tổn thất do:
+
+- thay đổi giá, slippage, thiếu thanh khoản, hoặc giao dịch thất bại
+- smart contract, token, ví, chữ ký, approve, hoặc lỗi thao tác của người dùng
+- khóa staking, phạt, hết thời hạn claim, hoặc lãi không sẵn có
+- sự cố của Polygon, Uniswap, RPC, hosting, hoặc bên thứ ba khác
+- dữ liệu giao diện không chính xác, chậm, đã cache, hoặc không sẵn có
+- phishing, malware, thiết bị bị xâm nhập, hoặc truy cập ví trái phép
+
+Mục này không loại trừ hoặc hạn chế những trách nhiệm mà pháp luật áp dụng không cho phép loại trừ hoặc hạn chế.
+
+## 13. Thay đổi điều khoản
+
+THĐP có thể cập nhật tài liệu này để phản ánh thay đổi về sản phẩm, kỹ thuật, vận hành, hoặc pháp lý. Phiên bản đăng trên website chính thức tại `/terms` là phiên bản hiện hành.
+
+Việc tiếp tục sử dụng website hoặc Giao diện PRANA sau khi cập nhật đồng nghĩa với việc bạn chấp nhận phiên bản đã sửa đổi, trong phạm vi pháp luật áp dụng cho phép.
+
+## 14. Liên hệ
+
+Câu hỏi về các điều khoản này có thể gửi tới [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).

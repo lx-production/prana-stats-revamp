@@ -15,22 +15,28 @@ type LegalMarkdownPageProps = {
   document: TermsRiskDocument;
   effectiveDateIso: string;
   metaNote: string;
+  /** Defaults to “Effective date:” / “Ngày có hiệu lực:”. Guides may pass “Updated:”. */
+  dateLabel?: string;
 };
 
 /**
- * Shared layout for standalone legal markdown pages (`/terms`, `/privacy`).
+ * Shared layout for standalone markdown pages (`/terms`, `/privacy`, guides).
  */
 const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
   icon: Icon,
   document,
   effectiveDateIso,
   metaNote,
+  dateLabel,
 }) => {
   const { locale } = useSiteLanguage();
   const buildInfo = getAppBuildInfo();
   const buildLabel = formatBuildLabel(buildInfo);
   const buildHref = buildIdentityUrl(buildInfo);
   const effectiveDate = formatTermsEffectiveDate(effectiveDateIso, locale);
+  const resolvedDateLabel =
+    dateLabel ??
+    (locale === "en" ? "Effective date: " : "Ngày có hiệu lực: ");
   // Hover shows full SHA even when the label is a release tag.
   const buildTitle = buildInfo.tag
     ? `${buildInfo.tag} (${buildInfo.commit})`
@@ -57,7 +63,7 @@ const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
 
           <aside className="mt-5 space-y-1.5 text-xs leading-relaxed text-white/45 sm:text-sm">
             <p>
-              {locale === "en" ? "Effective date: " : "Ngày có hiệu lực: "}
+              {resolvedDateLabel}
               <span className="text-white/65">{effectiveDate}</span>
             </p>
             <p>

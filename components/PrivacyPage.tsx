@@ -19,7 +19,7 @@ const PrivacyPage: React.FC = () => {
       effectiveDateIso={PRIVACY_EFFECTIVE_DATE}
       metaNote={
         locale === "en"
-          ? "This policy describes technical data processing for the current website and PRANA Swap build."
+          ? "This policy describes technical data processing for the current website and PRANA Interfaces build."
           : "Chính sách này mô tả việc xử lý dữ liệu kỹ thuật cho website và bản PRANA Swap hiện hành."
       }
     />

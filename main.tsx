@@ -3,8 +3,10 @@ import "./index.css";
 import ReactDOM from "react-dom/client";
 import AppFooter from "./components/AppFooter";
 import PrivacyPage from "./components/PrivacyPage";
+import SwapGuidePage from "./components/SwapGuidePage";
 import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
+import StakingGuidePage from "./components/StakingGuidePage";
 import { useAppPathname } from "./hooks/useAppPathname";
 import FlutterShaderBackground from "./flutterShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -12,7 +14,9 @@ import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import {
   isStakePath,
   isPrivacyPath,
+  isGuideSwapPath,
   isTermsRiskPath,
+  isGuideStakingPath,
 } from "./constants/appRoutes";
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
@@ -48,6 +52,16 @@ function App() {
       ) : isPrivacyPath(pathname) ? (
         <>
           <PrivacyPage />
+          <AppFooter />
+        </>
+      ) : isGuideSwapPath(pathname) ? (
+        <>
+          <SwapGuidePage />
+          <AppFooter />
+        </>
+      ) : isGuideStakingPath(pathname) ? (
+        <>
+          <StakingGuidePage />
           <AppFooter />
         </>
       ) : (

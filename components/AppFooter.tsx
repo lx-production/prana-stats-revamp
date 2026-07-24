@@ -1,8 +1,13 @@
 import React from 'react';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import { getAppBuildInfo } from '../utils/appBuildInfo.ts';
-import { PRIVACY_PATH, TERMS_RISK_PATH } from '../constants/appRoutes.ts';
 import { buildIdentityUrl, formatBuildLabel } from '../utils/buildInfoUrls.ts';
+import {
+  PRIVACY_PATH,
+  TERMS_RISK_PATH,
+  GUIDE_SWAP_CANONICAL_PATH,
+  GUIDE_STAKING_CANONICAL_PATH,
+} from '../constants/appRoutes.ts';
 
 /**
  * Site footer: release tag when HEAD is tagged, otherwise short SHA.
@@ -36,6 +41,24 @@ const AppFooter: React.FC = () => {
           className="underline-offset-2 hover:text-white/75 hover:underline"
         >
           {locale === 'en' ? 'Privacy Policy' : 'Chính sách quyền riêng tư'}
+        </a>
+        <span aria-hidden="true" className="text-white/25">
+          ·
+        </span>
+        <a
+          href={GUIDE_SWAP_CANONICAL_PATH}
+          className="underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          {locale === 'en' ? 'Swap guide' : 'Hướng dẫn Swap'}
+        </a>
+        <span aria-hidden="true" className="text-white/25">
+          ·
+        </span>
+        <a
+          href={GUIDE_STAKING_CANONICAL_PATH}
+          className="underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          {locale === 'en' ? 'Staking guide' : 'Hướng dẫn Staking'}
         </a>
       </p>
       <p className="text-center text-xs text-white/35">

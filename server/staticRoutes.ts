@@ -9,7 +9,13 @@ import {
 import {
   STAKE_PATH,
   isStakePath,
+  GUIDE_SWAP_PATH,
   STAKE_CANONICAL_PATH,
+  isGuideSwapPath,
+  GUIDE_STAKING_PATH,
+  isGuideStakingPath,
+  GUIDE_SWAP_CANONICAL_PATH,
+  GUIDE_STAKING_CANONICAL_PATH,
 } from '../constants/appRoutes.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
@@ -19,6 +25,13 @@ export type StaticRouteOptions = {
   distDir?: string;
 };
 
+/** Bare path → trailing-slash canonical URL for SPA document routes. */
+const SPA_TRAILING_SLASH_REDIRECTS = [
+  { bare: STAKE_PATH, canonical: STAKE_CANONICAL_PATH },
+  { bare: GUIDE_SWAP_PATH, canonical: GUIDE_SWAP_CANONICAL_PATH },
+  { bare: GUIDE_STAKING_PATH, canonical: GUIDE_STAKING_CANONICAL_PATH },
+] as const;
+
 /**
  * Builds the static/SPA request handler.
  * Production uses DIST_DIR; tests inject a temp dir with index.html.
@@ -27,16 +40,23 @@ export function createStaticRequestHandler(options: StaticRouteOptions = {}): Re
   const distDir = options.distDir ?? DIST_DIR;
 
   return async function handleStaticRequest(req, res, url): Promise<boolean> {
-    // Lazy staking route lives in the main SPA; normalize trailing slash.
-    if (url.pathname === STAKE_PATH) {
-      sendRedirect(res, 308, `${STAKE_CANONICAL_PATH}${url.search}`);
-      return true;
+    // Normalize trailing slash for stake + guide document routes.
+    for (const route of SPA_TRAILING_SLASH_REDIRECTS) {
+      if (url.pathname === route.bare) {
+        sendRedirect(res, 308, `${route.canonical}${url.search}`);
+        return true;
+      }
     }
 
-    // Serve the SPA shell for /stake/ (and unknown subpaths) so refresh does not 404.
-    if (isStakePath(url.pathname)) {
-      const stakeShell = path.join(distDir, 'index.html');
-      if (await tryServeFile(req, res, stakeShell)) return true;
+    // Serve the SPA shell early for stake/guide trees so refresh does not 404
+    // on directory-like paths before the general fallback.
+    if (
+      isStakePath(url.pathname) ||
+      isGuideSwapPath(url.pathname) ||
+      isGuideStakingPath(url.pathname)
+    ) {
+      const spaShell = path.join(distDir, 'index.html');
+      if (await tryServeFile(req, res, spaShell)) return true;
       return false;
     }
 

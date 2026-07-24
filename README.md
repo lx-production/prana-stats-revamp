@@ -36,6 +36,9 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | [docs/swap-modal-technical-overview.md](docs/swap-modal-technical-overview.md) | Swap quote / verify flow                   |
 | [docs/add-staking-ui.md](docs/add-staking-ui.md)                               | Lazy `/stake/` staking UI integration      |
 | `/terms`                                                                       | Terms / Risk Disclosure page (footer link) |
+| `/privacy`                                                                     | Privacy Policy page (footer link)          |
+| `/guide/swap/`                                                                 | Swap user guide (approve, slippage, …)     |
+| `/guide/staking/`                                                              | Staking user guide (permit, claim, …)      |
 | `/stake/`                                                                      | Personal staking (permit, stake, claim)    |
 
 

@@ -3,8 +3,8 @@
 ## Tóm tắt kiến trúc
 
 - Dùng chung một Vite app, `WagmiProvider`, React Query, locale, favicon và design system.
-- Một SPA, nhiều path (không React Router): `/` (stats), `/stake/` (staking), `/terms`, `/privacy` — chọn page theo `window.location.pathname` (`useAppPathname` + `constants/appRoutes`).
-- `/` và `/stake/` là `React.lazy`; người vào trang stats không tải code staking; `/terms` và `/privacy` giữ page nhỏ eager như hiện tại.
+- Một SPA, nhiều path (không React Router): `/` (stats), `/stake/` (staking), `/terms`, `/privacy`, `/guide/swap/`, `/guide/staking/` — chọn page theo `window.location.pathname` (`useAppPathname` + `constants/appRoutes`).
+- `/` và `/stake/` là `React.lazy`; người vào trang stats không tải code staking; `/terms`, `/privacy`, và các guide giữ page nhỏ eager như hiện tại.
 - Link `/stake/` dùng navigation thông thường (full URL), không client-side router library.
 - Contract reads đi qua backend API chuyên biệt; Alchemy key chỉ tồn tại server-side.
 - Ví người dùng vẫn ký permit và gửi transaction trực tiếp.
@@ -60,7 +60,7 @@ Các phần dùng chung:
 | Wagmi/React Query providers | `features/web3/Web3Providers.tsx` (lazy via `StakingEntry` / `SwapEntry`; not root `main.tsx`) |
 | Connect, disconnect, switch Polygon | `features/web3/useInjectedWallet.ts` |
 | Locale VI/EN | `SiteLanguageProvider`, `useSiteLanguage`, `LanguageToggle` |
-| Path matching (`/terms`, `/privacy`, `/stake`) | `constants/appRoutes.ts` + `useAppPathname` |
+| Path matching (`/terms`, `/privacy`, `/stake`, `/guide/*`) | `constants/appRoutes.ts` + `useAppPathname` |
 | Polygon RPC (frontend public) | `constants/network.ts` + `features/web3/wagmiConfig.ts` |
 | PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
 | Protocol wallets (treasury/reserve/buy-dips) | `constants/protocolAddresses.ts` |
