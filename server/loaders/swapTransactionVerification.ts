@@ -1,7 +1,8 @@
 import { ethers } from 'ethers';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { logVerifiedSwapTransactionEvent, type SwapRequestLogMetadata } from './swapLogs.ts';
-import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
+import { UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import { assertSwapQuoteTokenUnused, markSwapQuoteTokenUsed, verifySwapQuoteToken } from './swapQuoteVerification.ts';
 
 import type { HexAddress, SwapQuoteResponse, SwapTransactionVerificationRequest } from '../../types/swap.types.ts';

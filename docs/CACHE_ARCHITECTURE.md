@@ -297,7 +297,7 @@ Top holdings in-memory cache (TTL = `SERVER_CACHE_TTL_MS.topHoldingsRefresh`):
 
 ### LP position NFT id cache
 
-`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `TARGET_OWNER`, separate from the `/api/lp-capital` response cache (`SERVER_CACHE_TTL_MS.lpCapitalApiResponse`, 1 hour).
+`server/loaders/lpCapital.ts` keeps an in-memory **Uniswap V3 position NFT token id** for `PROTOCOL_RESERVE_ADDRESS`, separate from the `/api/lp-capital` response cache (`SERVER_CACHE_TTL_MS.lpCapitalApiResponse`, 1 hour).
 
 - TTL is `LP_TOKEN_ID_CACHE_TTL_MS` from `constants/arbitrumWbtcUsdtLp.ts`, which is set to `SERVER_CACHE_TTL_MS.lpTokenId` (24 hours) in the central registry.
 - Each `loadLpCapital()` call still reads on-chain `positions(tokenId)` and checks the position is still active in the configured pool; if not, the id cache is cleared and the loader rescans wallet NFTs.

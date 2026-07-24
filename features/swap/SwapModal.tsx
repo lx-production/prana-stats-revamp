@@ -12,7 +12,13 @@ import { ArrowDownUp, CheckCircle2, ExternalLink, Loader2, LogOut, RefreshCw, X 
 import { formatCompactAddress } from '../web3/walletFormatting';
 import { formatSwapTokenAmount, isPositiveDecimalInput } from './utils/swapTokenFormatting';
 import { TERMS_RISK_PATH } from '../../constants/appRoutes';
-import { DEFAULT_SWAP_SLIPPAGE_BPS, DEFAULT_SWAP_TOKEN_IN_SYMBOL, DEFAULT_SWAP_TOKEN_OUT_SYMBOL, POLYGONSCAN_TX_BASE_URL, V1_SWAP_TOKENS } from '../../constants/swapContracts';
+import { POLYGONSCAN_TX_BASE_URL } from '../../constants/network';
+import {
+  DEFAULT_SWAP_SLIPPAGE_BPS,
+  DEFAULT_SWAP_TOKEN_IN_SYMBOL,
+  DEFAULT_SWAP_TOKEN_OUT_SYMBOL,
+  V1_SWAP_TOKENS,
+} from '../../constants/swapContracts';
 
 import type { SwapModalProps, SwapTokenSymbol } from '../../types/swap.types';
 

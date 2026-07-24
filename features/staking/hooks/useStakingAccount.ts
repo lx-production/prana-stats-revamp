@@ -1,16 +1,13 @@
 import { isAddress } from 'viem';
 import { useQuery } from '@tanstack/react-query';
-import {
-  fetchStakingAccount,
-  stakingAccountQueryKey,
-} from '../stakingApi.ts';
+import { fetchStakingAccount, stakingAccountQueryKey } from '../stakingApi.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
 
 /**
  * Wallet-specific balance + stakes from GET /api/staking/account.
  * Always refetch on mount so reconnecting the same wallet does not reuse a
- * stale cache entry. No polling — Bước 5 will invalidate after receipts.
+ * stale cache entry. No polling
  */
 export function useStakingAccount(address: string | undefined) {
   const validAddress =

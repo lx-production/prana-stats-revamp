@@ -2,10 +2,11 @@ import React from 'react';
 import InfoTooltip from './InfoTooltip';
 import { Landmark } from 'lucide-react';
 import { useCapital } from '../hooks/useCapital';
-import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
 import { SELL_BOND_ADDRESS_V2 } from '../constants/bonds';
 import { WBTC_PRANA_V3_POOL } from '../constants/sharedContracts';
 import { computeProtocolCapitalUsd } from '../utils/protocolCapital';
+import { PROTOCOL_RESERVE_ADDRESS } from '../constants/protocolAddresses';
+import { useArbitrumWbtcUsdtLpValue } from '../hooks/useArbitrumWbtcUsdtLpValue';
 
 export const Capital: React.FC = () => {
   const { items, isLoading, error } = useCapital();
@@ -116,7 +117,7 @@ export const Capital: React.FC = () => {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="text-xs text-gray-500 font-mono break-all flex items-start gap-1 relative">
-                            0x917d8fc3938FDB924332ad3B4771B234E5F468DC
+                            {PROTOCOL_RESERVE_ADDRESS}
                             <InfoTooltip
                               ariaLabel="LP position details"
                               text="Uniswap V3 LP WBTC/USDT"

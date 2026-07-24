@@ -1,19 +1,15 @@
-import type { CapitalApiResponse } from '../../types/api.types.ts';
 import { ethers } from 'ethers';
 import { erc20Abi } from 'viem';
-import { loadPranaPricesBundle } from './pranaPrices.ts';
 import { formatUsd } from '../../utils/formatters.ts';
-import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
+import { loadPranaPricesBundle } from './pranaPrices.ts';
+import { ARBITRUM_USDT } from '../../constants/arbitrumWbtcUsdtLp.ts';
+import { USDT_POLYGON_ADDRESS } from '../../constants/swapContracts.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
-import { MULTICALL3_ABI, MULTICALL3_ADDRESS, WBTC_ADDRESS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
+import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
+import { BUY_DIPS_WALLET_ADDRESS, PRANA_PROTOCOL_ADDRESS } from '../../constants/protocolAddresses.ts';
+import { MULTICALL3_ABI, MULTICALL3_ADDRESS, USDT_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
 
-const TREZOR_1 = '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
-const METAMASK = '0x1d791aca381c844c4e497fca9429dbe5d36ff1bc';
-
-const USDT_POLYGON_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
-const USDT_ARBITRUM_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
-const USDT_DECIMALS = 6;
-const WBTC_DECIMALS = 8;
+import type { CapitalApiResponse } from '../../types/api.types.ts';
 
 const ERC20_IFACE = new ethers.Interface(erc20Abi);
 
@@ -50,18 +46,18 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
   ]);
 
   const polygonMulticall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, polygonProvider);
-  const usdtArbitrum = new ethers.Contract(USDT_ARBITRUM_ADDRESS, erc20Abi, arbitrumProvider);
+  const usdtArbitrum = new ethers.Contract(ARBITRUM_USDT, erc20Abi, arbitrumProvider);
 
   const polygonCalls = [
     {
       target: USDT_POLYGON_ADDRESS,
       allowFailure: false,
-      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [TREZOR_1]),
+      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [PRANA_PROTOCOL_ADDRESS]),
     },
     {
       target: USDT_POLYGON_ADDRESS,
       allowFailure: false,
-      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [METAMASK]),
+      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [BUY_DIPS_WALLET_ADDRESS]),
     },
     {
       target: WBTC_ADDRESS,
@@ -72,18 +68,18 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
 
   const [{ btcPriceUsd }, usdtArbitrumRaw, polygonResults, sellBondCapacityRaw] = await Promise.all([
     loadPranaPricesBundle(),
-    usdtArbitrum.balanceOf(TREZOR_1),
+    usdtArbitrum.balanceOf(PRANA_PROTOCOL_ADDRESS),
     polygonMulticall.aggregate3.staticCall(polygonCalls) as Promise<MulticallResult[]>,
     loadSellBondCapacityRaw(polygonProvider),
   ]);
 
-  const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT Trezor 1');
-  const usdtPolygonRawTrezor3 = decodeBalance(polygonResults[1], 'Polygon USDT MetaMask');
+  const usdtPolygonRaw = decodeBalance(polygonResults[0], 'Polygon USDT PRANA Protocol');
+  const usdtPolygonRawBuyDips = decodeBalance(polygonResults[1], 'Polygon USDT Buy Dips wallet');
   const wbtcPranaPoolRaw = decodeBalance(polygonResults[2], 'Polygon WBTC/PRANA pool WBTC reserve');
 
   const usdtPolygonAmount = Number(ethers.formatUnits(usdtPolygonRaw, USDT_DECIMALS));
   const usdtArbitrumAmount = Number(ethers.formatUnits(usdtArbitrumRaw, USDT_DECIMALS));
-  const usdtPolygonAmountTrezor3 = Number(ethers.formatUnits(usdtPolygonRawTrezor3, USDT_DECIMALS));
+  const usdtPolygonAmountBuyDips = Number(ethers.formatUnits(usdtPolygonRawBuyDips, USDT_DECIMALS));
   const wbtcAmount = Number(ethers.formatUnits(sellBondCapacityRaw, WBTC_DECIMALS));
   const wbtcPranaPoolAmount = Number(ethers.formatUnits(wbtcPranaPoolRaw, WBTC_DECIMALS));
   const wbtcUsdValue = wbtcAmount * btcPriceUsd;
@@ -96,7 +92,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         label: 'Capital Wallet',
         tokenSymbol: 'USDT',
         network: 'Polygon',
-        address: TREZOR_1,
+        address: PRANA_PROTOCOL_ADDRESS,
         amount: Number.isFinite(usdtPolygonAmount)
           ? usdtPolygonAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })
           : '0',
@@ -109,7 +105,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         label: 'Capital Wallet',
         tokenSymbol: 'USDT',
         network: 'Arbitrum',
-        address: TREZOR_1,
+        address: PRANA_PROTOCOL_ADDRESS,
         amount: Number.isFinite(usdtArbitrumAmount)
           ? usdtArbitrumAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })
           : '0',
@@ -122,11 +118,11 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         label: 'Capital Wallet',
         tokenSymbol: 'USDT',
         network: 'Polygon',
-        address: METAMASK,
-        amount: Number.isFinite(usdtPolygonAmountTrezor3)
-          ? usdtPolygonAmountTrezor3.toLocaleString('en-US', { maximumFractionDigits: 2 })
+        address: BUY_DIPS_WALLET_ADDRESS,
+        amount: Number.isFinite(usdtPolygonAmountBuyDips)
+          ? usdtPolygonAmountBuyDips.toLocaleString('en-US', { maximumFractionDigits: 2 })
           : '0',
-        amountValue: Number.isFinite(usdtPolygonAmountTrezor3) ? usdtPolygonAmountTrezor3 : 0,
+        amountValue: Number.isFinite(usdtPolygonAmountBuyDips) ? usdtPolygonAmountBuyDips : 0,
         usdValue: null,
         usdValueNumber: null,
       },

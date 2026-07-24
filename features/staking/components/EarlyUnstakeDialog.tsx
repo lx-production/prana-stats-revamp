@@ -102,7 +102,7 @@ export default function EarlyUnstakeDialog({
           {copy.earlyDialogInterestLost}
         </StatusBanner>
 
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
+        <div className="mt-5 flex flex-col gap-2">
           <button
             type="button"
             className="btn-stake btn-danger w-full sm:w-auto"
@@ -121,7 +121,7 @@ export default function EarlyUnstakeDialog({
           <button
             ref={cancelRef}
             type="button"
-            className="btn-hero btn-glass w-full sm:w-auto"
+            className="btn-hero btn-glass w-full sm:w-auto text-sm"
             disabled={busy}
             onClick={onCancel}
           >

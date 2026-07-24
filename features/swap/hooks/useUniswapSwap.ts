@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
 import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
-import { POLYGON_CHAIN_ID, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../../constants/swapContracts';
+import { POLYGON_CHAIN_ID } from '../../../constants/network';
+import { UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../../constants/swapContracts';
 
 import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../../../types/swap.types';
 

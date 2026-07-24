@@ -1,26 +1,15 @@
 import React from 'react';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 
-import type { LanguageToggleProps } from '../types/languageToggle.types';
-
 /**
- * VI / EN site language control.
- * - `fixed` (default): homepage / legal shell corner placement
- * - `inline`: staking header row (flows with layout)
+ * VI / EN site language control — fixed corner placement (homepage, legal, staking).
  */
-const LanguageToggle: React.FC<LanguageToggleProps> = ({
-  placement = 'fixed',
-}) => {
+const LanguageToggle: React.FC = () => {
   const { locale, setLocale } = useSiteLanguage();
-
-  const shellClass =
-    placement === 'fixed'
-      ? 'fixed right-4 top-4 z-[60] pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.25rem,env(safe-area-inset-right))] shadow-lg'
-      : 'relative z-10 shrink-0';
 
   return (
     <div
-      className={`flex rounded-lg border border-white/15 bg-[#070b1f]/80 p-0.5 backdrop-blur-md ${shellClass}`}
+      className="fixed right-4 top-4 z-[60] flex rounded-lg border border-white/15 bg-[#070b1f]/80 p-0.5 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.25rem,env(safe-area-inset-right))] shadow-lg backdrop-blur-md"
       role="group"
       aria-label="Site language"
     >

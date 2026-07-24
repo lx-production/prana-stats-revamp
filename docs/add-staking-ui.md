@@ -17,7 +17,7 @@
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 10/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
-- [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; inline `LanguageToggle`; gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
+- [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; fixed `LanguageToggle` (cùng homepage); gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
 - [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; code review sau refactor Swap đã hoàn tất và Hero STAKE đã trỏ vào lazy route `/stake/`; rollout nginx Pi/VPS, public smoke-test và rollback window vẫn thực hiện sau khi deploy.
 
@@ -63,7 +63,8 @@ Các phần dùng chung:
 | Path matching (`/terms`, `/privacy`, `/stake`) | `constants/appRoutes.ts` + `useAppPathname` |
 | Polygon RPC (frontend public) | `constants/network.ts` + `features/web3/wagmiConfig.ts` |
 | PRANA address/decimals | `constants/sharedContracts.ts` (đã có) |
-| Staking/Interest address và ABI | `constants/stakingContracts.ts` (typed ABI `as const`, tối thiểu cho stats + UI) |
+| Protocol wallets (treasury/reserve/buy-dips) | `constants/protocolAddresses.ts` |
+| Staking/Interest address và ABI | `constants/stakingContracts.ts` (typed ABI `as const`, tối thiểu cho stats + UI; gồm `PRANA_TOKEN_ABI` cho account reads) |
 | Format số/ngày giờ | Mở rộng `utils/formatters.ts` |
 | Rút gọn wallet address | `formatCompactAddress` trong `features/web3/walletFormatting.ts` (Swap + staking dùng chung) |
 | Favicon | `useSpinningFavicon` hiện tại |
@@ -96,7 +97,7 @@ Baseline: v2.3.1 đã có path resolver cho `/terms` và `/privacy` trong `main.
 
 ### Bước 2 — Chuẩn hóa constants, ABI và types ✅
 
-- Hợp nhất/chuẩn hóa tiếp trên nền đã có: `sharedContracts.ts`, `stakingContracts.ts`, `network.ts`; xóa bản sao trong `staking-ui`.
+- Hợp nhất/chuẩn hóa tiếp trên nền đã có: `sharedContracts.ts`, `protocolAddresses.ts`, `stakingContracts.ts`, `network.ts`; xóa bản sao trong `staking-ui`.
 - Thay ABI human-readable/ABI lớn bằng một typed ABI tối thiểu dùng chung (đủ stake/claim/unstake/permit reads+writes cho UI mới; stats loader có thể dùng chung hoặc subset).
 - Bổ sung constants còn thiếu (không hardcode lại những gì `network` / shared đã có):
   - Polygon chain ID (nếu chưa export từ một nguồn chuẩn).
@@ -252,7 +253,7 @@ Stake management:
   - Action buttons full width.
   - Stake metadata chuyển từ nhiều cột về stack.
   - Transaction hashes wrap an toàn.
-- `LanguageToggle`: homepage/legal giữ placement `fixed` trong shell `main.tsx`; staking header dùng `inline` (mở rộng prop nếu cần).
+- `LanguageToggle`: homepage/legal/staking đều dùng placement `fixed` góc viewport (staking render trong `StakingPage`, cùng style shell).
 - Toàn bộ copy nằm trong `staking.copy.ts`, chọn đúng một ngôn ngữ theo toggle; bỏ các câu trộn Việt–Anh.
 - Staking page metadata: Closeout Bước 1 đã thêm `usePageMetadata` (title + description theo locale, restore khi unmount). Giữ hành vi đó khi port UI đầy đủ. Open Graph/Twitter vẫn là metadata chung của PRANA Protocol (một HTML shell).
 

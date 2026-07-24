@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { POLYGON_CHAIN_ID, SWAP_DEADLINE_SECONDS, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
+import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
+import { SWAP_DEADLINE_SECONDS, UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../constants/swapContracts.ts';
 import type {
   HexAddress,
   SwapQuoteResponse,

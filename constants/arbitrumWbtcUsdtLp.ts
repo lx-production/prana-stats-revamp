@@ -4,8 +4,6 @@ import { SERVER_CACHE_TTL_MS } from './cachePolicy.ts';
 // Contract addresses
 export const NONFUNGIBLE_POSITION_MANAGER = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88';
 export const WBTC_USDT_POOL = '0x5969EFddE3cF5C0D9a88aE51E47d721096A97203';
-export const TARGET_OWNER = '0x917d8fc3938FDB924332ad3B4771B234E5F468DC';
-
 // Pool configuration
 export const POOL_FEE = 0.0005; // 0.05%
 export const LP_TOKEN_ID_CACHE_TTL_MS = SERVER_CACHE_TTL_MS.lpTokenId;

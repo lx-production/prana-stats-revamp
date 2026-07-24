@@ -2,8 +2,12 @@ import { ethers } from 'ethers';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { mapStakeRecords } from '../utils/stakingReadUtils.ts';
 import { toBigInt } from '../../utils/fetchActiveStakesUtils.ts';
-import { PRANA_ADDRESS, PRANA_TOKEN_ABI } from '../../constants/sharedContracts.ts';
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
+import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
+import {
+  PRANA_TOKEN_ABI,
+  STAKING_CONTRACT_ABI,
+  STAKING_CONTRACT_ADDRESS,
+} from '../../constants/stakingContracts.ts';
 
 import type { Address } from '../../types/blockchain.types.ts';
 import type { StakingAccountSnapshot } from '../../features/staking/staking.types.ts';

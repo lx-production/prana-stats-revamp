@@ -1,9 +1,11 @@
 import React from 'react';
 import { Lock, Wallet } from 'lucide-react';
-import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
-import { formatNumber } from '../utils/formatters';
-import InfoTooltip from './InfoTooltip';
 import BuyDips from './BuyDips';
+import InfoTooltip from './InfoTooltip';
+import { formatNumber } from '../utils/formatters';
+import { PRANA_ADDRESS } from '../constants/sharedContracts';
+import { buildPolygonscanTokenUrl } from '../utils/polygonscanUrls';
+import { useTopHoldingAddresses } from '../hooks/useTopHoldingAddresses';
 
 export const TopHoldingAddresses: React.FC = () => {
   const nonCirculatingRanks = new Set([1, 2, 3, 5]);
@@ -29,6 +31,7 @@ export const TopHoldingAddresses: React.FC = () => {
     },
   };
   const { activePage, error, isPageLoading, pageCount, pageHolders, setActivePage } = useTopHoldingAddresses();
+  const topHoldersExplorerUrl = buildPolygonscanTokenUrl(PRANA_ADDRESS, { hash: 'balances' });
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -45,7 +48,7 @@ export const TopHoldingAddresses: React.FC = () => {
               <div className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-cyan-400" />
                 <a
-                  href="https://polygonscan.com/token/0x928277e774f34272717eadfafc3fd802dafbd0f5#balances"
+                  href={topHoldersExplorerUrl}
                   className="no-underline"
                   rel="noreferrer"
                   target="_blank"

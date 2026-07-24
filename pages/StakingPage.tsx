@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ArrowLeft, Coins, ExternalLink, Lock } from 'lucide-react';
+import { ArrowLeft, DollarSign, ExternalLink, Lock, ScrollText } from 'lucide-react';
 import AppFooter from '../components/AppFooter';
 import LanguageToggle from '../components/LanguageToggle';
 import GlassPanel from '../components/ui/GlassPanel';
@@ -49,33 +49,32 @@ export default function StakingPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
+      {/* Same fixed corner placement as homepage / legal shell */}
+      <LanguageToggle />
       {/* Dimmer than homepage default (0.5) so form content stays readable */}
       <FlutterShaderBackground brightness={0.32} />
 
       <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-16 sm:max-w-6xl sm:px-6 sm:py-20">
         <header className="space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-3">
-              {/* Subtle text link back to homepage — no button chrome */}
-              <a
-                href="/"
-                className="inline-flex items-center gap-1.5 text-sm text-white/45 transition hover:text-white/80"
-              >
-                <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                {copy.backHome}
-              </a>
-              <p className="text-sm uppercase tracking-[0.2em] text-white/45">
-                PRANA Protocol
-              </p>
-              <h1 className="flex items-center gap-2 text-3xl font-medium tracking-wide sm:text-4xl">
-                <Lock className="h-7 w-7 shrink-0 text-[#F5D27A]" aria-hidden />
-                {copy.pageTitle}
-              </h1>
-              <p className="max-w-2xl text-[15px] text-white/70">
-                {copy.pageSubtitle}
-              </p>
-            </div>
-            <LanguageToggle placement="inline" />
+          <div className="space-y-3">
+            {/* Subtle text link back to homepage — no button chrome */}
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-white/45 transition hover:text-white/80"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {copy.backHome}
+            </a>
+            <p className="text-sm uppercase tracking-[0.2em] text-white/45">
+              PRANA Protocol
+            </p>
+            <h1 className="flex items-center gap-2 text-3xl font-medium tracking-wide sm:text-4xl">
+              <Lock className="h-7 w-7 shrink-0 text-[#F5D27A]" aria-hidden />
+              {copy.pageTitle}
+            </h1>
+            <p className="max-w-2xl text-[15px] text-white/70">
+              {copy.pageSubtitle}
+            </p>
           </div>
 
           {/* Compact contract verification links */}
@@ -86,7 +85,7 @@ export default function StakingPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-1 break-all text-cyan-300/90 underline-offset-2 hover:underline"
             >
-              <Coins className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <ScrollText className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {copy.stakingContractLink}
               <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
             </a>
@@ -96,6 +95,7 @@ export default function StakingPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-1 break-all text-cyan-300/90 underline-offset-2 hover:underline"
             >
+              <DollarSign className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {copy.interestContractLink}
               <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
             </a>

@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { useBuyDips } from '../hooks/useBuyDips';
 import { formatStatValue } from '../utils/formatters';
+import { PRANA_ADDRESS } from '../constants/sharedContracts';
+import { BUY_DIPS_WALLET_ADDRESS } from '../constants/protocolAddresses';
+import { buildPolygonscanTokenUrl } from '../utils/polygonscanUrls';
 
 type BuyDipsProps = {
   className?: string;
@@ -27,11 +30,15 @@ export const BuyDips: React.FC<BuyDipsProps> = ({ className }) => {
     [data],
   );
 
+  const buyDipsExplorerUrl = buildPolygonscanTokenUrl(PRANA_ADDRESS, {
+    holderAddress: BUY_DIPS_WALLET_ADDRESS,
+  });
+
   return (
     <div className={className}>
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
         <a
-          href="https://polygonscan.com/token/0x928277e774f34272717eadfafc3fd802dafbd0f5?a=0x1d791aca381c844c4e497fca9429dbe5d36ff1bc"
+          href={buyDipsExplorerUrl}
           target="_blank"
           rel="noreferrer"
           className="text-cyan-300 no-underline hover:text-cyan-200"

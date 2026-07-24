@@ -2,7 +2,8 @@ import { createRequire } from 'node:module';
 import { ethers } from 'ethers';
 import { getSwapToken, getSwapTokenByAddress } from '../../utils/swapTokens.ts';
 import { getServerPolygonProvider, getServerPolygonRpcUrl } from './providers.ts';
-import { POLYGON_CHAIN_ID, QUOTER_V2_ABI, UNISWAP_V3_QUOTER_V2_ADDRESS } from '../../constants/swapContracts.ts';
+import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
+import { QUOTER_V2_ABI, UNISWAP_V3_QUOTER_V2_ADDRESS } from '../../constants/swapContracts.ts';
 
 import type { HexAddress, SwapQuoteRequest, SwapRouteStep, SwapToken } from '../../types/swap.types.ts';
 

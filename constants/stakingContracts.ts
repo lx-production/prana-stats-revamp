@@ -4,6 +4,27 @@ import type { HexAddress } from '../types/blockchain.types.ts';
 export const STAKING_CONTRACT_ADDRESS: HexAddress = '0x714425A4F4d624ef83fEff810a0EEC30B0847868';
 export const INTEREST_CONTRACT_ADDRESS: HexAddress = '0x1DE1E9BEF781fb3440C2c22E8ca1bF61BD26f69d';
 
+/**
+ * Minimal PRANA ERC-20 surface for staking account reads.
+ * balanceOf for wallet balance; nonces for EIP-2612 permit signing.
+ */
+export const PRANA_TOKEN_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'nonces',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const;
+
 /** EIP-712 permit domain for PRANA (must match on-chain token name/version). */
 export const PRANA_PERMIT_DOMAIN_NAME = 'Prana_v2' as const;
 export const PRANA_PERMIT_DOMAIN_VERSION = '1' as const;

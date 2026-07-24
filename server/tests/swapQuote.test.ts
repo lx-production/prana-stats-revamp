@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ethers } from 'ethers';
 
+import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../constants/sharedContracts.ts';
 import {
-  POLYGON_CHAIN_ID,
   SWAP_ROUTER_02_ABI,
   USDT_POLYGON_ADDRESS,
   UNISWAP_SWAP_ROUTER_02_ADDRESS,

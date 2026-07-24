@@ -1,21 +1,21 @@
 import {
-  NONFUNGIBLE_POSITION_MANAGER,
-  WBTC_USDT_POOL,
-  TARGET_OWNER,
-  POOL_FEE,
-  LP_TOKEN_ID_CACHE_TTL_MS,
   ARBITRUM_USDT,
   ARBITRUM_WBTC,
   ERC721_ENUMERABLE_ABI,
-  POSITION_MANAGER_ABI,
+  LP_TOKEN_ID_CACHE_TTL_MS,
+  NONFUNGIBLE_POSITION_MANAGER,
   POOL_ABI,
+  POOL_FEE,
+  POSITION_MANAGER_ABI,
+  WBTC_USDT_POOL,
 } from '../../constants/arbitrumWbtcUsdtLp.ts';
-
 import { ethers } from 'ethers';
 import { fetchJsonSafe } from '../../utils/fetchJson.ts';
 import { calculatePositionMath } from '../../utils/uniswapV3Helpers.ts';
+import { PROTOCOL_RESERVE_ADDRESS } from '../../constants/protocolAddresses.ts';
 import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
 import { getServerArbitrumProvider } from '../utils/providers.ts';
+
 import type { LpCapitalApiResponse } from '../../types/api.types.ts';
 
 interface GeckoPoolResponse {
@@ -116,7 +116,7 @@ export async function loadLpCapital(): Promise<LpCapitalApiResponse> {
       : {
           target: NONFUNGIBLE_POSITION_MANAGER,
           allowFailure: false,
-          callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [TARGET_OWNER]),
+          callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [PROTOCOL_RESERVE_ADDRESS]),
         },
   ];
 
@@ -177,7 +177,7 @@ export async function loadLpCapital(): Promise<LpCapitalApiResponse> {
               {
                 target: NONFUNGIBLE_POSITION_MANAGER,
                 allowFailure: false,
-                callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [TARGET_OWNER]),
+                callData: POSITION_MANAGER_IFACE.encodeFunctionData('balanceOf', [PROTOCOL_RESERVE_ADDRESS]),
               },
             ])
           )[0]
@@ -190,7 +190,7 @@ export async function loadLpCapital(): Promise<LpCapitalApiResponse> {
         {
           target: NONFUNGIBLE_POSITION_MANAGER,
           allowFailure: false,
-          callData: POSITION_MANAGER_IFACE.encodeFunctionData('tokenOfOwnerByIndex', [TARGET_OWNER, ownerIndex]),
+          callData: POSITION_MANAGER_IFACE.encodeFunctionData('tokenOfOwnerByIndex', [PROTOCOL_RESERVE_ADDRESS, ownerIndex]),
         },
       ]);
       const tokenIdRaw = decodeRequiredResult<bigint>(POSITION_MANAGER_IFACE, 'tokenOfOwnerByIndex', tokenIdResult);

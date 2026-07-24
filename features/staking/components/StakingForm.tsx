@@ -359,7 +359,7 @@ export default function StakingForm({
 
         <button
           type="button"
-          className="btn-hero btn-gold-border w-full"
+          className="btn-hero btn-gold-border w-full text-sm"
           disabled={!canClickCta || actionsLocked}
           onClick={() => void stakeTx.permitAndStake()}
         >
