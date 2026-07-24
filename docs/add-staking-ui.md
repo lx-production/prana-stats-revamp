@@ -19,7 +19,7 @@
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; fixed `LanguageToggle` (cùng homepage); gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
 - [x] **Bước 7 — Xóa phần dư thừa của `staking-ui`**: xóa toàn bộ directory legacy; form/stakes/actions sống ở `features/staking/` + `/stake/`; license/contact từ README cũ ghi vào closeout; root `README` trỏ `/stake/` + doc này.
-- [ ] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; code review sau refactor Swap đã hoàn tất và Hero STAKE đã trỏ vào lazy route `/stake/`; rollout nginx Pi/VPS, public smoke-test và rollback window vẫn thực hiện sau khi deploy.
+- [x] **Bước 8 — Deployment và cập nhật tài liệu vận hành**: config/docs trong repo đã sẵn sàng; Hero STAKE trỏ `/stake/`; nginx Pi/VPS đã rollout (bỏ static `/stake`); smoke-test public `/stake/` pass; static cũ `/var/www/html/prana/stake/` đã xóa sau rollback window. Migration hoàn tất.
 
 ## 1. Cấu trúc và phần dùng chung
 
@@ -283,7 +283,7 @@ Giữ lại dưới dạng mới:
 - Staking/Interest contract Polygonscan links dưới dạng compact verification links trong page header/footer.
 - Nội dung cần thiết từ README được nhập vào docs chính trước khi bỏ directory.
 
-### Bước 8 — Deployment và docs 🚧
+### Bước 8 — Deployment và docs ✅
 
 - Routing đã hoàn thành từ Bước 1: Node phục vụ `/stake/` bằng SPA shell, `/stake` redirect `308`, và Vite tạo staking thành hashed lazy chunk trong một `dist/`.
 - Đã cập nhật `NETWORK_ARCHITECTURE.md`:
@@ -293,17 +293,18 @@ Giữ lại dưới dạng mới:
   - `docs/vi/NETWORK_ARCHITECTURE.md`.
   - `docs/swap-modal-technical-overview.md`.
   - `docs/vi/swap-modal-technical-overview.md`.
-- Đã chuẩn bị config Pi nginx trong repo (`docs/pi-prana.triethocduongpho.net`):
-  - Xóa redirect/location/alias `/stake`.
-  - Giữ một `location /` proxy Node (và giữ `/bond/` static).
-- Đã chuẩn bị config VPS nginx trong repo (`docs/vps-prana.triethocduongpho.net`):
-  - Bỏ `stake` khỏi legacy asset cache; chỉ còn `/bond/assets/`.
-- Rollout không downtime còn pending (sẽ áp dụng trên Pi/VPS thủ công sau khi app hoàn thiện):
+- Config Pi nginx trong repo (`docs/pi-prana.triethocduongpho.net`):
+  - Đã xóa redirect/location/alias `/stake`.
+  - Một `location /` proxy Node (giữ `/bond/` static).
+- Config VPS nginx trong repo (`docs/vps-prana.triethocduongpho.net`):
+  - Đã bỏ `stake` khỏi legacy asset cache; chỉ còn `/bond/assets/`.
+- Snapshot pre-migration giữ trong `docs/backup-pi-prana.triethocduongpho.net` và `docs/backup-vps-prana.triethocduongpho.net` (tham khảo lịch sử, không deploy).
+- Rollout không downtime đã hoàn tất trên Pi/VPS:
   1. Deploy build/server mới trong khi nginx vẫn phục vụ staking cũ.
   2. Xác minh Node `/stake/` nội bộ (`curl -I http://127.0.0.1:4173/stake/`).
   3. Copy config từ repo → `nginx -t`, rồi reload (Pi trước hoặc cùng lúc với VPS).
-  4. Smoke-test public `/stake/`.
-  5. Giữ static staking cũ trong một rollback window rồi mới xóa `/var/www/html/prana/stake/`.
+  4. Smoke-test public `/stake/` pass.
+  5. Sau rollback window, đã xóa static staking cũ `/var/www/html/prana/stake/`.
 
 ## 3. Kiểm thử và tiêu chí hoàn thành
 

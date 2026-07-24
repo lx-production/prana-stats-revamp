@@ -287,7 +287,7 @@ Staking stats response cache:
 
 Browser staking UI (React Query on `/stake/`):
 - `['staking-config']` — `staleTime` 30s (aligned with config HTTP/`Cache-Control` max-age)
-- `['staking-account', address]` — enabled only for a valid address; `staleTime: 0` + `refetchOnMount: 'always'` (no forever-stale cache on reconnect); no polling; invalidate after receipts in Bước 5
+- `['staking-account', address]` — enabled only for a valid address; `staleTime: 0` + `refetchOnMount: 'always'` (no forever-stale cache on reconnect); no polling; invalidate after successful transaction receipts
 
 Bond refresh request dedupe:
 - `ensureBondsRefreshed()` — shares the in-flight `updateBondsV2` run used by `/api/bond-metrics` and does not keep a TTL cache after it completes
