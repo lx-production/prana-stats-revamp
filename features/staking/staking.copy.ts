@@ -78,6 +78,8 @@ export type StakingCopy = {
   switchPolygonFirst: string;
   stakingContractLink: string;
   interestContractLink: string;
+  /** Internal guide page explaining Staking + Interest contracts. */
+  contractsGuideLink: string;
 };
 
 const vi: StakingCopy = {
@@ -170,6 +172,7 @@ const vi: StakingCopy = {
   switchPolygonFirst: 'Hãy chuyển sang Polygon trước.',
   stakingContractLink: 'Hợp đồng Staking',
   interestContractLink: 'Hợp đồng Interest',
+  contractsGuideLink: 'Giải thích Hợp đồng',
 };
 
 const en: StakingCopy = {
@@ -263,6 +266,7 @@ const en: StakingCopy = {
   switchPolygonFirst: 'Switch to Polygon first.',
   stakingContractLink: 'Staking contract',
   interestContractLink: 'Interest contract',
+  contractsGuideLink: 'Contract explanation',
 };
 
 export function getStakingCopy(locale: SiteLocale): StakingCopy {

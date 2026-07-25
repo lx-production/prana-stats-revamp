@@ -39,6 +39,7 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | `/privacy`                                                                     | Privacy Policy page (footer link)          |
 | `/guide/swap/`                                                                 | Swap user guide (approve, slippage, …)     |
 | `/guide/staking/`                                                              | Staking user guide (permit, claim, …)      |
+| `/guide/contracts/`                                                            | Staking + Interest contract explanation    |
 | `/stake/`                                                                      | Personal staking (permit, stake, claim)    |
 
 

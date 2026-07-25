@@ -12,8 +12,9 @@ import { useInjectedWallet } from '../features/web3/useInjectedWallet';
 import WalletControl from '../features/staking/components/WalletControl';
 import { useStakingConfig } from '../features/staking/hooks/useStakingConfig';
 import { useStakingAccount } from '../features/staking/hooks/useStakingAccount';
+import { GUIDE_CONTRACTS_CANONICAL_PATH } from '../constants/appRoutes.ts';
 import { POLYGONSCAN_ADDRESS_BASE_URL } from '../constants/network.ts';
-import { ArrowLeft, DollarSign, ExternalLink, Lock, ScrollText } from 'lucide-react';
+import { ArrowLeft, DollarSign, ExternalLink, FileText, Lock, ScrollText } from 'lucide-react';
 import { INTEREST_CONTRACT_ADDRESS, STAKING_CONTRACT_ADDRESS } from '../constants/stakingContracts.ts';
 
 export default function StakingPage() {
@@ -92,6 +93,14 @@ export default function StakingPage() {
               <DollarSign className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {copy.interestContractLink}
               <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+            </a>
+            {/* Same-site guide page (footer-style legal/guide shell), not Polygonscan */}
+            <a
+              href={GUIDE_CONTRACTS_CANONICAL_PATH}
+              className="inline-flex items-center gap-1 text-cyan-300/90 underline-offset-2 hover:underline"
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {copy.contractsGuideLink}
             </a>
           </div>
         </header>

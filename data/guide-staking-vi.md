@@ -88,4 +88,4 @@ UI chính thức hiện hộp thoại xác nhận với tỷ lệ phạt, số n
 
 Phạt early-unstake là quy tắc của smart contract, không phải phí giao diện riêng do THĐP thu. Tỷ lệ hiện tại có thể thay đổi qua cấu hình contract cho các hành động sau này; luôn tin các giá trị hiển thị tại thời điểm xác nhận.
 
-Về địa chỉ contract, ý nghĩa APR, và toàn bộ ngôn ngữ rủi ro, xem [Điều khoản & Công bố rủi ro](/terms).
+Cơ chế hai hợp đồng Staking / Interest (quyền và giới hạn của owner): xem [Giải thích Hợp đồng](/guide/contracts/). Về địa chỉ contract, ý nghĩa APR, và toàn bộ ngôn ngữ rủi ro, xem [Điều khoản & Công bố rủi ro](/terms).

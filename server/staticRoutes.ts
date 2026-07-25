@@ -14,8 +14,11 @@ import {
   isGuideSwapPath,
   GUIDE_STAKING_PATH,
   isGuideStakingPath,
+  GUIDE_CONTRACTS_PATH,
+  isGuideContractsPath,
   GUIDE_SWAP_CANONICAL_PATH,
   GUIDE_STAKING_CANONICAL_PATH,
+  GUIDE_CONTRACTS_CANONICAL_PATH,
 } from '../constants/appRoutes.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
@@ -30,6 +33,7 @@ const SPA_TRAILING_SLASH_REDIRECTS = [
   { bare: STAKE_PATH, canonical: STAKE_CANONICAL_PATH },
   { bare: GUIDE_SWAP_PATH, canonical: GUIDE_SWAP_CANONICAL_PATH },
   { bare: GUIDE_STAKING_PATH, canonical: GUIDE_STAKING_CANONICAL_PATH },
+  { bare: GUIDE_CONTRACTS_PATH, canonical: GUIDE_CONTRACTS_CANONICAL_PATH },
 ] as const;
 
 /**
@@ -53,7 +57,8 @@ export function createStaticRequestHandler(options: StaticRouteOptions = {}): Re
     if (
       isStakePath(url.pathname) ||
       isGuideSwapPath(url.pathname) ||
-      isGuideStakingPath(url.pathname)
+      isGuideStakingPath(url.pathname) ||
+      isGuideContractsPath(url.pathname)
     ) {
       const spaShell = path.join(distDir, 'index.html');
       if (await tryServeFile(req, res, spaShell)) return true;

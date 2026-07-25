@@ -88,4 +88,4 @@ The official UI shows a confirmation dialog with the penalty percent, estimated 
 
 Early-unstake penalty is a smart-contract rule, not a separate interface fee charged by THĐP. Current percentages can change through contract configuration for future actions; always trust the values shown at confirmation time.
 
-For contract addresses, APR meaning, and full risk language, see the [Terms & Risk Disclosure](/terms).
+For how the Staking and Interest contracts work (owner powers and limits), see the [Contract explanation](/guide/contracts/). For contract addresses, APR meaning, and full risk language, see the [Terms & Risk Disclosure](/terms).
