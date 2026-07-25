@@ -6,7 +6,7 @@
 - Giữ Buy/Sell Bond V2, quản lý và claim bond V1/V2; bỏ các donut/status trùng với Bonding Stats trên homepage.
 - Buy Bond giữ hai chế độ nhập: WBTC chính xác hoặc target PRANA.
 - Contract reads và quote đi qua backend; ví chỉ trực tiếp gửi `approve`, tạo bond và `claim`.
-- Quote là ước tính vì contract không nhận ngưỡng output tối thiểu (`minOut`) hoặc input tối đa (`maxIn`); UI phải cảnh báo và preflight lại trước giao dịch.
+- Quote được tính đúng theo trạng thái on-chain tại block đọc. Nếu reserves/rates/treasury không đổi trước khi transaction thực thi thì raw amount sẽ khớp quote; thời gian trôi qua hoặc sang block mới tự nó không làm quote đổi. UI vẫn fresh-quote/preflight trước giao dịch vì contract không nhận ngưỡng output tối thiểu (`minOut`) hoặc input tối đa (`maxIn`) để khóa kết quả khi state thực sự thay đổi.
 
 ## Các bước triển khai
 
@@ -69,24 +69,33 @@
    - Sell nhận exact PRANA và quote WBTC dự kiến.
    - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX chỉ áp dụng cho exact WBTC và Sell PRANA.
    - Term selector đọc on-chain V2 config, style như staking ui; mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
-   - Quote debounce 600 ms, hủy request cũ, bỏ response stale; sau 15 giây đánh dấu quote cũ và disable submit cho tới khi refresh.
+   - Quote debounce 600 ms, hủy request cũ, bỏ response stale; sau 30 giây đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
    - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
    - **`maxIn` nghĩa là gì**
       - `maxIn` là giới hạn input tối đa do người dùng chấp nhận chi. Ví dụ target `10.000 PRANA`, quote hiện tại cần `0,001 WBTC`; nếu có `maxIn = 0,00101 WBTC`, contract phải revert khi giá đổi làm chi phí vượt mức đó.
       - `buyBondForPranaAmount(pranaAmount, period)` hiện chỉ nhận target PRANA và kỳ hạn, không nhận `maxWbtcIn`. Vì vậy UI không thể bắt contract giữ nguyên quote.
-      - Allowance WBTC được set theo quote đóng vai trò “spending cap” thay thế: chi phí mới vượt allowance thì transaction revert thay vì lấy thêm WBTC. Đây là biện pháp giảm rủi ro, không biến quote thành slippage-protected quote.
-      - Với Exact WBTC Buy và Exact PRANA Sell, giới hạn còn thiếu tương ứng là `minOut`: số PRANA/WBTC tối thiểu người dùng chấp nhận nhận. Contract hiện cũng không nhận tham số này.
+      - Chỉ **Target PRANA Buy** cần allowance WBTC làm “spending cap” thay thế: chi phí WBTC tính lại lúc execution mà vượt allowance thì transaction revert thay vì lấy thêm WBTC. Nếu chi phí bằng hoặc thấp hơn cap thì contract dùng số thực tế đó.
+      - **Exact WBTC Buy** luôn dùng đúng số WBTC truyền vào `buyBondForWbtcAmount`; không có rủi ro chi nhiều WBTC hơn input. Giá trị có thể thay đổi là lượng PRANA nhận, vì contract không nhận `minPranaOut`.
+      - **Exact PRANA Sell** luôn dùng đúng số PRANA truyền vào `sellBond`; giá trị có thể thay đổi là lượng WBTC nhận, vì contract không nhận `minWbtcOut`.
+      - Với volume/traffic Bonding hiện thấp, hầu hết quote sẽ khớp chính xác khi execution. Sai khác chỉ xuất hiện nếu state liên quan đổi giữa lúc quote và lúc transaction được thực thi, ví dụ có bond khác, giao dịch làm đổi WBTC/PRANA pool, hoặc manager cập nhật/sync contract.
    - **Kiểm thử Bước 4**
       - Parser table test cho empty/zero/negative/scientific notation, dấu thập phân lặp, 8/9 decimals hợp lệ và vượt decimals.
       - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; target PRANA không hiện MAX.
       - Toggle Buy xóa hoặc vô hiệu quote của mode cũ; đổi side, term, amount, account hoặc chain cũng invalidates quote hiện tại.
       - Debounce fake-timer test: nhiều lần gõ chỉ gửi request cuối; request cũ bị abort; response về sai thứ tự không ghi đè quote mới.
-      - Quote đủ 15 giây bị stale, CTA disable và fresh quote khôi phục trạng thái.
+      - Quote đủ 30 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật review/cap trước khi cho write.
+      - Determinism test: cùng reserves/rates/treasury và input phải cho đúng cùng raw quote dù block timestamp khác; chỉ fixture thay đổi state mới được làm quote đổi.
       - Term refresh loại bỏ option đang chọn thì fallback 30 ngày hoặc option đầu tiên; không submit term đã biến mất.
       - Component test đủ loading/empty/error/issue states và copy VI/EN cho cả ba quote mode.
 
 5. **Harden approve và tạo bond**
    - Dùng một CTA theo phase: `Approve` → `Review` → `Create Bond` → `Confirming`; không tự bật hai wallet prompt liên tiếp.
+   - Bốn phase là trạng thái UI, không phải bốn yêu cầu ký trên ví:
+      - `Approve`: nếu allowance chưa phù hợp, user bấm CTA và xác nhận một transaction `approve` trên ví.
+      - `Review`: app fresh-quote rồi mở dialog review nội bộ; không gọi ví.
+      - `Create Bond`: user xác nhận dialog, sau đó ví hiện một transaction tạo bond.
+      - `Confirming`: app chờ receipt; không gọi ví và không ký thêm.
+   - Vì vậy flow cần approval có tối đa hai wallet transaction prompts, xuất hiện ở hai hành động chủ động riêng. Nếu allowance đã đủ thì bỏ qua `Approve` và chỉ còn prompt tạo bond. `simulateContract`, fresh quote và chờ receipt đều không mở ví.
    - Trước approve và trước create:
       - Refetch account/config/quote thành công.
       - Đảm bảo đúng wallet, Polygon, balance, minimum, term, paused và treasury capacity.
@@ -97,7 +106,8 @@
    - Chỉ báo thành công sau receipt; account refetch thất bại sau receipt là warning, không biến giao dịch thành failed.
    - Chuẩn hóa lỗi VI/EN cho rejection, wrong chain, gas, allowance, pause, minimum, treasury, reserve, revert và RPC; không render raw provider error.
    - **Kiểm thử Bước 5**
-      - State-machine test cho mọi phase và đảm bảo một click không tự mở cả approve lẫn create prompt.
+      - State-machine test cho mọi phase: flow cần approval có đúng hai wallet prompts tách biệt; flow đủ allowance có đúng một prompt; Review/Confirming/simulate/fresh-quote không gọi ví.
+      - Đảm bảo một click không tự mở cả approve lẫn create prompt.
       - Exact WBTC Buy và Exact PRANA Sell: allowance bằng input là đủ; thiếu một raw unit phải approve; allowance lớn không bị hạ không cần thiết.
       - Target PRANA: allowance cũ lớn hơn quote vẫn phải được cap lại; fresh quote vượt cap quay về approve; fresh quote nhỏ hơn/ bằng cap mới được review.
       - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
@@ -109,7 +119,38 @@
 
 6. **Port Active Bonds và claim**
    - Backend hợp nhất Buy/Sell × V1/V2; UI hiển thị badge side/version, principal, payout, claimed, claimable, thời gian và tiến độ vesting.
-   - Tính claimable bằng bigint đúng công thức linear vesting; thời gian hiện tại dựa trên `blockTimestamp + elapsed`, không chỉ dựa clock thiết bị.
+   - Tính Bonding claimable bằng bigint đúng contract:
+      - Trước maturity: `totalVestedRaw = floor(totalPayoutRaw × (now - creationTime) / (maturityTime - creationTime))`.
+      - `claimableRaw = max(totalVestedRaw - claimedRaw, 0)`.
+      - Từ maturity: claim toàn bộ `totalPayoutRaw - claimedRaw` còn lại và contract đánh dấu bond đã claimed.
+      - `lastClaimTime` của Bonding chỉ chặn hai claim cùng timestamp; công thức vesting vẫn tính cộng dồn từ `creationTime` rồi trừ `claimedRaw`.
+   - **Khác biệt cốt lõi giữa Bonding và Staking**
+      - Cả hai đều dùng timestamp theo giây, nhưng không dùng cùng điểm bắt đầu để tính claimable.
+      - Bonding tính tổng payout đã vest cộng dồn từ `creationTime`, sau đó trừ tổng payout đã claim:
+
+        ```text
+        totalVestedRaw = floor(totalPayoutRaw × elapsedSinceCreation / totalDuration)
+        claimableRaw = totalVestedRaw - claimedRaw
+        ```
+
+      - Staking tính phần lãi mới phát sinh từ `lastClaimTime`, sau khi cap thời gian tại maturity:
+
+        ```text
+        effectiveTime = min(now, startTime + duration)
+        elapsedSinceLastClaim = effectiveTime - lastClaimTime
+        annualInterestRaw = floor(principalRaw × APR / 100)
+        interestPerSecondRaw = floor(annualInterestRaw / 31,536,000)
+        claimableInterestRaw = interestPerSecondRaw × elapsedSinceLastClaim
+        ```
+
+      - Vì vậy `lastClaimTime` trong Staking trực tiếp quyết định số lãi của lần claim tiếp theo. Trong Bonding, nó được lưu và cập nhật sau claim nhưng không tham gia công thức payout; `claimedPrana` hoặc `claimedWbtc` mới là giá trị được trừ khỏi tổng đã vest.
+      - Ví dụ một Buy Bond có payout `1.000 PRANA` vest trong 100 ngày:
+        - Ngày 30: tổng đã vest là `300 PRANA`; nếu chưa claim thì claimable là `300 PRANA`.
+        - Sau khi claim, `claimedPrana = 300 PRANA` và `lastClaimTime` được cập nhật.
+        - Ngày 50: tổng đã vest là `500 PRANA`; claimable mới là `500 - 300 = 200 PRANA`.
+        - Từ ngày 100: contract trả toàn bộ `1.000 - claimedPrana` còn lại rồi đánh dấu bond `claimed = true`.
+   - Progress bar Bonding là phần trăm payout đã vest theo thời gian: clamp `floor((now - creationTime) × 100 / (maturityTime - creationTime))` vào `0..100`. Nó có cùng hình dạng với progress thời gian tới maturity của Staking, nhưng không phải công thức tính lãi Staking.
+   - Thời gian hiện tại dựa trên `blockTimestamp + elapsed`, không chỉ dựa clock thiết bị.
    - Sort theo maturity gần nhất, tie-break bằng side/version/id.
    - Claim chọn contract từ mapping nội bộ side/version, không tin địa chỉ do UI hoặc API truyền vào.
    - Claim flow: switch Polygon → simulate → write → receipt → refetch account; dùng cùng cơ chế resume pending hash.
@@ -117,6 +158,9 @@
    - **Kiểm thử Bước 6**
       - Mapper fixtures cho bốn deployment, gồm ID trùng nhau; React key và contract dispatch vẫn phân biệt side/version.
       - Claimable bigint test tại trước creation, đúng creation, giữa kỳ, sau partial claim, đúng maturity và sau maturity; kết quả khớp phép chia Solidity.
+      - Progress test clamp `0..100`, rounding xuống theo integer math và tách biệt khỏi `lastClaimTime`.
+      - Multi-claim test: claim ngày 30 rồi ngày 50 phải trả phần chênh lệch cumulative vested (`500 - 300` trong ví dụ), không vest lại từ `lastClaimTime`.
+      - Regression test phân biệt Bonding và Staking: thay `lastClaimTime` nhưng giữ `claimedRaw` không được làm đổi Bonding claimable; cùng thay đổi đó phải làm đổi Staking claimable interest.
       - Clock test dùng server `blockTimestamp + elapsed`, không nhảy theo clock máy bị lệch.
       - Sorting test theo maturity rồi side/version/id; progress luôn nằm trong `0..100`.
       - Claim V1/V2 phải chọn address/ABI từ mapping nội bộ; payload API giả mạo address không ảnh hưởng write target.
