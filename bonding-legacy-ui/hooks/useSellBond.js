@@ -1,0 +1,376 @@
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useConnection, useReadContract, useWriteContract, usePublicClient } from 'wagmi';
+import { parseUnits, formatUnits } from 'viem';
+import { SELL_BOND_ADDRESS, SELL_BOND_ABI } from '../constants/sellBondContract';
+import { PRANA_ADDRESS, PRANA_ABI, PRANA_DECIMALS, WBTC_DECIMALS } from '../constants/sharedContracts';
+import { BOND_TERMS } from '../constants/bondTerms';
+import { calculateWbtcQuote } from '../utils/SellBondPricing';
+
+const useSellBond = () => {
+  const { address, isConnected } = useConnection();
+  const [pranaAmount, setPranaAmount] = useState('');
+  const [termIndex, setTermIndex] = useState(1); // Default term index
+  const [bondRates, setBondRates] = useState({}); // Stores { termInSeconds: { rate, duration } }
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [calculatedWbtc, setCalculatedWbtc] = useState('0'); // Calculated WBTC user will receive
+  const [isWaitingForApprovalConfirmation, setIsWaitingForApprovalConfirmation] = useState(false);
+  const [didSyncReserves, setDidSyncReserves] = useState(false);
+  const [reserveWarning, setReserveWarning] = useState('');
+  const { mutateAsync: writeContractAsync, status: writeStatus } = useWriteContract();
+  const publicClient = usePublicClient();
+  // Mirroring the buy flow, the sell quote previously suffered from "stale"
+  // async responses where an older request would finish after the user changed
+  // the amount/term and overwrite the newer calculation. Tracking a request id
+  // lets us drop those outdated responses so the UI always reflects the latest
+  // inputs the user has provided.
+  const calculationRequestIdRef = useRef(0);
+  
+  const selectedTermEnum = termIndex; // Enum in contract (matching BOND_TERMS id)
+  
+  // --- Contract Reads ---
+  
+  // Read user's PRANA balance. 'data' renamed to pranaBalanceData
+  const { data: pranaBalanceData } = useReadContract({
+    address: PRANA_ADDRESS,
+    abi: PRANA_ABI,
+    functionName: 'balanceOf',
+    args: [address],
+    query: {
+      enabled: isConnected && !!address,
+    },
+  });
+  const pranaBalance = pranaBalanceData ? formatUnits(pranaBalanceData, PRANA_DECIMALS) : '0';
+  
+  // Read PRANA allowance for the Sell Bond contract
+  const { data: pranaAllowanceData, refetch: refetchAllowance } = useReadContract({
+    address: PRANA_ADDRESS,
+    abi: PRANA_ABI,
+    functionName: 'allowance',
+    args: [address, SELL_BOND_ADDRESS],
+    query: {
+      enabled: isConnected && !!address,
+    },
+  });
+  const pranaAllowance = pranaAllowanceData ? BigInt(pranaAllowanceData) : BigInt(0);
+  
+  // Read Min Sell Amount (in PRANA)
+  const { data: minSellAmountData } = useReadContract({
+    address: SELL_BOND_ADDRESS,
+    abi: SELL_BOND_ABI,
+    functionName: 'minPranaSellAmount', // Adjusted function name
+    query: {
+      enabled: isConnected,
+    },
+  });
+  const minPranaSellAmountFormatted = minSellAmountData ? formatUnits(minSellAmountData, PRANA_DECIMALS) : '0';
+  const minPranaSellAmountWei = minSellAmountData ? BigInt(minSellAmountData) : BigInt(0);
+  
+  // Lazily refetch the user's active sell bonds when needed (shares cache with ActiveBonds component)
+  const { refetch: refetchActiveSellBonds } = useReadContract({
+    address: SELL_BOND_ADDRESS,
+    abi: SELL_BOND_ABI,
+    functionName: 'getUserActiveBonds',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: false,
+    },
+  });
+  
+  // --- Calculations ---
+  
+  const isValidPranaInput = useMemo(() => pranaAmount && !isNaN(parseFloat(pranaAmount)) && parseFloat(pranaAmount) > 0, [pranaAmount]);
+
+  const isPranaBelowMinimum = useMemo(() => {
+    if (!isValidPranaInput) return false;
+    try {
+      if (minPranaSellAmountWei === 0n) return false;
+      const currentPranaWei = parseUnits(pranaAmount, PRANA_DECIMALS);
+      return currentPranaWei < minPranaSellAmountWei;
+    } catch (err) {
+      console.error('Failed to compare PRANA sell amount with minimum:', err);
+      return true;
+    }
+  }, [isValidPranaInput, minPranaSellAmountWei, pranaAmount]);
+  
+  // Calculation effect - runs when PRANA input or term changes
+  useEffect(() => {
+    calculationRequestIdRef.current += 1;
+    const requestId = calculationRequestIdRef.current;
+
+    const isLatestRequest = () => calculationRequestIdRef.current === requestId;
+
+    const resetCalculatedState = () => {
+      if (!isLatestRequest()) return;
+      setCalculatedWbtc('0');
+      setDidSyncReserves(false);
+      setReserveWarning('');
+    };
+
+    const calculateWbtc = async () => {
+      if (!isConnected || !publicClient || !isValidPranaInput || !pranaAmount) {
+        resetCalculatedState();
+        if (isLatestRequest()) {
+          setIsCalculating(false);
+        }
+        return;
+      }
+
+      if (!isLatestRequest()) return;
+      setIsCalculating(true);
+      resetCalculatedState();
+
+      try {
+        const pranaAmountWei = parseUnits(pranaAmount, PRANA_DECIMALS);
+        if (!isLatestRequest()) return;
+
+        if (pranaAmountWei === 0n) {
+          if (!isLatestRequest()) return;
+          setCalculatedWbtc('0');
+          setDidSyncReserves(false);
+        } else {
+          const { wbtcQuote, reservesSynced, warning } = await calculateWbtcQuote({
+            pranaAmountWei,
+            period: selectedTermEnum,
+            publicClient,
+          });
+
+          if (!isLatestRequest()) return;
+
+          if (warning) {
+            setReserveWarning(warning);
+            setCalculatedWbtc('0');
+            setDidSyncReserves(false);
+          } else {
+            const formattedWbtc = formatUnits(wbtcQuote, WBTC_DECIMALS);
+            setCalculatedWbtc(formattedWbtc);
+            setDidSyncReserves(reservesSynced);
+            setReserveWarning('');
+          }
+        }
+      } catch (err) {
+        console.error("WBTC Calculation error:", err);
+        if (isLatestRequest()) {
+          setError("Lỗi tính toán số WBTC nhận được.");
+          setCalculatedWbtc('0');
+          setDidSyncReserves(false);
+          setReserveWarning('');
+        }
+      } finally {
+        if (isLatestRequest()) {
+          setIsCalculating(false);
+        }
+      }
+    };
+
+    const debounceTimeout = setTimeout(() => {
+      calculateWbtc();
+    }, 500);
+
+    return () => clearTimeout(debounceTimeout);
+
+  }, [pranaAmount, isConnected, publicClient, isValidPranaInput, selectedTermEnum]);
+  
+  
+  // --- Loading State ---
+  useEffect(() => {
+    setLoading(writeStatus === 'pending' || isWaitingForApprovalConfirmation);
+  }, [writeStatus, isWaitingForApprovalConfirmation]);
+  
+  // --- Reset messages ---
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError('');
+        setSuccess('');
+      }, 10000); // Reset after 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
+  
+  // --- Actions ---
+  
+  const handleApprove = async () => {
+    setError('');
+    setSuccess('');
+    setIsWaitingForApprovalConfirmation(false);
+    
+    if (!isValidPranaInput) {
+      setError('Vui lòng nhập số lượng PRANA hợp lệ để phê duyệt.');
+      return;
+    }
+    
+    const amountToApprove = parseUnits(pranaAmount, PRANA_DECIMALS);
+    
+    try {
+      const hash = await writeContractAsync({
+        address: PRANA_ADDRESS, // Approve PRANA token
+        abi: PRANA_ABI,
+        functionName: 'approve',
+        args: [SELL_BOND_ADDRESS, amountToApprove],
+      });
+      setIsWaitingForApprovalConfirmation(true);
+      setSuccess(`Approve transaction ${hash} sent. Waiting for confirmation...`);
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      
+      setIsWaitingForApprovalConfirmation(false);
+      
+      if (receipt.status === 'success') {
+        setSuccess(`Approve transaction ${hash} confirmed! Allowance updated.`);
+        refetchAllowance();
+      } else {
+        console.error("Approve PRANA transaction failed:", receipt);
+        setError(`Approve transaction ${hash} failed. Status: ${receipt.status}`);
+      }
+    } catch (err) {
+      console.error("Approve PRANA error:", err);
+      setIsWaitingForApprovalConfirmation(false);
+      let errorMsg = 'Approve PRANA thất bại';
+      if (err.message?.includes('rejected') || err.message?.includes('denied')) {
+        errorMsg = 'Yêu cầu approve bị từ chối';
+      } else if (err.message?.includes('insufficient funds')) {
+        errorMsg = 'Không đủ gas để thực hiện giao dịch';
+      } else {
+        errorMsg = `Approve PRANA thất bại: ${err.shortMessage || err.message || 'Lỗi không xác định'}`;
+      }
+      setError(errorMsg);
+    }
+  };
+  
+  const handleSellBond = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    
+    if (!isValidPranaInput || isCalculating) {
+      setError('Vui lòng nhập số lượng PRANA hợp lệ và đợi tính toán hoàn tất.');
+      setLoading(false); return;
+    }
+    
+    const finalPranaAmountWei = parseUnits(pranaAmount, PRANA_DECIMALS);
+    
+    // Check minimum PRANA sell amount
+    if (finalPranaAmountWei < minPranaSellAmountWei) {
+      setError(`Số lượng PRANA bán tối thiểu là ${minPranaSellAmountFormatted}.`);
+      setLoading(false); return;
+    }
+    
+    // Check allowance
+    if (finalPranaAmountWei > pranaAllowance) {
+      setError('Cần approve PRANA trước hoặc approve số lượng lớn hơn.');
+      setLoading(false); return;
+    }
+    
+    try {
+      const hash = await writeContractAsync({
+        address: SELL_BOND_ADDRESS,
+        abi: SELL_BOND_ABI,
+        functionName: 'sellBond',
+        args: [finalPranaAmountWei, selectedTermEnum],
+      });
+      setSuccess(`Giao dịch bán bond đã được gửi thành công! Hash: ${hash}`);
+      setPranaAmount(''); // Reset input
+      setCalculatedWbtc('0'); // Reset calculation
+      refetchAllowance(); // Refetch allowance as it might have changed implicitly
+      if (address) {
+        setTimeout(() => {
+          refetchActiveSellBonds({ args: [address] }).catch((refetchErr) => {
+            console.error('Failed to refetch active sell bonds:', refetchErr);
+          });
+        }, 1000);
+      }
+    } catch (err) {
+      console.error("Sell bond error:", err);
+      let errorMsg = 'Bán bond thất bại';
+      // Extract revert reasons if possible
+      if (err.message?.includes('execution reverted')) {
+        const revertReason = err.message.match(/execution reverted: (.*?)(?:"|$)/);
+        errorMsg = revertReason ? `Lỗi hợp đồng: ${revertReason[1]}` : 'Giao dịch bị revert';
+      } else if (err.message?.includes('rejected') || err.message?.includes('denied')) {
+        errorMsg = 'Giao dịch bị từ chối bởi ví';
+      } else if (err.message?.includes('insufficient funds')) {
+        errorMsg = 'Không đủ gas để thực hiện giao dịch';
+      } else if (err.message?.includes('PRANA amount below minimum')) {
+        errorMsg = `Lỗi: Số lượng PRANA thấp hơn mức tối thiểu (${minPranaSellAmountFormatted}).`;
+      } else if (err.message?.includes('Not enough WBTC available')) {
+        errorMsg = "Lỗi: Kho bạc không đủ WBTC để mua PRANA này. Thử lại sau.";
+      } else {
+        errorMsg = `Bán bond thất bại: ${err.shortMessage || err.message || 'Lỗi không xác định'}`;
+      }
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // --- Derived State ---
+  
+  const needsApproval = useMemo(() => {
+    if (!isConnected || !isValidPranaInput || isPranaBelowMinimum) return false;
+    const requiredPranaWei = parseUnits(pranaAmount, PRANA_DECIMALS);
+    return requiredPranaWei > 0n && requiredPranaWei > pranaAllowance;
+  }, [pranaAmount, pranaAllowance, isConnected, isValidPranaInput, isPranaBelowMinimum]);
+  
+  // Fetch Bond Rates (V2: bondRates(termId))
+  useEffect(() => {
+    async function fetchRates() {
+      if (!isConnected || !publicClient) return;
+      
+      try {
+        const termOptions = BOND_TERMS;
+        const entries = await Promise.all(
+          termOptions.map(async (option) => {
+            const [rate, duration] = await publicClient.readContract({
+              address: SELL_BOND_ADDRESS,
+              abi: SELL_BOND_ABI,
+              functionName: 'bondRates',
+              args: [option.id]
+            });
+            
+            return [option.seconds, { rate: Number(rate), duration: Number(duration) }];
+          })
+        );
+        
+        const ratesInfoMap = Object.fromEntries(entries);
+        setBondRates(ratesInfoMap);
+      } catch (err) {
+        console.error('Error fetching sell bond rates:', err);
+        setError('Lỗi khi lấy dữ liệu tỷ lệ bond (bán).');
+      }
+    }
+    
+    fetchRates();
+  }, [isConnected, publicClient]);
+  
+  const isLoading = loading;
+  
+  return {
+    address,
+    isConnected,
+    pranaAmount,
+    setPranaAmount,
+    termIndex,
+    setTermIndex,
+    bondRates,
+    error,
+    success,
+    loading: isLoading,
+    isCalculating,
+    handleApprove,
+    handleSellBond,
+    pranaBalance,
+    minPranaSellAmountFormatted,
+    needsApproval,
+    calculatedWbtc,
+    isWaitingForApprovalConfirmation,
+    isValidPranaInput,
+    didSyncReserves,
+    reserveWarning,
+    isPranaBelowMinimum,
+  };
+};
+
+export default useSellBond;
