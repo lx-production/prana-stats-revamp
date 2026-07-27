@@ -53,6 +53,8 @@ export type StakingCopy = {
   started: string;
   ends: string;
   progressComplete: (percent: number) => string;
+  /** Shown under the progress bar while matured and still within grace. */
+  gracePeriodRemaining: (durationLabel: string) => string;
   accruedInterest: string;
   maturityInterest: string;
   claimInterest: string;
@@ -132,6 +134,7 @@ const vi: StakingCopy = {
   started: 'Bắt đầu',
   ends: 'Kết thúc',
   progressComplete: (percent) => `${percent}% hoàn thành`,
+  gracePeriodRemaining: (durationLabel) => `Thời gian ân hạn: ${durationLabel}`,
   accruedInterest: 'Lãi chưa claim',
   maturityInterest: 'Lãi khi đáo hạn',
   claimInterest: 'Claim lãi',
@@ -226,6 +229,7 @@ const en: StakingCopy = {
   started: 'Started',
   ends: 'Ends',
   progressComplete: (percent) => `${percent}% complete`,
+  gracePeriodRemaining: (durationLabel) => `Grace period: ${durationLabel}`,
   accruedInterest: 'Unclaimed interest',
   maturityInterest: 'Interest at maturity',
   claimInterest: 'Claim interest',

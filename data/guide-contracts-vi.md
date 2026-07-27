@@ -40,7 +40,7 @@ Người stake có thể:
 Các quy tắc quan trọng khác:
 
 - Công thức lãi on-chain dùng phép chia số nguyên (tích lũy theo giây từ lãi năm). Ước tính trên UI có thể lệch nhẹ so với số nhận được on-chain.
-- Sau đáo hạn, lãi còn claim được chỉ trong **grace period** — khoảng thời gian ân hạn sau khi stake đáo hạn, trong đó bạn vẫn claim được lãi còn lại. Hết grace thì lãi chưa claim không nhận được nữa; vốn gốc vẫn có thể unstake.
+- Sau đáo hạn, lãi còn claim được chỉ trong **grace period** — khoảng thời gian ân hạn sau khi stake đáo hạn, trong đó bạn vẫn claim được lãi còn lại. Độ dài grace lấy từ cấu hình on-chain (owner có thể đổi; không cố định). Trên [/stake/](/stake/), khi một stake đã đáo hạn và vẫn còn trong cửa sổ ân hạn, thẻ stake hiện countdown thời gian ân hạn còn lại. Hết grace thì lãi chưa claim không nhận được nữa; vốn gốc vẫn có thể unstake.
 - PRANA phạt unstake sớm được chuyển sang Hợp đồng Interest (có thể dùng để trả lãi sau này).
 - Khi hợp đồng **tạm dừng (paused)**, các thao tác stake / claim / unstake dùng `whenNotPaused` sẽ bị chặn.
 
@@ -93,7 +93,7 @@ Lưu ý quan trọng: “không có hàm rút vốn gốc của user” **không
 
 - Xác nhận bạn đang ở **Polygon** và tương tác đúng địa chỉ Staking / Interest chính thức trên [/stake/](/stake/)
 - Hiểu APR được cố định **theo từng stake lúc tạo**, trong khi cấu hình chung (min stake, grace, phạt, pause, APR công bố cho stake mới) vẫn có thể đổi
-- Lên kế hoạch claim trước khi hết grace nếu muốn nhận lãi còn lại sau đáo hạn
+- Lên kế hoạch claim trước khi hết grace nếu muốn nhận lãi còn lại sau đáo hạn — theo dõi countdown ân hạn trên thẻ stake tại [/stake/](/stake/)
 - Giữ POL để trả gas; Permit là chữ ký, còn Stake / Claim / Unstake là giao dịch on-chain
 - Coi số dư / khả năng nạp quỹ của Hợp đồng Interest là điều kiện vận hành để claim thành công
 

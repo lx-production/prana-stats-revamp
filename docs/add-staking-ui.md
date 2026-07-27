@@ -43,6 +43,7 @@ features/staking/
 │   ├── useStakingAccount.ts
 │   ├── useStakeTransaction.ts
 │   └── useStakeActions.ts
+├── formatGraceRemaining.ts
 ├── staking.copy.ts
 ├── stakingMath.ts
 └── staking.types.ts
@@ -246,6 +247,7 @@ Stake management:
 - Secondary/claim dùng cyan–emerald hoặc `btn-glass`; early unstake dùng red nhưng giữ cùng border/glass language.
 - Input dùng nền trong suốt, border trắng mờ, focus ring vàng/cyan.
 - Progress bar dùng cyan/gold gradient; status dùng pill `Active`, `Matured`, `Claim first`, `Grace expired`.
+- Khi stake đã matured và còn trong grace: dòng dưới progress bar đổi từ `% hoàn thành` sang countdown ân hạn (`Thời gian ân hạn: …` / `Grace period: …`), cập nhật theo `nowSeconds` tick mỗi giây.
 - Dùng Lucide `Loader2`, `Wallet`, `Lock`, `Coins`, `ExternalLink`; bỏ unicode spinner.
 - Alerts dùng chung `StatusBanner` với `role="status"` hoặc `role="alert"` và `aria-live`.
 - Mobile:

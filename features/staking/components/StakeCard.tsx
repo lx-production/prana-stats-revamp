@@ -1,12 +1,14 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+import { formatGraceRemainingLabel } from '../formatGraceRemaining.ts';
 import {
   calculateAccruedInterestRaw,
   calculateTotalInterestRaw,
   daysFromSeconds,
   formatPranaAmount,
   getEffectiveAccruedSeconds,
+  getGraceDeadline,
   getStakeActionState,
   getStakeDisplayStatus,
   getStakeEndTime,
@@ -109,6 +111,16 @@ export default function StakeCard({
     stake.durationSeconds,
   );
 
+  // Show grace countdown only after maturity while the claim window is open.
+  const graceDeadline = getGraceDeadline(stake, gracePeriodSeconds);
+  const showGraceCountdown =
+    gracePeriodSeconds > 0 &&
+    nowSeconds >= endTime &&
+    nowSeconds <= graceDeadline;
+  const graceRemainingLabel = showGraceCountdown
+    ? formatGraceRemainingLabel(graceDeadline - nowSeconds, locale)
+    : null;
+
   const isThisBusy =
     activeAction?.stakeId === stake.id &&
     (activeAction.kind === 'claim' ||
@@ -162,7 +174,11 @@ export default function StakeCard({
           />
         </div>
         <div className="mt-2 space-y-1 text-xs text-white/60">
-          <div>{copy.progressComplete(progress)}</div>
+          <div>
+            {graceRemainingLabel
+              ? copy.gracePeriodRemaining(graceRemainingLabel)
+              : copy.progressComplete(progress)}
+          </div>
           <div>
             {copy.accruedInterest}:{' '}
             <strong className="text-white/85">

@@ -40,7 +40,7 @@ What you can do as a staker:
 Other important rules:
 
 - Interest math uses integer division on-chain (per-second accrual from annual interest). Displayed UI estimates can differ slightly from the final on-chain amount.
-- After maturity, remaining claimable interest is only available until the **grace period** ends — the extra window after maturity during which you can still claim leftover interest. After that, unclaimed interest can no longer be claimed; principal may still be unstaked.
+- After maturity, remaining claimable interest is only available until the **grace period** ends — the extra window after maturity during which you can still claim leftover interest. Grace length comes from on-chain config (the owner can change it; it is not a fixed constant). On [/stake/](/stake/), when a stake has matured and is still inside the grace window, the stake card shows a countdown of remaining grace time. After that, unclaimed interest can no longer be claimed; principal may still be unstaked.
 - Early-unstake penalty PRANA is sent to the Interest Contract (it can later fund interest payments).
 - While the contract is **paused**, stake / claim / unstake calls that use `whenNotPaused` are blocked.
 
@@ -93,7 +93,7 @@ Important nuance: “cannot steal principal via a withdraw function” is **not*
 
 - Confirm you are on **Polygon** and interacting with the official Staking / Interest addresses linked from [/stake/](/stake/)
 - Understand that APR is fixed **per stake at creation**, while global config (min stake, grace, penalty, pause, published APRs for new stakes) can still change
-- Plan to claim before the grace window ends if you want remaining interest after maturity
+- Plan to claim before the grace window ends if you want remaining interest after maturity — watch the grace countdown on the stake card at [/stake/](/stake/)
 - Keep POL for gas; Permit is a signature, Stake / Claim / Unstake are on-chain transactions
 - Treat Interest Contract balance / funding as an operational dependency for successful claims
 
