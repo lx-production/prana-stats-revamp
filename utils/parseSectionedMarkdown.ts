@@ -11,12 +11,12 @@ function slugifyHeading(heading: string): string {
 }
 
 /**
- * Parse Terms / Risk Disclosure markdown:
+ * Parse sectioned markdown (`#` title, intro, `##` sections):
  * - first `#` line → title
  * - paragraphs before the first `##` → intro
  * - each `##` block → a section
  */
-export function parseTermsRiskMarkdown(markdown: string): TermsRiskDocument {
+export function parseSectionedMarkdown(markdown: string): TermsRiskDocument {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
 
   let title = "";
