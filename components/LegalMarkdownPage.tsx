@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowLeft } from "lucide-react";
 import { getAppBuildInfo } from "../utils/appBuildInfo";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
-import { renderInlineMarkdown } from "../utils/inlineMarkdown";
+import { renderMarkdownBody } from "../utils/inlineMarkdown";
 import { formatTermsEffectiveDate } from "../utils/formatTermsEffectiveDate";
 import { buildIdentityUrl, formatBuildLabel } from "../utils/buildInfoUrls";
 
@@ -88,9 +88,9 @@ const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
           </aside>
 
           {document.intro ? (
-            <p className="mt-5 text-sm leading-relaxed text-slate-300 sm:text-base whitespace-pre-line">
-              {renderInlineMarkdown(document.intro)}
-            </p>
+            <div className="mt-5 space-y-3 text-sm leading-relaxed text-slate-300 sm:text-base">
+              {renderMarkdownBody(document.intro)}
+            </div>
           ) : null}
         </div>
 
@@ -100,8 +100,8 @@ const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
               <h2 className="text-base font-semibold text-white sm:text-lg">
                 {section.heading}
               </h2>
-              <div className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base whitespace-pre-line">
-                {renderInlineMarkdown(section.body)}
+              <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-300 sm:text-base">
+                {renderMarkdownBody(section.body)}
               </div>
             </section>
           ))}

@@ -2,6 +2,82 @@ import React from "react";
 
 import type { ReactNode } from "react";
 
+/** One block after splitting body text into paragraphs vs lists. */
+type MarkdownBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "unordered-list"; items: string[] }
+  | { type: "ordered-list"; items: string[] };
+
+/** Match markdown ordered items like `1. text`. */
+const ORDERED_LIST_ITEM = /^(\d+)\.\s+(.+)$/;
+
+/**
+ * Split markdown body into paragraphs and consecutive list blocks.
+ * Supports `- ` bullets and `1.` numbered lists. Does not nest lists.
+ */
+function parseMarkdownBlocks(text: string): MarkdownBlock[] {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const blocks: MarkdownBlock[] = [];
+  let paragraphLines: string[] = [];
+  let listItems: string[] = [];
+  let listKind: "unordered-list" | "ordered-list" | null = null;
+
+  const flushParagraph = () => {
+    const joined = paragraphLines.join("\n").trim();
+    if (joined) blocks.push({ type: "paragraph", text: joined });
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (listKind && listItems.length > 0) {
+      blocks.push({ type: listKind, items: listItems });
+    }
+    listItems = [];
+    listKind = null;
+  };
+
+  // Start a list or keep appending; switch kind flushes the previous list.
+  const pushListItem = (
+    kind: "unordered-list" | "ordered-list",
+    item: string,
+  ) => {
+    flushParagraph();
+    if (listKind && listKind !== kind) flushList();
+    listKind = kind;
+    listItems.push(item);
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Unordered list item: "- text"
+    if (trimmed.startsWith("- ")) {
+      pushListItem("unordered-list", trimmed.slice(2));
+      continue;
+    }
+
+    // Ordered list item: "1. text"
+    const orderedMatch = ORDERED_LIST_ITEM.exec(trimmed);
+    if (orderedMatch) {
+      pushListItem("ordered-list", orderedMatch[2]);
+      continue;
+    }
+
+    // Blank line ends the current paragraph or list.
+    if (trimmed === "") {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  flushList();
+  return blocks;
+}
 
 /**
  * Render a plain-text markdown snippet with:
@@ -67,5 +143,40 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
     }
 
     return <React.Fragment key={index}>{token}</React.Fragment>;
+  });
+}
+
+const LIST_CLASS = "space-y-1.5 pl-5 marker:text-slate-400";
+
+/**
+ * Render markdown body with paragraphs, `- ` / `1.` lists, and inline tokens.
+ */
+export function renderMarkdownBody(text: string): ReactNode[] {
+  return parseMarkdownBlocks(text).map((block, index) => {
+    if (block.type === "unordered-list") {
+      return (
+        <ul key={index} className={`list-disc ${LIST_CLASS}`}>
+          {block.items.map((item, itemIndex) => (
+            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    if (block.type === "ordered-list") {
+      return (
+        <ol key={index} className={`list-decimal ${LIST_CLASS}`}>
+          {block.items.map((item, itemIndex) => (
+            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ol>
+      );
+    }
+
+    return (
+      <p key={index} className="whitespace-pre-line">
+        {renderInlineMarkdown(block.text)}
+      </p>
+    );
   });
 }
