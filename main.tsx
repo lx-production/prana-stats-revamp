@@ -18,7 +18,7 @@ import {
   isGuideSwapPath,
   isTermsRiskPath,
   isGuideStakingPath,
-  isGuideContractsPath,
+  isGuideStakingContractsPath,
 } from "./constants/appRoutes";
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
@@ -66,7 +66,7 @@ function App() {
           <StakingGuidePage />
           <AppFooter />
         </>
-      ) : isGuideContractsPath(pathname) ? (
+      ) : isGuideStakingContractsPath(pathname) ? (
         <>
           <ContractsGuidePage />
           <AppFooter />

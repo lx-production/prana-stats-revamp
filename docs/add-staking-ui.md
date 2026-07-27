@@ -3,7 +3,7 @@
 ## Tóm tắt kiến trúc
 
 - Dùng chung một Vite app, `WagmiProvider`, React Query, locale, favicon và design system.
-- Một SPA, nhiều path (không React Router): `/` (stats), `/stake/` (staking), `/terms`, `/privacy`, `/guide/swap/`, `/guide/staking/`, `/guide/contracts/` — chọn page theo `window.location.pathname` (`useAppPathname` + `constants/appRoutes`).
+- Một SPA, nhiều path (không React Router): `/` (stats), `/stake/` (staking), `/terms`, `/privacy`, `/guide/swap/`, `/guide/staking/`, `/guide/staking-contracts/` — chọn page theo `window.location.pathname` (`useAppPathname` + `constants/appRoutes`).
 - `/` và `/stake/` là `React.lazy`; người vào trang stats không tải code staking; `/terms`, `/privacy`, và các guide giữ page nhỏ eager như hiện tại.
 - Link `/stake/` dùng navigation thông thường (full URL), không client-side router library.
 - Contract reads đi qua backend API chuyên biệt; Alchemy key chỉ tồn tại server-side.

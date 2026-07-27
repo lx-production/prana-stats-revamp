@@ -6,7 +6,7 @@ import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useContractsGuideDocument } from "../hooks/useContractsGuideDocument";
 
 /**
- * Standalone contracts explainer at `/guide/contracts/`.
+ * Standalone staking contracts explainer at `/guide/staking-contracts/`.
  */
 const ContractsGuidePage: React.FC = () => {
   const { locale } = useSiteLanguage();

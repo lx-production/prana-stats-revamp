@@ -22,11 +22,11 @@ export const GUIDE_STAKING_PATH = "/guide/staking";
 /** Canonical Staking guide URL (trailing slash). */
 export const GUIDE_STAKING_CANONICAL_PATH = "/guide/staking/";
 
-/** Contracts explanation path without trailing slash (redirects to canonical). */
-export const GUIDE_CONTRACTS_PATH = "/guide/contracts";
+/** Staking contracts explanation path without trailing slash (redirects to canonical). */
+export const GUIDE_STAKING_CONTRACTS_PATH = "/guide/staking-contracts";
 
-/** Canonical contracts explanation URL (trailing slash). */
-export const GUIDE_CONTRACTS_CANONICAL_PATH = "/guide/contracts/";
+/** Canonical staking contracts explanation URL (trailing slash). */
+export const GUIDE_STAKING_CONTRACTS_CANONICAL_PATH = "/guide/staking-contracts/";
 
 function normalizePathname(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
@@ -58,10 +58,10 @@ export function isGuideStakingPath(pathname: string): boolean {
   );
 }
 
-/** True for `/guide/contracts` and any path under `/guide/contracts/`. */
-export function isGuideContractsPath(pathname: string): boolean {
+/** True for `/guide/staking-contracts` and any path under `/guide/staking-contracts/`. */
+export function isGuideStakingContractsPath(pathname: string): boolean {
   return (
-    pathname === GUIDE_CONTRACTS_PATH ||
-    pathname.startsWith(GUIDE_CONTRACTS_CANONICAL_PATH)
+    pathname === GUIDE_STAKING_CONTRACTS_PATH ||
+    pathname.startsWith(GUIDE_STAKING_CONTRACTS_CANONICAL_PATH)
   );
 }

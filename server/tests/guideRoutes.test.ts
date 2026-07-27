@@ -9,12 +9,12 @@ import {
   GUIDE_SWAP_PATH,
   GUIDE_STAKING_PATH,
   isGuideSwapPath,
-  GUIDE_CONTRACTS_PATH,
   isGuideStakingPath,
-  isGuideContractsPath,
   GUIDE_SWAP_CANONICAL_PATH,
   GUIDE_STAKING_CANONICAL_PATH,
-  GUIDE_CONTRACTS_CANONICAL_PATH,
+  GUIDE_STAKING_CONTRACTS_PATH,
+  isGuideStakingContractsPath,
+  GUIDE_STAKING_CONTRACTS_CANONICAL_PATH,
 } from '../../constants/appRoutes.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -94,12 +94,18 @@ test('isGuideStakingPath matches /guide/staking and /guide/staking/*', () => {
   assert.equal(isGuideStakingPath('/stake/'), false);
 });
 
-test('isGuideContractsPath matches /guide/contracts and /guide/contracts/*', () => {
-  assert.equal(isGuideContractsPath(GUIDE_CONTRACTS_PATH), true);
-  assert.equal(isGuideContractsPath(GUIDE_CONTRACTS_CANONICAL_PATH), true);
-  assert.equal(isGuideContractsPath('/guide/contracts/section'), true);
-  assert.equal(isGuideContractsPath('/guide/staking/'), false);
-  assert.equal(isGuideContractsPath('/stake/'), false);
+test('isGuideStakingContractsPath matches /guide/staking-contracts and nested paths', () => {
+  assert.equal(isGuideStakingContractsPath(GUIDE_STAKING_CONTRACTS_PATH), true);
+  assert.equal(
+    isGuideStakingContractsPath(GUIDE_STAKING_CONTRACTS_CANONICAL_PATH),
+    true,
+  );
+  assert.equal(
+    isGuideStakingContractsPath('/guide/staking-contracts/section'),
+    true,
+  );
+  assert.equal(isGuideStakingContractsPath('/guide/staking/'), false);
+  assert.equal(isGuideStakingContractsPath('/stake/'), false);
 });
 
 test('GET /guide/swap redirects 308 to canonical path', async () => {
@@ -159,25 +165,25 @@ test('GET /guide/staking/ serves SPA shell HTML', async () => {
   assert.match(bodyText(res), /<div id="root"><\/div>/);
 });
 
-test('GET /guide/contracts redirects 308 to canonical path', async () => {
+test('GET /guide/staking-contracts redirects 308 to canonical path', async () => {
   const res = mockResponse();
   const handled = await handleStaticRequest(
     mockRequest(),
     res,
-    new URL('http://127.0.0.1/guide/contracts'),
+    new URL('http://127.0.0.1/guide/staking-contracts'),
   );
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 308);
-  assert.equal(res.headers.get('Location'), GUIDE_CONTRACTS_CANONICAL_PATH);
+  assert.equal(res.headers.get('Location'), GUIDE_STAKING_CONTRACTS_CANONICAL_PATH);
 });
 
-test('GET /guide/contracts/ serves SPA shell HTML', async () => {
+test('GET /guide/staking-contracts/ serves SPA shell HTML', async () => {
   const res = mockResponse();
   const handled = await handleStaticRequest(
     mockRequest(),
     res,
-    new URL(`http://127.0.0.1${GUIDE_CONTRACTS_CANONICAL_PATH}`),
+    new URL(`http://127.0.0.1${GUIDE_STAKING_CONTRACTS_CANONICAL_PATH}`),
   );
 
   assert.equal(handled, true);
