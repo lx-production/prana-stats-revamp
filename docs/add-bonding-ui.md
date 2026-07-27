@@ -2,6 +2,7 @@
 
 ## Tóm tắt
 
+- Template song song: [`docs/add-staking-ui.md`](./add-staking-ui.md) — lazy route, API, CTA phases, guide stack và deployment.
 - legacy bonding ui nằm ở thư mục `bonding-legacy-ui/`. Sau khi làm làm xong hết kế hoạch trong file này thì có thể xoá.
 - Chuyển bonding legacy thành lazy feature TypeScript trong main Vite app, dùng chung Web3 providers, React Query, VI/EN, footer và design system.
 - Giữ Buy/Sell Bond V2, quản lý và claim bond V1/V2; bỏ các donut/status trùng với Bonding Stats trên homepage.
@@ -14,22 +15,25 @@
 ## Các bước triển khai
 
 1. **Thiết lập lazy route** `/bond/`
-  - Thêm `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath`.
-  - Tạo `BondingEntry` bọc `BondingPage` bằng `Web3Providers`; load bằng `React.lazy` trong `main.tsx`.
-  - Node redirect `/bond` → `/bond/` bằng `308`, giữ query string; `/bond/*` trả SPA shell.
-  - Chuyển Hero BOND từ URL tuyệt đối sang `BOND_CANONICAL_PATH`.
+  - Thêm `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath` vào `constants/appRoutes.ts` (mirror `STAKE_*` / `isStakePath`).
+  - Cấu trúc entry giống Staking:
+    - `features/bonding/BondingEntry.tsx` bọc `pages/BondingPage.tsx` bằng `Web3Providers`.
+    - `React.lazy` trong `main.tsx` trên nhánh `isBondPath`, **ngoài** homepage shader shell (như `isStakePath`).
+  - Node redirect `/bond` → `/bond/` bằng `308`, giữ query string; `/bond/*` trả SPA shell qua `server/staticRoutes.ts`.
+  - Chuyển Hero BOND trong `hero3.tsx` từ URL tuyệt đối + `target="_blank"` sang `BOND_CANONICAL_PATH` same-tab (giống STAKE).
   - Đảm bảo vào `/bond/` không tải `StatsPage`, GLB hoặc dữ liệu homepage.
   - **Kiểm thử Bước 1**
     - Unit test `isBondPath`: nhận `/bond`, `/bond/`, `/bond/preview`; từ chối `/bonding`, `/bonds` và `/`.
-    - Server route test: `/bond?ref=hero` trả `308` tới `/bond/?ref=hero`; refresh `/bond/` và `/bond/*` đều trả fixture SPA shell.
-    - Test Hero dùng constant canonical thay vì URL production hardcode.
+    - Server route test (`server/tests/bondRoutes.test.ts`, mirror `stakeRoutes.test.ts`): `/bond?ref=hero` trả `308` tới `/bond/?ref=hero`; refresh `/bond/` và `/bond/*` đều trả fixture SPA shell.
+    - Test Hero dùng constant canonical same-tab thay vì URL production hardcode / tab mới.
     - Production build phải có chunk `BondingEntry`/`BondingPage` riêng. Kiểm tra chunk entry chung và `StatsPage` không import module bonding.
     - Chạy trang `/bond/` với network log sạch: không có request tới JSON stats, model GLB hoặc chunk `StatsPage`.
 2. **Chuẩn hóa constants, ABI và types**
-  - Mở rộng `constants/bonds.ts` thành nguồn chuẩn cho Buy/Sell V1/V2, dùng ABI tối thiểu typed `as const`.
+  - Mở rộng `constants/bonds.ts` (và `bonds.types.ts`) — file đã có địa chỉ V1/V2 + ABI scan/`committed*`; **không tạo file ABI thứ hai**.
+  - Bổ sung ABI tối thiểu còn thiếu: create bond (chỉ V2), active-bond read, `claimBond`, config/paused/min/terms reads. Giữ pattern `BondAbiFunctionFragment[]` hiện có, hoặc migrate sang `as const` như `stakingContracts.ts` nếu typecheck yêu cầu.
   - Chỉ giữ V2 ABI cho tạo bond; V1/V2 đều có read active bonds và `claimBond`.
   - Dùng lại PRANA/WBTC address, decimals, pool và network constants hiện tại; không sao chép constants từ legacy.
-  - Tạo `features/bonding` types cho term, config, account, quote, active bond và transaction lifecycle.
+  - Tạo `features/bonding/bonding.types.ts` cho term, config, account, quote, active bond và transaction lifecycle (một file, như `staking.types.ts`).
   - Token amounts, allowance và bond ID đi qua JSON dưới dạng decimal string; không ép sang `number`.
   - **Kiểm thử Bước 2**
     - Typecheck xác nhận tên hàm và tuple V1/V2 khớp với `readContract`, `simulateContract` và `writeContract`.
@@ -38,12 +42,14 @@
     - Test mapper với amount và bond ID lớn hơn `Number.MAX_SAFE_INTEGER`; JSON vẫn giữ đúng decimal string.
     - Static search không còn address literal hoặc bản ABI thứ hai trong `features/bonding`, server loader và UI.
 3. **Xây backend Bonding API**
+  - Loaders: `server/loaders/bondingConfig.ts`, `bondingAccount.ts`, `bondingQuote.ts` (+ optional `server/loaders/cached/bondingConfigCached.ts`); đăng ký trong `getApiRoutes.ts` / `postApiRoutes.ts`.
+  - Rate limit: thêm bonding quote/account limiters trong `server/rateLimit.ts` cạnh staking.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
   - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc`, `buy_target_prana` hoặc `sell_exact_prana`, gồm `amountRaw` và `termId`.
   - Quote response trả `wbtcAmountRaw`, `pranaAmountRaw`, rate/duration, block timestamp, nguồn reserve `impacted|market` và các issue như paused, dưới minimum, vượt reserve hoặc thiếu treasury.
   - Mọi reads trong một response dùng cùng `blockTag`; quote mô phỏng đúng thứ tự bigint/rounding/1% fee của Solidity và nhánh tự đồng bộ market reserve.
-  - Validate body/content-type/origin, giới hạn body 2 KB, 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút.
+  - Validate body/content-type/origin, giới hạn body 2 KB, 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút. Tái dùng `rejectInvalidSwapApiRequest` (hoặc helper tương đương) từ `server/helpers/apiRoutesHelpers.ts`.
   - Lỗi RPC trả `502` đã redact; input sai trả `400`; trạng thái quote không executable vẫn trả `200` kèm issue để form hiển thị đúng lý do.
   - **Vì sao Bonding có body/content-type/origin validation nhưng Staking không có**
     - Hai Staking endpoint hiện tại đều là `GET`. Chúng không nhận JSON body, nên không có body size hoặc `Content-Type` để kiểm tra. Staking vẫn validate method, checksum `address`, rate limit và redact lỗi RPC.
@@ -61,14 +67,20 @@
     - Quote math fixture cho cả ba mode; kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
     - Boundary fixtures: zero, dưới minimum, term ngoài `0..4`, target bằng/vượt reserve, treasury vừa đủ/thiếu một raw unit và paused state.
     - Error test đảm bảo response/log không lộ RPC URL, API key, calldata hoặc raw provider stack.
+    - Suite: `server/tests/bondingApi.test.ts` (mirror `stakingApi.test.ts`).
 4. **Port form và dữ liệu client**
-  - Tạo `BondingPage` gồm header/contract links, wallet panel, tab Buy/Sell, form và Active Bonds.
+  - Cấu trúc client mirror Staking:
+    - `pages/BondingPage.tsx` — shell (shader, `LanguageToggle`, `AppFooter`, `usePageMetadata`, header/links).
+    - `features/bonding/bondingApi.ts` — browser adapter qua `fetchJson` (mirror `stakingApi.ts`).
+    - `features/bonding/bonding.copy.ts` — VI/EN copy.
+    - `features/bonding/components/` — form, tabs, Active Bonds, term selector.
+    - `features/bonding/hooks/` — config/account/quote hooks.
   - Buy có toggle:
     - Exact WBTC → quote PRANA nhận dự kiến.
     - Target PRANA → quote WBTC cần trả dự kiến, kèm cảnh báo contract không nhận tham số “WBTC tối đa được phép chi”.
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX chỉ áp dụng cho exact WBTC và Sell PRANA.
-  - Term selector đọc on-chain V2 config, style như staking ui; mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
+  - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
   - Quote debounce 600 ms, hủy request cũ, bỏ response stale; sau 30 giây đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
   - `maxIn` **nghĩa là gì**
@@ -88,6 +100,7 @@
     - Term refresh loại bỏ option đang chọn thì fallback 30 ngày hoặc option đầu tiên; không submit term đã biến mất.
     - Component test đủ loading/empty/error/issue states và copy VI/EN cho cả ba quote mode.
 5. **Harden approve và tạo bond**
+  - Template Staking: `stakeCtaPhase.ts`, `useStakeTransaction.ts`, `stakeTransactionFlow.ts` → tương ứng Bonding `bondCtaPhase` / transaction hook/flow (approve+create thay vì permit+stake).
   - Dùng một CTA theo phase: `Approve` → `Review` → `Create Bond` → `Confirming`; không tự bật hai wallet prompt liên tiếp.
   - Bốn phase là trạng thái UI, không phải bốn yêu cầu ký trên ví:
     - `Approve`: nếu allowance chưa phù hợp, user bấm CTA và xác nhận một transaction `approve` trên ví.
@@ -163,11 +176,28 @@
 7. **UI, accessibility và tài liệu**
   - Dùng dark shell, shader brightness thấp, `GlassPanel`, `StatusBanner`, gold CTA, Lucide và `AppFooter`; không thêm MUI hoặc PropTypes.
   - Refactor wallet control thành component dùng chung Web3 để Staking và Bonding không lặp connect/switch/disconnect.
+    - Hiện tại `WalletControl` nằm ở `features/staking/components/WalletControl.tsx` và còn phụ thuộc `staking.copy` / `stakingErrors`.
+    - Tách phần UI trung lập (connect / switch Polygon / disconnect) sang `features/web3/`; copy và format lỗi vẫn thuộc từng feature.
   - Thêm VI/EN copy, metadata, Polygonscan links cho bốn deployment, responsive mobile và `prefers-reduced-motion`.
   - Term/tabs/dialog hỗ trợ keyboard, focus trap, Escape, focus-visible và `aria-live`.
   - Thêm `/guide/bonding/` VI/EN giải thích approve, hai chiều Buy, vesting, claim, treasury và giới hạn quote/slippage; thêm link footer.
+    - Pattern giống Staking/Swap guides sau rename trên `main` (không dùng `LegalMarkdownPage` hay `termsRiskParser` cũ):
+      - `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath` trong `constants/appRoutes.ts`.
+      - `components/BondingGuidePage.tsx` render qua `MarkdownDocumentPage`.
+      - `hooks/useBondingGuideDocument.ts` parse markdown bằng `parseSectionedMarkdown`.
+      - Nội dung: `data/guide-bonding-en.md`, `data/guide-bonding-vi.md`.
+      - Đăng ký route trong `main.tsx`; bare → canonical `308` + SPA shell trong `server/staticRoutes.ts`.
+      - Test matcher/redirect/SPA trong `server/tests/guideRoutes.test.ts`.
+      - Thêm link `GUIDE_BONDING_CANONICAL_PATH` vào `AppFooter`.
+    - Lưu ý naming hiện có: contracts guide là `/guide/staking-contracts/` với `data/guide-staking-contracts-{en,vi}.md` — Bonding guide không tái dùng path/file đó.
   - Cập nhật Terms/Privacy để bao gồm PRANA Bonding và wallet/account/quote requests.
-  - Ghi tiến độ vào `docs/add-bonding-ui.md`, cập nhật README và tài liệu shared/network architecture.
+    - Nội dung: `data/terms-risk-{en,vi}.md`, `data/privacy-{en,vi}.md` (render qua `MarkdownDocumentPage` + `parseSectionedMarkdown`).
+    - Nếu thay đổi pháp lý chính thức: cập nhật ngày trong `constants/termsRisk.ts` và `constants/privacy.ts`.
+  - Ghi tiến độ vào `docs/add-bonding-ui.md`; cập nhật README và tài liệu architecture sẽ trở nên lỗi thời khi Bonding dùng Web3 chung:
+    - `docs/SHARED_CODE_ARCHITECTURE.md` và `docs/vi/SHARED_CODE_ARCHITECTURE.md`
+    - `docs/swap-modal-technical-overview.md` và `docs/vi/swap-modal-technical-overview.md`
+    - `docs/NETWORK_ARCHITECTURE.md` và `docs/vi/NETWORK_ARCHITECTURE.md`
+    - Comment “Swap and staking only” trong `features/web3/Web3Providers.tsx`, `useInjectedWallet.ts`, `walletFormatting.ts` và `main.tsx`
   - Sau khi mọi test pass, xóa toàn bộ `bonding-legacy-ui/`; không mang theme context, staking constants hay hooks thống kê dư thừa sang feature mới.
   - **Kiểm thử Bước 7**
     - Keyboard test cho Buy/Sell tabs và term chips: Tab, mũi tên, Enter/Space và roving `tabIndex`.
@@ -176,12 +206,15 @@
     - Reduced-motion test/class audit: shader/decorative animation và spinner không tạo chuyển động liên tục khi user yêu cầu giảm chuyển động.
     - Responsive QA ở 320, 375, 768 và desktop: không overflow amount/hash/address, CTA full width trên mobile.
     - Copy parity test đảm bảo mọi key có cả VI/EN, không render câu trộn ngôn ngữ; metadata đổi theo locale.
-    - Link test cho homepage, guide, Terms/Privacy và bốn Polygonscan deployments.
+    - Link test cho homepage, `/guide/bonding/`, Terms/Privacy và bốn Polygonscan deployments.
+    - Guide route test: `/guide/bonding` → `308` `/guide/bonding/`; refresh `/guide/bonding/` trả SPA shell; page render đúng VI/EN qua `MarkdownDocumentPage`.
+    - Shared wallet control: Staking và Bonding cùng dùng component Web3 trung lập; copy/error format vẫn feature-local.
     - Sau khi xóa legacy, `rg` xác nhận không còn import/path legacy, MUI, PropTypes hoặc ThemeContext; typecheck/build lại từ clean checkout.
 8. **Deployment và migration legacy**
   - Build phải tạo chunk Bonding riêng; kiểm tra Stats/Staking chunks không bị kéo thêm dependency bonding.
   - Deploy main app trước và smoke-test trực tiếp Node `/bond/` cùng các Bonding API trong khi nginx vẫn phục vụ legacy.
   - Pi nginx: bỏ redirect/static alias `/bond`, `/bond/`, `/bond/assets/` để toàn bộ route đi vào Node; chạy `nginx -t` rồi reload.
+  - Lưu ý: Pi legacy hiện dùng `301` cho `/bond` → `/bond/`; sau cutover Node phục vụ bare path bằng `308` (đồng bộ với `/stake` và guides).
   - VPS nginx: bỏ special legacy `/bond/assets/`; giữ `/assets/` của main Vite app và reload sau `nginx -t`.
   - Public smoke-test `/bond` redirect, refresh `/bond/`, gzip assets, config/account/quote, connect/switch chain và quote; không tự gửi giao dịch thật khi smoke production.
   - Giữ `/var/www/html/prana/bond/` trong 7 ngày làm rollback; rollback bằng cách khôi phục nginx legacy blocks. Sau cửa sổ này mới xóa static build cũ và ghi nhận trong tài liệu.
@@ -203,6 +236,7 @@
 - `BondingQuoteRequest`: discriminated union cho ba quote mode, nhận raw amount và term ID.
 - `BondingQuote`: raw PRANA/WBTC amounts, rate/duration, reserve source, quote timestamp và validation issues.
 - Route công khai mới: `/bond/`, `/guide/bonding/`, `/api/bonding/config`, `/api/bonding/account`, `/api/bonding/quote`.
+- Route constants mới: `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath`, `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath`.
 
 
 
@@ -212,6 +246,7 @@ Checklist chi tiết nằm ngay dưới từng bước. Mỗi bước chỉ đư
 
 - Test mới của bước đó pass độc lập và không làm regression test hiện có.
 - `npm run typecheck` pass; các bước backend/client tương ứng phải chạy thêm server/client test suite.
+- Thêm script `"test:bonding": "node --import tsx --test 'features/bonding/tests/**/*.test.ts'"` vào `package.json` (mirror `test:staking`).
 - Cuối Bước 7 chạy toàn bộ `npm test`, `npm run test:staking`, `npm run test:bonding` và production build.
 - Cuối Bước 8 hoàn tất smoke test origin/public, ghi lại build SHA, kết quả nginx validation và quyết định giữ/rollback.
 
