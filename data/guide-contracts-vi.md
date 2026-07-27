@@ -40,7 +40,7 @@ Người stake có thể:
 Các quy tắc quan trọng khác:
 
 - Công thức lãi on-chain dùng phép chia số nguyên (tích lũy theo giây từ lãi năm). Ước tính trên UI có thể lệch nhẹ so với số nhận được on-chain.
-- Sau đáo hạn, lãi còn claim được chỉ trong **grace period**. Hết grace thì lãi chưa claim không nhận được nữa; vốn gốc vẫn có thể unstake.
+- Sau đáo hạn, lãi còn claim được chỉ trong **grace period** — khoảng thời gian ân hạn sau khi stake đáo hạn, trong đó bạn vẫn claim được lãi còn lại. Hết grace thì lãi chưa claim không nhận được nữa; vốn gốc vẫn có thể unstake.
 - PRANA phạt unstake sớm được chuyển sang Hợp đồng Interest (có thể dùng để trả lãi sau này).
 - Khi hợp đồng **tạm dừng (paused)**, các thao tác stake / claim / unstake dùng `whenNotPaused` sẽ bị chặn.
 

@@ -40,7 +40,7 @@ What you can do as a staker:
 Other important rules:
 
 - Interest math uses integer division on-chain (per-second accrual from annual interest). Displayed UI estimates can differ slightly from the final on-chain amount.
-- After maturity, remaining claimable interest is only available until the **grace period** ends. After that, unclaimed interest can no longer be claimed; principal may still be unstaked.
+- After maturity, remaining claimable interest is only available until the **grace period** ends — the extra window after maturity during which you can still claim leftover interest. After that, unclaimed interest can no longer be claimed; principal may still be unstaked.
 - Early-unstake penalty PRANA is sent to the Interest Contract (it can later fund interest payments).
 - While the contract is **paused**, stake / claim / unstake calls that use `whenNotPaused` are blocked.
 
