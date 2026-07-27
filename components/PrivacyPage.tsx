@@ -1,6 +1,6 @@
 import React from "react";
 import { Shield } from "lucide-react";
-import LegalMarkdownPage from "./LegalMarkdownPage";
+import MarkdownDocumentPage from "./MarkdownDocumentPage";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { PRIVACY_EFFECTIVE_DATE } from "../constants/privacy";
 import { usePrivacyDocument } from "../hooks/usePrivacyDocument";
@@ -13,7 +13,7 @@ const PrivacyPage: React.FC = () => {
   const privacyDoc = usePrivacyDocument();
 
   return (
-    <LegalMarkdownPage
+    <MarkdownDocumentPage
       icon={Shield}
       document={privacyDoc}
       effectiveDateIso={PRIVACY_EFFECTIVE_DATE}

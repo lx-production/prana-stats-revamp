@@ -1,6 +1,6 @@
 import React from "react";
 import { Scale } from "lucide-react";
-import LegalMarkdownPage from "./LegalMarkdownPage";
+import MarkdownDocumentPage from "./MarkdownDocumentPage";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { TERMS_RISK_EFFECTIVE_DATE } from "../constants/termsRisk";
 import { useTermsRiskDocument } from "../hooks/useTermsRiskDocument";
@@ -14,7 +14,7 @@ const TermsRiskPage: React.FC = () => {
   const termsDoc = useTermsRiskDocument();
 
   return (
-    <LegalMarkdownPage
+    <MarkdownDocumentPage
       icon={Scale}
       document={termsDoc}
       effectiveDateIso={TERMS_RISK_EFFECTIVE_DATE}

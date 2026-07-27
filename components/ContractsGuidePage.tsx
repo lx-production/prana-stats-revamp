@@ -1,6 +1,6 @@
 import React from "react";
 import { FileText } from "lucide-react";
-import LegalMarkdownPage from "./LegalMarkdownPage";
+import MarkdownDocumentPage from "./MarkdownDocumentPage";
 import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useContractsGuideDocument } from "../hooks/useContractsGuideDocument";
@@ -13,7 +13,7 @@ const ContractsGuidePage: React.FC = () => {
   const guideDoc = useContractsGuideDocument();
 
   return (
-    <LegalMarkdownPage
+    <MarkdownDocumentPage
       icon={FileText}
       document={guideDoc}
       effectiveDateIso={GUIDE_UPDATED_DATE}

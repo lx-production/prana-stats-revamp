@@ -9,8 +9,7 @@ import { buildIdentityUrl, formatBuildLabel } from "../utils/buildInfoUrls";
 import type { LucideIcon } from "lucide-react";
 import type { TermsRiskDocument } from "../types/termsRisk.types";
 
-
-type LegalMarkdownPageProps = {
+type MarkdownDocumentPageProps = {
   icon: LucideIcon;
   document: TermsRiskDocument;
   effectiveDateIso: string;
@@ -22,7 +21,7 @@ type LegalMarkdownPageProps = {
 /**
  * Shared layout for standalone markdown pages (`/terms`, `/privacy`, guides).
  */
-const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
+const MarkdownDocumentPage: React.FC<MarkdownDocumentPageProps> = ({
   icon: Icon,
   document,
   effectiveDateIso,
@@ -111,4 +110,4 @@ const LegalMarkdownPage: React.FC<LegalMarkdownPageProps> = ({
   );
 };
 
-export default LegalMarkdownPage;
+export default MarkdownDocumentPage;

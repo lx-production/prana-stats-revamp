@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowLeftRight } from "lucide-react";
-import LegalMarkdownPage from "./LegalMarkdownPage";
+import MarkdownDocumentPage from "./MarkdownDocumentPage";
 import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useSwapGuideDocument } from "../hooks/useSwapGuideDocument";
@@ -13,7 +13,7 @@ const SwapGuidePage: React.FC = () => {
   const guideDoc = useSwapGuideDocument();
 
   return (
-    <LegalMarkdownPage
+    <MarkdownDocumentPage
       icon={ArrowLeftRight}
       document={guideDoc}
       effectiveDateIso={GUIDE_UPDATED_DATE}
