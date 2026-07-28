@@ -7,7 +7,7 @@ import { getStakingCopy } from '../staking.copy.ts';
 import { useStakeActions } from '../hooks/useStakeActions.ts';
 import EarlyUnstakeDialog from './EarlyUnstakeDialog.tsx';
 import StakeCard from './StakeCard.tsx';
-import TxLink from './TxLink.tsx';
+import TxLink from '../../../components/ui/TxLink.tsx';
 
 import type { StakeRecord, StakingConfig } from '../staking.types.ts';
 

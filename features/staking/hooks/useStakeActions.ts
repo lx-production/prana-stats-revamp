@@ -8,7 +8,7 @@ import {
 } from '../../../constants/stakingContracts.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { getPolygonWalletClient } from '../getPolygonWalletClient.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { getStakingCopy } from '../staking.copy.ts';
 import { confirmStakeReceipt } from '../stakeTransactionFlow.ts';
 import {

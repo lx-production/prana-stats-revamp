@@ -13,7 +13,7 @@ import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getStakingCopy } from '../staking.copy.ts';
 import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
-import { getPolygonWalletClient } from '../getPolygonWalletClient.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { isPermitSnapshotValid } from '../permitUtils.ts';
 import { getConfiguredDuration } from '../stakingMath.ts';
 import {

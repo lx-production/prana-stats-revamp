@@ -1,6 +1,6 @@
 import { getWalletClient } from 'wagmi/actions';
 import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
-import { wagmiConfig } from '../web3/wagmiConfig.ts';
+import { wagmiConfig } from './wagmiConfig.ts';
 
 /**
  * Resolve a fresh Polygon wallet client after ensurePolygon().

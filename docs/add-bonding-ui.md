@@ -76,7 +76,7 @@
     - Error test đảm bảo response/log không lộ RPC URL, API key, calldata hoặc raw provider stack.
     - Confirmation API test: reject body/hash/action sai trước RPC; success/revert/not-mined/RPC-error tách biệt; sender/target/function/args mismatch không được xác nhận.
     - Suite: `server/tests/bondingApi.test.ts` (mirror `stakingApi.test.ts`).
-4. **Port form và dữ liệu client**
+4. ✅ **Port form và dữ liệu client**
   - Cấu trúc client mirror Staking:
     - `pages/BondingPage.tsx` — shell (shader, `LanguageToggle`, `AppFooter`, `usePageMetadata`, header/links).
     - `features/bonding/bondingApi.ts` — browser adapter qua `fetchJson` (mirror `stakingApi.ts`).

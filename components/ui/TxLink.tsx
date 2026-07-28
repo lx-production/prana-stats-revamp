@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react';
-import { POLYGONSCAN_TX_BASE_URL } from '../../../constants/network.ts';
+import { POLYGONSCAN_TX_BASE_URL } from '../../constants/network.ts';
 
-import type { Hex } from '../../../types/blockchain.types.ts';
+import type { Hex } from '../../types/blockchain.types.ts';
 
 /** Compact Polygonscan deep link for a transaction hash. */
 export default function TxLink({ hash, label }: { hash: Hex; label: string }) {

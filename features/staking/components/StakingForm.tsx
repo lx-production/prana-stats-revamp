@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
 import { Coins, Loader2 } from 'lucide-react';
-import TxLink from './TxLink.tsx';
+import TxLink from '../../../components/ui/TxLink.tsx';
 import { getStakingCopy } from '../staking.copy.ts';
 import { getStakeCtaPhase } from '../stakeCtaPhase.ts';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
