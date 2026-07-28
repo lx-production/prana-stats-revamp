@@ -4,12 +4,14 @@ import { polygon } from 'wagmi/chains';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { confirmBondingTransactionOnServer } from '../bondingApi.ts';
 import { getBondingCopy } from '../bonding.copy.ts';
 import {
   formatBondingError,
   getBondingErrorMessage,
+  logBondingFailure,
 } from '../bondingErrors.ts';
 import {
   confirmBondReceipt,
@@ -93,8 +95,7 @@ export function useBondActions({
       setWarning(null);
 
       const outcome = await confirmBondReceipt(pendingTx.hash, {
-        waitForReceipt: (txHash) =>
-          publicClient!.waitForTransactionReceipt({ hash: txHash }),
+        waitForReceipt: waitForPolygonWalletReceipt,
         confirmOnServer: (txHash) =>
           confirmBondingTransactionOnServer({
             transactionHash: txHash,
@@ -110,6 +111,7 @@ export function useBondActions({
       }
 
       if (outcome.kind === 'reverted') {
+        logBondingFailure('claim-resume: reverted', { hash: pendingTx.hash });
         setPending(null);
         setTransactionHash(null);
         setAction(null);
@@ -119,6 +121,11 @@ export function useBondActions({
       }
 
       // Keep hash + snapshot; never treat as failed write.
+      logBondingFailure('claim-resume: confirmation_unavailable', {
+        hash: pendingTx.hash,
+        receiptError: outcome.receiptError,
+        verificationError: outcome.verificationError,
+      });
       setPending(pendingTx);
       setTransactionHash(pendingTx.hash);
       setStatus('confirmation_unavailable');
@@ -128,7 +135,6 @@ export function useBondActions({
       applyConfirmed,
       copy.confirmationUnavailable,
       locale,
-      publicClient,
       refetchAccount,
       wallet.address,
     ],
@@ -152,12 +158,14 @@ export function useBondActions({
       setTransactionHash(null);
 
       if (!wallet.isConnected || !wallet.address) {
+        logBondingFailure('claim: not_connected');
         setError(getBondingErrorMessage('not_connected', locale));
         setStatus('error');
         return;
       }
 
       if (!config || !configReady) {
+        logBondingFailure('claim: missing config');
         setError(getBondingErrorMessage('generic', locale));
         setStatus('error');
         return;
@@ -166,12 +174,14 @@ export function useBondActions({
       if (
         isBondDeploymentPaused(config.paused, target.side, target.version)
       ) {
+        logBondingFailure('claim: paused', target);
         setError(getBondingErrorMessage('paused', locale));
         setStatus('error');
         return;
       }
 
       if (!publicClient) {
+        logBondingFailure('claim: rpc_unavailable (no publicClient)');
         setError(getBondingErrorMessage('rpc_unavailable', locale));
         setStatus('error');
         return;
@@ -204,7 +214,8 @@ export function useBondActions({
           refetchAccount,
           validateFreshAccount: () => true,
           simulate: async () => {
-            const request = await publicClient.simulateContract({
+            // viem returns { result, request } — only `request` is writeContract-ready.
+            const { request } = await publicClient.simulateContract({
               account: wallet.address!,
               address: claimTarget.address,
               abi: claimTarget.abi,
@@ -238,7 +249,7 @@ export function useBondActions({
             setPending({ hash, action: actionSnapshot });
             setTransactionHash(hash);
             setStatus('confirming');
-            return publicClient.waitForTransactionReceipt({ hash });
+            return waitForPolygonWalletReceipt(hash);
           },
           confirmOnServer: (hash) =>
             confirmBondingTransactionOnServer({
@@ -249,18 +260,21 @@ export function useBondActions({
         });
 
         if (outcome.kind === 'fresh_account_failed') {
+          logBondingFailure('claim: fresh_account_failed');
           setAction(null);
           setStatus('error');
           setError(getBondingErrorMessage('account_refetch_failed', locale));
           return;
         }
         if (outcome.kind === 'validation_failed') {
+          logBondingFailure('claim: validation_failed');
           setAction(null);
           setStatus('error');
           setError(getBondingErrorMessage('generic', locale));
           return;
         }
         if (outcome.kind === 'simulate_failed') {
+          logBondingFailure('claim: simulate_failed', outcome.error);
           setAction(null);
           setPending(null);
           setStatus('error');
@@ -275,6 +289,11 @@ export function useBondActions({
           return;
         }
         if (outcome.kind === 'confirmation_unavailable') {
+          logBondingFailure('claim: confirmation_unavailable', {
+            hash: outcome.hash,
+            receiptError: outcome.receiptError,
+            verificationError: outcome.verificationError,
+          });
           setPending({ hash: outcome.hash, action: actionSnapshot });
           setTransactionHash(outcome.hash);
           setStatus('confirmation_unavailable');
@@ -282,6 +301,10 @@ export function useBondActions({
           return;
         }
         if (outcome.kind === 'reverted') {
+          logBondingFailure('claim: reverted', {
+            hash: outcome.hash,
+            source: outcome.source,
+          });
           setPending(null);
           setTransactionHash(null);
           setAction(null);

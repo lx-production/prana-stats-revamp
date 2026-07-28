@@ -194,9 +194,23 @@ export function getBondingErrorMessage(
   return ERROR_COPY[locale][code];
 }
 
+/**
+ * Dev breadcrumb for bonding write failures.
+ * UI still shows locale copy only — raw provider text stays in the console.
+ */
+export function logBondingFailure(context: string, detail?: unknown): void {
+  if (detail !== undefined) {
+    console.error(`[bonding] ${context}`, detail);
+    return;
+  }
+  console.error(`[bonding] ${context}`);
+}
+
 export function formatBondingError(
   error: unknown,
   locale: SiteLocale,
 ): string {
-  return getBondingErrorMessage(classifyBondingError(error), locale);
+  const code = classifyBondingError(error);
+  logBondingFailure(code, error);
+  return getBondingErrorMessage(code, locale);
 }

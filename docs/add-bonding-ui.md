@@ -128,10 +128,10 @@
     - Đảm bảo đúng wallet, Polygon, balance, minimum, term, paused và treasury capacity.
   - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định.
   - Target PRANA Buy phải set WBTC allowance thành cap bằng quote mới nhất, kể cả khi allowance cũ lớn hơn; nếu quote mới vượt cap thì yêu cầu approve lại. Dialog phải hiển thị cap WBTC rõ ràng.
-  - Ngay trước write, chạy `simulateContract`; sau đó gửi request đã simulate bằng wallet client.
+  - Ngay trước write, chạy `simulateContract` rồi destructure `{ request }` (viem trả `{ result, request }` — chỉ `request` mới truyền được vào `writeContract`); không truyền nguyên object trả về của simulate.
   - Khi đã có hash, tuyệt đối không broadcast lần hai:
-    - Thử `waitForTransactionReceipt` qua browser RPC trước.
-    - Nếu browser RPC lỗi đọc receipt, gọi `/api/bonding/confirm-transaction` qua RPC server độc lập.
+    - Thử `waitForTransactionReceipt` qua RPC của ví đã broadcast transaction trước.
+    - Nếu RPC của ví lỗi đọc receipt, gọi `/api/bonding/confirm-transaction` qua RPC server độc lập.
     - Receipt explicit `reverted` mới là transaction failed; RPC lỗi hoặc transaction chưa terminal không được đổi thành failed.
     - Nếu cả browser và server chưa xác nhận được, giữ hash + snapshot, chuyển phase `Confirmation unavailable`, hiện Polygonscan và CTA “Tiếp tục xác nhận”; retry chỉ lặp confirmation.
   - Chỉ báo thành công sau receipt; account refetch thất bại sau receipt là warning, không biến giao dịch thành failed.
@@ -143,7 +143,7 @@
     - Target PRANA: allowance cũ lớn hơn quote vẫn phải được cap lại; fresh quote vượt cap quay về approve; fresh quote nhỏ hơn/ bằng cap mới được review.
     - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
     - User reject approve hoặc create trước hash cho phép retry đúng phase; lỗi receipt sau hash chỉ hiện “tiếp tục xác nhận”.
-    - Browser receipt success không gọi server fallback; browser RPC lỗi + server success/revert trả đúng terminal state.
+    - Wallet receipt success không gọi server fallback; wallet RPC lỗi + server success/revert trả đúng terminal state.
     - Browser và server cùng unavailable giữ `Confirmation unavailable`, hash và action snapshot; không log/render như transaction failed và không gọi write lần hai.
     - `simulateContract` failure không gọi `writeContract`; simulated request thành công phải giữ đúng address, function, args và connected account.
     - Receipt `reverted` không báo success; receipt thành công mới reset form/invalidate quote/refetch account.
@@ -181,7 +181,7 @@
   - Thời gian hiện tại dựa trên `blockTimestamp + elapsed`, không chỉ dựa clock thiết bị.
   - Sort theo maturity gần nhất, tie-break bằng side/version/id.
   - Claim chọn contract từ mapping nội bộ side/version, không tin địa chỉ do UI hoặc API truyền vào.
-  - Claim flow: switch Polygon → simulate → write → browser receipt / server confirmation fallback → refetch account; dùng cùng cơ chế resume pending hash.
+  - Claim flow: switch Polygon → simulate → write → wallet receipt / server confirmation fallback → refetch account; dùng cùng cơ chế resume pending hash.
   - Khóa form và các claim khác khi có một write đang chạy; nếu contract tương ứng paused thì disable action với lý do rõ ràng.
   - **Kiểm thử Bước 6**
     - Mapper fixtures cho bốn deployment, gồm ID trùng nhau; React key và contract dispatch vẫn phân biệt side/version.
