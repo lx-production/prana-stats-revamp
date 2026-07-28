@@ -104,8 +104,8 @@ const vi: BondingCopy = {
   connectedAs: 'Đã kết nối',
   buyTab: 'Mua Bond',
   sellTab: 'Bán Bond',
-  buyExactWbtcMode: 'WBTC muốn bán',
-  buyTargetPranaMode: 'PRANA muốn mua',
+  buyExactWbtcMode: 'WBTC Muốn Bán',
+  buyTargetPranaMode: 'PRANA Muốn Mua',
   amountLabelWbtc: 'Số lượng WBTC',
   amountLabelPrana: 'Số lượng PRANA',
   balanceLabel: 'Số dư',
@@ -193,7 +193,7 @@ const vi: BondingCopy = {
   switchPolygonFirst: 'Chuyển sang Polygon trước.',
   buyV2ContractLink: 'Buy Bond V2',
   sellV2ContractLink: 'Sell Bond V2',
-  contractsGuideLink: 'Giải thích contracts',
+  contractsGuideLink: 'Giải thích Hợp đồng',
 };
 
 const en: BondingCopy = {
@@ -207,8 +207,8 @@ const en: BondingCopy = {
   connectedAs: 'Connected as',
   buyTab: 'Buy Bond',
   sellTab: 'Sell Bond',
-  buyExactWbtcMode: 'WBTC to sell',
-  buyTargetPranaMode: 'PRANA to buy',
+  buyExactWbtcMode: 'WBTC To Sell',
+  buyTargetPranaMode: 'PRANA To Buy',
   amountLabelWbtc: 'WBTC amount',
   amountLabelPrana: 'PRANA amount',
   balanceLabel: 'Balance',

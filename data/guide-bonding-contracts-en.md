@@ -2,7 +2,7 @@
 
 This page explains the on-chain contracts behind **PRANA Bonding**: **BuyPranaBondV2** and **SellPranaBondV2**. Read it with the [Bonding guide](/guide/bonding/) and the [Terms & Risk Disclosure](/terms).
 
-Both contracts run on **Polygon**. Addresses are linked from [/bond/](/bond/) and Polygonscan. This page is educational — always verify live code and parameters on-chain before bonding.
+Both contracts run on **Polygon**. This page is educational — always verify live code and parameters on-chain before bonding.
 
 **V1 note:** Buy/Sell Bond V1 deployments remain only for viewing and claiming historical bonds. **New bonds are created only on V2.**
 
@@ -22,6 +22,8 @@ Typical lifecycle:
 3. Payout vests over time from `creationTime` to `maturityTime`
 4. You claim vested payout (partially before maturity, or the remainder from maturity)
 
+
+
 ## 2. Impacted reserves and price impact
 
 Each V2 contract keeps two reserve sets:
@@ -38,7 +40,8 @@ After each bond creation, impacted reserves are updated. So the next bond sees *
 
 This applies to all three flows (buy exact WBTC, buy target PRANA, sell exact PRANA).
 
-**Where is the OTC edge?**  
+**Where is the OTC edge?** 
+
 This guard only constrains the AMM baseline (before incentives). The OTC edge comes from `bondRates`:
 
 - Buy can get a **discount**
@@ -57,29 +60,22 @@ Technical notes:
 
 BuyPranaBondV2 exposes two create functions:
 
-- `buyBondForWbtcAmount(wbtcAmount, period)` — spend an exact WBTC amount; PRANA payout is computed on-chain
+- `buyBondForWbtcAmount(wbtcAmount, period)` — spend an exact WBTC amount you want to use to buy PRANA; PRANA payout is computed on-chain
 - `buyBondForPranaAmount(pranaAmount, period)` — target an exact PRANA payout; WBTC cost is computed on-chain
 
-Important limits in the current contracts:
-
-- There is **no** `minPranaOut` on exact-WBTC buys
-- There is **no** `maxWbtcIn` on target-PRANA buys
-
-So the official UI cannot promise a locked output or a hard on-chain input ceiling beyond the ERC-20 allowance used as a practical spending cap for Target PRANA.
+If you already have WBTC, enter the WBTC amount you want to sell. That is the forward quote direction and is usually better. Do not use the PRANA input path to reverse-check, because it is not a 1:1 inverse conversion.
 
 ## 4. Sell Bond create path
 
 SellPranaBondV2 creates bonds with:
 
-- `sellBond(pranaAmount, period)` — lock an exact PRANA amount; WBTC payout is computed on-chain
-
-There is **no** `minWbtcOut`. Exact PRANA in is fixed; WBTC out can still change if reserves/rates/treasury move before execution.
+- `sellBond(pranaAmount, period)` — lock an exact PRANA amount you want to sell; WBTC payout is computed on-chain
 
 ## 5. Fee, terms, and minimums
 
-Create/quote math includes a **1% fee** path aligned with the Solidity formula (integer division / flooring).
+Create/quote math includes a **1% fee**, aligned with the 1% fee of the DEX pool.
 
-Terms come from on-chain `bondRates` (rate and duration per period id). The UI reads live V2 config and defaults toward a 30-day term when available.
+Terms come from on-chain `bondRates` (rate and duration per period id). The UI reads live V2 config and defaults toward a 30-day term.
 
 Each contract enforces its own **minimum** create amount. Amounts below minimum, paused state, insufficient reserves, or insufficient treasury capacity make a quote non-executable.
 
@@ -92,15 +88,15 @@ Vesting is cumulative from `creationTime`:
 - Before maturity: `floor(totalPayout × elapsed / duration) − claimed`
 - From maturity: remaining `totalPayout − claimed`, then the bond can be marked fully claimed
 
-`claimedPrana` / `claimedWbtc` are what get subtracted. `lastClaimTime` only prevents two claims at the same timestamp; it does **not** restart vesting from the last claim the way Staking interest does.
+`claimedPrana` / `claimedWbtc` are what get subtracted. `lastClaimTime` only prevents two claims at the same timestamp.
 
 ## 7. Pause, treasury, and roles
 
-Admin / manager controls (names may appear as `DEFAULT_ADMIN_ROLE` / `BOND_MANAGER_ROLE`):
+Admin / manager controls (names may appear as `DEFAULT_ADMIN_ROLE` / `BOND_MANAGER_ROLE`), or PRANA Protocol:
 
 - **Pause / unpause** user create and claim paths that require `whenNotPaused`
 - Update **rates**, **minimums**, and **impacted reserves**
-- **Withdraw** surplus tokens under the contract’s withdraw rules
+- **Withdraw** surplus tokens under the contract’s withdraw rules: only **uncommitted** tokens can be withdrawn. Payout already committed to open bonds (`committedPrana` on Buy / `committedWbtc` on Sell) **cannot** be withdrawn; admin can only withdraw surplus = balance − committed. The other token on each side (WBTC on Buy, PRANA on Sell) is not locked by committed and can be withdrawn in full.
 - Manage role membership / ownership according to the deployed AccessControl setup
 
 Committed treasury amounts track payouts still owed to open bonds. Managers cannot invent a higher claimable on an existing bond by changing global rates after creation — each bond stores its own payout terms at create time.
@@ -117,9 +113,6 @@ Pause, reserve updates, funding levels, and role keys remain real operational ri
 
 - Confirm **Polygon** and the official Buy/Sell V1/V2 addresses linked from [/bond/](/bond/)
 - Remember: **new bonds = V2 only**; V1 is view/claim history
-- Understand there is no on-chain `minOut` / `maxIn` slip protection on create
-- For Target PRANA Buy, treat WBTC allowance as the practical spending cap
-- Keep POL for Approve, Create, and later Claim transactions
-- Watch pause, minimum, reserve, and treasury issues shown on the quote before confirming
+- Keep a little POL for Approve, Create, and later Claim transactions
 
 For step-by-step wallet prompts, see the [Bonding guide](/guide/bonding/).
