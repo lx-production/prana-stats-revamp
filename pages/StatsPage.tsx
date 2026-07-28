@@ -19,7 +19,7 @@ import DoublePranaAbsorptionFlow from "../components/DoublePranaAbsorptionFlow";
 import PranaPerformanceSection from "../components/PranaPerformanceSection";
 import { TopHoldingAddressesProvider } from "../hooks/useTopHoldingAddresses";
 
-// Warm stats + hero assets only when this lazy chunk loads (not on `/stake/`).
+// Warm stats + hero assets only when this lazy chunk loads (not on `/stake/` or `/bond/`).
 prefetchInitialJson();
 preloadHeroAssets();
 

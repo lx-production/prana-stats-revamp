@@ -14,7 +14,7 @@
 
 ## Các bước triển khai
 
-1. **Thiết lập lazy route** `/bond/`
+1. ✅ **Thiết lập lazy route** `/bond/`
   - Thêm `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath` vào `constants/appRoutes.ts` (mirror `STAKE_*` / `isStakePath`).
   - Cấu trúc entry giống Staking:
     - `features/bonding/BondingEntry.tsx` bọc `pages/BondingPage.tsx` bằng `Web3Providers`.
@@ -28,7 +28,7 @@
     - Test Hero dùng constant canonical same-tab thay vì URL production hardcode / tab mới.
     - Production build phải có chunk `BondingEntry`/`BondingPage` riêng. Kiểm tra chunk entry chung và `StatsPage` không import module bonding.
     - Chạy trang `/bond/` với network log sạch: không có request tới JSON stats, model GLB hoặc chunk `StatsPage`.
-2. **Chuẩn hóa constants, ABI và types**
+2. ✅ **Chuẩn hóa constants, ABI và types**
   - Mở rộng `constants/bonds.ts` (và `bonds.types.ts`) — file đã có địa chỉ V1/V2 + ABI scan/`committed*`; **không tạo file ABI thứ hai**.
   - Bổ sung ABI tối thiểu còn thiếu: create bond (chỉ V2), active-bond read, `claimBond`, config/paused/min/terms reads. Giữ pattern `BondAbiFunctionFragment[]` hiện có, hoặc migrate sang `as const` như `stakingContracts.ts` nếu typecheck yêu cầu.
   - Chỉ giữ V2 ABI cho tạo bond; V1/V2 đều có read active bonds và `claimBond`.

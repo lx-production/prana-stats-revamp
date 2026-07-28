@@ -7,9 +7,12 @@ import {
   rootDataJsonFilenameFromPathname,
 } from './helpers/requestHelpers.ts';
 import {
+  BOND_PATH,
   STAKE_PATH,
+  isBondPath,
   isStakePath,
   GUIDE_SWAP_PATH,
+  BOND_CANONICAL_PATH,
   STAKE_CANONICAL_PATH,
   isGuideSwapPath,
   GUIDE_STAKING_PATH,
@@ -31,6 +34,7 @@ export type StaticRouteOptions = {
 /** Bare path → trailing-slash canonical URL for SPA document routes. */
 const SPA_TRAILING_SLASH_REDIRECTS = [
   { bare: STAKE_PATH, canonical: STAKE_CANONICAL_PATH },
+  { bare: BOND_PATH, canonical: BOND_CANONICAL_PATH },
   { bare: GUIDE_SWAP_PATH, canonical: GUIDE_SWAP_CANONICAL_PATH },
   { bare: GUIDE_STAKING_PATH, canonical: GUIDE_STAKING_CANONICAL_PATH },
   {
@@ -47,7 +51,7 @@ export function createStaticRequestHandler(options: StaticRouteOptions = {}): Re
   const distDir = options.distDir ?? DIST_DIR;
 
   return async function handleStaticRequest(req, res, url): Promise<boolean> {
-    // Normalize trailing slash for stake + guide document routes.
+    // Normalize trailing slash for stake / bond / guide document routes.
     for (const route of SPA_TRAILING_SLASH_REDIRECTS) {
       if (url.pathname === route.bare) {
         sendRedirect(res, 308, `${route.canonical}${url.search}`);
@@ -55,10 +59,11 @@ export function createStaticRequestHandler(options: StaticRouteOptions = {}): Re
       }
     }
 
-    // Serve the SPA shell early for stake/guide trees so refresh does not 404
+    // Serve the SPA shell early for stake/bond/guide trees so refresh does not 404
     // on directory-like paths before the general fallback.
     if (
       isStakePath(url.pathname) ||
+      isBondPath(url.pathname) ||
       isGuideSwapPath(url.pathname) ||
       isGuideStakingPath(url.pathname) ||
       isGuideStakingContractsPath(url.pathname)

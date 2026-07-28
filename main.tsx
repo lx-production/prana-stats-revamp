@@ -13,6 +13,7 @@ import FlutterShaderBackground from "./flutterShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import {
+  isBondPath,
   isStakePath,
   isPrivacyPath,
   isGuideSwapPath,
@@ -23,6 +24,7 @@ import {
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
 const StakingEntry = lazy(() => import("./features/staking/StakingEntry"));
+const BondingEntry = lazy(() => import("./features/bonding/BondingEntry"));
 
 const pageFallback = (
   <div
@@ -36,10 +38,14 @@ function App() {
   useSpinningFavicon();
   const pathname = useAppPathname();
 
-  // Staking is its own lazy page (no shared homepage shell / stats prefetch).
+  // Staking / Bonding are their own lazy pages (no shared homepage shell / stats prefetch).
   const body = isStakePath(pathname) ? (
     <Suspense fallback={pageFallback}>
       <StakingEntry />
+    </Suspense>
+  ) : isBondPath(pathname) ? (
+    <Suspense fallback={pageFallback}>
+      <BondingEntry />
     </Suspense>
   ) : (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
@@ -88,5 +94,5 @@ if (!rootElement) {
   throw new Error('Root element with id "root" was not found.');
 }
 
-// Web3 providers live under lazy SwapEntry / StakingEntry — not the root shell.
+// Web3 providers live under lazy SwapEntry / StakingEntry / BondingEntry — not the root shell.
 ReactDOM.createRoot(rootElement).render(<App />);

@@ -6,7 +6,7 @@ import {
   SwapLazyFallback,
   SwapLazyErrorBoundary,
 } from "./features/swap/SwapLazyShell";
-import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
+import { BOND_CANONICAL_PATH, STAKE_CANONICAL_PATH } from "./constants/appRoutes";
 
 import type { PranaHeroProps } from "./types/hero.types";
 
@@ -104,9 +104,7 @@ export default function PranaHero({ onOpenCovenants }: PranaHeroProps) {
             STAKE
           </a>
           <a
-            href="https://prana.triethocduongpho.net/bond/"
-            target="_blank"
-            rel="noopener"
+            href={BOND_CANONICAL_PATH}
             className="btn-hero btn-glass"
           >
             BOND (OTC)

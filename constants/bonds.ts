@@ -1,4 +1,4 @@
-import type { BondAbiFunctionFragment } from './bonds.types';
+import type { BondAbiFunctionFragment, BondAbiParam } from './bonds.types';
 
 // Consolidated bond contracts: addresses, ABIs, and related constants
 
@@ -64,6 +64,219 @@ export const SELL_BOND_COMMITTED_WBTC_ABI: BondAbiFunctionFragment[] = [
 // Default exports use V2 contracts
 export const SELL_BOND_ADDRESS = SELL_BOND_ADDRESS_V2;
 
+/** Create-bond function names — V2 only (never attach to V1 account ABIs). */
+export const BUY_BOND_V2_CREATE_FUNCTION_NAMES = [
+  'buyBondForWbtcAmount',
+  'buyBondForPranaAmount',
+] as const;
+
+export const SELL_BOND_V2_CREATE_FUNCTION_NAMES = ['sellBond'] as const;
+
+const PAUSED_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [],
+  name: 'paused',
+  outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+  stateMutability: 'view',
+  type: 'function',
+};
+
+const CLAIM_BOND_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [{ internalType: 'uint256', name: 'bondId', type: 'uint256' }],
+  name: 'claimBond',
+  outputs: [],
+  stateMutability: 'nonpayable',
+  type: 'function',
+};
+
+const BUY_BOND_STRUCT_COMPONENTS: BondAbiParam[] = [
+  { internalType: 'uint256', name: 'id', type: 'uint256' },
+  { internalType: 'address', name: 'owner', type: 'address' },
+  { internalType: 'uint256', name: 'wbtcAmount', type: 'uint256' },
+  { internalType: 'uint256', name: 'pranaAmount', type: 'uint256' },
+  { internalType: 'uint256', name: 'maturityTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'creationTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'lastClaimTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'claimedPrana', type: 'uint256' },
+  { internalType: 'bool', name: 'claimed', type: 'bool' },
+];
+
+const SELL_BOND_STRUCT_COMPONENTS: BondAbiParam[] = [
+  { internalType: 'uint256', name: 'id', type: 'uint256' },
+  { internalType: 'address', name: 'owner', type: 'address' },
+  { internalType: 'uint256', name: 'pranaAmount', type: 'uint256' },
+  { internalType: 'uint256', name: 'wbtcAmount', type: 'uint256' },
+  { internalType: 'uint256', name: 'maturityTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'creationTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'lastClaimTime', type: 'uint256' },
+  { internalType: 'uint256', name: 'claimedWbtc', type: 'uint256' },
+  { internalType: 'bool', name: 'claimed', type: 'bool' },
+];
+
+const BUY_GET_USER_ACTIVE_BONDS_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+  name: 'getUserActiveBonds',
+  outputs: [
+    {
+      components: BUY_BOND_STRUCT_COMPONENTS,
+      internalType: 'struct BuyPranaBondV2.Bond[]',
+      name: '',
+      type: 'tuple[]',
+    },
+  ],
+  stateMutability: 'view',
+  type: 'function',
+};
+
+const SELL_GET_USER_ACTIVE_BONDS_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+  name: 'getUserActiveBonds',
+  outputs: [
+    {
+      components: SELL_BOND_STRUCT_COMPONENTS,
+      internalType: 'struct SellPranaBondV2.Bond[]',
+      name: '',
+      type: 'tuple[]',
+    },
+  ],
+  stateMutability: 'view',
+  type: 'function',
+};
+
+/**
+ * Buy V1 + V2 account surface: paused, active-bond read, claim.
+ * No create-bond functions — new bonds are V2-only.
+ */
+export const BUY_BOND_ACCOUNT_ABI: BondAbiFunctionFragment[] = [
+  PAUSED_FRAGMENT,
+  BUY_GET_USER_ACTIVE_BONDS_FRAGMENT,
+  CLAIM_BOND_FRAGMENT,
+];
+
+/**
+ * Sell V1 + V2 account surface: paused, active-bond read, claim.
+ * No create-bond functions — new bonds are V2-only.
+ */
+export const SELL_BOND_ACCOUNT_ABI: BondAbiFunctionFragment[] = [
+  PAUSED_FRAGMENT,
+  SELL_GET_USER_ACTIVE_BONDS_FRAGMENT,
+  CLAIM_BOND_FRAGMENT,
+];
+
+/**
+ * Buy V2: account + config (min/terms) + create writes.
+ * Used with BUY_BOND_ADDRESS_V2 for readContract / simulateContract / writeContract.
+ */
+export const BUY_BOND_V2_ABI: BondAbiFunctionFragment[] = [
+  PAUSED_FRAGMENT,
+  {
+    inputs: [],
+    name: 'minPranaBuyAmount',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'enum BuyPranaBondV2.BondTerm',
+        name: '',
+        type: 'uint8',
+      },
+    ],
+    name: 'bondRates',
+    outputs: [
+      { internalType: 'uint256', name: 'rate', type: 'uint256' },
+      { internalType: 'uint256', name: 'duration', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  BUY_GET_USER_ACTIVE_BONDS_FRAGMENT,
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'wbtcAmount', type: 'uint256' },
+      {
+        internalType: 'enum BuyPranaBondV2.BondTerm',
+        name: 'period',
+        type: 'uint8',
+      },
+    ],
+    name: 'buyBondForWbtcAmount',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'pranaAmount', type: 'uint256' },
+      {
+        internalType: 'enum BuyPranaBondV2.BondTerm',
+        name: 'period',
+        type: 'uint8',
+      },
+    ],
+    name: 'buyBondForPranaAmount',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  CLAIM_BOND_FRAGMENT,
+];
+
+/**
+ * Sell V2: account + config (min/terms) + create write.
+ * Used with SELL_BOND_ADDRESS_V2 for readContract / simulateContract / writeContract.
+ */
+export const SELL_BOND_V2_ABI: BondAbiFunctionFragment[] = [
+  PAUSED_FRAGMENT,
+  {
+    inputs: [],
+    name: 'minPranaSellAmount',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'enum SellPranaBondV2.BondTerm',
+        name: '',
+        type: 'uint8',
+      },
+    ],
+    name: 'bondRates',
+    outputs: [
+      { internalType: 'uint256', name: 'rate', type: 'uint256' },
+      { internalType: 'uint256', name: 'duration', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  SELL_GET_USER_ACTIVE_BONDS_FRAGMENT,
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'pranaAmount', type: 'uint256' },
+      {
+        internalType: 'enum SellPranaBondV2.BondTerm',
+        name: 'period',
+        type: 'uint8',
+      },
+    ],
+    name: 'sellBond',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  CLAIM_BOND_FRAGMENT,
+];
+
+/** Function names present on a bond ABI fragment list (for tests / guards). */
+export function bondAbiFunctionNames(
+  abi: readonly BondAbiFunctionFragment[],
+): string[] {
+  return abi.map((fragment) => fragment.name);
+}
+
 // ============================================================================
 // BOND VOLUME FRAGMENTS (for scanning bonds)
 // ============================================================================
@@ -80,53 +293,7 @@ export const BUY_BOND_BONDS_ABI: BondAbiFunctionFragment[] = [
     name: 'bonds',
     outputs: [
       {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'id',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'uint256',
-            name: 'wbtcAmount',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'pranaAmount',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'maturityTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'creationTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'lastClaimTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'claimedPrana',
-            type: 'uint256',
-          },
-          {
-            internalType: 'bool',
-            name: 'claimed',
-            type: 'bool',
-          },
-        ],
+        components: BUY_BOND_STRUCT_COMPONENTS,
         internalType: 'struct BuyPranaBondV2.Bond',
         name: '',
         type: 'tuple',
@@ -149,53 +316,7 @@ export const SELL_BOND_BONDS_ABI: BondAbiFunctionFragment[] = [
     name: 'bonds',
     outputs: [
       {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'id',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'uint256',
-            name: 'pranaAmount',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'wbtcAmount',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'maturityTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'creationTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'lastClaimTime',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'claimedWbtc',
-            type: 'uint256',
-          },
-          {
-            internalType: 'bool',
-            name: 'claimed',
-            type: 'bool',
-          },
-        ],
+        components: SELL_BOND_STRUCT_COMPONENTS,
         internalType: 'struct SellPranaBondV2.Bond',
         name: '',
         type: 'tuple',
