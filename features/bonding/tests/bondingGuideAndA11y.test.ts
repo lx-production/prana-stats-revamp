@@ -58,11 +58,17 @@ test('bonding contracts guide markdown parses VI/EN and notes V1 claim-only', ()
   assert.match(vi.intro, /V2/);
 });
 
-test('Bonding page header links contracts guide; footer links user guide', () => {
+test('Bonding page header links V2 contracts + contracts guide; footer links user guide', () => {
   const bondingPage = readRepoFile('pages', 'BondingPage.tsx');
   const footer = readRepoFile('components', 'AppFooter.tsx');
 
   assert.match(bondingPage, /GUIDE_BONDING_CONTRACTS_CANONICAL_PATH/);
+  assert.match(bondingPage, /BUY_BOND_ADDRESS_V2/);
+  assert.match(bondingPage, /SELL_BOND_ADDRESS_V2/);
+  // Header only surfaces live V2 create contracts — not legacy V1.
+  assert.doesNotMatch(bondingPage, /BUY_BOND_ADDRESS_V1/);
+  assert.doesNotMatch(bondingPage, /SELL_BOND_ADDRESS_V1/);
+  assert.doesNotMatch(bondingPage, /buyV1ContractLink|sellV1ContractLink/);
   assert.doesNotMatch(bondingPage, /Contracts guide route lands in Bước 7/);
 
   assert.match(footer, /GUIDE_BONDING_CANONICAL_PATH/);
@@ -139,7 +145,7 @@ test('reduced-motion CSS freezes continuous spinner animation', () => {
   assert.match(css, /\.animate-spin\s*\{[\s\S]*animation:\s*none/);
 });
 
-test('BondSideTabs and TermSelector expose radiogroup keyboard pattern', () => {
+test('BondSideTabs uses tablist; TermSelector keeps radiogroup keyboard pattern', () => {
   const tabs = readRepoFile(
     'features',
     'bonding',
@@ -153,9 +159,15 @@ test('BondSideTabs and TermSelector expose radiogroup keyboard pattern', () => {
     'TermSelector.tsx',
   );
 
+  assert.match(tabs, /role="tablist"/);
+  assert.match(tabs, /role="tab"/);
+  assert.match(tabs, /aria-selected/);
+  assert.doesNotMatch(tabs, /role="radiogroup"/);
+
+  assert.match(terms, /role="radiogroup"/);
+  assert.match(terms, /role="radio"/);
+
   for (const source of [tabs, terms]) {
-    assert.match(source, /role="radiogroup"/);
-    assert.match(source, /role="radio"/);
     assert.match(source, /ArrowRight/);
     assert.match(source, /ArrowLeft/);
     assert.match(source, /Home/);

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Coins, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import TxLink from '../../../components/ui/TxLink.tsx';
@@ -20,9 +20,7 @@ import {
 } from '../hooks/useBondingQuote.ts';
 import { useBondTransaction } from '../hooks/useBondTransaction.ts';
 import {
-  daysFromSeconds,
   formatPranaAmount,
-  formatRateBpsPercent,
   formatWbtcAmount,
   getConfiguredTerm,
   getDefaultTermId,
@@ -334,12 +332,15 @@ export default function BondingForm({
   return (
     <GlassPanel hoverable>
       <div className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Coins className="h-5 w-5 text-[#F5D27A]" aria-hidden />
-          <h2 className="text-lg font-medium tracking-wide">
-            {side === 'buy' ? copy.buyTab : copy.sellTab}
-          </h2>
-        </div>
+        {/* Buy / Sell as underline tabs — replaces the old dual-button switcher. */}
+        <BondSideTabs
+          side={side}
+          onSelect={onSideChange}
+          disabled={formFieldsDisabled}
+          buyLabel={copy.buyTab}
+          sellLabel={copy.sellTab}
+          ariaLabel={`${copy.buyTab} / ${copy.sellTab}`}
+        />
 
         {configLoading ? (
           <StatusBanner tone="neutral">{copy.loadingConfig}</StatusBanner>
@@ -355,20 +356,6 @@ export default function BondingForm({
         {wallet.isConnected && !wallet.isPolygon ? (
           <StatusBanner tone="warning">{copy.switchPolygonFirst}</StatusBanner>
         ) : null}
-
-        <div className="space-y-2">
-          <p id="bond-side-label" className="text-sm text-white/55">
-            {copy.buyTab} / {copy.sellTab}
-          </p>
-          <BondSideTabs
-            side={side}
-            onSelect={onSideChange}
-            disabled={formFieldsDisabled}
-            buyLabel={copy.buyTab}
-            sellLabel={copy.sellTab}
-            labelId="bond-side-label"
-          />
-        </div>
 
         {side === 'buy' ? (
           <div
@@ -409,16 +396,29 @@ export default function BondingForm({
           </div>
         ) : null}
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <label htmlFor="bond-amount" className="text-white/55">
-              {amountLabel}
-            </label>
-            <span className="text-white/45">
-              {copy.balanceLabel}: {balanceFormatted} {balanceTokenLabel}
-            </span>
-          </div>
-          <div className="flex gap-2">
+        {/* Amount (left) + live quote (right) — mirror Staking amount/interest row. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <label htmlFor="bond-amount" className="text-white/55">
+                {amountLabel}
+              </label>
+              <div className="flex items-center gap-2 text-xs text-white/45">
+                <span>
+                  {copy.balanceLabel}: {balanceFormatted} {balanceTokenLabel}
+                </span>
+                {showMax ? (
+                  <button
+                    type="button"
+                    disabled={formFieldsDisabled || !account}
+                    onClick={onMax}
+                    className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-[#F5D27A] transition hover:border-[#F5D27A]/35 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {copy.maxButton}
+                  </button>
+                ) : null}
+              </div>
+            </div>
             <input
               id="bond-amount"
               type="text"
@@ -430,20 +430,21 @@ export default function BondingForm({
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#F5D27A]/45 disabled:opacity-50"
               placeholder="0.0"
             />
-            {showMax ? (
-              <button
-                type="button"
-                disabled={formFieldsDisabled || !account}
-                onClick={onMax}
-                className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold text-[#F5D27A] transition hover:border-[#F5D27A]/35 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {copy.maxButton}
-              </button>
+            {amountError ? (
+              <StatusBanner tone="error">{amountError}</StatusBanner>
             ) : null}
           </div>
-          {amountError ? (
-            <StatusBanner tone="error">{amountError}</StatusBanner>
-          ) : null}
+
+          <QuotePanel
+            copy={copy}
+            side={side}
+            buyMode={buyMode}
+            quote={displayQuote}
+            isLoading={quoteState.isLoading && !bondTx.reviewOpen}
+            error={quoteState.error}
+            isStale={quoteState.isStale && bondTx.reviewQuote == null}
+            hasAmount={Boolean(amount) && parsedAmount.ok}
+          />
         </div>
 
         <div className="space-y-2">
@@ -460,17 +461,6 @@ export default function BondingForm({
             rateLabel={copy.ratePercent}
           />
         </div>
-
-        <QuotePanel
-          copy={copy}
-          side={side}
-          buyMode={buyMode}
-          quote={displayQuote}
-          isLoading={quoteState.isLoading && !bondTx.reviewOpen}
-          error={quoteState.error}
-          isStale={quoteState.isStale && bondTx.reviewQuote == null}
-          hasAmount={Boolean(amount) && parsedAmount.ok}
-        />
 
         {bondTx.error ? (
           <StatusBanner
@@ -549,19 +539,6 @@ function QuotePanel({
   isStale,
   hasAmount,
 }: QuotePanelProps) {
-  if (isLoading) {
-    return <StatusBanner tone="neutral">{copy.quoteLoading}</StatusBanner>;
-  }
-  if (error) {
-    return <StatusBanner tone="error">{copy.quoteError}</StatusBanner>;
-  }
-  if (!hasAmount) {
-    return <StatusBanner tone="neutral">{copy.quoteEmpty}</StatusBanner>;
-  }
-  if (!quote) {
-    return <StatusBanner tone="neutral">{copy.quoteEmpty}</StatusBanner>;
-  }
-
   const primaryLabel =
     side === 'sell'
       ? copy.expectedWbtc
@@ -569,18 +546,56 @@ function QuotePanel({
         ? copy.expectedPrana
         : copy.requiredWbtc;
 
+  // Empty / loading / error states still fill the right column so the row stays aligned.
+  if (isLoading) {
+    return (
+      <div className="flex min-w-0 flex-col">
+        <div className="mb-2 text-sm text-white/55">{primaryLabel}</div>
+        <div className="flex flex-1 items-center rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/55">
+          {copy.quoteLoading}
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="flex min-w-0 flex-col">
+        <div className="mb-2 text-sm text-white/55">{primaryLabel}</div>
+        <StatusBanner tone="error" className="flex-1">
+          {copy.quoteError}
+        </StatusBanner>
+      </div>
+    );
+  }
+  if (!hasAmount || !quote) {
+    return (
+      <div className="flex min-w-0 flex-col">
+        <div className="mb-2 text-sm text-white/55">{primaryLabel}</div>
+        <div className="flex flex-1 items-center rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/40">
+          {copy.quoteEmpty}
+        </div>
+      </div>
+    );
+  }
+
   const primaryValue =
     side === 'sell' || buyMode === 'target_prana'
-      ? `${formatWbtcAmount(quote.wbtcAmountRaw)} WBTC`
-      : `${formatPranaAmount(quote.pranaAmountRaw)} PRANA`;
-
-  const secondaryValue =
-    side === 'sell' || buyMode === 'target_prana'
-      ? `${formatPranaAmount(quote.pranaAmountRaw)} PRANA`
-      : `${formatWbtcAmount(quote.wbtcAmountRaw)} WBTC`;
+      ? formatWbtcAmount(quote.wbtcAmountRaw)
+      : formatPranaAmount(quote.pranaAmountRaw);
+  const primaryToken =
+    side === 'sell' || buyMode === 'target_prana' ? 'WBTC' : 'PRANA';
 
   return (
-    <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="text-sm text-white/55">{primaryLabel}</div>
+      <div className="flex flex-1 flex-col justify-center rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+        <div className="text-xl font-semibold text-white">
+          {primaryValue}{' '}
+          <span className="text-sm font-normal text-white/55">
+            {primaryToken}
+          </span>
+        </div>
+      </div>
       {isStale ? (
         <StatusBanner tone="warning">{copy.quoteStale}</StatusBanner>
       ) : null}
@@ -589,31 +604,6 @@ function QuotePanel({
           {copy.targetPranaNoMaxInWarning}
         </StatusBanner>
       ) : null}
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="text-white/55">{primaryLabel}</span>
-        <span className="font-medium text-white">{primaryValue}</span>
-      </div>
-      <div className="flex items-center justify-between gap-3 text-xs text-white/45">
-        <span>
-          {buyMode === 'target_prana' && side === 'buy'
-            ? copy.expectedPrana
-            : side === 'sell'
-              ? copy.amountLabelPrana
-              : copy.amountLabelWbtc}
-        </span>
-        <span>{secondaryValue}</span>
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/45">
-        <span>
-          {copy.rateLabel}: {formatRateBpsPercent(quote.rateBpsRaw)}
-        </span>
-        <span>{copy.durationLabel(daysFromSeconds(quote.durationSeconds))}</span>
-        <span>
-          {quote.reserveSource === 'market'
-            ? copy.reserveSourceMarket
-            : copy.reserveSourceImpacted}
-        </span>
-      </div>
       {quote.issues.length > 0 ? (
         <div className="space-y-1">
           {quote.issues.map((issue) => (

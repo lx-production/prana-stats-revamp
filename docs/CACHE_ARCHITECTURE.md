@@ -296,7 +296,7 @@ Browser staking UI (React Query on `/stake/`):
 Bonding transaction UI caches (`/bond/`):
 - `/api/bonding/config` — server private cache 30s (`SERVER_CACHE_TTL_MS.apiResponse`); React Query key `['bonding-config']` with matching staleTime
 - `/api/bonding/account` — **not** server-cached (`private, no-store`); React Query key `['bonding-account', address]` with `staleTime: 0` + refetch on mount; invalidate after successful approve/create/claim receipts
-- `/api/bonding/quote` — **not** cached (`no-store`); client debounces/aborts and treats quotes older than 30s as stale
+- `/api/bonding/quote` — **not** cached (`no-store`); client debounces/aborts and treats quotes older than 60s as stale
 - `/api/bonding/confirm-transaction` — **not** cached (`no-store`); confirmation polling only, separate rate-limit bucket from quote
 
 Bond refresh request dedupe:

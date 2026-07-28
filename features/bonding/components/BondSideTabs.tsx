@@ -8,13 +8,14 @@ type BondSideTabsProps = {
   disabled?: boolean;
   buyLabel: string;
   sellLabel: string;
-  labelId: string;
+  /** Accessible name for the tablist (no visible label needed). */
+  ariaLabel: string;
 };
 
 const SIDES: BondSide[] = ['buy', 'sell'];
 
 /**
- * Buy / Sell tab radiogroup with roving tabindex + arrow keys.
+ * Buy / Sell underline tabs with roving tabindex + arrow keys.
  */
 export default function BondSideTabs({
   side,
@@ -22,7 +23,7 @@ export default function BondSideTabs({
   disabled = false,
   buyLabel,
   sellLabel,
-  labelId,
+  ariaLabel,
 }: BondSideTabsProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedIndex = SIDES.indexOf(side);
@@ -38,7 +39,7 @@ export default function BondSideTabs({
     buttonRefs.current[index]?.focus();
   };
 
-  const onRadioKeyDown = (
+  const onTabKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     index: number,
   ) => {
@@ -70,9 +71,9 @@ export default function BondSideTabs({
 
   return (
     <div
-      role="radiogroup"
-      aria-labelledby={labelId}
-      className="grid grid-cols-2 gap-2"
+      role="tablist"
+      aria-label={ariaLabel}
+      className="flex border-b border-white/10"
     >
       {SIDES.map((value, index) => {
         const selected = value === side;
@@ -83,20 +84,20 @@ export default function BondSideTabs({
               buttonRefs.current[index] = node;
             }}
             type="button"
-            role="radio"
-            aria-checked={selected}
+            role="tab"
+            aria-selected={selected}
             tabIndex={disabled ? -1 : index === tabStopIndex ? 0 : -1}
             disabled={disabled}
             onClick={() => onSelect(value)}
-            onKeyDown={(event) => onRadioKeyDown(event, index)}
+            onKeyDown={(event) => onTabKeyDown(event, index)}
             className={`
-              rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-all duration-300
+              relative -mb-px flex-1 px-3 py-2.5 text-sm font-semibold transition-colors duration-200
               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5D27A]
               disabled:cursor-not-allowed disabled:opacity-50
               ${
                 selected
-                  ? 'border-[#F5D27A]/45 bg-[#F5D27A]/10 text-white'
-                  : 'border-white/10 bg-white/5 text-white/80 hover:border-white/25 hover:bg-white/10'
+                  ? 'border-b-2 border-[#F5D27A] text-white'
+                  : 'border-b-2 border-transparent text-white/50 hover:text-white/80'
               }
             `}
           >

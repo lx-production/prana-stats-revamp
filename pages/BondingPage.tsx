@@ -4,7 +4,6 @@ import {
   ExternalLink,
   FileText,
   Link2,
-  ScrollText,
 } from 'lucide-react';
 import AppFooter from '../components/AppFooter';
 import GlassPanel from '../components/ui/GlassPanel';
@@ -23,9 +22,7 @@ import { useBondingAccount } from '../features/bonding/hooks/useBondingAccount';
 import { POLYGONSCAN_ADDRESS_BASE_URL } from '../constants/network.ts';
 import { GUIDE_BONDING_CONTRACTS_CANONICAL_PATH } from '../constants/appRoutes.ts';
 import {
-  BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
-  SELL_BOND_ADDRESS_V1,
   SELL_BOND_ADDRESS_V2,
 } from '../constants/bonds.ts';
 
@@ -63,21 +60,12 @@ export default function BondingPage() {
       : 'Mua và bán bond PRANA trên Polygon — trang bonding chính thức của PRANA Protocol.',
   );
 
+  // Header only links live V2 create contracts; V1 remains claim-only (no public header link).
   const contractLinks = [
-    {
-      href: `${POLYGONSCAN_ADDRESS_BASE_URL}/${BUY_BOND_ADDRESS_V1}`,
-      label: copy.buyV1ContractLink,
-      Icon: ScrollText,
-    },
     {
       href: `${POLYGONSCAN_ADDRESS_BASE_URL}/${BUY_BOND_ADDRESS_V2}`,
       label: copy.buyV2ContractLink,
       Icon: Link2,
-    },
-    {
-      href: `${POLYGONSCAN_ADDRESS_BASE_URL}/${SELL_BOND_ADDRESS_V1}`,
-      label: copy.sellV1ContractLink,
-      Icon: ScrollText,
     },
     {
       href: `${POLYGONSCAN_ADDRESS_BASE_URL}/${SELL_BOND_ADDRESS_V2}`,

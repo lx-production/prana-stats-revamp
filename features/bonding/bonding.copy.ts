@@ -35,8 +35,6 @@ export type BondingCopy = {
   expectedWbtc: string;
   requiredWbtc: string;
   targetPranaNoMaxInWarning: string;
-  reserveSourceImpacted: string;
-  reserveSourceMarket: string;
   rateLabel: string;
   durationLabel: (days: number) => string;
   /** Primary CTA phases (Approve → Review → Create → Confirming). */
@@ -89,9 +87,7 @@ export type BondingCopy = {
   amountReasons: Record<BondAmountParseReason, string>;
   quoteIssues: Record<BondingQuoteIssue, string>;
   switchPolygonFirst: string;
-  buyV1ContractLink: string;
   buyV2ContractLink: string;
-  sellV1ContractLink: string;
   sellV2ContractLink: string;
   contractsGuideLink: string;
 };
@@ -120,15 +116,13 @@ const vi: BondingCopy = {
   pausedSellBanner: 'Sell Bond V2 đang tạm dừng. Không thể mở bond bán mới.',
   quoteLoading: 'Đang lấy quote…',
   quoteError: 'Không lấy được quote. Thử lại sau.',
-  quoteStale: 'Quote đã cũ hơn 30 giây — sẽ làm mới trước khi tiếp tục.',
+  quoteStale: 'Quote đã cũ hơn 1 phút — sẽ làm mới trước khi tiếp tục.',
   quoteEmpty: 'Nhập số lượng hợp lệ để xem quote.',
   expectedPrana: 'PRANA nhận dự kiến',
   expectedWbtc: 'WBTC nhận dự kiến',
   requiredWbtc: 'WBTC cần trả dự kiến',
   targetPranaNoMaxInWarning:
     'Contract không nhận tham số “WBTC tối đa được phép chi”. Allowance WBTC hoạt động như spending cap thay thế.',
-  reserveSourceImpacted: 'Nguồn reserve: impacted',
-  reserveSourceMarket: 'Nguồn reserve: market',
   rateLabel: 'Tỷ lệ chiết khấu',
   durationLabel: (days) => `${days} ngày`,
   approveCta: 'Approve',
@@ -195,9 +189,7 @@ const vi: BondingCopy = {
     zero_amount: 'Số lượng bằng 0.',
   },
   switchPolygonFirst: 'Chuyển sang Polygon trước.',
-  buyV1ContractLink: 'Buy Bond V1',
   buyV2ContractLink: 'Buy Bond V2',
-  sellV1ContractLink: 'Sell Bond V1',
   sellV2ContractLink: 'Sell Bond V2',
   contractsGuideLink: 'Hướng dẫn contracts',
 };
@@ -226,15 +218,13 @@ const en: BondingCopy = {
   pausedSellBanner: 'Sell Bond V2 is paused. New sell bonds cannot be opened.',
   quoteLoading: 'Fetching quote…',
   quoteError: 'Could not fetch quote. Try again later.',
-  quoteStale: 'Quote is older than 30 seconds — it will refresh before continuing.',
+  quoteStale: 'Quote is older than 1 minute — it will refresh before continuing.',
   quoteEmpty: 'Enter a valid amount to see a quote.',
   expectedPrana: 'Expected PRANA',
   expectedWbtc: 'Expected WBTC',
   requiredWbtc: 'Estimated WBTC required',
   targetPranaNoMaxInWarning:
     'The contract does not accept a “maximum WBTC allowed” parameter. WBTC allowance acts as a spending cap instead.',
-  reserveSourceImpacted: 'Reserve source: impacted',
-  reserveSourceMarket: 'Reserve source: market',
   rateLabel: 'Discount rate',
   durationLabel: (days) => `${days} days`,
   approveCta: 'Approve',
@@ -301,9 +291,7 @@ const en: BondingCopy = {
     zero_amount: 'Amount is zero.',
   },
   switchPolygonFirst: 'Switch to Polygon first.',
-  buyV1ContractLink: 'Buy Bond V1',
   buyV2ContractLink: 'Buy Bond V2',
-  sellV1ContractLink: 'Sell Bond V1',
   sellV2ContractLink: 'Sell Bond V2',
   contractsGuideLink: 'Contracts guide',
 };

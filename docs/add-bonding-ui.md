@@ -95,7 +95,7 @@
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX chỉ áp dụng cho exact WBTC và Sell PRANA.
   - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
-  - Quote debounce 600 ms, hủy request cũ, bỏ response stale; sau 30 giây đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
+  - Quote debounce 600 ms: trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
   - `maxIn` **nghĩa là gì**
     - `maxIn` là giới hạn input tối đa do người dùng chấp nhận chi. Ví dụ target `10.000 PRANA`, quote hiện tại cần `0,001 WBTC`; nếu có `maxIn = 0,00101 WBTC`, contract phải revert khi giá đổi làm chi phí vượt mức đó.
@@ -109,7 +109,7 @@
     - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; target PRANA không hiện MAX.
     - Toggle Buy xóa hoặc vô hiệu quote của mode cũ; đổi side, term, amount, account hoặc chain cũng invalidates quote hiện tại.
     - Debounce fake-timer test: nhiều lần gõ chỉ gửi request cuối; request cũ bị abort; response về sai thứ tự không ghi đè quote mới.
-    - Quote đủ 30 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật review/cap trước khi cho write.
+    - Quote đủ 60 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật review/cap trước khi cho write.
     - Determinism test: cùng reserves/rates/treasury và input phải cho đúng cùng raw quote dù block timestamp khác; chỉ fixture thay đổi state mới được làm quote đổi.
     - Term refresh loại bỏ option đang chọn thì fallback 30 ngày hoặc option đầu tiên; không submit term đã biến mất.
     - Component test đủ loading/empty/error/issue states và copy VI/EN cho cả ba quote mode.
@@ -197,7 +197,7 @@
 7. ✅ **UI, accessibility và tài liệu**
   - Dùng dark shell, shader brightness thấp, `GlassPanel`, `StatusBanner`, gold CTA, Lucide và `AppFooter`; không thêm MUI hoặc PropTypes.
   - Xác nhận shared wallet control / `TxLink` đã được cả Staking và Bonding dùng sau refactor ở Bước 4; không còn import ngược từ Bonding vào `features/staking/`.
-  - Thêm VI/EN copy, metadata, Polygonscan links cho bốn deployment, responsive mobile và `prefers-reduced-motion`.
+  - Thêm VI/EN copy, metadata, Polygonscan links cho hai deployment V2 đang live (Buy/Sell), responsive mobile và `prefers-reduced-motion`. Header không gắn link V1 — V1 chỉ còn claim lịch sử trong Active Bonds.
   - Term/tabs/dialog hỗ trợ keyboard, focus trap, Escape, focus-visible và `aria-live`.
   - Thêm hai trang guide riêng, mirror Staking (`/guide/staking/` + `/guide/staking-contracts/`):
     1. **User guide** `/guide/bonding/` — approve, hai chiều Buy, Sell, vesting, claim, treasury và giới hạn quote/slippage.
@@ -215,7 +215,7 @@
     - Đăng ký cả hai route trong `main.tsx` bên trong homepage/legal shell giống `StakingGuidePage` / `ContractsGuidePage`, không đặt trong lazy `BondingEntry`; bare → canonical `308` + SPA shell trong `server/staticRoutes.ts`.
     - Test matcher/redirect/SPA cho cả hai path trong `server/tests/guideRoutes.test.ts`.
     - Footer: thêm `GUIDE_BONDING_CANONICAL_PATH` vào `AppFooter` (user guide). Contracts guide không bắt buộc vào footer; đặt trong header Bonding page như staking.
-    - Header `pages/BondingPage.tsx`: Polygonscan links cho bốn deployment + same-site link tới `GUIDE_BONDING_CONTRACTS_CANONICAL_PATH` (mirror `StakingPage` → `/guide/staking-contracts/`).
+    - Header `pages/BondingPage.tsx`: Polygonscan links chỉ cho Buy/Sell Bond V2 (live) + same-site link tới `GUIDE_BONDING_CONTRACTS_CANONICAL_PATH` (mirror `StakingPage` → `/guide/staking-contracts/`). Không gắn link V1 trên header.
     - Cross-link: user guide ↔ contracts guide ↔ `/terms`; contracts guide nêu rõ V1 chỉ còn để xem/claim lịch sử, bond mới chỉ trên V2.
   - Nội dung tối thiểu cho `/guide/bonding-contracts/` (dựa trên `contracts/BuyPranaBondV2.sol` và `contracts/SellPranaBondV2.sol`):
     - Big picture: hai contract độc lập — Buy nhận WBTC / trả PRANA vesting; Sell nhận PRANA / trả WBTC vesting.
@@ -238,13 +238,13 @@
     - Comment “Swap and staking only” trong `features/web3/Web3Providers.tsx`, `useInjectedWallet.ts`, `walletFormatting.ts` và `main.tsx`
   - Sau khi mọi test pass, xóa toàn bộ `bonding-legacy-ui/`; không mang theme context, staking constants hay hooks thống kê dư thừa sang feature mới.
   - **Kiểm thử Bước 7**
-    - Keyboard test cho Buy/Sell tabs và term chips: Tab, mũi tên, Enter/Space và roving `tabIndex`.
+    - Keyboard test cho Buy/Sell tabs (`role="tablist"`) và term chips (`role="radiogroup"`): Tab, mũi tên, Enter/Space và roving `tabIndex`.
     - Dialog test: focus vào dialog khi mở, Tab không thoát, Escape đóng, đóng xong trả focus về CTA.
     - `StatusBanner` có đúng `role`, `aria-live`; input/CTA có label và disabled reason đọc được bằng screen reader.
     - Reduced-motion test/class audit: shader/decorative animation và spinner không tạo chuyển động liên tục khi user yêu cầu giảm chuyển động.
     - Responsive QA ở 320, 375, 768 và desktop: không overflow amount/hash/address, CTA full width trên mobile.
     - Copy parity test đảm bảo mọi key có cả VI/EN, không render câu trộn ngôn ngữ; metadata đổi theo locale.
-    - Link test cho homepage, `/guide/bonding/`, `/guide/bonding-contracts/`, Terms/Privacy và bốn Polygonscan deployments.
+    - Link test cho homepage, `/guide/bonding/`, `/guide/bonding-contracts/`, Terms/Privacy và hai Polygonscan V2 deployments (không yêu cầu header link V1).
     - Guide route test: `/guide/bonding` và `/guide/bonding-contracts` → `308` canonical; refresh cả hai trả SPA shell; page render đúng VI/EN qua `MarkdownDocumentPage`.
     - Guide metadata/header test: dùng `GUIDE_UPDATED_DATE`; Bonding page header có same-site link tới contracts guide; guide routes không kéo `BondingEntry`/Web3.
     - Shared wallet control/TxLink: Staking và Bonding cùng dùng component trung lập; copy/error format vẫn feature-local; không có import Bonding → Staking.

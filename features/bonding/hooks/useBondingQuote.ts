@@ -11,7 +11,7 @@ import type {
 export const BONDING_QUOTE_DEBOUNCE_MS = 600;
 
 /** After this age, the UI marks the quote stale and CTA must fresh-quote. */
-export const BONDING_QUOTE_STALE_MS = 30_000;
+export const BONDING_QUOTE_STALE_MS = 60_000;
 
 export type UseBondingQuoteInput = {
   enabled: boolean;
@@ -37,7 +37,10 @@ export type UseBondingQuoteResult = {
 
 /**
  * Live bonding quote with 600ms debounce, AbortController cancel, stale drop,
- * and a 30s stale mark. CTA uses `freshQuote()` instead of a manual refresh button.
+ * and a 60s stale mark. CTA uses `freshQuote()` instead of a manual refresh button.
+ *
+ * Important: `isLoading` flips only when the debounced fetch actually starts —
+ * not on every keystroke — so typing does not look like an instant quote call.
  */
 export function useBondingQuote(
   input: UseBondingQuoteInput,
@@ -52,6 +55,11 @@ export function useBondingQuote(
   const requestIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Keep the latest request for freshQuote without re-creating the callback
+  // on every keystroke identity change mid-flight.
+  const inputRef = useRef(input);
+  inputRef.current = input;
+
   const invalidate = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -62,7 +70,7 @@ export function useBondingQuote(
     setQuotedAtMs(null);
   }, []);
 
-  // Tick once per second while a quote is showing so `isStale` flips at 30s.
+  // Tick once per second while a quote is showing so `isStale` flips at 60s.
   useEffect(() => {
     if (quotedAtMs == null) return;
     const intervalId = window.setInterval(() => {
@@ -77,7 +85,15 @@ export function useBondingQuote(
   // Debounced auto-quote when request inputs change.
   useEffect(() => {
     if (!input.enabled || !input.request) {
-      invalidate();
+      // Inline clear — do not depend on `invalidate` in this effect's deps
+      // (avoids re-entry / extra runs when the disabled branch clears state).
+      abortRef.current?.abort();
+      abortRef.current = null;
+      requestIdRef.current += 1;
+      setQuote(null);
+      setIsLoading(false);
+      setError(null);
+      setQuotedAtMs(null);
       return;
     }
 
@@ -86,13 +102,18 @@ export function useBondingQuote(
     abortRef.current = abortController;
 
     const requestId = ++requestIdRef.current;
+    const request = input.request;
+
+    // Drop the previous quote as soon as inputs change (mirror Swap), but do
+    // NOT set loading yet — wait until the debounce timer fires.
     setQuote(null);
     setQuotedAtMs(null);
-    setIsLoading(true);
     setError(null);
+    setIsLoading(false);
 
-    const request = input.request;
     const timeoutId = window.setTimeout(() => {
+      // Debounce settled — now the network work (and loading UI) starts.
+      setIsLoading(true);
       fetchBondingQuote(request, abortController.signal)
         .then((nextQuote) => {
           if (abortController.signal.aborted) return;
@@ -129,11 +150,11 @@ export function useBondingQuote(
     input.request?.mode,
     input.request?.amountRaw,
     input.request?.termId,
-    invalidate,
   ]);
 
   const freshQuote = useCallback(async (): Promise<BondingQuote | null> => {
-    if (!input.enabled || !input.request) return null;
+    const current = inputRef.current;
+    if (!current.enabled || !current.request) return null;
 
     abortRef.current?.abort();
     const abortController = new AbortController();
@@ -145,7 +166,7 @@ export function useBondingQuote(
 
     try {
       const nextQuote = await fetchBondingQuote(
-        input.request,
+        current.request,
         abortController.signal,
       );
       if (abortController.signal.aborted) return null;
@@ -171,7 +192,7 @@ export function useBondingQuote(
         setIsLoading(false);
       }
     }
-  }, [input.enabled, input.request]);
+  }, []);
 
   return {
     quote,

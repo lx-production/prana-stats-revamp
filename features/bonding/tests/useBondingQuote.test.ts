@@ -100,11 +100,16 @@ test('useBondingQuote clears state when disabled or request is null', async () =
 
 test('useBondingQuote debounces — only the last typed request is sent', async () => {
   const fetches: Array<{ body: unknown; signal?: AbortSignal }> = [];
+  let releaseFetch: (() => void) | null = null;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
     fetches.push({
       body: init?.body ? JSON.parse(String(init.body)) : null,
       signal: init?.signal ?? undefined,
+    });
+    // Hold the response so we can observe isLoading === true mid-flight.
+    await new Promise<void>((resolve) => {
+      releaseFetch = resolve;
     });
     return new Response(JSON.stringify(sampleQuote()), {
       status: 200,
@@ -125,7 +130,8 @@ test('useBondingQuote debounces — only the last typed request is sent', async 
       }),
     );
 
-    assert.equal(result.current.isLoading, true);
+    // During the debounce window: no network yet, and no loading flash.
+    assert.equal(result.current.isLoading, false);
     assert.equal(fetches.length, 0);
 
     // Type again before debounce fires — previous timer must be cancelled.
@@ -133,26 +139,48 @@ test('useBondingQuote debounces — only the last typed request is sent', async 
     await act(async () => {
       rerender();
     });
+    assert.equal(result.current.isLoading, false);
+    assert.equal(fetches.length, 0);
+
     amountRaw = '300';
     await act(async () => {
       rerender();
     });
+    assert.equal(result.current.isLoading, false);
+    assert.equal(fetches.length, 0);
+
+    // Advance almost to the deadline — still quiet.
+    await act(async () => {
+      mock.timers.tick(BONDING_QUOTE_DEBOUNCE_MS - 1);
+    });
+    assert.equal(fetches.length, 0);
+    assert.equal(result.current.isLoading, false);
 
     await act(async () => {
-      mock.timers.tick(BONDING_QUOTE_DEBOUNCE_MS);
+      mock.timers.tick(1);
     });
     await act(async () => {
       await Promise.resolve();
       await Promise.resolve();
     });
 
+    // Loading flips only when the debounced fetch starts.
     assert.equal(fetches.length, 1);
+    assert.equal(result.current.isLoading, true);
     assert.deepEqual(fetches[0]?.body, {
       mode: 'buy_exact_wbtc',
       amountRaw: '300',
       termId: 1,
     });
+
+    await act(async () => {
+      releaseFetch?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     assert.equal(result.current.quote?.wbtcAmountRaw, '1000000');
+    assert.equal(result.current.isLoading, false);
 
     await unmount();
   } finally {
@@ -237,7 +265,7 @@ test('useBondingQuote aborts in-flight request when inputs change', async () => 
   }
 });
 
-test('useBondingQuote marks quote stale after 30 seconds; freshQuote bypasses debounce', async () => {
+test('useBondingQuote marks quote stale after 60 seconds; freshQuote bypasses debounce', async () => {
   let fetchCount = 0;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => {
