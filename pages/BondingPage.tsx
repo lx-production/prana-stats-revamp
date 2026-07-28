@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ArrowLeft,
   ExternalLink,
@@ -29,8 +29,8 @@ import {
 } from '../constants/bonds.ts';
 
 /**
- * Bonding route shell — wallet, Buy/Sell form, live quotes, active bonds list.
- * Approve/create writes (Bước 5) and claim (Bước 6) build on this data layer.
+ * Bonding route shell — wallet, Buy/Sell form, approve/create writes, active bonds.
+ * Claim actions land in Bước 6.
  */
 export default function BondingPage() {
   const { locale } = useSiteLanguage();
@@ -44,6 +44,16 @@ export default function BondingPage() {
 
   // formBusy reserved for claim cross-lock in Bước 6
   const [, setFormBusy] = useState(false);
+
+  const refetchAccount = useCallback(
+    () => accountQuery.refetch(),
+    [accountQuery.refetch],
+  );
+
+  const refetchConfig = useCallback(
+    () => configQuery.refetch(),
+    [configQuery.refetch],
+  );
 
   usePageMetadata(
     'PRANA Bonding | PRANA Protocol',
@@ -143,6 +153,8 @@ export default function BondingPage() {
               configLoading={configQuery.isLoading}
               configError={configQuery.isError}
               onBusyChange={setFormBusy}
+              refetchAccount={refetchAccount}
+              refetchConfig={refetchConfig}
             />
             <ActiveBonds
               bonds={accountQuery.data?.bonds}

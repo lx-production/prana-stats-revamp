@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Coins, Loader2 } from 'lucide-react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+import TxLink from '../../../components/ui/TxLink.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import {
@@ -9,12 +10,15 @@ import {
   WBTC_DECIMALS,
 } from '../../../constants/sharedContracts.ts';
 import { getBondingCopy } from '../bonding.copy.ts';
+import { getBondCtaPhase } from '../bondCtaPhase.ts';
 import TermSelector from './TermSelector.tsx';
 import BondSideTabs from './BondSideTabs.tsx';
+import CreateBondReviewDialog from './CreateBondReviewDialog.tsx';
 import {
   buildBondingQuoteRequest,
   useBondingQuote,
 } from '../hooks/useBondingQuote.ts';
+import { useBondTransaction } from '../hooks/useBondTransaction.ts';
 import {
   daysFromSeconds,
   formatPranaAmount,
@@ -35,8 +39,7 @@ import type {
   BondSide,
   BondTermId,
 } from '../bonding.types.ts';
-
-type BuyInputMode = 'exact_wbtc' | 'target_prana';
+import type { BuyInputMode } from '../hooks/useBondTransaction.ts';
 
 type BondingFormProps = {
   config: BondingConfig | undefined;
@@ -46,11 +49,12 @@ type BondingFormProps = {
   /** Lock form while claim actions run (step 6). */
   actionsLocked?: boolean;
   onBusyChange?: (busy: boolean) => void;
+  refetchAccount: () => Promise<unknown>;
+  refetchConfig: () => Promise<unknown>;
 };
 
 /**
- * Buy/Sell bonding form: amount, term, live quote, and CTA fresh-quote review.
- * Wallet approve/create writes land in Bước 5.
+ * Buy/Sell bonding form: amount, term, live quote, and Approve → Review → Create.
  */
 export default function BondingForm({
   config,
@@ -59,6 +63,8 @@ export default function BondingForm({
   configError,
   actionsLocked = false,
   onBusyChange,
+  refetchAccount,
+  refetchConfig,
 }: BondingFormProps) {
   const { locale } = useSiteLanguage();
   const copy = getBondingCopy(locale);
@@ -68,8 +74,6 @@ export default function BondingForm({
   const [buyMode, setBuyMode] = useState<BuyInputMode>('exact_wbtc');
   const [amount, setAmount] = useState('');
   const [termId, setTermId] = useState<BondTermId | null>(null);
-  const [reviewedQuote, setReviewedQuote] = useState<BondingQuote | null>(null);
-  const [reviewBusy, setReviewBusy] = useState(false);
 
   const terms = side === 'buy' ? (config?.buyTerms ?? []) : (config?.sellTerms ?? []);
 
@@ -118,36 +122,65 @@ export default function BondingForm({
     request: quoteRequest,
   });
 
-  useEffect(() => {
-    onBusyChange?.(reviewBusy || quoteState.isLoading);
-  }, [onBusyChange, reviewBusy, quoteState.isLoading]);
+  const bondTx = useBondTransaction({
+    config,
+    account,
+    side,
+    buyMode,
+    amountRaw,
+    termId,
+    quote: quoteState.quote,
+    freshQuote: quoteState.freshQuote,
+    refetchAccount,
+    refetchConfig,
+  });
 
-  // Changing side / buy mode clears amount + reviewed quote; quote hook invalidates too.
+  useEffect(() => {
+    onBusyChange?.(
+      bondTx.isBusy || quoteState.isLoading || bondTx.status === 'reviewing',
+    );
+  }, [
+    onBusyChange,
+    bondTx.isBusy,
+    bondTx.status,
+    quoteState.isLoading,
+  ]);
+
+  // Clear amount only after a confirmed create — keep success + tx hash visible.
+  useEffect(() => {
+    if (bondTx.status === 'success') {
+      setAmount('');
+      quoteState.invalidate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- success edge only
+  }, [bondTx.status]);
+
+  // Changing side / buy mode clears amount; quote hook invalidates too.
   const onSideChange = (next: BondSide) => {
     if (next === side) return;
     setSide(next);
     setAmount('');
-    setReviewedQuote(null);
     quoteState.invalidate();
+    bondTx.clearMessages();
   };
 
   const onBuyModeChange = (next: BuyInputMode) => {
     if (next === buyMode) return;
     setBuyMode(next);
     setAmount('');
-    setReviewedQuote(null);
     quoteState.invalidate();
+    bondTx.clearMessages();
   };
 
   const onAmountChange = (value: string) => {
     if (!isBondAmountInput(value, inputDecimals)) return;
     setAmount(value);
-    setReviewedQuote(null);
+    bondTx.clearMessages();
   };
 
   const onTermChange = (next: BondTermId) => {
     setTermId(next);
-    setReviewedQuote(null);
+    bondTx.clearMessages();
   };
 
   const wbtcBalanceRaw = account ? BigInt(account.wbtcBalanceRaw) : 0n;
@@ -174,7 +207,7 @@ export default function BondingForm({
       side === 'sell' ? account.pranaBalanceRaw : account.wbtcBalanceRaw;
     const decimals = side === 'sell' ? PRANA_DECIMALS : WBTC_DECIMALS;
     setAmount(rawBalanceToAmountInput(raw, decimals));
-    setReviewedQuote(null);
+    bondTx.clearMessages();
   };
 
   const selectedTerm = getConfiguredTerm(terms, termId);
@@ -232,7 +265,8 @@ export default function BondingForm({
     paused ||
     configLoading ||
     !config ||
-    reviewBusy ||
+    bondTx.isBusy ||
+    bondTx.reviewOpen ||
     actionsLocked;
 
   const amountLabel =
@@ -240,32 +274,62 @@ export default function BondingForm({
       ? copy.amountLabelPrana
       : copy.amountLabelWbtc;
 
-  const displayQuote = reviewedQuote ?? quoteState.quote;
+  const displayQuote = bondTx.reviewQuote ?? quoteState.quote;
 
-  const onReviewCta = async () => {
-    if (!wallet.isConnected || !wallet.isPolygon) return;
-    setReviewBusy(true);
-    try {
-      // Always fresh-quote on CTA — even if the live quote looks current.
-      const fresh = await quoteState.freshQuote();
-      if (!fresh) {
-        setReviewedQuote(null);
-        return;
-      }
-      setReviewedQuote(fresh);
-    } finally {
-      setReviewBusy(false);
-    }
-  };
-
-  const canReview =
+  const canSubmit =
     !formFieldsDisabled &&
     !amountError &&
     parsedAmount.ok &&
     selectedTerm != null &&
     wallet.isConnected &&
     wallet.isPolygon &&
-    !quoteState.isLoading;
+    !quoteState.isLoading &&
+    quoteState.quote != null &&
+    quoteState.quote.issues.length === 0;
+
+  // Pending broadcast: allow confirmation resume while fields stay frozen.
+  const canClickCta = bondTx.hasPendingHash
+    ? wallet.isConnected && !bondTx.isBusy && !actionsLocked
+    : canSubmit;
+
+  const ctaPhase = getBondCtaPhase(
+    bondTx.status,
+    bondTx.needsApproval,
+    bondTx.hasPendingHash,
+  );
+
+  const displayPhase =
+    ctaPhase === 'success' && canSubmit ? 'review' : ctaPhase;
+
+  const ctaLabel = (() => {
+    switch (displayPhase) {
+      case 'approve':
+        return bondTx.status === 'approving'
+          ? copy.approvingCta
+          : copy.approveCta;
+      case 'create':
+        return bondTx.status === 'submitting'
+          ? copy.creatingBondCta
+          : copy.createBondCta;
+      case 'confirming':
+        return copy.confirmingCta;
+      case 'confirmation_unavailable':
+        return copy.resumeConfirmingCta;
+      case 'success':
+        return copy.bondSuccessCta;
+      case 'error':
+        return bondTx.needsApproval ? copy.approveCta : copy.reviewQuote;
+      default:
+        return quoteState.isLoading || bondTx.status === 'reviewing'
+          ? copy.refreshingQuote
+          : copy.reviewQuote;
+    }
+  })();
+
+  const showCtaSpinner =
+    bondTx.isBusy ||
+    bondTx.status === 'reviewing' ||
+    (quoteState.isLoading && displayPhase === 'review');
 
   return (
     <GlassPanel hoverable>
@@ -402,28 +466,64 @@ export default function BondingForm({
           side={side}
           buyMode={buyMode}
           quote={displayQuote}
-          isLoading={quoteState.isLoading || reviewBusy}
+          isLoading={quoteState.isLoading && !bondTx.reviewOpen}
           error={quoteState.error}
-          isStale={quoteState.isStale && reviewedQuote == null}
+          isStale={quoteState.isStale && bondTx.reviewQuote == null}
           hasAmount={Boolean(amount) && parsedAmount.ok}
         />
 
+        {bondTx.error ? (
+          <StatusBanner
+            tone={
+              bondTx.status === 'confirmation_unavailable'
+                ? 'warning'
+                : 'error'
+            }
+          >
+            {bondTx.error}
+          </StatusBanner>
+        ) : null}
+        {bondTx.warning ? (
+          <StatusBanner tone="warning">{bondTx.warning}</StatusBanner>
+        ) : null}
+        {bondTx.success ? (
+          <StatusBanner tone="success">{bondTx.success}</StatusBanner>
+        ) : null}
+        {bondTx.transactionHash ? (
+          <div className="text-sm">
+            <TxLink hash={bondTx.transactionHash} label="Polygonscan" />
+          </div>
+        ) : null}
+
         <button
           type="button"
-          disabled={!canReview}
-          onClick={() => void onReviewCta()}
+          disabled={!canClickCta}
+          onClick={() => void bondTx.onPrimaryCta()}
           className="btn-hero btn-gold-border inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {reviewBusy || quoteState.isLoading ? (
+          {showCtaSpinner ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           ) : null}
-          {reviewBusy ? copy.refreshingQuote : copy.reviewQuote}
+          {ctaLabel}
         </button>
-
-        {reviewedQuote && reviewedQuote.issues.length === 0 ? (
-          <StatusBanner tone="success">{copy.quoteReady}</StatusBanner>
-        ) : null}
       </div>
+
+      {bondTx.reviewOpen && bondTx.reviewQuote ? (
+        <CreateBondReviewDialog
+          quote={bondTx.reviewQuote}
+          side={side}
+          buyMode={buyMode}
+          copy={copy}
+          busy={bondTx.status === 'submitting' || bondTx.status === 'confirming'}
+          error={
+            bondTx.reviewOpen && bondTx.status !== 'confirmation_unavailable'
+              ? bondTx.error
+              : null
+          }
+          onConfirm={() => void bondTx.onConfirmCreate()}
+          onCancel={bondTx.closeReview}
+        />
+      ) : null}
     </GlassPanel>
   );
 }

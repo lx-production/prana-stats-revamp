@@ -39,10 +39,26 @@ export type BondingCopy = {
   reserveSourceMarket: string;
   rateLabel: string;
   durationLabel: (days: number) => string;
-  /** Primary CTA before write flow lands in step 5 — refreshes quote then reviews. */
+  /** Primary CTA phases (Approve → Review → Create → Confirming). */
+  approveCta: string;
+  approvingCta: string;
   reviewQuote: string;
   refreshingQuote: string;
+  createBondCta: string;
+  creatingBondCta: string;
+  confirmingCta: string;
+  resumeConfirmingCta: string;
+  bondSuccessCta: string;
   quoteReady: string;
+  bondConfirmed: string;
+  accountSyncWarning: string;
+  confirmationUnavailable: string;
+  reviewDialogTitle: string;
+  reviewDialogBody: string;
+  reviewDialogWbtcCap: string;
+  reviewDialogConfirm: string;
+  reviewDialogCancel: string;
+  processing: string;
   activeBondsHeading: string;
   noBonds: string;
   loadingBonds: string;
@@ -105,9 +121,28 @@ const vi: BondingCopy = {
   reserveSourceMarket: 'Nguồn reserve: market',
   rateLabel: 'Tỷ lệ chiết khấu',
   durationLabel: (days) => `${days} ngày`,
-  reviewQuote: 'Xem lại quote',
+  approveCta: 'Approve',
+  approvingCta: 'Đang approve…',
+  reviewQuote: 'Xem lại',
   refreshingQuote: 'Đang làm mới quote…',
+  createBondCta: 'Tạo Bond',
+  creatingBondCta: 'Đang tạo bond…',
+  confirmingCta: 'Đang xác nhận…',
+  resumeConfirmingCta: 'Tiếp tục xác nhận',
+  bondSuccessCta: 'Đã tạo bond',
   quoteReady: 'Quote sẵn sàng',
+  bondConfirmed: 'Giao dịch bonding đã xác nhận trên Polygon.',
+  accountSyncWarning:
+    'Giao dịch thành công nhưng chưa tải lại số dư. Làm mới trang nếu cần.',
+  confirmationUnavailable:
+    'Đã gửi giao dịch nhưng chưa xác nhận được receipt. Kiểm tra Polygonscan rồi bấm Tiếp tục xác nhận.',
+  reviewDialogTitle: 'Xác nhận tạo bond',
+  reviewDialogBody:
+    'Kiểm tra lại số lượng và kỳ hạn trước khi ví mở giao dịch tạo bond.',
+  reviewDialogWbtcCap: 'Cap WBTC (allowance)',
+  reviewDialogConfirm: 'Tạo Bond',
+  reviewDialogCancel: 'Hủy',
+  processing: 'Đang xử lý…',
   activeBondsHeading: 'Bond đang hoạt động',
   noBonds: 'Chưa có bond nào.',
   loadingBonds: 'Đang tải danh sách bond…',
@@ -183,9 +218,28 @@ const en: BondingCopy = {
   reserveSourceMarket: 'Reserve source: market',
   rateLabel: 'Discount rate',
   durationLabel: (days) => `${days} days`,
-  reviewQuote: 'Review quote',
+  approveCta: 'Approve',
+  approvingCta: 'Approving…',
+  reviewQuote: 'Review',
   refreshingQuote: 'Refreshing quote…',
+  createBondCta: 'Create Bond',
+  creatingBondCta: 'Creating bond…',
+  confirmingCta: 'Confirming…',
+  resumeConfirmingCta: 'Continue confirming',
+  bondSuccessCta: 'Bond created',
   quoteReady: 'Quote ready',
+  bondConfirmed: 'Bonding transaction confirmed on Polygon.',
+  accountSyncWarning:
+    'Transaction succeeded but the balance refresh failed. Reload if needed.',
+  confirmationUnavailable:
+    'Transaction submitted but the receipt could not be confirmed. Check Polygonscan, then continue confirming.',
+  reviewDialogTitle: 'Confirm create bond',
+  reviewDialogBody:
+    'Review amounts and term before your wallet opens the create-bond transaction.',
+  reviewDialogWbtcCap: 'WBTC spending cap (allowance)',
+  reviewDialogConfirm: 'Create Bond',
+  reviewDialogCancel: 'Cancel',
+  processing: 'Processing…',
   activeBondsHeading: 'Active bonds',
   noBonds: 'No active bonds yet.',
   loadingBonds: 'Loading bonds…',

@@ -6,6 +6,8 @@ import type {
   BondingConfig,
   BondingQuote,
   BondingQuoteRequest,
+  BondingTransactionConfirmation,
+  BondingTransactionConfirmationRequest,
 } from './bonding.types.ts';
 
 /** Browser React Query key for GET /api/bonding/config. */
@@ -44,6 +46,24 @@ export async function fetchBondingQuote(
       signal,
     },
     // Never dedupe POSTs — each quote body is unique.
+    { dedupeKey: null },
+  );
+}
+
+/**
+ * POST /api/bonding/confirm-transaction — server Polygon RPC fallback when the
+ * browser cannot read a receipt for an already-broadcast hash.
+ */
+export async function confirmBondingTransactionOnServer(
+  request: BondingTransactionConfirmationRequest,
+): Promise<BondingTransactionConfirmation> {
+  return await fetchJson<BondingTransactionConfirmation>(
+    '/api/bonding/confirm-transaction',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
     { dedupeKey: null },
   );
 }
