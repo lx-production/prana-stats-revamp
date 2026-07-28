@@ -64,8 +64,8 @@ export type BondingCopy = {
   /** Config still loading — claims stay off. */
   bondsConfigPending: string;
   bondsConfigError: string;
-  /** Claim CTA / lifecycle copy. */
-  claimBond: string;
+  /** Claim CTA / lifecycle copy — buy pays PRANA, sell pays WBTC. */
+  claimBond: Record<BondSide, string>;
   claimingCta: string;
   claimConfirmed: string;
   claimPausedReason: string;
@@ -154,7 +154,7 @@ const vi: BondingCopy = {
   accountError: 'Không tải được dữ liệu ví. Thử lại sau.',
   bondsConfigPending: 'Đang tải cấu hình — claim tạm khóa.',
   bondsConfigError: 'Không tải được cấu hình. Claim tạm khóa.',
-  claimBond: 'Claim',
+  claimBond: { buy: 'Claim PRANA', sell: 'Claim WBTC' },
   claimingCta: 'Đang claim…',
   claimConfirmed: 'Claim bond đã xác nhận trên Polygon.',
   claimPausedReason: 'Deployment này đang tạm dừng — không thể claim.',
@@ -257,7 +257,7 @@ const en: BondingCopy = {
   accountError: 'Could not load wallet data. Try again later.',
   bondsConfigPending: 'Loading config — claims are locked.',
   bondsConfigError: 'Could not load config. Claims are locked.',
-  claimBond: 'Claim',
+  claimBond: { buy: 'Claim PRANA', sell: 'Claim WBTC' },
   claimingCta: 'Claiming…',
   claimConfirmed: 'Bond claim confirmed on Polygon.',
   claimPausedReason: 'This deployment is paused — claim unavailable.',

@@ -183,7 +183,7 @@ export default function BondCard({
                 {copy.claimingCta}
               </span>
             ) : (
-              copy.claimBond
+              copy.claimBond[bond.side]
             )}
           </button>
         </div>
