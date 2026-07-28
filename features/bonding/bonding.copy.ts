@@ -76,6 +76,7 @@ export type BondingCopy = {
   versionBadge: Record<BondVersion, string>;
   principalLabel: string;
   payoutLabel: string;
+  startTimeLabel: string;
   claimedLabel: string;
   claimableLabel: string;
   maturityLabel: string;
@@ -103,8 +104,8 @@ const vi: BondingCopy = {
   connectedAs: 'Đã kết nối',
   buyTab: 'Mua Bond',
   sellTab: 'Bán Bond',
-  buyExactWbtcMode: 'WBTC chính xác',
-  buyTargetPranaMode: 'Target PRANA',
+  buyExactWbtcMode: 'WBTC muốn bán',
+  buyTargetPranaMode: 'PRANA muốn mua',
   amountLabelWbtc: 'Số lượng WBTC',
   amountLabelPrana: 'Số lượng PRANA',
   balanceLabel: 'Số dư',
@@ -165,6 +166,7 @@ const vi: BondingCopy = {
   versionBadge: { v1: 'V1', v2: 'V2' },
   principalLabel: 'Gốc',
   payoutLabel: 'Payout',
+  startTimeLabel: 'Bắt đầu',
   claimedLabel: 'Đã claim',
   claimableLabel: 'Có thể claim',
   maturityLabel: 'Đáo hạn',
@@ -205,8 +207,8 @@ const en: BondingCopy = {
   connectedAs: 'Connected as',
   buyTab: 'Buy Bond',
   sellTab: 'Sell Bond',
-  buyExactWbtcMode: 'Exact WBTC',
-  buyTargetPranaMode: 'Target PRANA',
+  buyExactWbtcMode: 'WBTC to sell',
+  buyTargetPranaMode: 'PRANA to buy',
   amountLabelWbtc: 'WBTC amount',
   amountLabelPrana: 'PRANA amount',
   balanceLabel: 'Balance',
@@ -267,6 +269,7 @@ const en: BondingCopy = {
   versionBadge: { v1: 'V1', v2: 'V2' },
   principalLabel: 'Principal',
   payoutLabel: 'Payout',
+  startTimeLabel: 'Start Time',
   claimedLabel: 'Claimed',
   claimableLabel: 'Claimable',
   maturityLabel: 'Maturity',

@@ -1,15 +1,11 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import {
-  formatPranaAmount,
-  formatWbtcAmount,
-  getBondActionState,
-} from '../bondingMath.ts';
+import { formatPranaAmount, formatWbtcAmount, getBondActionState } from '../bondingMath.ts';
 
+import type { BondingCopy } from '../bonding.copy.ts';
 import type { SiteLocale } from '../../../types/locale.types.ts';
 import type { ActiveBondRecord, BondClaimActionTarget } from '../bonding.types.ts';
-import type { BondingCopy } from '../bonding.copy.ts';
 
 type BondCardProps = {
   bond: ActiveBondRecord;
@@ -26,13 +22,18 @@ type BondCardProps = {
 };
 
 function formatBondDate(unixSeconds: number, locale: SiteLocale): string {
-  return new Date(unixSeconds * 1000).toLocaleString(
+  const date = new Date(unixSeconds * 1000);
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  // Keep 24h clock for consistency across locales.
+  const time = date.toLocaleTimeString(
     locale === 'en' ? 'en-GB' : 'vi-VN',
-    {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    },
+    { hour: '2-digit', minute: '2-digit', hour12: false },
   );
+
+  return `${day}/${month}/${year}, ${time}`;
 }
 
 /**
@@ -67,6 +68,7 @@ export default function BondCard({
     : `${formatWbtcAmount(actionState.claimableRaw)} WBTC`;
   const progress = actionState.progressPercent;
 
+  const startTimeLabel = formatBondDate(bond.creationTime, locale);
   const maturityLabel = formatBondDate(bond.maturityTime, locale);
 
   const claimTarget: BondClaimActionTarget = {
@@ -96,31 +98,47 @@ export default function BondCard({
           {copy.bondId(bond.id)}
         </h3>
         <div className="flex flex-wrap gap-1.5">
-          <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/70">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+              bond.side === 'sell'
+                ? 'border-red-300/40 bg-red-400/10 text-red-200'
+                : 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200'
+            }`}
+          >
             {copy.sideBadge[bond.side]}
           </span>
-          <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/70">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+              bond.version === 'v1'
+                ? 'border-cyan-300/40 bg-cyan-400/10 text-cyan-200'
+                : 'border-amber-300/50 bg-amber-400/15 text-amber-100'
+            }`}
+          >
             {copy.versionBadge[bond.version]}
           </span>
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
-        <div>
+      <dl className="space-y-1.5 text-xs">
+        <div className="flex items-start justify-between gap-3">
           <dt className="text-white/45">{copy.principalLabel}</dt>
-          <dd className="mt-0.5 break-all text-white/85">{principal}</dd>
+          <dd className="break-all text-right text-white/85">{principal}</dd>
         </div>
-        <div>
+        <div className="flex items-start justify-between gap-3">
           <dt className="text-white/45">{copy.payoutLabel}</dt>
-          <dd className="mt-0.5 break-all text-white/85">{payout}</dd>
-        </div>
-        <div>
+          <dd className="break-all text-right text-white/85">{payout}</dd>
+        </div>        
+        <div className="flex items-start justify-between gap-3">
           <dt className="text-white/45">{copy.claimedLabel}</dt>
-          <dd className="mt-0.5 break-all text-white/85">{claimed}</dd>
+          <dd className="break-all text-right text-white/85">{claimed}</dd>
         </div>
-        <div>
+        <div className="flex items-start justify-between gap-3">
           <dt className="text-white/45">{copy.claimableLabel}</dt>
-          <dd className="mt-0.5 break-all text-white/85">{claimable}</dd>
+          <dd className="break-all text-right text-white/85">{claimable}</dd>
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <dt className="text-white/45">{copy.startTimeLabel}</dt>
+          <dd className="break-all text-right text-white/85">{startTimeLabel}</dd>
         </div>
       </dl>
 
