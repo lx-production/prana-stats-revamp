@@ -7,7 +7,7 @@
 - Chuyển bonding legacy thành lazy feature TypeScript trong main Vite app, dùng chung Web3 providers, React Query, VI/EN, footer và design system.
 - Giữ Buy/Sell Bond V2, quản lý và claim bond V1/V2; bỏ các donut/status trùng với Bonding Stats trên homepage.
 - Buy Bond giữ hai chế độ nhập: WBTC chính xác hoặc target PRANA.
-- Contract reads và quote đi qua backend; ví chỉ trực tiếp gửi `approve`, tạo bond và `claim`.
+- Contract reads, quote và fallback xác nhận receipt đi qua backend; ví chỉ trực tiếp gửi `approve`, tạo bond và `claim`.
 - Quote được tính đúng theo trạng thái on-chain tại block đọc. Nếu reserves/rates/treasury không đổi trước khi transaction thực thi thì raw amount sẽ khớp quote; thời gian trôi qua hoặc sang block mới tự nó không làm quote đổi. UI vẫn fresh-quote/preflight trước giao dịch vì contract không nhận ngưỡng output tối thiểu (`minOut`) hoặc input tối đa (`maxIn`) để khóa kết quả khi state thực sự thay đổi.
 
 
@@ -42,31 +42,39 @@
     - Test mapper với amount và bond ID lớn hơn `Number.MAX_SAFE_INTEGER`; JSON vẫn giữ đúng decimal string.
     - Static search không còn address literal hoặc bản ABI thứ hai trong `features/bonding`, server loader và UI.
 3. **Xây backend Bonding API**
-  - Loaders: `server/loaders/bondingConfig.ts`, `bondingAccount.ts`, `bondingQuote.ts` (+ optional `server/loaders/cached/bondingConfigCached.ts`); đăng ký trong `getApiRoutes.ts` / `postApiRoutes.ts`.
-  - Rate limit: thêm bonding quote/account limiters trong `server/rateLimit.ts` cạnh staking.
+  - Loaders: `server/loaders/bondingConfig.ts`, `bondingAccount.ts`, `bondingQuote.ts`, `bondingTransactionConfirmation.ts` (+ optional `server/loaders/cached/bondingConfigCached.ts`); đăng ký trong `getApiRoutes.ts` / `postApiRoutes.ts`.
+  - Tạo `server/utils/bondingReadUtils.ts` cho term mapping, active-bond normalization và quote math dùng chung giữa loaders/tests; route files chỉ orchestration.
+  - Trong `getApiRoutes.ts`, thêm injectable `BondingApiLoaders` + default loaders giống `StakingApiLoaders` để route tests không cần live RPC.
+  - Rate limit: mở rộng factory `createSwapRateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
   - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc`, `buy_target_prana` hoặc `sell_exact_prana`, gồm `amountRaw` và `termId`.
+  - `POST /api/bonding/confirm-transaction`: `no-store`; fallback qua Polygon RPC của server khi browser RPC không đọc được receipt của hash đã broadcast.
+    - Request gồm `transactionHash`, connected `account` và action snapshot tối thiểu (`approve|create|claim`, side/version và args cần đối chiếu).
+    - Chỉ xác nhận sau khi receipt terminal; kiểm tra sender, chain, target từ mapping nội bộ, function selector và args tương ứng. Không tin contract address hoặc calldata do client tự khai.
+    - Endpoint này chỉ dự phòng xác nhận UX, không ghi trusted analytics hay tạo side effect; vì vậy không tái dùng HMAC hoặc `/api/swap/verify-transaction` riêng của Swap.
   - Quote response trả `wbtcAmountRaw`, `pranaAmountRaw`, rate/duration, block timestamp, nguồn reserve `impacted|market` và các issue như paused, dưới minimum, vượt reserve hoặc thiếu treasury.
   - Mọi reads trong một response dùng cùng `blockTag`; quote mô phỏng đúng thứ tự bigint/rounding/1% fee của Solidity và nhánh tự đồng bộ market reserve.
-  - Validate body/content-type/origin, giới hạn body 2 KB, 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút. Tái dùng `rejectInvalidSwapApiRequest` (hoặc helper tương đương) từ `server/helpers/apiRoutesHelpers.ts`.
+  - Validate body/content-type/origin, giới hạn body 2 KB, 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút; confirmation có bucket riêng để hash polling không tiêu quota quote. Tái dùng `rejectInvalidSwapApiRequest` từ `server/helpers/apiRoutesHelpers.ts` và `readJsonBody()` từ `server/helpers/requestHelpers.ts`.
   - Lỗi RPC trả `502` đã redact; input sai trả `400`; trạng thái quote không executable vẫn trả `200` kèm issue để form hiển thị đúng lý do.
-  - **Vì sao Bonding có body/content-type/origin validation nhưng Staking không có**
+  - **Vì sao Bonding có body/content-type/origin validation và confirmation fallback**
     - Hai Staking endpoint hiện tại đều là `GET`. Chúng không nhận JSON body, nên không có body size hoặc `Content-Type` để kiểm tra. Staking vẫn validate method, checksum `address`, rate limit và redact lỗi RPC.
     - Bonding config/account cũng là `GET` và áp dụng cùng mô hình với Staking.
-    - Chỉ Bonding quote là `POST` vì request có discriminated union và raw amount. Endpoint này phải giới hạn 2 KB, yêu cầu JSON và reject body sai shape để tránh parser/memory abuse hoặc RPC calls vô nghĩa.
-    - Origin validation ở quote là lớp chống website khác dùng trình duyệt người dùng để tiêu quota RPC của PRANA; đây không phải cơ chế xác thực tuyệt đối vì client ngoài trình duyệt có thể tự đặt header. Rate limit và strict input validation vẫn là lớp bảo vệ chính.
-    - Swap cần thêm transaction verification vì backend Swap tạo route/calldata động và cần đối chiếu transaction đã gửi. Bonding backend chỉ trả số quote; client gọi fixed contract address/function từ ABI nội bộ, nên chưa cần `/verify-transaction`. Trước write vẫn bắt buộc fresh quote và `simulateContract`.
+    - Bonding quote là `POST` vì request có discriminated union và raw amount. Endpoint này phải giới hạn 2 KB, yêu cầu JSON và reject body sai shape để tránh parser/memory abuse hoặc RPC calls vô nghĩa.
+    - Confirmation cũng là `POST` vì cần hash + action snapshot. Nó chỉ được gọi sau khi browser `waitForTransactionReceipt` lỗi; server dùng RPC độc lập để phân biệt transaction success/revert với lỗi đọc RPC tạm thời.
+    - Origin validation ở các POST là lớp chống website khác dùng trình duyệt người dùng để tiêu quota RPC của PRANA; đây không phải cơ chế xác thực tuyệt đối vì client ngoài trình duyệt có thể tự đặt header. Rate limit và strict input validation vẫn là lớp bảo vệ chính.
+    - Swap `/api/swap/verify-transaction` còn kiểm HMAC, router calldata và ghi verified analytics vì backend tạo route/calldata động. Bonding không tái dùng flow đó: server chỉ cho phép mapping contract/function cố định và xác nhận receipt/action đã broadcast.
   - **Kiểm thử Bước 3**
     - Config: chỉ nhận `GET`, trả cache 30 giây, đúng bốn paused state/terms/minimum và mọi read dùng cùng `blockTag`.
     - Account: thiếu/sai address trả `400` trước khi tiêu rate-limit quota; address hợp lệ được checksum; response có `private, no-store`.
     - Account mapper: hợp nhất đủ Buy/Sell × V1/V2, không làm rơi bond khi ID trùng giữa deployment, và hard-fail `502` thay vì trả danh sách thiếu nếu một contract read lỗi.
     - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB hoặc union sai đều bị từ chối mà không gọi loader/RPC.
     - Quote origin: same-origin hợp lệ được nhận; browser origin không được phép bị từ chối; request không có `Origin` từ server-to-server được xử lý theo cùng policy hiện có của Swap.
-    - Rate-limit test riêng cho quote/account, gồm per-IP, global bucket, trusted proxy hop và cleanup bucket.
+    - Rate-limit test riêng cho quote/account/confirmation, gồm per-IP, global bucket, trusted proxy hop và cleanup bucket.
     - Quote math fixture cho cả ba mode; kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
     - Boundary fixtures: zero, dưới minimum, term ngoài `0..4`, target bằng/vượt reserve, treasury vừa đủ/thiếu một raw unit và paused state.
     - Error test đảm bảo response/log không lộ RPC URL, API key, calldata hoặc raw provider stack.
+    - Confirmation API test: reject body/hash/action sai trước RPC; success/revert/not-mined/RPC-error tách biệt; sender/target/function/args mismatch không được xác nhận.
     - Suite: `server/tests/bondingApi.test.ts` (mirror `stakingApi.test.ts`).
 4. **Port form và dữ liệu client**
   - Cấu trúc client mirror Staking:
@@ -75,6 +83,12 @@
     - `features/bonding/bonding.copy.ts` — VI/EN copy.
     - `features/bonding/components/` — form, tabs, Active Bonds, term selector.
     - `features/bonding/hooks/` — config/account/quote hooks.
+  - Tái dùng constants từ `constants/sharedContracts.ts`: `WBTC_ADDRESS`, `WBTC_DECIMALS`, `PRANA_ADDRESS`, `PRANA_DECIMALS`, `WBTC_PRANA_V3_POOL`.
+  - Trước khi Bonding dùng wallet UI, hoàn thành các shared refactor cần thiết:
+    - Chuyển `getPolygonWalletClient.ts` từ `features/staking/` sang `features/web3/`; luôn lấy client mới sau `ensurePolygon()`, không dùng client capture trước chain switch.
+    - Chuyển `TxLink.tsx` trung lập từ `features/staking/components/` sang `components/ui/` để Staking/Bonding cùng dùng Polygonscan hash link.
+    - Tách phần UI connect / switch Polygon / disconnect của `features/staking/components/WalletControl.tsx` sang `features/web3/`; copy và error formatter được truyền từ từng feature.
+    - Mirror gate trong `features/staking/accountRefetch.ts` bằng helper Bonding typed riêng; không import `StakingAccountSnapshot` vào Bonding và không fallback sang cached account trước write.
   - Buy có toggle:
     - Exact WBTC → quote PRANA nhận dự kiến.
     - Target PRANA → quote WBTC cần trả dự kiến, kèm cảnh báo contract không nhận tham số “WBTC tối đa được phép chi”.
@@ -101,6 +115,7 @@
     - Component test đủ loading/empty/error/issue states và copy VI/EN cho cả ba quote mode.
 5. **Harden approve và tạo bond**
   - Template Staking: `stakeCtaPhase.ts`, `useStakeTransaction.ts`, `stakeTransactionFlow.ts` → tương ứng Bonding `bondCtaPhase` / transaction hook/flow (approve+create thay vì permit+stake).
+  - Template confirmation mới từ v4.4.0: tách helper thuần `features/bonding/utils/bondTransactionConfirmation.ts` tương tự `features/swap/utils/swapTransactionConfirmation.ts`; hook chỉ orchestration/UI state.
   - Dùng một CTA theo phase: `Approve` → `Review` → `Create Bond` → `Confirming`; không tự bật hai wallet prompt liên tiếp.
   - Bốn phase là trạng thái UI, không phải bốn yêu cầu ký trên ví:
     - `Approve`: nếu allowance chưa phù hợp, user bấm CTA và xác nhận một transaction `approve` trên ví.
@@ -114,7 +129,11 @@
   - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định.
   - Target PRANA Buy phải set WBTC allowance thành cap bằng quote mới nhất, kể cả khi allowance cũ lớn hơn; nếu quote mới vượt cap thì yêu cầu approve lại. Dialog phải hiển thị cap WBTC rõ ràng.
   - Ngay trước write, chạy `simulateContract`; sau đó gửi request đã simulate bằng wallet client.
-  - Khi đã có hash, retry chỉ tiếp tục `waitForTransactionReceipt`, tuyệt đối không broadcast lần hai.
+  - Khi đã có hash, tuyệt đối không broadcast lần hai:
+    - Thử `waitForTransactionReceipt` qua browser RPC trước.
+    - Nếu browser RPC lỗi đọc receipt, gọi `/api/bonding/confirm-transaction` qua RPC server độc lập.
+    - Receipt explicit `reverted` mới là transaction failed; RPC lỗi hoặc transaction chưa terminal không được đổi thành failed.
+    - Nếu cả browser và server chưa xác nhận được, giữ hash + snapshot, chuyển phase `Confirmation unavailable`, hiện Polygonscan và CTA “Tiếp tục xác nhận”; retry chỉ lặp confirmation.
   - Chỉ báo thành công sau receipt; account refetch thất bại sau receipt là warning, không biến giao dịch thành failed.
   - Chuẩn hóa lỗi VI/EN cho rejection, wrong chain, gas, allowance, pause, minimum, treasury, reserve, revert và RPC; không render raw provider error.
   - **Kiểm thử Bước 5**
@@ -124,6 +143,8 @@
     - Target PRANA: allowance cũ lớn hơn quote vẫn phải được cap lại; fresh quote vượt cap quay về approve; fresh quote nhỏ hơn/ bằng cap mới được review.
     - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
     - User reject approve hoặc create trước hash cho phép retry đúng phase; lỗi receipt sau hash chỉ hiện “tiếp tục xác nhận”.
+    - Browser receipt success không gọi server fallback; browser RPC lỗi + server success/revert trả đúng terminal state.
+    - Browser và server cùng unavailable giữ `Confirmation unavailable`, hash và action snapshot; không log/render như transaction failed và không gọi write lần hai.
     - `simulateContract` failure không gọi `writeContract`; simulated request thành công phải giữ đúng address, function, args và connected account.
     - Receipt `reverted` không báo success; receipt thành công mới reset form/invalidate quote/refetch account.
     - Refetch sau success thất bại hiển thị warning và hash Polygonscan, không đổi receipt thành error.
@@ -160,7 +181,7 @@
   - Thời gian hiện tại dựa trên `blockTimestamp + elapsed`, không chỉ dựa clock thiết bị.
   - Sort theo maturity gần nhất, tie-break bằng side/version/id.
   - Claim chọn contract từ mapping nội bộ side/version, không tin địa chỉ do UI hoặc API truyền vào.
-  - Claim flow: switch Polygon → simulate → write → receipt → refetch account; dùng cùng cơ chế resume pending hash.
+  - Claim flow: switch Polygon → simulate → write → browser receipt / server confirmation fallback → refetch account; dùng cùng cơ chế resume pending hash.
   - Khóa form và các claim khác khi có một write đang chạy; nếu contract tương ứng paused thì disable action với lý do rõ ràng.
   - **Kiểm thử Bước 6**
     - Mapper fixtures cho bốn deployment, gồm ID trùng nhau; React key và contract dispatch vẫn phân biệt side/version.
@@ -175,28 +196,45 @@
     - Concurrency test: một claim pending khóa create/approve và các claim khác; resume receipt không broadcast lại.
 7. **UI, accessibility và tài liệu**
   - Dùng dark shell, shader brightness thấp, `GlassPanel`, `StatusBanner`, gold CTA, Lucide và `AppFooter`; không thêm MUI hoặc PropTypes.
-  - Refactor wallet control thành component dùng chung Web3 để Staking và Bonding không lặp connect/switch/disconnect.
-    - Hiện tại `WalletControl` nằm ở `features/staking/components/WalletControl.tsx` và còn phụ thuộc `staking.copy` / `stakingErrors`.
-    - Tách phần UI trung lập (connect / switch Polygon / disconnect) sang `features/web3/`; copy và format lỗi vẫn thuộc từng feature.
+  - Xác nhận shared wallet control / `TxLink` đã được cả Staking và Bonding dùng sau refactor ở Bước 4; không còn import ngược từ Bonding vào `features/staking/`.
   - Thêm VI/EN copy, metadata, Polygonscan links cho bốn deployment, responsive mobile và `prefers-reduced-motion`.
   - Term/tabs/dialog hỗ trợ keyboard, focus trap, Escape, focus-visible và `aria-live`.
-  - Thêm `/guide/bonding/` VI/EN giải thích approve, hai chiều Buy, vesting, claim, treasury và giới hạn quote/slippage; thêm link footer.
-    - Pattern giống Staking/Swap guides sau rename trên `main` (không dùng `LegalMarkdownPage` hay `termsRiskParser` cũ):
-      - `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath` trong `constants/appRoutes.ts`.
-      - `components/BondingGuidePage.tsx` render qua `MarkdownDocumentPage`.
-      - `hooks/useBondingGuideDocument.ts` parse markdown bằng `parseSectionedMarkdown`.
-      - Nội dung: `data/guide-bonding-en.md`, `data/guide-bonding-vi.md`.
-      - Đăng ký route trong `main.tsx`; bare → canonical `308` + SPA shell trong `server/staticRoutes.ts`.
-      - Test matcher/redirect/SPA trong `server/tests/guideRoutes.test.ts`.
-      - Thêm link `GUIDE_BONDING_CANONICAL_PATH` vào `AppFooter`.
-    - Lưu ý naming hiện có: contracts guide là `/guide/staking-contracts/` với `data/guide-staking-contracts-{en,vi}.md` — Bonding guide không tái dùng path/file đó.
-  - Cập nhật Terms/Privacy để bao gồm PRANA Bonding và wallet/account/quote requests.
+  - Thêm hai trang guide riêng, mirror Staking (`/guide/staking/` + `/guide/staking-contracts/`):
+    1. **User guide** `/guide/bonding/` — approve, hai chiều Buy, Sell, vesting, claim, treasury và giới hạn quote/slippage.
+    2. **Contracts guide** `/guide/bonding-contracts/` — giải thích on-chain `BuyPranaBondV2` và `SellPranaBondV2` (educational; luôn đối chiếu code/params trên Polygonscan).
+  - Pattern render giống Staking/Swap guides sau rename trên `main` (không dùng `LegalMarkdownPage` hay `termsRiskParser` cũ):
+    - Constants trong `constants/appRoutes.ts`:
+      - `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath`
+      - `GUIDE_BONDING_CONTRACTS_PATH`, `GUIDE_BONDING_CONTRACTS_CANONICAL_PATH`, `isGuideBondingContractsPath`
+    - Pages: `components/BondingGuidePage.tsx`, `components/BondingContractsGuidePage.tsx` qua `MarkdownDocumentPage`.
+    - Hooks: `hooks/useBondingGuideDocument.ts`, `hooks/useBondingContractsGuideDocument.ts` qua `parseSectionedMarkdown`.
+    - Nội dung:
+      - `data/guide-bonding-{en,vi}.md`
+      - `data/guide-bonding-contracts-{en,vi}.md` (mirror `data/guide-staking-contracts-{en,vi}.md`)
+    - Cập nhật `GUIDE_UPDATED_DATE` trong `constants/guides.ts` khi publish guide.
+    - Đăng ký cả hai route trong `main.tsx` bên trong homepage/legal shell giống `StakingGuidePage` / `ContractsGuidePage`, không đặt trong lazy `BondingEntry`; bare → canonical `308` + SPA shell trong `server/staticRoutes.ts`.
+    - Test matcher/redirect/SPA cho cả hai path trong `server/tests/guideRoutes.test.ts`.
+    - Footer: thêm `GUIDE_BONDING_CANONICAL_PATH` vào `AppFooter` (user guide). Contracts guide không bắt buộc vào footer; đặt trong header Bonding page như staking.
+    - Header `pages/BondingPage.tsx`: Polygonscan links cho bốn deployment + same-site link tới `GUIDE_BONDING_CONTRACTS_CANONICAL_PATH` (mirror `StakingPage` → `/guide/staking-contracts/`).
+    - Cross-link: user guide ↔ contracts guide ↔ `/terms`; contracts guide nêu rõ V1 chỉ còn để xem/claim lịch sử, bond mới chỉ trên V2.
+  - Nội dung tối thiểu cho `/guide/bonding-contracts/` (dựa trên `contracts/BuyPranaBondV2.sol` và `contracts/SellPranaBondV2.sol`):
+    - Big picture: hai contract độc lập — Buy nhận WBTC / trả PRANA vesting; Sell nhận PRANA / trả WBTC vesting.
+    - Impacted reserves và progressive price impact; `syncImpactedReserves` / `setImpactedReserves` thuộc manager.
+    - Buy: `buyBondForWbtcAmount` vs `buyBondForPranaAmount`; không có `minPranaOut` / `maxWbtcIn`.
+    - Sell: `sellBond(pranaAmount, period)`; không có `minWbtcOut`.
+    - Phí 1% trong quote math; term/rate/duration từ `bondRates`; minimum Buy/Sell.
+    - Claim/vesting từ `creationTime`, `claimedPrana`/`claimedWbtc`, và `lastClaimTime` chỉ chặn double-claim cùng timestamp.
+    - Pause, treasury/committed amounts, và quyền `BOND_MANAGER_ROLE` / `DEFAULT_ADMIN_ROLE` (rates, min, reserves, withdraw, pause) — gì owner/manager làm được và không làm được với bond đã tạo.
+    - Không tái dùng path/file của staking contracts guide.
+  - Cập nhật Terms/Privacy để bao gồm PRANA Bonding và wallet/account/quote/transaction-confirmation requests.
     - Nội dung: `data/terms-risk-{en,vi}.md`, `data/privacy-{en,vi}.md` (render qua `MarkdownDocumentPage` + `parseSectionedMarkdown`).
     - Nếu thay đổi pháp lý chính thức: cập nhật ngày trong `constants/termsRisk.ts` và `constants/privacy.ts`.
-  - Ghi tiến độ vào `docs/add-bonding-ui.md`; cập nhật README và tài liệu architecture sẽ trở nên lỗi thời khi Bonding dùng Web3 chung:
+  - Sau khi các phần Bonding tương ứng đã tồn tại, ghi tiến độ vào `docs/add-bonding-ui.md`; cập nhật README và tài liệu architecture sẽ trở nên lỗi thời khi Bonding dùng Web3 chung:
     - `docs/SHARED_CODE_ARCHITECTURE.md` và `docs/vi/SHARED_CODE_ARCHITECTURE.md`
     - `docs/swap-modal-technical-overview.md` và `docs/vi/swap-modal-technical-overview.md`
     - `docs/NETWORK_ARCHITECTURE.md` và `docs/vi/NETWORK_ARCHITECTURE.md`
+    - `docs/SECURITY_OVERVIEW.md` và `docs/vi/SECURITY_OVERVIEW.md` — fixed action validation, origin/body/rate-limit và confirmation fallback
+    - `docs/CACHE_ARCHITECTURE.md` — config cache, account/quote/confirmation `no-store` và React Query keys
     - Comment “Swap and staking only” trong `features/web3/Web3Providers.tsx`, `useInjectedWallet.ts`, `walletFormatting.ts` và `main.tsx`
   - Sau khi mọi test pass, xóa toàn bộ `bonding-legacy-ui/`; không mang theme context, staking constants hay hooks thống kê dư thừa sang feature mới.
   - **Kiểm thử Bước 7**
@@ -206,9 +244,10 @@
     - Reduced-motion test/class audit: shader/decorative animation và spinner không tạo chuyển động liên tục khi user yêu cầu giảm chuyển động.
     - Responsive QA ở 320, 375, 768 và desktop: không overflow amount/hash/address, CTA full width trên mobile.
     - Copy parity test đảm bảo mọi key có cả VI/EN, không render câu trộn ngôn ngữ; metadata đổi theo locale.
-    - Link test cho homepage, `/guide/bonding/`, Terms/Privacy và bốn Polygonscan deployments.
-    - Guide route test: `/guide/bonding` → `308` `/guide/bonding/`; refresh `/guide/bonding/` trả SPA shell; page render đúng VI/EN qua `MarkdownDocumentPage`.
-    - Shared wallet control: Staking và Bonding cùng dùng component Web3 trung lập; copy/error format vẫn feature-local.
+    - Link test cho homepage, `/guide/bonding/`, `/guide/bonding-contracts/`, Terms/Privacy và bốn Polygonscan deployments.
+    - Guide route test: `/guide/bonding` và `/guide/bonding-contracts` → `308` canonical; refresh cả hai trả SPA shell; page render đúng VI/EN qua `MarkdownDocumentPage`.
+    - Guide metadata/header test: dùng `GUIDE_UPDATED_DATE`; Bonding page header có same-site link tới contracts guide; guide routes không kéo `BondingEntry`/Web3.
+    - Shared wallet control/TxLink: Staking và Bonding cùng dùng component trung lập; copy/error format vẫn feature-local; không có import Bonding → Staking.
     - Sau khi xóa legacy, `rg` xác nhận không còn import/path legacy, MUI, PropTypes hoặc ThemeContext; typecheck/build lại từ clean checkout.
 8. **Deployment và migration legacy**
   - Build phải tạo chunk Bonding riêng; kiểm tra Stats/Staking chunks không bị kéo thêm dependency bonding.
@@ -216,10 +255,10 @@
   - Pi nginx: bỏ redirect/static alias `/bond`, `/bond/`, `/bond/assets/` để toàn bộ route đi vào Node; chạy `nginx -t` rồi reload.
   - Lưu ý: Pi legacy hiện dùng `301` cho `/bond` → `/bond/`; sau cutover Node phục vụ bare path bằng `308` (đồng bộ với `/stake` và guides).
   - VPS nginx: bỏ special legacy `/bond/assets/`; giữ `/assets/` của main Vite app và reload sau `nginx -t`.
-  - Public smoke-test `/bond` redirect, refresh `/bond/`, gzip assets, config/account/quote, connect/switch chain và quote; không tự gửi giao dịch thật khi smoke production.
+  - Public smoke-test `/bond` redirect, refresh `/bond/`, gzip assets, config/account/quote/confirmation route validation, connect/switch chain và quote; không tự gửi giao dịch thật khi smoke production.
   - Giữ `/var/www/html/prana/bond/` trong 7 ngày làm rollback; rollback bằng cách khôi phục nginx legacy blocks. Sau cửa sổ này mới xóa static build cũ và ghi nhận trong tài liệu.
   - **Kiểm thử Bước 8**
-    - Trước cutover: gọi trực tiếp Node origin để test `/bond/`, ba API và hashed/gzip assets trong khi public URL vẫn chạy legacy.
+    - Trước cutover: gọi trực tiếp Node origin để test `/bond/`, bốn API và hashed/gzip assets trong khi public URL vẫn chạy legacy.
     - Chạy `nginx -t` trên Pi/VPS trước mỗi reload; lưu bản config đang chạy để rollback.
     - Sau cutover: `/bond` trả đúng `308`, `/bond/` trả main SPA build identity mới, asset URL nằm dưới `/assets/`, không còn `/bond/assets/`.
     - Kiểm tra `Content-Encoding`, `Cache-Control`, CSP/security headers và `/api/version` khớp footer SHA/tag.
@@ -235,8 +274,10 @@
 - `BondingAccount`: checksum address, block metadata, raw balances/allowances và normalized active bond records.
 - `BondingQuoteRequest`: discriminated union cho ba quote mode, nhận raw amount và term ID.
 - `BondingQuote`: raw PRANA/WBTC amounts, rate/duration, reserve source, quote timestamp và validation issues.
-- Route công khai mới: `/bond/`, `/guide/bonding/`, `/api/bonding/config`, `/api/bonding/account`, `/api/bonding/quote`.
-- Route constants mới: `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath`, `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath`.
+- `BondingTransactionConfirmationRequest`: hash, account và action snapshot tối thiểu để server đối chiếu fixed target/function/args.
+- `BondingTransactionConfirmation`: terminal `confirmed|reverted`, hoặc trạng thái chưa thể xác nhận mà không suy diễn thành on-chain failure.
+- Route công khai mới: `/bond/`, `/guide/bonding/`, `/guide/bonding-contracts/`, `/api/bonding/config`, `/api/bonding/account`, `/api/bonding/quote`, `/api/bonding/confirm-transaction`.
+- Route constants mới: `BOND_PATH`, `BOND_CANONICAL_PATH`, `isBondPath`, `GUIDE_BONDING_PATH`, `GUIDE_BONDING_CANONICAL_PATH`, `isGuideBondingPath`, `GUIDE_BONDING_CONTRACTS_PATH`, `GUIDE_BONDING_CONTRACTS_CANONICAL_PATH`, `isGuideBondingContractsPath`.
 
 
 
