@@ -32,6 +32,8 @@ let walletClientStub: {
   sendTransaction?: (args: unknown) => Promise<`0x${string}`>;
 } | null = null;
 
+let verifySwapTransactionStub = async (): Promise<void> => {};
+
 mock.module('wagmi', {
   namedExports: {
     usePublicClient: () => publicClientStub,
@@ -43,6 +45,7 @@ mock.module('wagmi', {
 mock.module('../utils/swapTransactionLogs.ts', {
   namedExports: {
     logSwapTransactionEvent: () => {},
+    verifySwapTransaction: () => verifySwapTransactionStub(),
   },
 });
 
@@ -201,6 +204,51 @@ test('useUniswapSwap.executeSwap reports insufficient balance with token symbol'
   });
 
   assert.equal(result.current.error, 'Insufficient USDT balance.');
+
+  await unmount();
+});
+
+test('useUniswapSwap confirms through the server when browser receipt RPC fails', async () => {
+  let serverVerificationCalls = 0;
+
+  publicClientStub = {
+    readContract: async () => 1_000_000_000n,
+    waitForTransactionReceipt: async () => {
+      throw new Error('Unknown block');
+    },
+  };
+  walletClientStub = {
+    sendTransaction: async () => '0xswap',
+  };
+  verifySwapTransactionStub = async () => {
+    serverVerificationCalls += 1;
+  };
+
+  const { useUniswapSwap } = await import('../hooks/useUniswapSwap.ts');
+  const { result, unmount } = await renderHook(() =>
+    useUniswapSwap({
+      quote: makeQuote(),
+      tokenIn: token('USDT'),
+      tokenOut: token('PRANA'),
+      amountIn: '10',
+      slippageBps: 50,
+      ownerAddress: owner,
+    }),
+  );
+
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  await act(async () => {
+    await result.current.executeSwap();
+  });
+
+  assert.equal(serverVerificationCalls, 1);
+  assert.equal(result.current.status, 'success');
+  assert.equal(result.current.error, null);
+  assert.equal(result.current.transactionHash, '0xswap');
 
   await unmount();
 });

@@ -214,9 +214,12 @@ Implemented in `features/swap/hooks/useUniswapSwap.ts`.
 2. If allowance &lt; quoted amount, send `approve(SwapRouter02, amountInRaw)` for the **exact** quote amount (not unlimited)
 3. Wait for approval receipt
 4. `walletClient.sendTransaction` to SwapRouter02 with server calldata
-5. Wait for swap receipt; reverted receipts are treated as failures
+5. Wait for the swap receipt; only an explicit `reverted` receipt is treated as a failed swap
+6. If the browser RPC cannot read the receipt (for example, a transient `Unknown block` response), fall back to `/api/swap/verify-transaction`, which checks the same hash through the server RPC
 
 Wallet / viem failures are sanitized before they reach the modal (`features/swap/utils/sanitizeSwapWalletError.ts`). User cancellations show **Transaction canceled.**; unknown internals collapse to a short approval/swap fallback so long calldata never overflows the UI. Full error details still go to lifecycle logs.
+
+An RPC read failure after broadcast is not logged or displayed as `swap_failed`. If both browser and server RPC confirmation are temporarily unavailable, the modal keeps the transaction hash and directs the user to Polygonscan instead of claiming the transaction reverted. Balance refresh failures after confirmation are also non-fatal UI-sync failures.
 
 Balances and allowances use the **browser** RPC. Routing and verification use the **server** RPC.
 

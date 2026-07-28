@@ -218,9 +218,12 @@ Implement trong `features/swap/hooks/useUniswapSwap.ts`.
 2. Nếu allowance < số lượng quote, gửi `approve(SwapRouter02, amountInRaw)` đúng số lượng quote (**không** unlimited)
 3. Chờ approval receipt
 4. `walletClient.sendTransaction` tới SwapRouter02 với calldata từ server
-5. Chờ swap receipt; receipt reverted được coi là thất bại
+5. Chờ swap receipt; chỉ receipt có trạng thái `reverted` mới được coi là swap thất bại
+6. Nếu RPC browser không đọc được receipt (ví dụ lỗi tạm thời `Unknown block`), fallback sang `/api/swap/verify-transaction` để kiểm tra cùng transaction hash qua RPC server
 
 Lỗi wallet / viem được sanitize trước khi hiện trên modal (`features/swap/utils/sanitizeSwapWalletError.ts`). User hủy tx hiện **Transaction canceled.**; lỗi nội bộ không rõ thu gọn thành fallback approve/swap ngắn để calldata dài không overflow UI. Chi tiết đầy đủ vẫn ghi vào lifecycle logs.
+
+Lỗi đọc RPC sau khi transaction đã được broadcast không được log hoặc hiển thị thành `swap_failed`. Nếu cả RPC browser và RPC server đều tạm thời chưa xác minh được, modal giữ transaction hash và hướng user kiểm tra Polygonscan thay vì khẳng định transaction đã revert. Lỗi refresh balance sau khi xác nhận cũng chỉ là lỗi đồng bộ UI, không làm đổi swap thành thất bại.
 
 Balance và allowance dùng RPC **browser**. Routing và verification dùng RPC **server**.
 

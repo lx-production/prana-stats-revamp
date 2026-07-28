@@ -46,6 +46,7 @@ function getActionLabel(
   if (status === 'approval-confirming') return 'Confirming Approval';
   if (status === 'swapping') return 'Swap in Wallet';
   if (status === 'swap-confirming') return 'Confirming Swap';
+  if (status === 'confirmation-unavailable') return 'Check on Polygonscan';
   if (isQuoteLoading) return 'Finding Best Route';
   if (isQuoteExpired) return 'Refresh Quote';
   if (needsApproval) return 'Approve & Swap';
@@ -126,6 +127,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   });
 
   const { resetSwapState } = swapState;
+  const isConfirmationUnavailable = swapState.status === 'confirmation-unavailable';
 
   const isBusy = [
     'approving',
@@ -152,11 +154,12 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
       !swapState.hasInsufficientBalance &&
       !isBusy,
   );
-  const isActionDisabled = wallet.isConnected && wallet.isPolygon && (
-    isBusy ||
-    (swapState.isQuoteExpired && quoteState.isRefreshCoolingDown) ||
-    ((!canSwap && !swapState.isQuoteExpired) || !hasAmount)
-  );
+  const isActionDisabled = wallet.isConnected && wallet.isPolygon &&
+    !isConfirmationUnavailable && (
+      isBusy ||
+      (swapState.isQuoteExpired && quoteState.isRefreshCoolingDown) ||
+      ((!canSwap && !swapState.isQuoteExpired) || !hasAmount)
+    );
 
   // Trap Tab inside the dialog and close on Escape.
   // Do not restore focus to SWAP — Esc would leave a :focus-visible ring on the hero CTA.
@@ -228,6 +231,15 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
       if (!wallet.isPolygon) {
         await wallet.ensurePolygon();
+        return;
+      }
+
+      if (isConfirmationUnavailable && swapState.transactionHash) {
+        window.open(
+          `${POLYGONSCAN_TX_BASE_URL}/${swapState.transactionHash}`,
+          '_blank',
+          'noopener,noreferrer',
+        );
         return;
       }
 

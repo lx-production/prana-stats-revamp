@@ -1,13 +1,19 @@
 import { erc20Abi } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
-import { logSwapTransactionEvent } from '../utils/swapTransactionLogs';
-import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
 import { POLYGON_CHAIN_ID } from '../../../constants/network';
+import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
+import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
+import { confirmSwapTransaction } from '../utils/swapTransactionConfirmation';
 import { UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../../constants/swapContracts';
+import { logSwapTransactionEvent, verifySwapTransaction } from '../utils/swapTransactionLogs';
 
-import type { HexAddress, SwapTransactionStatus, UseUniswapSwapInput, UseUniswapSwapResult } from '../../../types/swap.types';
+import type {
+  HexAddress,
+  SwapTransactionStatus,
+  UseUniswapSwapInput,
+  UseUniswapSwapResult,
+} from '../../../types/swap.types';
 
 // Treat the quote as expired a few seconds early so we don't send a tx
 // that fails right as the Uniswap deadline passes.
@@ -205,7 +211,8 @@ export function useUniswapSwap({
 
       setStatus('approved');
       // Re-read allowance so the UI knows approval succeeded.
-      await refreshBalances();
+      // A balance RPC error after a confirmed approval must not relabel it failed.
+      await refreshBalances().catch(() => undefined);
     } catch (err) {
       logSwapTransactionEvent({
         event: 'approval_failed',
@@ -270,22 +277,48 @@ export function useUniswapSwap({
 
       setTransactionHash(swapHash);
       setStatus('swap-confirming');
-      const receipt = await publicClient?.waitForTransactionReceipt({ hash: swapHash });
+      const confirmation = await confirmSwapTransaction({
+        waitForReceipt: async () => {
+          if (!publicClient) {
+            throw new Error('Polygon receipt RPC is unavailable.');
+          }
 
-      if (receipt?.status === 'reverted') {
+          return publicClient.waitForTransactionReceipt({ hash: swapHash });
+        },
+        verifyOnServer: () =>
+          verifySwapTransaction({
+            ownerAddress,
+            transactionHash: swapHash,
+            quote,
+          }),
+      });
+
+      if (confirmation.kind === 'reverted') {
         throw new Error('Swap transaction reverted.');
       }
 
-      logSwapTransactionEvent({
-        event: 'swap_confirmed',
-        quote,
-        ownerAddress,
-        transactionHash: swapHash,
-        receiptStatus: receipt?.status,
-      });
+      if (confirmation.kind === 'confirmation_unavailable') {
+        // The hash exists, but neither RPC could prove its final state yet.
+        // Do not emit swap_failed: an RPC read error is not an on-chain revert.
+        setStatus('confirmation-unavailable');
+        setError('Swap submitted, but confirmation is temporarily unavailable. Check the transaction on Polygonscan.');
+        return;
+      }
+
+      // Server fallback already wrote the verified confirmation log.
+      if (confirmation.source === 'browser') {
+        logSwapTransactionEvent({
+          event: 'swap_confirmed',
+          quote,
+          ownerAddress,
+          transactionHash: swapHash,
+          receiptStatus: 'success',
+        });
+      }
 
       setStatus('success');
-      await refreshBalances();
+      // Balance refresh is post-confirmation UI sync, not transaction execution.
+      await refreshBalances().catch(() => undefined);
     } catch (err) {
       // Only log swap_failed if we already got past approval into the swap tx.
       if (swapStarted) {

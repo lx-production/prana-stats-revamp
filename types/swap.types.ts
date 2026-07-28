@@ -121,6 +121,24 @@ export type SwapTransactionVerificationRequest = {
   quote: SwapQuoteResponse;
 };
 
+export type SwapReceiptResult = {
+  status: 'success' | 'reverted';
+};
+
+export type SwapConfirmationOutcome =
+  | { kind: 'confirmed'; source: 'browser' | 'server' }
+  | { kind: 'reverted' }
+  | {
+      kind: 'confirmation_unavailable';
+      receiptError: unknown;
+      verificationError: unknown;
+    };
+
+export type ConfirmSwapTransactionDependencies = {
+  waitForReceipt: () => Promise<SwapReceiptResult>;
+  verifyOnServer: () => Promise<void>;
+};
+
 export type SwapTransactionStatus =
   | 'idle'
   | 'approving'
@@ -128,6 +146,7 @@ export type SwapTransactionStatus =
   | 'approved'
   | 'swapping'
   | 'swap-confirming'
+  | 'confirmation-unavailable'
   | 'success'
   | 'error';
 

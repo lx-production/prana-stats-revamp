@@ -12,6 +12,26 @@ function getErrorMessage(error: unknown): string | undefined {
   return String(error);
 }
 
+/**
+ * Uses the backend's independent Polygon RPC to prove that a submitted swap
+ * succeeded and matched its signed quote.
+ */
+export async function verifySwapTransaction(
+  payload: SwapTransactionVerificationRequest,
+): Promise<void> {
+  const response = await fetch('/api/swap/verify-transaction', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error('The server could not verify the swap transaction.');
+  }
+}
+
 export function logSwapTransactionEvent(input: {
   event: SwapTransactionLogEvent;
   quote?: SwapQuoteResponse | null;
@@ -32,13 +52,7 @@ export function logSwapTransactionEvent(input: {
       quote: input.quote,
     };
 
-    void fetch('/api/swap/verify-transaction', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }).catch(() => undefined);
+    void verifySwapTransaction(payload).catch(() => undefined);
     return;
   }
 
