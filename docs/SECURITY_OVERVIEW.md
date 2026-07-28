@@ -55,6 +55,17 @@ All swap endpoints are POST-only, JSON body, same-origin checks, body size caps,
 | `POST /api/swap/verify-transaction` | On-chain proof → verified `swap_confirmed` log | 32 KB | 10 / IP / min |
 | `POST /api/staking/quote` | Fully-funded Interest preflight (raw bigint, same block) | 2 KB | 10 / IP / min + 60 global / min |
 
+Bonding reuses the same admission helpers for its POSTs, but does **not** reuse Swap HMAC / verified analytics:
+
+| Endpoint | Purpose | Body cap | Rate limit |
+| --- | --- | --- | --- |
+| `GET /api/bonding/config` | Shared V1/V2 paused/terms/minimum snapshot | n/a | shared GET limiter family |
+| `GET /api/bonding/account` | Wallet balances/allowances/active bonds | n/a | 10 / IP / min + 120 global / min |
+| `POST /api/bonding/quote` | Exact WBTC / target PRANA / exact PRANA quote | 2 KB | 10 / IP / min + 60 global / min |
+| `POST /api/bonding/confirm-transaction` | Browser-RPC fallback receipt check for fixed approve/create/claim actions | 2 KB | separate confirmation bucket |
+
+Bonding confirmation only accepts hashes already broadcast by the user and validates sender/target/selector/args against an internal side/version mapping. It is UX confirmation only — not Swap-style trusted analytics.
+
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 
 Client IP for rate limiting (`server/rateLimit.ts`): `X-Forwarded-For` is only trusted when the direct socket peer is a localhost proxy (`127.0.0.1` / `::1`). The client IP is then taken by counting hops from the right of the header (`TRUSTED_PROXY_HOP_COUNT`; production uses `2` because both VPS and Pi nginx append — see [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Otherwise the socket address is used.

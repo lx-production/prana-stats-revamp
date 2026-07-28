@@ -1,23 +1,24 @@
 # Shared Code và ranh giới feature
 
-Tài liệu này giải thích cách trang Stats chính, Swap modal lazy, và Staking UI
-tái sử dụng utilities, helpers, constants, UI primitives, và hạ tầng Web3.
+Tài liệu này giải thích cách trang Stats chính, Swap modal lazy, Staking UI,
+và Bonding UI tái sử dụng utilities, helpers, constants, UI primitives, và hạ tầng Web3.
 
 Nó mô tả cây mã nguồn hiện tại. Đây là hướng dẫn về ownership và dependency,
-không phải yêu cầu rằng mọi module shared phải được cả ba bề mặt sử dụng.
+không phải yêu cầu rằng mọi module shared phải được cả bốn bề mặt sử dụng.
 
 Tài liệu liên quan:
 
 - [`CACHE_ARCHITECTURE.md`](../CACHE_ARCHITECTURE.md) — cache dữ liệu trên browser và server
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — luồng Swap client/server
 - [`add-staking-ui.md`](../add-staking-ui.md) — Staking UI và luồng giao dịch
+- [`add-bonding-ui.md`](../add-bonding-ui.md) — Bonding UI và luồng giao dịch
 - Bản tiếng Anh: [`SHARED_CODE_ARCHITECTURE.md`](../SHARED_CODE_ARCHITECTURE.md)
 
 ---
 
 ## 1. Thành phần runtime
 
-Ứng dụng có một root shell và hai entry ở cấp trang được lazy-load:
+Ứng dụng có một root shell và ba entry ở cấp trang được lazy-load:
 
 ```mermaid
 flowchart TD
@@ -26,25 +27,28 @@ flowchart TD
   hero["Hero + eager Swap loading/error shell"]
   swap["Lazy SwapEntry"]
   staking["Lazy StakingEntry"]
+  bonding["Lazy BondingEntry"]
   web3["Shared Web3Providers"]
 
   root --> stats
   root --> staking
+  root --> bonding
   stats --> hero
   hero -. "first SWAP request" .-> swap
   swap --> web3
   staking --> web3
+  bonding --> web3
 ```
 
-- `main.tsx` sở hữu routing, site-language provider, các trang legal, và
-  lazy boundary cho `StatsPage` cùng `StakingEntry`.
+- `main.tsx` sở hữu routing, site-language provider, các trang legal/guide, và
+  lazy boundary cho `StatsPage`, `StakingEntry`, và `BondingEntry`.
 - `StatsPage` sở hữu dashboard protocol công khai và hero.
 - Hero import `SwapLazyShell` một cách eager để vẫn hiện được modal accessible
   khi loading hoặc khi chunk lỗi. `SwapEntry` đầy đủ chỉ được import sau khi
   user yêu cầu Swap.
-- `SwapEntry` và `StakingEntry` mỗi cái mount boundary `Web3Providers` dùng chung.
-  Root shell và trang Stats thông thường không mount sẵn Wagmi hay React Query
-  Web3 providers.
+- `SwapEntry`, `StakingEntry`, và `BondingEntry` mỗi cái mount boundary
+  `Web3Providers` dùng chung. Root shell và trang Stats thông thường không
+  mount sẵn Wagmi hay React Query Web3 providers.
 
 Sự phân biệt này quan trọng khi nói về sharing:
 
@@ -62,13 +66,14 @@ Sự phân biệt này quan trọng khi nói về sharing:
 | `utils/` | Helper thuần hoặc tái sử dụng rộng, browser data adapters, và một số helper Stats đã ổn định |
 | `constants/` | Route chuẩn, giá trị network, địa chỉ đã deploy, token metadata, cache policy, và cấu hình feature |
 | `components/` | UI cấp app và component của trang Stats |
-| `components/ui/` | Presentation primitives generic; hiện chủ yếu dùng bởi Staking |
+| `components/ui/` | Presentation primitives generic; dùng bởi Staking và Bonding |
 | `hooks/` | Hook App/Stats và site-language context |
-| `features/web3/` | Khả năng wallet/provider dùng chung, chỉ bởi Swap và Staking |
+| `features/web3/` | Khả năng wallet/provider dùng chung bởi Swap, Staking, và Bonding |
 | `features/swap/` | Swap UI, quote state, transaction state, và formatting/logging riêng của Swap |
 | `features/staking/` | Staking UI, API adapters, math, validation, và transaction flows |
+| `features/bonding/` | Bonding UI, API adapters, math, validation, và transaction flows |
 | `server/helpers/` | Helper chỉ dành cho server: HTTP, cache, logging, address, và static-file |
-| `server/utils/` | Providers chỉ dành cho server cộng hỗ trợ loader cho Stats, Swap, và Staking |
+| `server/utils/` | Providers chỉ dành cho server cộng hỗ trợ loader cho Stats, Swap, Staking, và Bonding |
 
 Một file không cần ba consumer mới được đặt ở vị trí shared. Nó thuộc về đó khi
 hành vi trung lập, ổn định, và hữu ích ngoài một feature. Hành vi đặc thù
@@ -266,6 +271,23 @@ Staking UI chủ yếu dùng:
 Card `StakingStats` trên homepage không phải Staking transaction UI. Nó là
 component Stats dựa trên đường dữ liệu aggregate `/api/staking-stats`.
 
+### Bonding UI
+
+Bonding UI chủ yếu dùng:
+
+- `BondingEntry` và `Web3Providers` dùng chung
+- `useInjectedWallet`, `WalletControl`, `wagmiConfig`, và format địa chỉ ví
+- React Query hooks qua `bondingApi.ts` và `fetchJson` dùng chung
+- `network.ts` cho Polygon, explorer links, và đơn vị thời gian
+- `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
+- `bonds.ts` cho contract Buy/Sell V1/V2 và ABI
+- Math, adapter config/account/quote, map lỗi, và state machine approve/create/claim riêng của Bonding
+- UI language/footer/shader dùng chung cộng `GlassPanel`, `StatusBanner`, và `TxLink`
+- `focusTrap` trong dialog review tạo bond
+
+Các thẻ Bonding Stats trên homepage không phải Bonding transaction UI. Chúng dùng
+`/api/bond-metrics` và các đường dữ liệu Stats liên quan.
+
 ---
 
 ## 8. Quy tắc bảo trì
@@ -277,7 +299,7 @@ component Stats dựa trên đường dữ liệu aggregate `/api/staking-stats`
    nên share khi error behavior, precision, caching, và lifecycle requirements
    cũng giống nhau.
 4. Giữ helper chỉ dành cho server dưới `server/`; client code không được import chúng.
-5. Giữ Web3 providers dưới lazy Swap và Staking entries.
+5. Giữ Web3 providers dưới lazy Swap, Staking, và Bonding entries.
 6. Xóa address literals khỏi consumers khi đã có named constant chuẩn.
 7. Coi thư mục generic là quyền được tái sử dụng module, không phải yêu cầu
    mọi feature phải tiêu thụ nó.

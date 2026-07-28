@@ -42,13 +42,13 @@ Internet
 │  • nginx :80 (default_server)                                    │
 │  • Server name: prana.triethocduongpho.net                       │
 │                                                                  │
-│  /           → proxy to 127.0.0.1:4173 (Node: stats, /stake/, API)│
-│  /bond/      → static files + gzip_static from disk               │
+│  /           → proxy to 127.0.0.1:4173 (Node: stats, /stake/, /bond/, API)│
+│  /bond/      → currently may still be Pi static legacy until cutover     │
 └─────────────────────────────────────────────────────────────────┘
     │
     ▼
   Node server (server/index.ts) on port 4173
-  • Serves HTML, API, and JSON for the main SPA (including lazy /stake/)
+  • Serves HTML, API, and JSON for the main SPA (including lazy /stake/ and /bond/)
   • Serves Vite `dist/` assets; prefers sibling `*.gz` (build level 9)
 ```
 
@@ -102,12 +102,12 @@ So from the internet’s perspective: user hits VPS:443 → nginx on VPS sends t
 
 **Config reference:** `docs/pi-prana.triethocduongpho.net`
 
-**Role:** Run nginx on port 80 and the Node app on 4173; serve the main SPA (stats + lazy `/stake/`) and the legacy bond SPA.
+**Role:** Run nginx on port 80 and the Node app on 4173; serve the main SPA (stats + lazy `/stake/` + lazy `/bond/`). Until the bonding nginx cutover in `docs/add-bonding-ui.md` step 8, public `/bond/` may still be served from the legacy static tree while Node already supports the same path.
 
 - **Port 80:** nginx `default_server` for `prana.triethocduongpho.net`.
-- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the main SPA shell, API, and JSON — including `/stake/` (lazy route; Node redirects bare `/stake` → `/stake/` with `308`). Forwards `Accept-Encoding` so Node can select Vite-precompressed `dist/**/*.gz`.
-- **`/bond/`:** Served from `/var/www/html/prana/bond/` (legacy React SPA, try_files to `index.html`) with `gzip_static on`. No-cache headers for HTML.
-- **`/bond/assets/`:** Static assets from disk with `gzip_static on`, long-lived cache, and CORS. Deploy bond builds with `*.gz` siblings next to hashed JS/CSS so static gzip can win.
+- **`/`:** Proxied to `http://127.0.0.1:4173` (Node server from `server/index.ts`, port from `PORT` env or 4173). Serves the main SPA shell, API, and JSON — including `/stake/` and `/bond/` (lazy routes; Node redirects bare `/stake` → `/stake/` and `/bond` → `/bond/` with `308`). Forwards `Accept-Encoding` so Node can select Vite-precompressed `dist/**/*.gz`.
+- **`/bond/` (pre-cutover):** May still be served from `/var/www/html/prana/bond/` (legacy React SPA, try_files to `index.html`) with `gzip_static on` until nginx cutover. After cutover, `/bond/` is proxied to Node like `/stake/`.
+- **`/bond/assets/` (pre-cutover):** Static assets from disk with `gzip_static on`, long-lived cache, and CORS. Removed after cutover so hashed assets live under the main `/assets/` location.
 
 So the **only** port that needs to be reachable from the tunnel is **80** (nginx). The Node app (4173) is only used by nginx on localhost.
 

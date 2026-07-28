@@ -1,6 +1,6 @@
 # Điều Khoản & Công Bố Rủi Ro
 
-Tài liệu này áp dụng cho website chính thức của PRANA Protocol và các giao diện giao dịch của website, bao gồm **PRANA Swap** và **PRANA Staking** (gọi chung là **Giao diện PRANA**). Vui lòng đọc kỹ trước khi kết nối ví, ký thông điệp, hoặc xác nhận giao dịch.
+Tài liệu này áp dụng cho website chính thức của PRANA Protocol và các giao diện giao dịch của website, bao gồm **PRANA Swap**, **PRANA Staking**, và **PRANA Bonding** (gọi chung là **Giao diện PRANA**). Vui lòng đọc kỹ trước khi kết nối ví, ký thông điệp, hoặc xác nhận giao dịch.
 
 Khi sử dụng một Giao diện PRANA, bạn xác nhận rằng bạn đã hiểu và chấp nhận các điều khoản này cùng các rủi ro được mô tả dưới đây. Nếu bạn không đồng ý, vui lòng không sử dụng Giao diện PRANA.
 
@@ -10,12 +10,12 @@ Giao diện PRANA là các giao diện kỹ thuật, **non-custodial** (không l
 
 Triết Học Đường Phố (**THĐP**):
 
-- không tạo tài khoản giao dịch hoặc staking nội bộ cho bạn
+- không tạo tài khoản giao dịch, staking, hoặc bonding nội bộ cho bạn
 - không kiểm soát ví, private key, hoặc seed phrase của bạn
 - không thể ký giao dịch thay bạn
 - không thể đảo ngược, hủy, hoặc khôi phục giao dịch sau khi giao dịch đã được xác nhận on-chain
 
-Bạn vẫn kiểm soát ví của mình. Tuy nhiên, khi bạn stake PRANA, số dư gốc được stake sẽ được chuyển từ ví của bạn sang Staking Contract và sau đó chịu sự điều chỉnh của contract đó cho đến khi được trả lại theo quy tắc của contract.
+Bạn vẫn kiểm soát ví của mình. Tuy nhiên, khi bạn stake PRANA, số dư gốc được stake sẽ được chuyển từ ví của bạn sang Staking Contract và sau đó chịu sự điều chỉnh của contract đó cho đến khi được trả lại theo quy tắc của contract. Khi bạn tạo bond, token đầu vào (WBTC hoặc PRANA) được chuyển vào Bond contract tương ứng và payout vest theo quy tắc của contract đó cho đến khi được claim.
 
 Smart contract không giống tài khoản ngân hàng hoặc tài khoản lưu ký. Tài sản nằm trong smart contract có thể chịu rủi ro từ contract, blockchain, cấu hình, và vận hành.
 
@@ -23,7 +23,7 @@ Smart contract không giống tài khoản ngân hàng hoặc tài khoản lưu 
 
 Bạn phải có đầy đủ năng lực hành vi theo pháp luật áp dụng và đủ tuổi để tự mình xác lập giao dịch. Bạn không được sử dụng Giao diện PRANA thay mặt người khác khi không có thẩm quyền hợp pháp.
 
-Bạn có trách nhiệm tự xác định xem việc sử dụng PRANA, swap, staking, và Giao diện PRANA có hợp pháp theo quốc tịch, nơi cư trú, và khu vực pháp lý của mình hay không.
+Bạn có trách nhiệm tự xác định xem việc sử dụng PRANA, swap, staking, bonding, và Giao diện PRANA có hợp pháp theo quốc tịch, nơi cư trú, và khu vực pháp lý của mình hay không.
 
 **Không sử dụng Giao diện PRANA** nếu việc sử dụng đó bị hạn chế hoặc bị cấm theo pháp luật áp dụng.
 
@@ -38,7 +38,7 @@ Thông tin này **không phải**:
 - tư vấn thuế
 - khuyến nghị hoặc bảo đảm dành cho bất kỳ cá nhân nào
 
-Bạn tự chịu trách nhiệm quyết định có mua, bán, giữ, swap, stake, claim, hoặc unstake tài sản mã hóa hay không. Bạn nên tham vấn chuyên gia độc lập khi thích hợp.
+Bạn tự chịu trách nhiệm quyết định có mua, bán, giữ, swap, stake, bond, claim, hoặc unstake tài sản mã hóa hay không. Bạn nên tham vấn chuyên gia độc lập khi thích hợp.
 
 ## 4. Rủi ro chung của tài sản mã hóa và blockchain
 
@@ -91,7 +91,37 @@ PRANA Staking tạo và quản lý vị thế stake PRANA qua Staking Contract t
 - Sau đáo hạn, lãi chỉ claim được trong thời gian ân hạn. Unstake trước khi claim có thể mất lãi chưa claim, mặc dù UI đã có cơ chế ngăn chặn chuyện này. Hết ân hạn thì lãi chưa claim không còn claim được; bạn có trách nhiệm theo dõi và claim đúng hạn.
 - Owner có thể pause và đổi cấu hình toàn cục (APR sẵn có, minimum, ân hạn, phạt). APR của vị thế hiện hữu được cố định lúc tạo; pause, khóa quản trị, và quỹ Interest Contract vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
-## 7. Địa chỉ contract cần đối chiếu
+## 7. Tóm tắt PRANA Bonding và rủi ro riêng
+
+PRANA Bonding giúp người dùng tạo và quản lý bond Buy và Sell qua các Bond contract trên Polygon. **Bond mới chỉ được tạo trên V2.** Deployment V1 vẫn có trong giao diện chỉ để xem và claim bond lịch sử.
+
+**Cách tạo một bond**
+
+Giao diện có thể yêu cầu giao dịch Approve ERC-20 cho WBTC (Buy) hoặc PRANA (Sell), rồi một giao dịch tạo bond riêng sau bước review trong app. Một lần bấm nút không mở liên tiếp cả Approve lẫn Create trên ví. Nếu allowance đã đủ cho hành động dự kiến, Approve có thể được bỏ qua.
+
+Khi giao dịch tạo bond thành công:
+
+- số lượng token đầu vào đã chọn được chuyển vào Bond contract tương ứng
+- kỳ hạn, snapshot rate/duration, và payout của bond được ghi nhận on-chain
+- payout vest theo thời gian và phải được claim theo quy tắc contract
+
+**Hai chế độ nhập Buy và thiếu khóa slip on-chain**
+
+Buy Bond hỗ trợ nhập exact WBTC và target PRANA. Exact WBTC dùng đúng số WBTC cố định. Target PRANA dùng đúng target PRANA và **không** nhận tham số `maxWbtcIn` on-chain. Exact WBTC Buy và exact PRANA Sell cũng không có output tối thiểu on-chain (`minPranaOut` / `minWbtcOut`).
+
+Quote hiển thị là ước tính từ state chain công khai và phép toán số nguyên của contract, gồm nhánh phí 1%. Số cuối cùng có thể khác nếu reserves, rate, treasury, hoặc state liên quan đổi giữa lúc quote và lúc thực thi. Giao diện có thể fresh-quote và đặt allowance WBTC làm cap cho Target PRANA Buy, nhưng allowance không đồng nghĩa với tham số `maxWbtcIn` on-chain.
+
+**Claim và vesting**
+
+Payout bond vest từ thời điểm tạo. Claimable dựa trên tổng payout đã vest trừ phần đã claim. `lastClaimTime` chỉ giúp chặn hai claim cùng timestamp; nó không mở lại cửa sổ vesting theo cách lãi Staking có thể tính từ lần claim gần nhất.
+
+Claim có thể thất bại nếu deployment liên quan đang pause, treasury hoặc reserves không đủ, mạng hoặc RPC không sẵn có, hoặc lời gọi contract bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công.
+
+**Kiểm soát cấu hình và quản trị**
+
+Bond contract có các hàm do admin và manager kiểm soát. Trong phạm vi mã đã triển khai, các role đó có thể tạm dừng hành động, cập nhật rate và minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bản ghi bond hiện hữu giữ điều khoản payout lúc tạo; thay đổi cấu hình toàn cục chủ yếu ảnh hưởng hành động sau này và bond mới. Trạng thái pause, mức quỹ, và khóa role vẫn là rủi ro bổ sung.
+
+## 8. Địa chỉ contract cần đối chiếu
 
 Các giao diện chính thức hiện tại xác định các contract trên Polygon sau:
 
@@ -99,65 +129,72 @@ Các giao diện chính thức hiện tại xác định các contract trên Pol
 - **Uniswap SwapRouter02:** [0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45](https://polygonscan.com/address/0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45)
 - **PRANA Staking Contract:** [0x714425A4F4d624ef83fEff810a0EEC30B0847868](https://polygonscan.com/address/0x714425a4f4d624ef83feff810a0eec30b0847868)
 - **PRANA Interest Contract:** [0x1DE1E9BEF781fb3440C2c22E8ca1bF61BD26f69d](https://polygonscan.com/address/0x1de1e9bef781fb3440c2c22e8ca1bf61bd26f69d)
+- **Buy Bond V1:** [0xA3adf8952982Eac60C0E43d6F93C66E7363c6Fe2](https://polygonscan.com/address/0xa3adf8952982eac60c0e43d6f93c66e7363c6fe2)
+- **Buy Bond V2:** [0x431030E3A0703f0914bE26026ffDaD693F3a16cf](https://polygonscan.com/address/0x431030e3a0703f0914be26026ffdad693f3a16cf)
+- **Sell Bond V1:** [0x2A48215e134a9382e1eBAf96F2Fa47Ca1c2fa092](https://polygonscan.com/address/0x2a48215e134a9382e1ebaf96f2fa47ca1c2fa092)
+- **Sell Bond V2:** [0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71](https://polygonscan.com/address/0xa6aa0662f5a37ec6e86b3390c46b6eba21a31f71)
 
 Với approve ERC-20 của Swap, trường `to` của giao dịch có thể là contract token; **spender** phải là SwapRouter02. Với chính giao dịch Swap, trường `to` phải là SwapRouter02.
 
 Với Permit PRANA dùng cho Staking, token được xác minh phải là token PRANA, spender phải là Staking Contract, và value phải là số lượng stake dự định. Các giao dịch Stake, Claim, Unstake, hoặc Early Unstake tiếp theo phải tương tác với Staking Contract.
 
+Với Approve của Bonding, spender phải là đúng Buy hoặc Sell Bond V2 cho tạo bond mới (hoặc đúng deployment V1/V2 khi claim). Giao dịch tạo và claim phải tương tác với đúng Bond contract đã được map.
+
 Luôn đối chiếu địa chỉ từng ký tự. Nếu ví hiển thị chain, token, spender, contract, số lượng, hoặc hàm bất thường, hãy dừng lại và từ chối yêu cầu.
 
-## 8. Trách nhiệm của người dùng
+## 9. Trách nhiệm của người dùng
 
 Trước khi ký hoặc gửi bất kỳ hành động nào, bạn có trách nhiệm:
 
 - xác nhận bạn đang ở đúng tên miền website chính thức
 - dùng Polygon mainnet và ví tương thích
 - đối chiếu contract, token, spender, hàm, số lượng, và người nhận liên quan
-- xem lại gas, mức tối thiểu nhận được, price impact, thời hạn, APR, đáo hạn, thời gian ân hạn, và thông tin phạt áp dụng cho hành động đó
-- giữ đủ POL cho mọi giao dịch cần thiết, gồm cả claim hoặc unstake sau này
+- xem lại gas, mức tối thiểu nhận được, price impact, thời hạn, APR, kỳ hạn bond, đáo hạn, thời gian ân hạn, và thông tin phạt áp dụng cho hành động đó
+- giữ đủ POL cho mọi giao dịch cần thiết, gồm cả claim, unstake, hoặc claim bond sau này
 - bảo vệ thiết bị, ví, private key, seed phrase, và phương thức khôi phục
 - tự kiểm tra trạng thái on-chain nếu giao diện bị chậm hoặc không sẵn có
 - hiểu hệ quả thuế và pháp lý của các giao dịch của bạn
 
 Không bao giờ chia sẻ seed phrase hoặc private key với THĐP hoặc bất kỳ ai tự nhận hỗ trợ PRANA. THĐP không cần cả hai để hỗ trợ một giao dịch công khai.
 
-## 9. Dịch vụ bên thứ ba và dữ liệu blockchain công khai
+## 10. Dịch vụ bên thứ ba và dữ liệu blockchain công khai
 
 Giao diện PRANA phụ thuộc vào Polygon, Uniswap, ví, nhà cung cấp RPC, nhà cung cấp hosting, và các hệ thống bên thứ ba khác. THĐP không sở hữu hoặc kiểm soát toàn bộ các hệ thống này và không chịu trách nhiệm về khả năng sẵn có, bảo mật, độ chính xác, hoặc điều khoản của chúng.
 
 Giao dịch blockchain và hoạt động ví là công khai. Địa chỉ ví, số lượng token, tương tác contract, mã băm giao dịch, và timestamp có thể hiển thị vĩnh viễn và có thể bị bên thứ ba phân tích hoặc liên kết với thông tin khác.
 
-## 10. Quyền riêng tư
+## 11. Quyền riêng tư
 
-Dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website hoặc dùng Giao diện PRANA, bao gồm log vận hành và hạ tầng, địa chỉ ví có trong request, dữ liệu quote và giao dịch Swap, và dữ liệu đọc tài khoản Staking.
+Dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website hoặc dùng Giao diện PRANA, bao gồm log vận hành và hạ tầng, địa chỉ ví có trong request, dữ liệu quote và giao dịch Swap, dữ liệu đọc tài khoản Staking, và các request tài khoản, quote, cùng xác nhận giao dịch của Bonding.
 
 Xem chi tiết tại [Chính sách quyền riêng tư](/privacy).
 
-## 11. Không bảo đảm uptime hoặc tính năng liên tục
+## 12. Không bảo đảm uptime hoặc tính năng liên tục
 
 Website và Giao diện PRANA được cung cấp trên cơ sở “nguyên trạng” và “tùy khả năng sẵn có”. THĐP không bảo đảm hoạt động liên tục, dữ liệu không lỗi, tương thích với mọi ví hoặc thiết bị, hỗ trợ liên tục cho bất kỳ tài sản hoặc tính năng nào, hoặc truy cập không gián đoạn tới bất kỳ smart contract nào.
 
 Một giao diện có thể được thay đổi, tạm dừng, hạn chế, hoặc ngừng cung cấp. Việc ngừng website không xóa các smart contract công khai hoặc bản ghi blockchain, nhưng có thể yêu cầu bạn dùng công cụ tương thích khác để tương tác với chúng.
 
-## 12. Giới hạn trách nhiệm
+## 13. Giới hạn trách nhiệm
 
 Trong phạm vi tối đa được pháp luật áp dụng cho phép, THĐP và các bên liên quan không chịu trách nhiệm đối với tổn thất hoặc thiệt hại phát sinh từ việc sử dụng, hoặc không thể sử dụng, website hoặc Giao diện PRANA, bao gồm tổn thất do:
 
 - thay đổi giá, slippage, thiếu thanh khoản, hoặc giao dịch thất bại
 - smart contract, token, ví, chữ ký, approve, hoặc lỗi thao tác của người dùng
 - khóa staking, phạt, hết thời hạn claim, hoặc lãi không sẵn có
+- lịch vesting bonding, deployment bị pause, thiếu reserve hoặc treasury, hoặc quote khác lúc thực thi
 - sự cố của Polygon, Uniswap, RPC, hosting, hoặc bên thứ ba khác
 - dữ liệu giao diện không chính xác, chậm, đã cache, hoặc không sẵn có
 - phishing, malware, thiết bị bị xâm nhập, hoặc truy cập ví trái phép
 
 Mục này không loại trừ hoặc hạn chế những trách nhiệm mà pháp luật áp dụng không cho phép loại trừ hoặc hạn chế.
 
-## 13. Thay đổi điều khoản
+## 14. Thay đổi điều khoản
 
 THĐP có thể cập nhật tài liệu này để phản ánh thay đổi về sản phẩm, kỹ thuật, vận hành, hoặc pháp lý. Phiên bản đăng trên website chính thức tại `/terms` là phiên bản hiện hành.
 
 Việc tiếp tục sử dụng website hoặc Giao diện PRANA sau khi cập nhật đồng nghĩa với việc bạn chấp nhận phiên bản đã sửa đổi, trong phạm vi pháp luật áp dụng cho phép.
 
-## 14. Liên hệ
+## 15. Liên hệ
 
 Câu hỏi về các điều khoản này có thể gửi tới [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).

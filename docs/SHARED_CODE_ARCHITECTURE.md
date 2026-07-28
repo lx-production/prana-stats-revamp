@@ -1,23 +1,24 @@
 # Shared Code and Feature Boundaries
 
-This document explains how the main Stats page, the lazy Swap modal, and the
-Staking UI reuse utilities, helpers, constants, UI primitives, and Web3
-infrastructure.
+This document explains how the main Stats page, the lazy Swap modal, the
+Staking UI, and the Bonding UI reuse utilities, helpers, constants, UI
+primitives, and Web3 infrastructure.
 
 It describes the current source tree. It is an ownership and dependency guide,
-not a requirement that every shared module must be used by all three surfaces.
+not a requirement that every shared module must be used by all four surfaces.
 
 Related documents:
 
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — browser and server data caches
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — Swap client/server flow
 - [`add-staking-ui.md`](./add-staking-ui.md) — Staking UI and transaction flow
+- [`add-bonding-ui.md`](./add-bonding-ui.md) — Bonding UI and transaction flow
 
 ---
 
 ## 1. Runtime composition
 
-The application has one root shell and two lazy page-level entries:
+The application has one root shell and three lazy page-level entries:
 
 ```mermaid
 flowchart TD
@@ -26,25 +27,28 @@ flowchart TD
   hero["Hero + eager Swap loading/error shell"]
   swap["Lazy SwapEntry"]
   staking["Lazy StakingEntry"]
+  bonding["Lazy BondingEntry"]
   web3["Shared Web3Providers"]
 
   root --> stats
   root --> staking
+  root --> bonding
   stats --> hero
   hero -. "first SWAP request" .-> swap
   swap --> web3
   staking --> web3
+  bonding --> web3
 ```
 
-- `main.tsx` owns routing, the site-language provider, the legal pages, and the
-  lazy boundary for `StatsPage` and `StakingEntry`.
+- `main.tsx` owns routing, the site-language provider, the legal/guide pages, and the
+  lazy boundary for `StatsPage`, `StakingEntry`, and `BondingEntry`.
 - `StatsPage` owns the public protocol dashboard and hero.
 - The hero imports `SwapLazyShell` eagerly so loading and chunk errors can still
   be shown as an accessible modal. The full `SwapEntry` is imported only after
   the user requests Swap.
-- `SwapEntry` and `StakingEntry` each mount the shared `Web3Providers` boundary.
-  The root shell and normal Stats page do not eagerly mount Wagmi or React Query
-  Web3 providers.
+- `SwapEntry`, `StakingEntry`, and `BondingEntry` each mount the shared
+  `Web3Providers` boundary. The root shell and normal Stats page do not eagerly
+  mount Wagmi or React Query Web3 providers.
 
 This distinction matters when describing sharing:
 
@@ -62,13 +66,14 @@ This distinction matters when describing sharing:
 | `utils/` | Pure or broadly reusable helpers, browser data adapters, and some established Stats helpers |
 | `constants/` | Canonical routes, network values, deployed addresses, token metadata, cache policy, and feature configuration |
 | `components/` | App-level UI and Stats page components |
-| `components/ui/` | Generic presentation primitives; currently used mainly by Staking |
+| `components/ui/` | Generic presentation primitives; used by Staking and Bonding |
 | `hooks/` | App/Stats hooks and the site-language context |
-| `features/web3/` | Shared wallet/provider capability used only by Swap and Staking |
+| `features/web3/` | Shared wallet/provider capability used by Swap, Staking, and Bonding |
 | `features/swap/` | Swap UI, quote state, transaction state, and Swap-specific formatting/logging |
 | `features/staking/` | Staking UI, API adapters, math, validation, and transaction flows |
+| `features/bonding/` | Bonding UI, API adapters, math, validation, and transaction flows |
 | `server/helpers/` | Server-only HTTP, cache, logging, address, and static-file helpers |
-| `server/utils/` | Server-only providers plus Stats, Swap, and Staking loader support |
+| `server/utils/` | Server-only providers plus Stats, Swap, Staking, and Bonding loader support |
 
 A file does not need three consumers to belong in a shared location. It belongs
 there when its behavior is neutral, stable, and useful outside one feature.
@@ -269,6 +274,24 @@ The Staking UI primarily uses:
 The homepage `StakingStats` card is not the Staking transaction UI. It is a
 Stats component backed by the aggregate `/api/staking-stats` data path.
 
+### Bonding UI
+
+The Bonding UI primarily uses:
+
+- `BondingEntry` and the shared `Web3Providers`
+- `useInjectedWallet`, `WalletControl`, `wagmiConfig`, and wallet address formatting
+- React Query hooks backed by `bondingApi.ts` and shared `fetchJson`
+- `network.ts` for Polygon, explorer links, and time units
+- `sharedContracts.ts` for PRANA/WBTC decimals and addresses
+- `bonds.ts` for deployed Buy/Sell V1/V2 contracts and ABIs
+- Bonding-local math, config/account/quote adapters, error mapping, and
+  approve/create/claim transaction state machines
+- shared language/footer/shader UI plus `GlassPanel`, `StatusBanner`, and `TxLink`
+- `focusTrap` in the create-bond review dialog
+
+The homepage Bonding Stats cards are not the Bonding transaction UI. They use
+aggregate `/api/bond-metrics` and related Stats data paths.
+
 ---
 
 ## 8. Maintenance rules
@@ -280,7 +303,7 @@ Stats component backed by the aggregate `/api/staking-stats` data path.
    be shared when error behavior, precision, caching, and lifecycle requirements
    are also the same.
 4. Keep server-only helpers under `server/`; client code must not import them.
-5. Keep Web3 providers below the lazy Swap and Staking entries.
+5. Keep Web3 providers below the lazy Swap, Staking, and Bonding entries.
 6. Remove address literals from consumers when a canonical named constant
    exists.
 7. Treat a generic directory as permission to reuse a module, not a requirement

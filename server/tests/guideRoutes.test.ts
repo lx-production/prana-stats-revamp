@@ -8,13 +8,19 @@ import { createStaticRequestHandler } from '../staticRoutes.ts';
 import {
   GUIDE_SWAP_PATH,
   GUIDE_STAKING_PATH,
+  GUIDE_BONDING_PATH,
   isGuideSwapPath,
   isGuideStakingPath,
+  isGuideBondingPath,
   GUIDE_SWAP_CANONICAL_PATH,
   GUIDE_STAKING_CANONICAL_PATH,
+  GUIDE_BONDING_CANONICAL_PATH,
   GUIDE_STAKING_CONTRACTS_PATH,
+  GUIDE_BONDING_CONTRACTS_PATH,
   isGuideStakingContractsPath,
+  isGuideBondingContractsPath,
   GUIDE_STAKING_CONTRACTS_CANONICAL_PATH,
+  GUIDE_BONDING_CONTRACTS_CANONICAL_PATH,
 } from '../../constants/appRoutes.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -108,6 +114,29 @@ test('isGuideStakingContractsPath matches /guide/staking-contracts and nested pa
   assert.equal(isGuideStakingContractsPath('/stake/'), false);
 });
 
+test('isGuideBondingPath matches /guide/bonding and /guide/bonding/*', () => {
+  assert.equal(isGuideBondingPath(GUIDE_BONDING_PATH), true);
+  assert.equal(isGuideBondingPath(GUIDE_BONDING_CANONICAL_PATH), true);
+  assert.equal(isGuideBondingPath('/guide/bonding/section'), true);
+  assert.equal(isGuideBondingPath('/guide/staking/'), false);
+  assert.equal(isGuideBondingPath('/bond/'), false);
+  assert.equal(isGuideBondingPath('/guide/bonding-contracts/'), false);
+});
+
+test('isGuideBondingContractsPath matches /guide/bonding-contracts and nested paths', () => {
+  assert.equal(isGuideBondingContractsPath(GUIDE_BONDING_CONTRACTS_PATH), true);
+  assert.equal(
+    isGuideBondingContractsPath(GUIDE_BONDING_CONTRACTS_CANONICAL_PATH),
+    true,
+  );
+  assert.equal(
+    isGuideBondingContractsPath('/guide/bonding-contracts/section'),
+    true,
+  );
+  assert.equal(isGuideBondingContractsPath('/guide/bonding/'), false);
+  assert.equal(isGuideBondingContractsPath('/bond/'), false);
+});
+
 test('GET /guide/swap redirects 308 to canonical path', async () => {
   const res = mockResponse();
   const handled = await handleStaticRequest(
@@ -184,6 +213,63 @@ test('GET /guide/staking-contracts/ serves SPA shell HTML', async () => {
     mockRequest(),
     res,
     new URL(`http://127.0.0.1${GUIDE_STAKING_CONTRACTS_CANONICAL_PATH}`),
+  );
+
+  assert.equal(handled, true);
+  assert.equal(res.statusCode, 200);
+  assert.match(String(res.headers.get('Content-Type') ?? ''), /text\/html/);
+  assert.match(bodyText(res), /<div id="root"><\/div>/);
+});
+
+test('GET /guide/bonding redirects 308 and preserves query string', async () => {
+  const res = mockResponse();
+  const handled = await handleStaticRequest(
+    mockRequest(),
+    res,
+    new URL('http://127.0.0.1/guide/bonding?from=footer'),
+  );
+
+  assert.equal(handled, true);
+  assert.equal(res.statusCode, 308);
+  assert.equal(
+    res.headers.get('Location'),
+    `${GUIDE_BONDING_CANONICAL_PATH}?from=footer`,
+  );
+});
+
+test('GET /guide/bonding/ serves SPA shell HTML', async () => {
+  const res = mockResponse();
+  const handled = await handleStaticRequest(
+    mockRequest(),
+    res,
+    new URL(`http://127.0.0.1${GUIDE_BONDING_CANONICAL_PATH}`),
+  );
+
+  assert.equal(handled, true);
+  assert.equal(res.statusCode, 200);
+  assert.match(String(res.headers.get('Content-Type') ?? ''), /text\/html/);
+  assert.match(bodyText(res), /<div id="root"><\/div>/);
+});
+
+test('GET /guide/bonding-contracts redirects 308 to canonical path', async () => {
+  const res = mockResponse();
+  const handled = await handleStaticRequest(
+    mockRequest(),
+    res,
+    new URL('http://127.0.0.1/guide/bonding-contracts'),
+  );
+
+  assert.equal(handled, true);
+  assert.equal(res.statusCode, 308);
+  assert.equal(res.headers.get('Location'), GUIDE_BONDING_CONTRACTS_CANONICAL_PATH);
+});
+
+test('GET /guide/bonding-contracts/ serves SPA shell HTML', async () => {
+  const res = mockResponse();
+  const handled = await handleStaticRequest(
+    mockRequest(),
+    res,
+    new URL(`http://127.0.0.1${GUIDE_BONDING_CONTRACTS_CANONICAL_PATH}`),
   );
 
   assert.equal(handled, true);

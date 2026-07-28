@@ -13,7 +13,7 @@ type Web3ProvidersProps = {
 };
 
 /**
- * Shared Wagmi + React Query boundary for Swap and staking.
+ * Shared Wagmi + React Query boundary for Swap, staking, and bonding.
  * Order: WagmiProvider → QueryClientProvider → children (Wagmi 3.x needs both).
  */
 export function Web3Providers({ children }: Web3ProvidersProps) {

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-This Privacy Policy explains how technical data may be processed when you visit the official PRANA Protocol website or use **PRANA Swap** or **PRANA Staking** (together, the **PRANA Interfaces**). Read it together with the [Terms & Risk Disclosure](/terms).
+This Privacy Policy explains how technical data may be processed when you visit the official PRANA Protocol website or use **PRANA Swap**, **PRANA Staking**, or **PRANA Bonding** (together, the **PRANA Interfaces**). Read it together with the [Terms & Risk Disclosure](/terms).
 
 ## 1. Scope and operator
 
@@ -66,22 +66,36 @@ In the current version, the Staking UI does not send a separate staking lifecycl
 
 Those wallet and blockchain providers may independently receive or process your IP address, wallet address, signed request, transaction data, and other technical information under their own policies.
 
-## 6. Wallet and device data
+## 6. Data processed by PRANA Bonding
+
+After you connect a wallet, the Bonding UI may request wallet-specific and quote-related data from the THĐP application server:
+
+- **Account snapshot** (`GET /api/bonding/account`) — your public wallet address is used to read public Polygon balances, allowances, and active Buy/Sell bond records (V1 and V2), plus block metadata
+- **Quote** (`POST /api/bonding/quote`) — mode, raw amount, and term id needed to compute an estimated WBTC/PRANA quote from public contract and pool state
+- **Transaction confirmation fallback** (`POST /api/bonding/confirm-transaction`) — a broadcast transaction hash plus a minimal action snapshot so the server can read the public receipt through its own Polygon RPC when the browser RPC cannot
+
+Account, quote, and confirmation requests are rate-limited using the client IP address. Account responses are not shared across users (`private, no-store`). The wallet address can appear in request URLs or bodies and therefore in application, reverse-proxy, hosting, or access logs, depending on infrastructure configuration.
+
+In the current version, the Bonding UI does not send a separate bonding lifecycle telemetry feed beyond these operational requests. Approve, create-bond, and claim transactions are submitted from your browser or wallet to Polygon infrastructure.
+
+Those wallet and blockchain providers may independently receive or process your IP address, wallet address, signed request, transaction data, and other technical information under their own policies.
+
+## 7. Wallet and device data
 
 To display and perform requested actions, the browser interface may temporarily process:
 
 - connected wallet address
 - current chain and connection state
-- balances, allowances, nonces, stakes, and public transaction data
+- balances, allowances, nonces, stakes, bonds, and public transaction data
 - quote and form inputs
-- Permit signature components and pending transaction hashes
+- Permit signature components, approval amounts, and pending transaction hashes
 - wallet or RPC errors
 
 This data may exist in browser memory while you use the interface. Your wallet extension or application may store its own connection or activity data independently.
 
 THĐP does not ask for, receive, or store your seed phrase or private key through the PRANA Interfaces. Never enter either one into the website or send it to anyone claiming to provide PRANA support.
 
-## 7. What is not used in the current version
+## 8. What is not used in the current version
 
 The current website and PRANA Interfaces do not use:
 
@@ -91,13 +105,13 @@ The current website and PRANA Interfaces do not use:
 - internal user accounts
 - custodial wallet balances maintained by THĐP
 
-This does not mean that no technical or public blockchain data is processed. Sections 2 through 6 describe the data flows that do exist.
+This does not mean that no technical or public blockchain data is processed. Sections 2 through 7 describe the data flows that do exist.
 
-## 8. Purposes of processing
+## 9. Purposes of processing
 
 THĐP may process the data described above to:
 
-- deliver website pages, Swap quotes, and Staking account data requested by you
+- deliver website pages, Swap quotes, Staking account data, and Bonding account/quote/confirmation data requested by you
 - construct, validate, and verify technical transaction flows
 - maintain security, rate-limit requests, and prevent abuse
 - detect, diagnose, and fix errors or availability problems
@@ -110,7 +124,7 @@ THĐP does not use this data to take custody of your assets or make automated in
 
 Where applicable law requires a legal basis, processing may be based on providing the service you request, THĐP’s legitimate interests in operating and securing the service, compliance with legal obligations, or consent where consent is required.
 
-## 9. Sharing and service providers
+## 10. Sharing and service providers
 
 Data may be disclosed or made available to:
 
@@ -125,7 +139,7 @@ Data may be disclosed or made available to:
 
 These recipients may process data under their own terms and privacy policies. Public on-chain data is available to anyone without THĐP selecting the recipient.
 
-## 10. Retention
+## 11. Retention
 
 Operational, security, and infrastructure logs are retained only for as long as reasonably necessary for the purposes described in this policy, taking into account security needs, troubleshooting, backup and log-rotation schedules, legal obligations, and the need to resolve disputes.
 
@@ -133,13 +147,13 @@ Different infrastructure providers may apply different retention periods under t
 
 When data is no longer reasonably required, THĐP will delete, overwrite, or de-identify it where reasonably practicable and subject to applicable law.
 
-## 11. Security
+## 12. Security
 
 THĐP uses reasonable technical and organizational measures intended to protect application data against unauthorized access, loss, misuse, or alteration. No internet service, wallet, RPC, or blockchain system is completely secure, and THĐP cannot guarantee absolute security.
 
 You are responsible for securing your wallet, device, private keys, seed phrase, and recovery methods.
 
-## 12. Your choices and rights
+## 13. Your choices and rights
 
 You can:
 
@@ -155,15 +169,15 @@ To make a request, email [thdp@triethocduongpho.net](mailto:thdp@triethocduongph
 
 THĐP cannot delete or change data recorded on Polygon or held independently by third parties.
 
-## 13. International processing
+## 14. International processing
 
 Internet, hosting, wallet, RPC, and blockchain infrastructure may operate in multiple countries. Your technical or public blockchain data may therefore be processed outside the country where you live. Where required, THĐP will apply measures required by applicable law for cross-border processing.
 
-## 14. Children
+## 15. Children
 
 The PRANA Interfaces are not directed to children or to persons who lack legal capacity to conduct the relevant transactions. If you believe a child has provided personal data to THĐP through the website, contact [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).
 
-## 15. Changes to this policy
+## 16. Changes to this policy
 
 THĐP may update this policy when the website, data flows, service providers, or legal requirements change. The version published at `/privacy` is the current version.
 

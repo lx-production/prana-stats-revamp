@@ -45,7 +45,7 @@ async function getInjectedConnector(connectors: readonly Connector[]): Promise<C
   return null;
 }
 
-/** Shared injected-wallet hook for Swap and staking (must run under Web3Providers). */
+/** Shared injected-wallet hook for Swap, staking, and bonding (must run under Web3Providers). */
 export function useInjectedWallet(): UseInjectedWalletResult {
   const connect = useConnect();
   const disconnect = useDisconnect();

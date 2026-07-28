@@ -194,7 +194,7 @@
     - Claim V1/V2 phải chọn address/ABI từ mapping nội bộ; payload API giả mạo address không ảnh hưởng write target.
     - Paused deployment chỉ khóa đúng bond thuộc deployment đó.
     - Concurrency test: một claim pending khóa create/approve và các claim khác; resume receipt không broadcast lại.
-7. **UI, accessibility và tài liệu**
+7. ✅ **UI, accessibility và tài liệu**
   - Dùng dark shell, shader brightness thấp, `GlassPanel`, `StatusBanner`, gold CTA, Lucide và `AppFooter`; không thêm MUI hoặc PropTypes.
   - Xác nhận shared wallet control / `TxLink` đã được cả Staking và Bonding dùng sau refactor ở Bước 4; không còn import ngược từ Bonding vào `features/staking/`.
   - Thêm VI/EN copy, metadata, Polygonscan links cho bốn deployment, responsive mobile và `prefers-reduced-motion`.

@@ -44,13 +44,13 @@ Internet
 │  • nginx :80 (default_server)                                    │
 │  • Server name: prana.triethocduongpho.net                       │
 │                                                                  │
-│  /           → proxy tới 127.0.0.1:4173 (Node: stats, /stake/, API) │
-│  /bond/      → static + gzip_static từ disk                      │
+│  /           → proxy tới 127.0.0.1:4173 (Node: stats, /stake/, /bond/, API) │
+│  /bond/      → trước cutover có thể vẫn là static legacy trên Pi           │
 └─────────────────────────────────────────────────────────────────┘
     │
     ▼
   Node server (server/index.ts) trên port 4173
-  • Phục vụ HTML, API và JSON cho SPA chính (gồm lazy /stake/)
+  • Phục vụ HTML, API và JSON cho SPA chính (gồm lazy /stake/ và /bond/)
   • Phục vụ asset Vite `dist/`; ưu tiên sibling `*.gz` (build level 9)
 ```
 
@@ -104,12 +104,12 @@ Từ góc nhìn internet: user hit VPS:443 → nginx trên VPS gửi tới 127.0
 
 **Tham chiếu cấu hình:** `docs/pi-prana.triethocduongpho.net`
 
-**Vai trò:** Chạy nginx trên port 80 và Node app trên 4173; phục vụ SPA chính (stats + lazy `/stake/`) và SPA bond cũ.
+**Vai trò:** Chạy nginx trên port 80 và Node app trên 4173; phục vụ SPA chính (stats + lazy `/stake/` + lazy `/bond/`). Trước cutover nginx ở `docs/add-bonding-ui.md` bước 8, public `/bond/` có thể vẫn phục vụ từ cây static legacy trong khi Node đã hỗ trợ cùng path.
 
 - **Port 80:** nginx `default_server` cho `prana.triethocduongpho.net`.
-- **`/`:** Proxy tới `http://127.0.0.1:4173` (Node server từ `server/index.ts`, port lấy từ env `PORT` hoặc 4173). Phục vụ SPA shell, API và JSON — gồm `/stake/` (lazy route; Node redirect bare `/stake` → `/stake/` với `308`). Forward `Accept-Encoding` để Node chọn `dist/**/*.gz` đã precompress bằng Vite.
-- **`/bond/`:** Phục vụ từ `/var/www/html/prana/bond/` (React SPA cũ, try_files về `index.html`) với `gzip_static on`. Header no-cache cho HTML.
-- **`/bond/assets/`:** Static asset từ disk với `gzip_static on`, cache dài hạn và CORS. Deploy bond kèm sibling `*.gz` cạnh JS/CSS hashed để static gzip có hiệu lực.
+- **`/`:** Proxy tới `http://127.0.0.1:4173` (Node server từ `server/index.ts`, port lấy từ env `PORT` hoặc 4173). Phục vụ SPA shell, API và JSON — gồm `/stake/` và `/bond/` (lazy route; Node redirect bare `/stake` → `/stake/` và `/bond` → `/bond/` với `308`). Forward `Accept-Encoding` để Node chọn `dist/**/*.gz` đã precompress bằng Vite.
+- **`/bond/` (trước cutover):** Có thể vẫn phục vụ từ `/var/www/html/prana/bond/` (React SPA cũ, try_files về `index.html`) với `gzip_static on` cho đến khi cutover nginx. Sau cutover, `/bond/` proxy tới Node giống `/stake/`.
+- **`/bond/assets/` (trước cutover):** Static asset từ disk với `gzip_static on`, cache dài hạn và CORS. Gỡ sau cutover để asset hashed nằm dưới location `/assets/` chính.
 
 Vậy **chỉ** port **80** (nginx) cần reach được từ tunnel. Node app (4173) chỉ được nginx trên localhost dùng.
 

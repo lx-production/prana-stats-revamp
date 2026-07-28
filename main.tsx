@@ -7,7 +7,9 @@ import SwapGuidePage from "./components/SwapGuidePage";
 import TermsRiskPage from "./components/TermsRiskPage";
 import LanguageToggle from "./components/LanguageToggle";
 import StakingGuidePage from "./components/StakingGuidePage";
+import BondingGuidePage from "./components/BondingGuidePage";
 import ContractsGuidePage from "./components/ContractsGuidePage";
+import BondingContractsGuidePage from "./components/BondingContractsGuidePage";
 import { useAppPathname } from "./hooks/useAppPathname";
 import FlutterShaderBackground from "./flutterShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
@@ -19,7 +21,9 @@ import {
   isGuideSwapPath,
   isTermsRiskPath,
   isGuideStakingPath,
+  isGuideBondingPath,
   isGuideStakingContractsPath,
+  isGuideBondingContractsPath,
 } from "./constants/appRoutes";
 
 const StatsPage = lazy(() => import("./pages/StatsPage"));
@@ -75,6 +79,16 @@ function App() {
       ) : isGuideStakingContractsPath(pathname) ? (
         <>
           <ContractsGuidePage />
+          <AppFooter />
+        </>
+      ) : isGuideBondingPath(pathname) ? (
+        <>
+          <BondingGuidePage />
+          <AppFooter />
+        </>
+      ) : isGuideBondingContractsPath(pathname) ? (
+        <>
+          <BondingContractsGuidePage />
           <AppFooter />
         </>
       ) : (

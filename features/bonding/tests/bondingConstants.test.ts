@@ -27,63 +27,38 @@ import {
 } from '../../../constants/sharedContracts.ts';
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, '../../..');
-const LEGACY_CONSTANTS_DIR = path.join(PROJECT_ROOT, 'bonding-legacy-ui', 'constants');
 
-/** Extract `export const NAME = '0x…'` (or number) from a legacy JS constants file. */
-async function readLegacyConst(
-  filename: string,
-  exportName: string,
-): Promise<string> {
-  const source = await fs.readFile(path.join(LEGACY_CONSTANTS_DIR, filename), 'utf8');
-  const match = source.match(
-    new RegExp(`export\\s+const\\s+${exportName}\\s*=\\s*['"]?([^'";\\s]+)['"]?`),
-  );
-  assert.ok(match, `expected ${exportName} in ${filename}`);
-  return match[1];
-}
+/**
+ * Frozen Polygon deployment fixtures formerly compared against bonding-legacy-ui.
+ * Keep these as regression anchors after legacy deletion.
+ */
+const LEGACY_DEPLOYMENT_FIXTURES = {
+  buyV1: '0xA3adf8952982Eac60C0E43d6F93C66E7363c6Fe2',
+  buyV2: '0x431030E3A0703f0914bE26026ffDaD693F3a16cf',
+  sellV1: '0x2A48215e134a9382e1eBAf96F2Fa47Ca1c2fa092',
+  sellV2: '0xA6aa0662f5A37ec6E86b3390C46B6eba21a31f71',
+  wbtc: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
+  prana: '0x928277e774F34272717EADFafC3fd802dAfBD0F5',
+  pranaDecimals: 9,
+  wbtcDecimals: 8,
+  pool: '0xf9A9Fce44AC9E68D7e0B87516fE21536446B1AED',
+} as const;
 
-test('characterization: four deployments match legacy bonding-ui constants', async () => {
-  assert.equal(
-    BUY_BOND_ADDRESS_V1,
-    await readLegacyConst('buyBondContractV1.js', 'BUY_BOND_ADDRESS'),
-  );
-  assert.equal(
-    BUY_BOND_ADDRESS_V2,
-    await readLegacyConst('buyBondContractV2.js', 'BUY_BOND_ADDRESS'),
-  );
-  assert.equal(
-    SELL_BOND_ADDRESS_V1,
-    await readLegacyConst('sellBondContractV1.js', 'SELL_BOND_ADDRESS'),
-  );
-  assert.equal(
-    SELL_BOND_ADDRESS_V2,
-    await readLegacyConst('sellBondContractV2.js', 'SELL_BOND_ADDRESS'),
-  );
+test('characterization: four deployments match frozen legacy fixtures', () => {
+  assert.equal(BUY_BOND_ADDRESS_V1, LEGACY_DEPLOYMENT_FIXTURES.buyV1);
+  assert.equal(BUY_BOND_ADDRESS_V2, LEGACY_DEPLOYMENT_FIXTURES.buyV2);
+  assert.equal(SELL_BOND_ADDRESS_V1, LEGACY_DEPLOYMENT_FIXTURES.sellV1);
+  assert.equal(SELL_BOND_ADDRESS_V2, LEGACY_DEPLOYMENT_FIXTURES.sellV2);
   assert.equal(BUY_BOND_ADDRESS, BUY_BOND_ADDRESS_V2);
   assert.equal(SELL_BOND_ADDRESS, SELL_BOND_ADDRESS_V2);
 });
 
-test('characterization: token decimals and pool match legacy sharedContracts', async () => {
-  assert.equal(
-    WBTC_ADDRESS,
-    await readLegacyConst('sharedContracts.js', 'WBTC_ADDRESS'),
-  );
-  assert.equal(
-    PRANA_ADDRESS,
-    await readLegacyConst('sharedContracts.js', 'PRANA_ADDRESS'),
-  );
-  assert.equal(
-    String(PRANA_DECIMALS),
-    await readLegacyConst('sharedContracts.js', 'PRANA_DECIMALS'),
-  );
-  assert.equal(
-    String(WBTC_DECIMALS),
-    await readLegacyConst('sharedContracts.js', 'WBTC_DECIMALS'),
-  );
-  assert.equal(
-    WBTC_PRANA_V3_POOL,
-    await readLegacyConst('sharedContracts.js', 'WBTC_PRANA_V3_POOL'),
-  );
+test('characterization: token decimals and pool match frozen legacy fixtures', () => {
+  assert.equal(WBTC_ADDRESS, LEGACY_DEPLOYMENT_FIXTURES.wbtc);
+  assert.equal(PRANA_ADDRESS, LEGACY_DEPLOYMENT_FIXTURES.prana);
+  assert.equal(PRANA_DECIMALS, LEGACY_DEPLOYMENT_FIXTURES.pranaDecimals);
+  assert.equal(WBTC_DECIMALS, LEGACY_DEPLOYMENT_FIXTURES.wbtcDecimals);
+  assert.equal(WBTC_PRANA_V3_POOL, LEGACY_DEPLOYMENT_FIXTURES.pool);
 });
 
 test('ABI: V1 account surface is active-bond read + claim + paused only', () => {

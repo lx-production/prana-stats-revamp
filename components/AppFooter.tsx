@@ -7,6 +7,7 @@ import {
   TERMS_RISK_PATH,
   GUIDE_SWAP_CANONICAL_PATH,
   GUIDE_STAKING_CANONICAL_PATH,
+  GUIDE_BONDING_CANONICAL_PATH,
 } from '../constants/appRoutes.ts';
 
 /**
@@ -59,6 +60,15 @@ const AppFooter: React.FC = () => {
           className="underline-offset-2 hover:text-white/75 hover:underline"
         >
           {locale === 'en' ? 'Staking guide' : 'Hướng dẫn Staking'}
+        </a>
+        <span aria-hidden="true" className="text-white/25">
+          ·
+        </span>
+        <a
+          href={GUIDE_BONDING_CANONICAL_PATH}
+          className="underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          {locale === 'en' ? 'Bonding guide' : 'Hướng dẫn Bonding'}
         </a>
       </p>
       <p className="text-center text-xs text-white/35">

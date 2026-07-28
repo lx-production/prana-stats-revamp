@@ -1,6 +1,6 @@
 # Chính sách quyền riêng tư
 
-Chính sách quyền riêng tư này giải thích cách dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website chính thức của PRANA Protocol hoặc dùng **PRANA Swap** hoặc **PRANA Staking** (gọi chung là **Giao diện PRANA**). Đọc cùng với [Điều khoản & Công bố rủi ro](/terms).
+Chính sách quyền riêng tư này giải thích cách dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website chính thức của PRANA Protocol hoặc dùng **PRANA Swap**, **PRANA Staking**, hoặc **PRANA Bonding** (gọi chung là **Giao diện PRANA**). Đọc cùng với [Điều khoản & Công bố rủi ro](/terms).
 
 ## 1. Phạm vi và bên vận hành
 
@@ -66,22 +66,36 @@ Trong phiên bản hiện tại, giao diện Staking không gửi một luồng 
 
 Các nhà cung cấp ví và blockchain đó có thể độc lập nhận hoặc xử lý địa chỉ IP, địa chỉ ví, request đã ký, dữ liệu giao dịch, và thông tin kỹ thuật khác theo chính sách riêng của họ.
 
-## 6. Dữ liệu ví và thiết bị
+## 6. Dữ liệu được xử lý bởi PRANA Bonding
+
+Sau khi bạn kết nối ví, giao diện Bonding có thể yêu cầu dữ liệu theo ví và quote từ máy chủ ứng dụng của THĐP:
+
+- **Snapshot tài khoản** (`GET /api/bonding/account`) — địa chỉ ví công khai của bạn được dùng để đọc số dư, allowance, và các bản ghi bond Buy/Sell đang hiệu lực (V1 và V2) trên Polygon, kèm metadata khối
+- **Quote** (`POST /api/bonding/quote`) — mode, raw amount, và term id cần để tính quote WBTC/PRANA ước tính từ state contract và pool công khai
+- **Fallback xác nhận giao dịch** (`POST /api/bonding/confirm-transaction`) — mã băm giao dịch đã broadcast kèm snapshot action tối thiểu để máy chủ đọc receipt công khai qua RPC Polygon riêng khi browser RPC không đọc được
+
+Các request account, quote, và confirmation được rate-limit bằng địa chỉ IP của client. Phản hồi account không chia sẻ giữa người dùng (`private, no-store`). Địa chỉ ví có thể xuất hiện trong URL hoặc body request và do đó trong log ứng dụng, reverse-proxy, hosting, hoặc access log, tùy cấu hình hạ tầng.
+
+Trong phiên bản hiện tại, giao diện Bonding không gửi một luồng telemetry vòng đời bonding riêng ngoài các request vận hành trên. Các giao dịch Approve, tạo bond, và claim được gửi từ trình duyệt hoặc ví của bạn tới hạ tầng Polygon.
+
+Các nhà cung cấp ví và blockchain đó có thể độc lập nhận hoặc xử lý địa chỉ IP, địa chỉ ví, request đã ký, dữ liệu giao dịch, và thông tin kỹ thuật khác theo chính sách riêng của họ.
+
+## 7. Dữ liệu ví và thiết bị
 
 Để hiển thị và thực hiện các hành động được yêu cầu, giao diện trình duyệt có thể tạm thời xử lý:
 
 - địa chỉ ví đã kết nối
 - chain hiện tại và trạng thái kết nối
-- số dư, allowance, nonce, stake, và dữ liệu giao dịch công khai
+- số dư, allowance, nonce, stake, bond, và dữ liệu giao dịch công khai
 - quote và dữ liệu nhập trên form
-- các thành phần chữ ký Permit và mã băm giao dịch đang chờ
+- các thành phần chữ ký Permit, số lượng approve, và mã băm giao dịch đang chờ
 - lỗi ví hoặc RPC
 
 Dữ liệu này có thể tồn tại trong bộ nhớ trình duyệt khi bạn dùng giao diện. Tiện ích mở rộng hoặc ứng dụng ví của bạn có thể lưu dữ liệu kết nối hoặc hoạt động riêng một cách độc lập.
 
 THĐP không yêu cầu, nhận, hoặc lưu trữ seed phrase hay private key của bạn qua Giao diện PRANA. Không bao giờ nhập cả hai vào website hoặc gửi cho bất kỳ ai tự nhận hỗ trợ PRANA.
 
-## 7. Những gì không được dùng trong phiên bản hiện tại
+## 8. Những gì không được dùng trong phiên bản hiện tại
 
 Website và Giao diện PRANA hiện tại không dùng:
 
@@ -91,13 +105,13 @@ Website và Giao diện PRANA hiện tại không dùng:
 - tài khoản người dùng nội bộ
 - số dư ví lưu ký do THĐP duy trì
 
-Điều này không có nghĩa là không có dữ liệu kỹ thuật hoặc dữ liệu blockchain công khai nào được xử lý. Các mục 2 đến 6 mô tả các luồng dữ liệu thực sự tồn tại.
+Điều này không có nghĩa là không có dữ liệu kỹ thuật hoặc dữ liệu blockchain công khai nào được xử lý. Các mục 2 đến 7 mô tả các luồng dữ liệu thực sự tồn tại.
 
-## 8. Mục đích xử lý
+## 9. Mục đích xử lý
 
 THĐP có thể xử lý dữ liệu mô tả ở trên để:
 
-- cung cấp trang website, quote Swap, và dữ liệu tài khoản Staking mà bạn yêu cầu
+- cung cấp trang website, quote Swap, dữ liệu tài khoản Staking, và dữ liệu tài khoản/quote/xác nhận Bonding mà bạn yêu cầu
 - xây dựng, xác thực, và xác minh các luồng giao dịch kỹ thuật
 - duy trì bảo mật, rate-limit request, và ngăn lạm dụng
 - phát hiện, chẩn đoán, và khắc phục lỗi hoặc sự cố sẵn sàng
@@ -110,7 +124,7 @@ THĐP không dùng dữ liệu này để lưu ký tài sản của bạn hoặc
 
 Khi pháp luật áp dụng yêu cầu cơ sở pháp lý, việc xử lý có thể dựa trên việc cung cấp dịch vụ bạn yêu cầu, lợi ích hợp pháp của THĐP trong việc vận hành và bảo mật dịch vụ, tuân thủ nghĩa vụ pháp lý, hoặc sự đồng ý khi cần sự đồng ý.
 
-## 9. Chia sẻ và nhà cung cấp dịch vụ
+## 10. Chia sẻ và nhà cung cấp dịch vụ
 
 Dữ liệu có thể được tiết lộ hoặc cung cấp cho:
 
@@ -125,7 +139,7 @@ Dữ liệu có thể được tiết lộ hoặc cung cấp cho:
 
 Các bên nhận này có thể xử lý dữ liệu theo điều khoản và chính sách quyền riêng tư riêng của họ. Dữ liệu on-chain công khai sẵn có cho bất kỳ ai mà không cần THĐP chọn bên nhận.
 
-## 10. Thời gian lưu trữ
+## 11. Thời gian lưu trữ
 
 Log vận hành, bảo mật, và hạ tầng chỉ được giữ trong thời gian hợp lý cần thiết cho các mục đích mô tả trong chính sách này, có xét đến nhu cầu bảo mật, xử lý sự cố, lịch backup và xoay vòng log, nghĩa vụ pháp lý, và nhu cầu giải quyết tranh chấp.
 
@@ -133,13 +147,13 @@ Các nhà cung cấp hạ tầng khác nhau có thể áp dụng thời gian lư
 
 Khi dữ liệu không còn cần thiết một cách hợp lý, THĐP sẽ xóa, ghi đè, hoặc hủy định danh dữ liệu đó trong phạm vi thực tế hợp lý và tùy theo pháp luật áp dụng.
 
-## 11. Bảo mật
+## 12. Bảo mật
 
 THĐP dùng các biện pháp kỹ thuật và tổ chức hợp lý nhằm bảo vệ dữ liệu ứng dụng khỏi truy cập trái phép, mất mát, sử dụng sai mục đích, hoặc thay đổi. Không có dịch vụ internet, ví, RPC, hoặc hệ thống blockchain nào hoàn toàn an toàn, và THĐP không thể bảo đảm bảo mật tuyệt đối.
 
 Bạn có trách nhiệm bảo vệ ví, thiết bị, private key, seed phrase, và phương thức khôi phục của mình.
 
-## 12. Lựa chọn và quyền của bạn
+## 13. Lựa chọn và quyền của bạn
 
 Bạn có thể:
 
@@ -155,15 +169,15 @@ Tùy pháp luật áp dụng, bạn có thể có quyền yêu cầu thông tin 
 
 THĐP không thể xóa hoặc thay đổi dữ liệu đã ghi trên Polygon hoặc do bên thứ ba giữ độc lập.
 
-## 13. Xử lý xuyên biên giới
+## 14. Xử lý xuyên biên giới
 
 Hạ tầng internet, hosting, ví, RPC, và blockchain có thể vận hành ở nhiều quốc gia. Do đó, dữ liệu kỹ thuật hoặc dữ liệu blockchain công khai của bạn có thể được xử lý ngoài quốc gia nơi bạn sinh sống. Khi được yêu cầu, THĐP sẽ áp dụng các biện pháp mà pháp luật áp dụng đòi hỏi đối với xử lý xuyên biên giới.
 
-## 14. Trẻ em
+## 15. Trẻ em
 
 Giao diện PRANA không hướng tới trẻ em hoặc người thiếu năng lực pháp lý để thực hiện các giao dịch liên quan. Nếu bạn tin rằng một trẻ em đã cung cấp dữ liệu cá nhân cho THĐP qua website, hãy liên hệ [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).
 
-## 15. Thay đổi chính sách này
+## 16. Thay đổi chính sách này
 
 THĐP có thể cập nhật chính sách này khi website, luồng dữ liệu, nhà cung cấp dịch vụ, hoặc yêu cầu pháp lý thay đổi. Phiên bản đăng tại `/privacy` là phiên bản hiện hành.
 

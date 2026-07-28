@@ -1,6 +1,6 @@
 /**
  * Pure wallet display helpers — no Wagmi/viem imports.
- * Shared by Swap and staking UI without pulling Web3 runtime.
+ * Shared by Swap, staking, and bonding UI without pulling Web3 runtime.
  */
 
 /** Shorten a hex address to `0xABCD...WXYZ` (first 6 + last 4 chars). */

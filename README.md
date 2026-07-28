@@ -40,7 +40,11 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | `/guide/swap/`                                                                 | Swap user guide (approve, slippage, …)     |
 | `/guide/staking/`                                                              | Staking user guide (permit, claim, …)      |
 | `/guide/staking-contracts/`                                                    | Staking + Interest contract explanation    |
+| `/guide/bonding/`                                                              | Bonding user guide (approve, buy/sell, …)  |
+| `/guide/bonding-contracts/`                                                    | Buy/Sell Bond V2 contract explanation      |
 | `/stake/`                                                                      | Personal staking (permit, stake, claim)    |
+| `/bond/`                                                                       | Personal bonding (approve, create, claim)  |
+| [docs/add-bonding-ui.md](docs/add-bonding-ui.md)                               | Lazy `/bond/` bonding UI integration       |
 
 
 Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.

@@ -21,6 +21,7 @@ import WalletControl from '../features/web3/WalletControl';
 import { useBondingConfig } from '../features/bonding/hooks/useBondingConfig';
 import { useBondingAccount } from '../features/bonding/hooks/useBondingAccount';
 import { POLYGONSCAN_ADDRESS_BASE_URL } from '../constants/network.ts';
+import { GUIDE_BONDING_CONTRACTS_CANONICAL_PATH } from '../constants/appRoutes.ts';
 import {
   BUY_BOND_ADDRESS_V1,
   BUY_BOND_ADDRESS_V2,
@@ -125,11 +126,13 @@ export default function BondingPage() {
                 <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
               </a>
             ))}
-            {/* Contracts guide route lands in Bước 7 — keep slot for parity with staking. */}
-            <span className="inline-flex items-center gap-1 text-white/35">
+            <a
+              href={GUIDE_BONDING_CONTRACTS_CANONICAL_PATH}
+              className="inline-flex items-center gap-1 text-cyan-300/90 underline-offset-2 hover:underline"
+            >
               <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {copy.contractsGuideLink}
-            </span>
+            </a>
           </div>
         </header>
 

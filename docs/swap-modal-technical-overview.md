@@ -69,7 +69,7 @@ flowchart TD
 
 Homepage loads stats UI only. The first **SWAP** click mounts a lazy `SwapEntry` behind `Suspense` (modal shell + spinner) and an error boundary (close / reload page for stale hashed assets). After the chunk loads, `SwapEntry` stays mounted across open/close so form lifecycle matches the previous eager modal. Closing while the chunk is still loading hides the fallback immediately and does not reopen when the import finishes.
 
-Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` stay free of Wagmi / viem / TanStack Query / Swap hooks. **SWAP** loads `SwapEntry-*.js` plus shared async `Web3Providers-*.js`; `/stake/` loads `StakingEntry-*.js` and may reuse that same Web3 chunk. Measured sizes and scan notes: [`extract-swap-modal-baseline.md`](./extract-swap-modal-baseline.md).
+Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` stay free of Wagmi / viem / TanStack Query / Swap hooks. **SWAP** loads `SwapEntry-*.js` plus shared async `Web3Providers-*.js`; `/stake/` loads `StakingEntry-*.js` and `/bond/` loads `BondingEntry-*.js`, both of which may reuse that same Web3 chunk. Measured sizes and scan notes: [`extract-swap-modal-baseline.md`](./extract-swap-modal-baseline.md).
 
 ### Trust split
 
@@ -303,7 +303,7 @@ VPS (public IP, DNS, Let’s Encrypt)
 Raspberry Pi (behind NAT)
   nginx :80
     /        → 127.0.0.1:4173  (Node app: static + API, incl. lazy /stake/)
-    /bond/   → static legacy SPA
+    /bond/   → Node SPA lazy BondingEntry (same main app; nginx cutover tracked in add-bonding-ui.md)
 ```
 
 ### Why this shape
@@ -362,12 +362,13 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `features/web3/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Debounced quote fetch |
 | `features/swap/hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
-| `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking) |
+| `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking + bonding) |
 | `features/web3/web3.types.ts` | Shared wallet hook result type |
-| `features/web3/Web3Providers.tsx` | Wagmi + React Query boundary (Swap + staking) |
+| `features/web3/Web3Providers.tsx` | Wagmi + React Query boundary (Swap + staking + bonding) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map wallet/viem errors to short UI messages |
 | `features/web3/wagmiConfig.ts` | Polygon + injected connectors |
 | `features/staking/StakingEntry.tsx` | Lazy `/stake/` root: `Web3Providers` → `StakingPage` |
+| `features/bonding/BondingEntry.tsx` | Lazy `/bond/` root: `Web3Providers` → `BondingPage` |
 | `features/swap/utils/swapTransactionLogs.ts` | Log vs verify client routing |
 | `features/swap/utils/swapTokenFormatting.ts` | Swap amount parse/format helpers (viem) |
 | `utils/tokenAmounts.ts` | Pure bigint ↔ decimal helpers (no ethers/viem) |

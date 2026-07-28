@@ -17,11 +17,17 @@ import {
   isGuideSwapPath,
   GUIDE_STAKING_PATH,
   isGuideStakingPath,
+  GUIDE_BONDING_PATH,
+  isGuideBondingPath,
   GUIDE_SWAP_CANONICAL_PATH,
   GUIDE_STAKING_CANONICAL_PATH,
+  GUIDE_BONDING_CANONICAL_PATH,
   GUIDE_STAKING_CONTRACTS_PATH,
   isGuideStakingContractsPath,
+  GUIDE_BONDING_CONTRACTS_PATH,
+  isGuideBondingContractsPath,
   GUIDE_STAKING_CONTRACTS_CANONICAL_PATH,
+  GUIDE_BONDING_CONTRACTS_CANONICAL_PATH,
 } from '../constants/appRoutes.ts';
 
 import type { RequestHandler } from './types/httpTypes.ts';
@@ -40,6 +46,11 @@ const SPA_TRAILING_SLASH_REDIRECTS = [
   {
     bare: GUIDE_STAKING_CONTRACTS_PATH,
     canonical: GUIDE_STAKING_CONTRACTS_CANONICAL_PATH,
+  },
+  { bare: GUIDE_BONDING_PATH, canonical: GUIDE_BONDING_CANONICAL_PATH },
+  {
+    bare: GUIDE_BONDING_CONTRACTS_PATH,
+    canonical: GUIDE_BONDING_CONTRACTS_CANONICAL_PATH,
   },
 ] as const;
 
@@ -66,7 +77,9 @@ export function createStaticRequestHandler(options: StaticRouteOptions = {}): Re
       isBondPath(url.pathname) ||
       isGuideSwapPath(url.pathname) ||
       isGuideStakingPath(url.pathname) ||
-      isGuideStakingContractsPath(url.pathname)
+      isGuideStakingContractsPath(url.pathname) ||
+      isGuideBondingPath(url.pathname) ||
+      isGuideBondingContractsPath(url.pathname)
     ) {
       const spaShell = path.join(distDir, 'index.html');
       if (await tryServeFile(req, res, spaShell)) return true;

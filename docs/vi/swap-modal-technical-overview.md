@@ -69,7 +69,7 @@ flowchart TD
 
 Homepage chỉ tải UI stats. Lần bấm **SWAP** đầu tiên mới mount lazy `SwapEntry` trong `Suspense` (shell modal + spinner) và error boundary (đóng / reload trang khi asset hash cũ sau deploy). Sau khi chunk tải xong, `SwapEntry` giữ mounted khi đóng/mở để lifecycle form giống modal eager trước đây. Đóng trong lúc đang tải sẽ ẩn fallback ngay và không tự mở lại khi import hoàn tất.
 
-Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` không chứa Wagmi / viem / TanStack Query / Swap hooks. **SWAP** tải `SwapEntry-*.js` cùng async `Web3Providers-*.js` dùng chung; `/stake/` tải `StakingEntry-*.js` và có thể tái sử dụng chunk Web3 đó. Số đo và ghi chú scan: [`extract-swap-modal-baseline.md`](../extract-swap-modal-baseline.md).
+Client chunks (Vite): eager `index-*.js` + lazy `StatsPage-*.js` không chứa Wagmi / viem / TanStack Query / Swap hooks. **SWAP** tải `SwapEntry-*.js` cùng async `Web3Providers-*.js` dùng chung; `/stake/` tải `StakingEntry-*.js` và `/bond/` tải `BondingEntry-*.js`, cả hai có thể tái sử dụng chunk Web3 đó. Số đo và ghi chú scan: [`extract-swap-modal-baseline.md`](../extract-swap-modal-baseline.md).
 
 ### Phân tách trust
 
@@ -313,7 +313,7 @@ VPS (IP public, DNS, Let’s Encrypt)
 Raspberry Pi (sau NAT)
   nginx :80
     /        → 127.0.0.1:4173  (Node app: static + API, gồm lazy /stake/)
-    /bond/   → static SPA cũ
+    /bond/   → Node SPA lazy BondingEntry (cùng main app; cutover nginx theo add-bonding-ui.md)
 ```
 
 ### Vì sao hình dạng này
@@ -373,12 +373,13 @@ Chi tiết tunnel/nginx: `[NETWORK_ARCHITECTURE.md](./NETWORK_ARCHITECTURE.md)`.
 | `features/web3/useInjectedWallet.ts` | Connect / disconnect / chuyển sang Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Fetch quote có debounce              |
 | `features/swap/hooks/useUniswapSwap.ts` | Balance, approve, swap, máy trạng thái |
-| `features/web3/walletFormatting.ts` | Helper rút gọn address thuần (Swap + staking) |
+| `features/web3/walletFormatting.ts` | Helper rút gọn address thuần (Swap + staking + bonding) |
 | `features/web3/web3.types.ts`   | Type kết quả hook wallet dùng chung        |
-| `features/web3/Web3Providers.tsx` | Boundary Wagmi + React Query (Swap + staking) |
+| `features/web3/Web3Providers.tsx` | Boundary Wagmi + React Query (Swap + staking + bonding) |
 | `features/swap/utils/sanitizeSwapWalletError.ts` | Map lỗi wallet/viem thành message UI ngắn |
 | `features/web3/wagmiConfig.ts`  | Polygon + injected connector               |
 | `features/staking/StakingEntry.tsx` | Lazy root `/stake/`: `Web3Providers` → `StakingPage` |
+| `features/bonding/BondingEntry.tsx` | Lazy root `/bond/`: `Web3Providers` → `BondingPage` |
 | `features/swap/utils/swapTransactionLogs.ts` | Routing client log vs verify         |
 | `features/swap/utils/swapTokenFormatting.ts` | Helper parse/format amount Swap (viem) |
 | `utils/tokenAmounts.ts`        | Helper bigint ↔ decimal thuần (không ethers/viem) |

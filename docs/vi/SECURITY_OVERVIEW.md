@@ -56,6 +56,17 @@ Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin,
 | `POST /api/swap/verify-transaction` | Chứng minh on-chain → log `swap_confirmed` đã verify | 32 KB | 10 / IP / phút |
 | `POST /api/staking/quote` | Preflight fully-funded Interest (raw bigint, cùng block) | 2 KB | 10 / IP / phút + 60 global / phút |
 
+Bonding tái dùng helper admission cho các POST, nhưng **không** tái dùng HMAC / analytics đã verify của Swap:
+
+| Endpoint | Mục đích | Giới hạn body | Rate limit |
+| --- | --- | --- | --- |
+| `GET /api/bonding/config` | Snapshot paused/terms/minimum V1/V2 | n/a | nhóm limiter GET dùng chung |
+| `GET /api/bonding/account` | Balance/allowance/active bonds theo ví | n/a | 10 / IP / phút + 120 global / phút |
+| `POST /api/bonding/quote` | Quote exact WBTC / target PRANA / exact PRANA | 2 KB | 10 / IP / phút + 60 global / phút |
+| `POST /api/bonding/confirm-transaction` | Fallback đọc receipt khi browser RPC lỗi cho approve/create/claim cố định | 2 KB | bucket confirmation riêng |
+
+Confirmation Bonding chỉ chấp nhận hash user đã broadcast và đối chiếu sender/target/selector/args với mapping side/version nội bộ. Đây chỉ là xác nhận UX — không phải analytics tin cậy kiểu Swap.
+
 Rate limiter dùng cửa sổ thời gian cố định trong bộ nhớ process, kèm dọn bucket định kỳ.
 
 IP client cho rate limiting (`server/rateLimit.ts`): chỉ tin `X-Forwarded-For` khi peer socket trực tiếp là proxy localhost (`127.0.0.1` / `::1`). Khi đó IP client được lấy bằng cách đếm hop từ bên phải của header (`TRUSTED_PROXY_HOP_COUNT`; production dùng `2` vì cả VPS lẫn Pi nginx đều append — xem [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Nếu không, dùng địa chỉ socket.
