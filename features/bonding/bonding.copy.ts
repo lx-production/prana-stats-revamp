@@ -191,7 +191,7 @@ const vi: BondingCopy = {
   switchPolygonFirst: 'Chuyển sang Polygon trước.',
   buyV2ContractLink: 'Buy Bond V2',
   sellV2ContractLink: 'Sell Bond V2',
-  contractsGuideLink: 'Hướng dẫn contracts',
+  contractsGuideLink: 'Giải thích contracts',
 };
 
 const en: BondingCopy = {
@@ -293,7 +293,7 @@ const en: BondingCopy = {
   switchPolygonFirst: 'Switch to Polygon first.',
   buyV2ContractLink: 'Buy Bond V2',
   sellV2ContractLink: 'Sell Bond V2',
-  contractsGuideLink: 'Contracts guide',
+  contractsGuideLink: 'Contracts explanation',
 };
 
 export function getBondingCopy(locale: SiteLocale): BondingCopy {

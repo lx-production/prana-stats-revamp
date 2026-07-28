@@ -124,7 +124,7 @@ export default function BondCard({
         </div>
       </dl>
 
-      <div className="space-y-1.5">
+      <div className="!mt-6 space-y-1.5">
         <div className="flex items-center justify-between gap-2 text-xs text-white/55">
           <span>
             {copy.maturityLabel}: {maturityLabel}
@@ -155,7 +155,7 @@ export default function BondCard({
         <div className="pt-1">
           <button
             type="button"
-            className="btn-stake btn-gold-border w-full sm:w-auto"
+            className="btn-stake btn-gold-border w-full"
             disabled={buttonsDisabled}
             onClick={() => onClaim(claimTarget)}
           >

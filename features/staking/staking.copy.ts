@@ -276,7 +276,7 @@ const en: StakingCopy = {
   switchPolygonFirst: 'Switch to Polygon first.',
   stakingContractLink: 'Staking contract',
   interestContractLink: 'Interest contract',
-  contractsGuideLink: 'Contract explanation',
+  contractsGuideLink: 'Contracts explanation',
 };
 
 export function getStakingCopy(locale: SiteLocale): StakingCopy {

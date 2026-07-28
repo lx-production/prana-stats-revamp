@@ -489,7 +489,7 @@ export default function BondingForm({
           type="button"
           disabled={!canClickCta}
           onClick={() => void bondTx.onPrimaryCta()}
-          className="btn-hero btn-gold-border inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-hero btn-gold-border inline-flex w-full items-center justify-center gap-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           {showCtaSpinner ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

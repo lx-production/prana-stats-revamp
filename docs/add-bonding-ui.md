@@ -130,10 +130,27 @@
   - Target PRANA Buy phải set WBTC allowance thành cap bằng quote mới nhất, kể cả khi allowance cũ lớn hơn; nếu quote mới vượt cap thì yêu cầu approve lại. Dialog phải hiển thị cap WBTC rõ ràng.
   - Ngay trước write, chạy `simulateContract` rồi destructure `{ request }` (viem trả `{ result, request }` — chỉ `request` mới truyền được vào `writeContract`); không truyền nguyên object trả về của simulate.
   - Khi đã có hash, tuyệt đối không broadcast lần hai:
-    - Thử `waitForTransactionReceipt` qua RPC của ví đã broadcast transaction trước.
+    - Thử `waitForTransactionReceipt` qua RPC của ví đã broadcast transaction trước (`features/web3/waitForPolygonWalletReceipt.ts`).
     - Nếu RPC của ví lỗi đọc receipt, gọi `/api/bonding/confirm-transaction` qua RPC server độc lập.
     - Receipt explicit `reverted` mới là transaction failed; RPC lỗi hoặc transaction chưa terminal không được đổi thành failed.
-    - Nếu cả browser và server chưa xác nhận được, giữ hash + snapshot, chuyển phase `Confirmation unavailable`, hiện Polygonscan và CTA “Tiếp tục xác nhận”; retry chỉ lặp confirmation.
+    - Nếu cả wallet RPC và server chưa xác nhận được, giữ hash + snapshot, chuyển phase `Confirmation unavailable`, hiện Polygonscan và CTA “Tiếp tục xác nhận”; retry chỉ lặp confirmation.
+  - **Ba lớp RPC — vì sao không “chỉ dùng 1 RPC”**
+    - Bonding write-path thực tế đi qua tối thiểu ba lớp độc lập; dRPC fail **không** có nghĩa RPC ví cũng fail:
+      - **dRPC** (`FRONTEND_POLYGON_RPC_URL` = `https://polygon.drpc.org` qua wagmi `publicClient`): simulate / đọc chain từ browser khi app cần HTTP transport của mình (CSP `connect-src` cũng pin URL này).
+      - **RPC của ví** (MetaMask/Rabby qua EIP-1193 / `walletClient`): broadcast `approve` / create / claim; sau broadcast, UI chờ receipt trên **cùng** provider đã gửi tx.
+      - **RPC server** (Alchemy / `POLYGON_RPC_URL` trong `server/utils/providers.ts`): quote, account, config reads và fallback `confirm-transaction`.
+    - Không gom được cả hệ thống về một RPC duy nhất nếu vẫn giữ: (1) đọc/quote khi chưa connect ví, (2) ký qua injected wallet, (3) server xác nhận độc lập khi browser/wallet RPC lỗi.
+    - Có thể gom **simulate + wait receipt** về RPC ví **sau khi đã connect** (một transport cho write-path). Khi chưa connect vẫn cần public RPC (dRPC) hoặc bắt buộc connect trước mọi on-chain read — đổi UX.
+  - **`simulateContract` qua RPC ví được không?**
+    - Được về kỹ thuật: `simulateContract` chủ yếu là `eth_call` (+ vài read phụ); wallet provider forward được.
+    - Hiện tại Bonding vẫn simulate qua `publicClient` (dRPC); chỉ receipt polling đã chuyển sang wallet RPC. Quote/config/account vẫn đi backend theo thiết kế — đổi simulate sang wallet RPC là tối ưu client, không đổi kiến trúc API.
+    - Hạn chế nếu chỉ dùng RPC ví: chưa connect thì không simulate được; một số ví/proxy hạn chế hoặc làm chậm `eth_call` hàng loạt.
+  - **Vì sao dRPC có thể simulate nhưng fail khi đọc receipt?**
+    - Hai việc gọi method và pattern khác nhau, không phải “cùng một health check”:
+      - Simulate ≈ vài `eth_call` / `eth_getCode` — nhẹ, không phụ thuộc hash tx vừa broadcast.
+      - `waitForTransactionReceipt` ≈ poll lặp `eth_getTransactionReceipt` (+ thường đọc block/status) — nặng hơn, dễ rate-limit / 400 trên public free endpoint.
+    - Tx được **broadcast qua RPC ví**, rồi hỏi receipt trên **dRPC** = hai node khác nhau: dRPC có thể chưa index hash, trả lỗi tạm, hoặc rate-limit trong lúc poll — trong khi `eth_call` simulate trên tip vẫn ổn.
+    - Vì vậy lỗi đỏ `POST https://polygon.drpc.org/ 400` khi chờ receipt **không** đồng nghĩa transaction failed on-chain. Flow đúng: catch lỗi đọc → server fallback → chỉ coi failed khi receipt explicit `reverted`; confirmed qua server vẫn là success (có thể kèm warning sync account).
   - Chỉ báo thành công sau receipt; account refetch thất bại sau receipt là warning, không biến giao dịch thành failed.
   - Chuẩn hóa lỗi VI/EN cho rejection, wrong chain, gas, allowance, pause, minimum, treasury, reserve, revert và RPC; không render raw provider error.
   - **Kiểm thử Bước 5**
@@ -144,7 +161,7 @@
     - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
     - User reject approve hoặc create trước hash cho phép retry đúng phase; lỗi receipt sau hash chỉ hiện “tiếp tục xác nhận”.
     - Wallet receipt success không gọi server fallback; wallet RPC lỗi + server success/revert trả đúng terminal state.
-    - Browser và server cùng unavailable giữ `Confirmation unavailable`, hash và action snapshot; không log/render như transaction failed và không gọi write lần hai.
+    - Wallet và server cùng unavailable giữ `Confirmation unavailable`, hash và action snapshot; không log/render như transaction failed và không gọi write lần hai.
     - `simulateContract` failure không gọi `writeContract`; simulated request thành công phải giữ đúng address, function, args và connected account.
     - Receipt `reverted` không báo success; receipt thành công mới reset form/invalidate quote/refetch account.
     - Refetch sau success thất bại hiển thị warning và hash Polygonscan, không đổi receipt thành error.
