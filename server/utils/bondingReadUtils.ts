@@ -1,15 +1,36 @@
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 
-import type { Address } from '../../types/blockchain.types.ts';
+import type { Address, Hex } from '../../types/blockchain.types.ts';
 import type {
   ActiveBondRecord,
   BondSide,
-  BondVersion,
-  BondingTermOption,
   BondTermId,
+  BondVersion,
+  BondingQuoteMode,
+  BondingQuoteRequest,
+  BondingTermOption,
+  BondingTransactionActionSnapshot,
+  BondingTransactionConfirmationRequest,
 } from '../../features/bonding/bonding.types.ts';
 
+export {
+  mulDiv,
+  computePoolReserves,
+  ensurePositiveReserve,
+  computeBondingQuote,
+} from './bondingQuoteMath.ts';
+
+export type {
+  BondingQuoteMathInput,
+  BondingQuoteMathResult,
+} from './bondingQuoteMath.ts';
+
 const BOND_TERM_IDS: readonly BondTermId[] = [0, 1, 2, 3, 4];
+const QUOTE_MODES: readonly BondingQuoteMode[] = [
+  'buy_exact_wbtc',
+  'buy_target_prana',
+  'sell_exact_prana',
+];
 
 /** True when value is a BondTerm id in 0..4. */
 export function isBondTermId(value: number): value is BondTermId {
@@ -74,4 +95,175 @@ export function mapActiveBondRecords(
       claimed: Boolean(bond.claimed),
     };
   });
+}
+
+/**
+ * Merge Buy/Sell × V1/V2 active-bond lists.
+ * Duplicate numeric ids across deployments stay distinct via side + version.
+ */
+export function mergeActiveBondRecords(
+  groups: readonly ActiveBondRecord[][],
+): ActiveBondRecord[] {
+  return groups.flat();
+}
+
+/** Parse a non-negative decimal integer string into bigint (rejects hex / floats / signs). */
+export function parseUnsignedDecimalRaw(value: unknown): bigint | null {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
+    return null;
+  }
+  return BigInt(value);
+}
+
+export function parseBondingQuoteRequest(body: unknown): BondingQuoteRequest {
+  if (!body || typeof body !== 'object') {
+    throw new BondingApiValidationError('Invalid bonding quote request.');
+  }
+
+  const payload = body as Record<string, unknown>;
+  const mode = payload.mode;
+  if (typeof mode !== 'string' || !QUOTE_MODES.includes(mode as BondingQuoteMode)) {
+    throw new BondingApiValidationError('Invalid bonding quote mode.');
+  }
+
+  const amountRaw = parseUnsignedDecimalRaw(payload.amountRaw);
+  if (amountRaw === null) {
+    throw new BondingApiValidationError('Invalid bonding quote amount.');
+  }
+
+  const termIdRaw = payload.termId;
+  if (typeof termIdRaw !== 'number' || !isBondTermId(termIdRaw)) {
+    throw new BondingApiValidationError('Invalid bonding quote term.');
+  }
+
+  return {
+    mode: mode as BondingQuoteMode,
+    amountRaw: amountRaw.toString(),
+    termId: termIdRaw,
+  };
+}
+
+const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
+
+export function parseBondingConfirmationRequest(
+  body: unknown,
+  parseAddress: (value: unknown) => Address | null,
+): BondingTransactionConfirmationRequest {
+  if (!body || typeof body !== 'object') {
+    throw new BondingApiValidationError('Invalid bonding confirmation request.');
+  }
+
+  const payload = body as Record<string, unknown>;
+  if (
+    typeof payload.transactionHash !== 'string' ||
+    !TX_HASH_RE.test(payload.transactionHash)
+  ) {
+    throw new BondingApiValidationError('Invalid bonding transaction hash.');
+  }
+
+  const account = parseAddress(payload.account);
+  if (!account) {
+    throw new BondingApiValidationError('Invalid bonding confirmation account.');
+  }
+
+  const action = parseBondingActionSnapshot(payload.action);
+  return {
+    transactionHash: payload.transactionHash as Hex,
+    account,
+    action,
+  };
+}
+
+function parseBondingActionSnapshot(value: unknown): BondingTransactionActionSnapshot {
+  if (!value || typeof value !== 'object') {
+    throw new BondingApiValidationError('Invalid bonding confirmation action.');
+  }
+
+  const action = value as Record<string, unknown>;
+  const kind = action.kind;
+
+  if (kind === 'approve') {
+    if (action.side !== 'buy' && action.side !== 'sell') {
+      throw new BondingApiValidationError('Invalid bonding approve side.');
+    }
+    const amountRaw = parseUnsignedDecimalRaw(action.amountRaw);
+    if (amountRaw === null) {
+      throw new BondingApiValidationError('Invalid bonding approve amount.');
+    }
+    return { kind: 'approve', side: action.side, amountRaw: amountRaw.toString() };
+  }
+
+  if (kind === 'create') {
+    if (action.side !== 'buy' && action.side !== 'sell') {
+      throw new BondingApiValidationError('Invalid bonding create side.');
+    }
+    if (action.version !== 'v2') {
+      throw new BondingApiValidationError('Invalid bonding create version.');
+    }
+    if (
+      typeof action.mode !== 'string' ||
+      !QUOTE_MODES.includes(action.mode as BondingQuoteMode)
+    ) {
+      throw new BondingApiValidationError('Invalid bonding create mode.');
+    }
+    // Create mode must match side: buy_* for buy, sell_* for sell.
+    if (action.side === 'buy' && action.mode === 'sell_exact_prana') {
+      throw new BondingApiValidationError('Invalid bonding create mode for side.');
+    }
+    if (action.side === 'sell' && action.mode !== 'sell_exact_prana') {
+      throw new BondingApiValidationError('Invalid bonding create mode for side.');
+    }
+    const amountRaw = parseUnsignedDecimalRaw(action.amountRaw);
+    if (amountRaw === null) {
+      throw new BondingApiValidationError('Invalid bonding create amount.');
+    }
+    if (typeof action.termId !== 'number' || !isBondTermId(action.termId)) {
+      throw new BondingApiValidationError('Invalid bonding create term.');
+    }
+    return {
+      kind: 'create',
+      side: action.side,
+      version: 'v2',
+      mode: action.mode as BondingQuoteMode,
+      amountRaw: amountRaw.toString(),
+      termId: action.termId,
+    };
+  }
+
+  if (kind === 'claim') {
+    if (action.side !== 'buy' && action.side !== 'sell') {
+      throw new BondingApiValidationError('Invalid bonding claim side.');
+    }
+    if (action.version !== 'v1' && action.version !== 'v2') {
+      throw new BondingApiValidationError('Invalid bonding claim version.');
+    }
+    const bondId = parseUnsignedDecimalRaw(action.bondId);
+    if (bondId === null) {
+      throw new BondingApiValidationError('Invalid bonding claim id.');
+    }
+    return {
+      kind: 'claim',
+      side: action.side,
+      version: action.version,
+      bondId: bondId.toString(),
+    };
+  }
+
+  throw new BondingApiValidationError('Invalid bonding confirmation action kind.');
+}
+
+/** Input/shape errors for Bonding POST APIs — routes map these to HTTP 400. */
+export class BondingApiValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BondingApiValidationError';
+  }
+}
+
+/** Sender/target/calldata mismatch — never report as confirmed. */
+export class BondingConfirmationMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BondingConfirmationMismatchError';
+  }
 }

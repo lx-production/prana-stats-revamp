@@ -14,3 +14,9 @@ export const MULTICALL3_ADDRESS: HexAddress = '0xcA11bde05977b3631167028862bE2a1
 export const MULTICALL3_ABI = [
   'function aggregate3(tuple(address target,bool allowFailure,bytes callData)[] calls) payable returns (tuple(bool success,bytes returnData)[] returnData)',
 ] as const;
+
+/** Uniswap V3 pool reads used by Bonding quote math (token0=WBTC, token1=PRANA). */
+export const UNISWAP_V3_POOL_ABI = [
+  'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
+  'function liquidity() view returns (uint128)',
+] as const;

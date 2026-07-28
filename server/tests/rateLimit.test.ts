@@ -291,3 +291,109 @@ test('per-IP staking account rejections do not spend the global account budget',
     true,
   );
 });
+
+function spendBondingQuoteBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 10,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isBondingQuoteRateLimited(req), false);
+  }
+}
+
+function spendBondingAccountBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 10,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isBondingAccountRateLimited(req), false);
+  }
+}
+
+function spendBondingConfirmBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 30,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isBondingConfirmRateLimited(req), false);
+  }
+}
+
+test('bonding quote limiter enforces 10 requests per IP per minute', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendBondingQuoteBudget(limiter, mockRequest('198.51.100.140'));
+  assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.140')), true);
+  assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.141')), false);
+});
+
+test('bonding quote limiter has a global all-clients budget of 60', () => {
+  const limiter = createSwapRateLimiters();
+
+  for (let index = 0; index < 60; index += 1) {
+    assert.equal(
+      limiter.isBondingQuoteRateLimited(mockRequest(`203.0.113.${index % 200}`)),
+      false,
+    );
+  }
+
+  assert.equal(
+    limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.210')),
+    true,
+  );
+});
+
+test('bonding account limiter enforces 10/IP and 120 global', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendBondingAccountBudget(limiter, mockRequest('198.51.100.150'));
+  assert.equal(limiter.isBondingAccountRateLimited(mockRequest('198.51.100.150')), true);
+  assert.equal(limiter.isBondingAccountRateLimited(mockRequest('198.51.100.151')), false);
+
+  const globalLimiter = createSwapRateLimiters();
+  for (let index = 0; index < 120; index += 1) {
+    assert.equal(
+      globalLimiter.isBondingAccountRateLimited(mockRequest(`203.0.114.${index % 200}`)),
+      false,
+    );
+  }
+  assert.equal(
+    globalLimiter.isBondingAccountRateLimited(mockRequest('198.51.100.220')),
+    true,
+  );
+});
+
+test('bonding confirmation limiter is separate from quote quota', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendBondingQuoteBudget(limiter, mockRequest('198.51.100.160'));
+  assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.160')), true);
+  // Confirmation budget must still be available after quote exhaustion.
+  assert.equal(limiter.isBondingConfirmRateLimited(mockRequest('198.51.100.160')), false);
+
+  spendBondingConfirmBudget(limiter, mockRequest('198.51.100.161'));
+  assert.equal(limiter.isBondingConfirmRateLimited(mockRequest('198.51.100.161')), true);
+  assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.161')), false);
+});
+
+test('bonding confirmation limiter uses trusted proxy hop identity', () => {
+  process.env.TRUSTED_PROXY_HOP_COUNT = '2';
+  const limiter = createSwapRateLimiters();
+
+  spendBondingConfirmBudget(
+    limiter,
+    mockRequest('127.0.0.1', '198.51.100.170, 127.0.0.1'),
+  );
+
+  assert.equal(
+    limiter.isBondingConfirmRateLimited(mockRequest('127.0.0.1', '198.51.100.170, 127.0.0.1')),
+    true,
+  );
+  assert.equal(
+    limiter.isBondingConfirmRateLimited(mockRequest('127.0.0.1', '198.51.100.171, 127.0.0.1')),
+    false,
+  );
+});

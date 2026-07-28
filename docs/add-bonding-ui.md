@@ -41,7 +41,7 @@
     - ABI contract test xác nhận V1 chỉ cần active-bond read/claim, còn create functions chỉ trỏ V2.
     - Test mapper với amount và bond ID lớn hơn `Number.MAX_SAFE_INTEGER`; JSON vẫn giữ đúng decimal string.
     - Static search không còn address literal hoặc bản ABI thứ hai trong `features/bonding`, server loader và UI.
-3. **Xây backend Bonding API**
+3. ✅ **Xây backend Bonding API**
   - Loaders: `server/loaders/bondingConfig.ts`, `bondingAccount.ts`, `bondingQuote.ts`, `bondingTransactionConfirmation.ts` (+ optional `server/loaders/cached/bondingConfigCached.ts`); đăng ký trong `getApiRoutes.ts` / `postApiRoutes.ts`.
   - Tạo `server/utils/bondingReadUtils.ts` cho term mapping, active-bond normalization và quote math dùng chung giữa loaders/tests; route files chỉ orchestration.
   - Trong `getApiRoutes.ts`, thêm injectable `BondingApiLoaders` + default loaders giống `StakingApiLoaders` để route tests không cần live RPC.

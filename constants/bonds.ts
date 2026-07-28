@@ -163,9 +163,25 @@ export const SELL_BOND_ACCOUNT_ABI: BondAbiFunctionFragment[] = [
 ];
 
 /**
- * Buy V2: account + config (min/terms) + create writes.
+ * Buy V2: account + config (min/terms) + impacted reserves + create writes.
  * Used with BUY_BOND_ADDRESS_V2 for readContract / simulateContract / writeContract.
  */
+const IMPACTED_WBTC_RESERVE_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [],
+  name: 'impactedWbtcReserve',
+  outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+  stateMutability: 'view',
+  type: 'function',
+};
+
+const IMPACTED_PRANA_RESERVE_FRAGMENT: BondAbiFunctionFragment = {
+  inputs: [],
+  name: 'impactedPranaReserve',
+  outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+  stateMutability: 'view',
+  type: 'function',
+};
+
 export const BUY_BOND_V2_ABI: BondAbiFunctionFragment[] = [
   PAUSED_FRAGMENT,
   {
@@ -191,6 +207,9 @@ export const BUY_BOND_V2_ABI: BondAbiFunctionFragment[] = [
     stateMutability: 'view',
     type: 'function',
   },
+  IMPACTED_WBTC_RESERVE_FRAGMENT,
+  IMPACTED_PRANA_RESERVE_FRAGMENT,
+  ...BUY_BOND_COMMITTED_PRANA_ABI,
   BUY_GET_USER_ACTIVE_BONDS_FRAGMENT,
   {
     inputs: [
@@ -252,6 +271,9 @@ export const SELL_BOND_V2_ABI: BondAbiFunctionFragment[] = [
     stateMutability: 'view',
     type: 'function',
   },
+  IMPACTED_WBTC_RESERVE_FRAGMENT,
+  IMPACTED_PRANA_RESERVE_FRAGMENT,
+  ...SELL_BOND_COMMITTED_WBTC_ABI,
   SELL_GET_USER_ACTIVE_BONDS_FRAGMENT,
   {
     inputs: [

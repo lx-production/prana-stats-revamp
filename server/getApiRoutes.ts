@@ -5,12 +5,14 @@ import { loadSummaryMarkdown } from './loaders/summary.ts';
 import { formatErrorForLog } from './helpers/logRedaction.ts';
 import { sendJson, sendText } from './helpers/requestHelpers.ts';
 import { loadStakingAccount } from './loaders/stakingAccount.ts';
+import { loadBondingAccount } from './loaders/bondingAccount.ts';
 import { parseChecksumAddress } from './helpers/addressHelpers.ts';
 import { loadCachedCapital } from './loaders/cached/capitalCached.ts';
 import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
 import { loadCachedStakingConfig } from './loaders/cached/stakingConfigCached.ts';
+import { loadCachedBondingConfig } from './loaders/cached/bondingConfigCached.ts';
 import { loadCachedTopHoldingAddresses, TOP_HOLDERS_PAGE_SIZE } from './loaders/topHoldingAddresses.ts';
 import { TOP_HOLDING_ADDRESSES } from '../constants/topHoldingAddresses.ts';
 import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cachePolicy.ts';
@@ -19,14 +21,17 @@ import type { Address } from '../types/blockchain.types.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
 import type { SwapRateLimiters } from './rateLimit.ts';
 import type { StakingAccountSnapshot, StakingConfig } from '../features/staking/staking.types.ts';
+import type { BondingAccount, BondingConfig } from '../features/bonding/bonding.types.ts';
 
 // Browser Cache-Control values for readonly GET responses
 const READONLY_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_LP_CAPITAL_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.lpCapitalApiResponseBrowserHttp}`;
 const READONLY_STAKING_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.stakingStatsApiResponseBrowserHttp}`;
 const READONLY_STAKING_CONFIG_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
+const READONLY_BONDING_CONFIG_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.apiResponseBrowserHttp}`;
 const READONLY_BOND_METRICS_API_CACHE_CONTROL = `private, max-age=${BROWSER_CACHE_TTL_SECONDS.bondMetricsApiResponseBrowserHttp}`;
 const STAKING_ACCOUNT_CACHE_CONTROL = 'private, no-store';
+const BONDING_ACCOUNT_CACHE_CONTROL = 'private, no-store';
 // Version identity is fixed for the process lifetime; allow short public reuse.
 const VERSION_API_CACHE_CONTROL = `public, max-age=${BROWSER_CACHE_TTL_SECONDS.versionApiResponseBrowserHttp}`;
 
@@ -40,15 +45,27 @@ export type StakingApiLoaders = {
   loadAccount: (address: Address) => Promise<StakingAccountSnapshot>;
 };
 
+/** Optional bonding GET loader overrides for route tests. */
+export type BondingApiLoaders = {
+  loadConfig: () => Promise<BondingConfig>;
+  loadAccount: (address: Address) => Promise<BondingAccount>;
+};
+
 const DEFAULT_STAKING_API_LOADERS: StakingApiLoaders = {
   loadConfig: loadCachedStakingConfig,
   loadAccount: loadStakingAccount,
 };
 
-// Handles readonly GET API routes (stats, capital, summary, staking config/account, etc.)
+const DEFAULT_BONDING_API_LOADERS: BondingApiLoaders = {
+  loadConfig: loadCachedBondingConfig,
+  loadAccount: loadBondingAccount,
+};
+
+// Handles readonly GET API routes (stats, capital, summary, staking/bonding config/account, etc.)
 export function createGetApiRouteHandler(
   rateLimiters: SwapRateLimiters,
   stakingLoaders: StakingApiLoaders = DEFAULT_STAKING_API_LOADERS,
+  bondingLoaders: BondingApiLoaders = DEFAULT_BONDING_API_LOADERS,
 ): RequestHandler {
   return async function handleGetApiRequest(req, res, url): Promise<boolean> {
     // Public deploy identity — compare with GitHub `main` and the UI footer SHA.
@@ -151,6 +168,72 @@ export function createGetApiRouteHandler(
         sendJson(res, 502, {
           error: 'upstream_unavailable',
           message: 'Failed to load staking account.',
+        });
+      }
+      return true;
+    }
+
+    // Protocol config for the /bond/ UI — 30s browser + server cache.
+    if (url.pathname === '/api/bonding/config') {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use GET for bonding config.',
+        });
+        return true;
+      }
+
+      try {
+        const result = await bondingLoaders.loadConfig();
+        sendJson(res, 200, result, { cacheControl: READONLY_BONDING_CONFIG_CACHE_CONTROL });
+      } catch (err) {
+        console.error('Failed to load bonding config:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to load bonding config.',
+        });
+      }
+      return true;
+    }
+
+    // Wallet-specific balances/allowances/bonds — no-store, rate-limited, requires valid address.
+    if (url.pathname === '/api/bonding/account') {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use GET for bonding account.',
+        });
+        return true;
+      }
+
+      // Validate before rate-limit so junk addresses do not spend IP/global RPC quota.
+      const address = parseChecksumAddress(url.searchParams.get('address'));
+      if (!address) {
+        sendJson(res, 400, {
+          error: 'invalid_address',
+          message: 'Provide a valid wallet address.',
+        });
+        return true;
+      }
+
+      if (rateLimiters.isBondingAccountRateLimited(req)) {
+        sendJson(res, 429, {
+          error: 'rate_limited',
+          message: 'Too many bonding account requests.',
+        });
+        return true;
+      }
+
+      try {
+        const result = await bondingLoaders.loadAccount(address);
+        sendJson(res, 200, result, { cacheControl: BONDING_ACCOUNT_CACHE_CONTROL });
+      } catch (err) {
+        console.error('Failed to load bonding account:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to load bonding account.',
         });
       }
       return true;

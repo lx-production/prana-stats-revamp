@@ -26,6 +26,15 @@ const STAKING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequ
 const STAKING_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const STAKING_QUOTE_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
 
+// Bonding APIs share the same in-memory store; confirmation has its own bucket so hash polling
+// does not consume quote quota.
+const BONDING_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
+const BONDING_QUOTE_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
+const BONDING_ACCOUNT_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
+const BONDING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+const BONDING_CONFIRM_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
+const BONDING_CONFIRM_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+
 // How often we delete expired per-IP buckets so memory does not grow forever.
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000; // 1 minute
 
@@ -146,10 +155,16 @@ export function createSwapRateLimiters() {
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
   const stakingAccountRateLimits = new Map<string, RateLimitBucket>();
   const stakingQuoteRateLimits = new Map<string, RateLimitBucket>();
+  const bondingQuoteRateLimits = new Map<string, RateLimitBucket>();
+  const bondingAccountRateLimits = new Map<string, RateLimitBucket>();
+  const bondingConfirmRateLimits = new Map<string, RateLimitBucket>();
 
   let globalSwapQuoteRateLimit: RateLimitBucket | null = null;
   let globalStakingAccountRateLimit: RateLimitBucket | null = null;
   let globalStakingQuoteRateLimit: RateLimitBucket | null = null;
+  let globalBondingQuoteRateLimit: RateLimitBucket | null = null;
+  let globalBondingAccountRateLimit: RateLimitBucket | null = null;
+  let globalBondingConfirmRateLimit: RateLimitBucket | null = null;
   // let is used because global* buckets get reassigned, while the Maps only get mutated
 
   return {
@@ -214,6 +229,69 @@ export function createSwapRateLimiters() {
       return globalResult.limited;
     },
 
+    // Bonding quote: 10/IP/min + 60/server/min.
+    isBondingQuoteRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          bondingQuoteRateLimits,
+          BONDING_QUOTE_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalBondingQuoteRateLimit,
+        BONDING_QUOTE_GLOBAL_RATE_LIMIT,
+      );
+      globalBondingQuoteRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
+    // Bonding account: 10/IP/min + 120/server/min (same shape as staking account).
+    isBondingAccountRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          bondingAccountRateLimits,
+          BONDING_ACCOUNT_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalBondingAccountRateLimit,
+        BONDING_ACCOUNT_GLOBAL_RATE_LIMIT,
+      );
+      globalBondingAccountRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
+    // Confirmation polling: separate bucket so retries do not burn quote quota.
+    isBondingConfirmRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          bondingConfirmRateLimits,
+          BONDING_CONFIRM_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalBondingConfirmRateLimit,
+        BONDING_CONFIRM_GLOBAL_RATE_LIMIT,
+      );
+      globalBondingConfirmRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
     getClientIp(req: IncomingMessage): string {
       return getRequestIp(req, trustedProxyHopCount);
     },
@@ -234,6 +312,9 @@ export function createSwapRateLimiters() {
         sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(stakingAccountRateLimits, now, STAKING_ACCOUNT_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(stakingQuoteRateLimits, now, STAKING_QUOTE_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(bondingQuoteRateLimits, now, BONDING_QUOTE_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(bondingAccountRateLimits, now, BONDING_ACCOUNT_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(bondingConfirmRateLimits, now, BONDING_CONFIRM_RATE_LIMIT.windowMs);
 
         if (
           globalStakingAccountRateLimit &&
@@ -249,6 +330,30 @@ export function createSwapRateLimiters() {
             STAKING_QUOTE_GLOBAL_RATE_LIMIT.windowMs
         ) {
           globalStakingQuoteRateLimit = null;
+        }
+
+        if (
+          globalBondingQuoteRateLimit &&
+          now - globalBondingQuoteRateLimit.windowStartedAt >
+            BONDING_QUOTE_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalBondingQuoteRateLimit = null;
+        }
+
+        if (
+          globalBondingAccountRateLimit &&
+          now - globalBondingAccountRateLimit.windowStartedAt >
+            BONDING_ACCOUNT_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalBondingAccountRateLimit = null;
+        }
+
+        if (
+          globalBondingConfirmRateLimit &&
+          now - globalBondingConfirmRateLimit.windowStartedAt >
+            BONDING_CONFIRM_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalBondingConfirmRateLimit = null;
         }
       }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
 

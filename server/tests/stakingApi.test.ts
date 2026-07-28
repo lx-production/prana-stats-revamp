@@ -161,10 +161,12 @@ function createQuoteHandlers(options?: {
   const rateLimiters = createSwapRateLimiters();
   const quoteCalls = options?.quoteCalls ?? { count: 0 };
   const handlePost = createPostApiRouteHandler(rateLimiters, {
-    loadQuote: async () => {
-      quoteCalls.count += 1;
-      if (options?.loadQuote) return options.loadQuote();
-      return sampleQuote();
+    staking: {
+      loadQuote: async () => {
+        quoteCalls.count += 1;
+        if (options?.loadQuote) return options.loadQuote();
+        return sampleQuote();
+      },
     },
   });
   return { rateLimiters, handlePost, quoteCalls };
