@@ -26,33 +26,34 @@ Vòng đời điển hình:
 
 ## 2. Impacted reserves và price impact
 
-Mỗi contract V2 giữ hai bộ số dự trữ nội bộ (**impacted reserves**: `impactedWbtcReserve` / `impactedPranaReserve`). Sau mỗi lần tạo bond thành công, contract cập nhật bộ số này như thể volume đó đã “đẩy” đường cong AMM — nên bond tiếp theo chịu **price impact lũy tiến**, không reset về giá pool mỗi lần.
+Mỗi contract V2 giữ 2 bộ reserve:
 
-**Market reserves** là reserves live của pool Uniswap V3 WBTC/PRANA tại block quote/create.
+- **Impacted reserves** (`impactedWbtcReserve`, `impactedPranaReserve`): reserve nội bộ đã tính tác động từ các bond trước đó.
+- **Market reserves**: reserve live của pool Uniswap V3 tại thời điểm quote/create.
 
-**Khi nào dùng impacted, khi nào dùng market?** Create/quote luôn tính song song hai nhánh rồi chọn theo quy tắc “không cho user lợi hơn giá market hiện tại”:
+Sau mỗi lần tạo bond, impacted reserves được cập nhật. Vì vậy bond sau sẽ chịu **price impact lũy tiến**, không luôn quay về giá pool live.
 
-- **Buy exact WBTC** (nhận PRANA): giữ **impacted** khi PRANA ước tính từ impacted **≤** PRANA từ pool. Nếu impacted cho **nhiều PRANA hơn** pool → reset impacted = pool và dùng **market**.
-- **Buy target PRANA** (chi WBTC): giữ **impacted** khi WBTC ước tính từ impacted **≥** WBTC từ pool. Nếu impacted đòi **ít WBTC hơn** pool → reset impacted = pool và dùng **market**.
-- **Sell exact PRANA** (nhận WBTC): giữ **impacted** khi WBTC ước tính từ impacted **≤** WBTC từ pool. Nếu impacted cho **nhiều WBTC hơn** pool → reset impacted = pool và dùng **market**.
+**Quy tắc chọn giá khi quote/create:** contract luôn tính cả 2 nhánh rồi chọn nhánh **không cho user có giá tốt hơn market hiện tại**.
 
-Nói ngắn gọn:
+- **Mặc định dùng impacted**.
+- Nếu impacted đang cho user lợi hơn giá DEX, contract sẽ **sync impacted về pool** và dùng **market**.
 
-- **Impacted** là mặc định khi volume bonding gần đây đã làm giá bond kém lợi hơn (hoặc bằng) giá pool live.
-- **Market** chỉ khi impacted đang “lệch có lợi cho user” so với pool — ví dụ sau khi pool di chuyển, hoặc sau `sync`/`set` admin — lúc đó contract tự đồng bộ impacted về pool rồi quote/create theo market.
+Áp dụng cho cả 3 flow (buy exact WBTC, buy target PRANA, sell exact PRANA).
 
-Vậy Bonding OTC còn lợi chỗ nào? Cơ chế trên chỉ chặn nhánh reserves **trước** premium/discount — tức không cho baseline AMM của bond tốt hơn giá pool. **Lợi OTC nằm ở `bondRates` áp vào sau:** Buy nhận **discount** (chiết khấu) trên baseline đó; Sell nhận **premium** trên baseline đó, đổi lại payout vest theo kỳ hạn đã chọn.
+**Bonding OTC còn lợi ở đâu?**  
+Phần chặn trên chỉ chặn baseline AMM (trước ưu đãi). Lợi thế OTC đến từ `bondRates`:
 
-Nói thẳng: nếu sau khi cân nhắc discount/premium (và thời gian chờ vesting) giá bonding **không còn lợi bằng** swap trực tiếp trên DEX, thì nên **swap trên DEX** thay vì tạo bond.
+- Buy có thể được **discount**
+- Sell có thể được **premium**
+- Đổi lại payout sẽ **vest theo kỳ hạn**
 
-API quote trả `reserveSource: "impacted" | "market"` để UI biết nhánh nào đã dùng. View `calculate*Amount` trên contract chỉ đọc impacted (không tự so sánh market); nhánh auto-sync market nằm ở hàm create (và được backend quote mô phỏng giống create).
+Nếu sau khi tính discount/premium + thời gian vesting mà bonding không tốt hơn swap DEX, thì nên swap trực tiếp trên DEX.
 
-Manager có `BOND_MANAGER_ROLE` có thể gọi:
+Lưu ý kỹ thuật:
 
-- `syncImpactedReserves` — copy reserves pool hiện tại vào impacted
-- `setImpactedReserves` — set trực tiếp giá trị reserve WBTC/PRANA impacted
-
-Đây là thao tác admin, không phải hành động ví người dùng. Thay đổi reserve có thể làm quote bond mới đổi; không viết lại payout của bond đã tạo.
+- `calculate*Amount` (view) chỉ đọc impacted, không tự so sánh market.
+- Nhánh auto-sync market nằm ở hàm create (backend quote mô phỏng theo logic này).
+- `BOND_MANAGER_ROLE` (PRANA Protocol) có thể gọi `syncImpactedReserves` hoặc `setImpactedReserves` để chỉnh impacted reserves (thao tác admin, không đổi payout bond đã tạo).
 
 ## 3. Các đường tạo Buy Bond
 

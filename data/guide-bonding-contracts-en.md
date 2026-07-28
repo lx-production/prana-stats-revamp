@@ -24,33 +24,34 @@ Typical lifecycle:
 
 ## 2. Impacted reserves and price impact
 
-Each V2 contract keeps an internal pair of virtual reserves (**impacted reserves**: `impactedWbtcReserve` / `impactedPranaReserve`). After every successful bond creation, the contract updates that pair as if the volume had already “pushed” the AMM curve — so the next bond takes **progressive price impact**, instead of resetting to pool price every time.
+Each V2 contract keeps two reserve sets:
 
-**Market reserves** are the live Uniswap V3 WBTC/PRANA pool reserves at the quote/create block.
+- **Impacted reserves** (`impactedWbtcReserve`, `impactedPranaReserve`): internal reserves that already include the effect of previous bonds.
+- **Market reserves**: live Uniswap V3 pool reserves at quote/create time.
 
-**When is impacted used vs market?** Create/quote always computes both paths, then picks by the rule “do not give the user a better deal than current market”:
+After each bond creation, impacted reserves are updated. So the next bond sees **progressive price impact**, instead of always resetting to live pool price.
 
-- **Buy exact WBTC** (receive PRANA): keep **impacted** when estimated PRANA from impacted **≤** PRANA from the pool. If impacted would give **more PRANA than** the pool → reset impacted = pool and use **market**.
-- **Buy target PRANA** (spend WBTC): keep **impacted** when estimated WBTC from impacted **≥** WBTC from the pool. If impacted would cost **less WBTC than** the pool → reset impacted = pool and use **market**.
-- **Sell exact PRANA** (receive WBTC): keep **impacted** when estimated WBTC from impacted **≤** WBTC from the pool. If impacted would give **more WBTC than** the pool → reset impacted = pool and use **market**.
+**Price selection rule for quote/create:** the contract computes both paths and picks the one that **does not give users a better price than current market**.
 
-In short:
+- **Impacted is the default**.
+- If impacted is better for the user than DEX market, the contract **syncs impacted to pool** and uses **market**.
 
-- **Impacted** is the default when recent bonding volume already made the bond price worse than (or equal to) the live pool.
-- **Market** is used only when impacted has drifted **in the user’s favor** vs the pool — for example after the pool moves, or after an admin `sync`/`set` — then the contract syncs impacted to the pool and quotes/creates from market.
+This applies to all three flows (buy exact WBTC, buy target PRANA, sell exact PRANA).
 
-So where is the Bonding OTC edge? The guard above only constrains the reserve path **before** premium/discount — it stops the bond’s AMM baseline from beating live pool price. **The OTC edge is the `bondRates` applied after that:** Buy gets a **discount** on that baseline; Sell gets a **premium** on that baseline, in exchange for payout vesting over the chosen term.
+**Where is the OTC edge?**  
+This guard only constrains the AMM baseline (before incentives). The OTC edge comes from `bondRates`:
 
-Bluntly: if after discount/premium (and waiting for vesting) bonding is **not better than** swapping directly on the DEX, **swap on the DEX** instead of creating a bond.
+- Buy can get a **discount**
+- Sell can get a **premium**
+- In exchange, payout **vests over the selected term**
 
-The quote API returns `reserveSource: "impacted" | "market"` so the UI knows which path was used. On-chain `calculate*Amount` views read impacted only (they do not compare market); the market auto-sync branch lives in the create functions (and the backend quote mirrors create).
+If discount/premium plus vesting still makes bonding worse than direct DEX swap, then DEX swap is the better choice.
 
-Managers with `BOND_MANAGER_ROLE` can call:
+Technical notes:
 
-- `syncImpactedReserves` — copy current pool reserves into impacted
-- `setImpactedReserves` — set impacted WBTC/PRANA reserve values directly
-
-These are admin operations, not user wallet actions. Reserve changes can move quotes for new bonds; they do not rewrite payouts already recorded on existing bonds.
+- `calculate*Amount` view functions read impacted only (no market comparison).
+- The market auto-sync branch exists in create functions (and backend quote mirrors this logic).
+- `BOND_MANAGER_ROLE` (PRANA Protocol) can call `syncImpactedReserves` or `setImpactedReserves` to adjust impacted reserves (admin-only; does not change payouts of existing bonds).
 
 ## 3. Buy Bond create paths
 
