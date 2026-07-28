@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+import TxLink from '../../../components/ui/TxLink.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getBondingCopy } from '../bonding.copy.ts';
 import { sortActiveBonds } from '../bondingMath.ts';
+import { useBondActions } from '../hooks/useBondActions.ts';
+import { isBondDeploymentPaused } from '../utils/bondClaimTarget.ts';
 import BondCard from './BondCard.tsx';
 
-import type { ActiveBondRecord } from '../bonding.types.ts';
+import type { ActiveBondRecord, BondingConfig } from '../bonding.types.ts';
 
 type ActiveBondsProps = {
   bonds: ActiveBondRecord[] | undefined;
@@ -14,20 +18,47 @@ type ActiveBondsProps = {
   error: boolean;
   /** Chain block timestamp from the account snapshot when available. */
   blockTimestamp?: number;
+  config: BondingConfig | undefined;
+  configLoading: boolean;
+  configError: boolean;
+  refetchAccount: () => Promise<unknown>;
+  /** Lock claims while the create/approve form tx is running. */
+  actionsLocked?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 };
 
 /**
- * Lists the connected wallet's active bonds (read-only in Bước 4).
+ * Lists active bonds and wires claim actions.
  * Wall time = blockTimestamp + elapsed (less dependent on local clock skew).
+ * Per-deployment pause only locks bonds on that deployment.
  */
 export default function ActiveBonds({
   bonds,
   loading,
   error,
   blockTimestamp,
+  config,
+  configLoading,
+  configError,
+  refetchAccount,
+  actionsLocked = false,
+  onBusyChange,
 }: ActiveBondsProps) {
   const { locale } = useSiteLanguage();
   const copy = getBondingCopy(locale);
+
+  const configReady = Boolean(config) && !configLoading && !configError;
+
+  const bondActions = useBondActions({
+    config,
+    refetchAccount,
+    externallyBusy: actionsLocked,
+    configReady,
+  });
+
+  useEffect(() => {
+    onBusyChange?.(bondActions.isBusy);
+  }, [onBusyChange, bondActions.isBusy]);
 
   const [nowSeconds, setNowSeconds] = useState(() =>
     blockTimestamp ?? Math.floor(Date.now() / 1000),
@@ -63,6 +94,64 @@ export default function ActiveBonds({
           {copy.activeBondsHeading}
         </h2>
 
+        {configLoading ? (
+          <StatusBanner tone="neutral">{copy.bondsConfigPending}</StatusBanner>
+        ) : null}
+        {configError ? (
+          <StatusBanner tone="warning">{copy.bondsConfigError}</StatusBanner>
+        ) : null}
+
+        {bondActions.error ? (
+          <StatusBanner tone="error">{bondActions.error}</StatusBanner>
+        ) : null}
+        {bondActions.success ? (
+          <StatusBanner tone="success">
+            {bondActions.success}
+            {bondActions.transactionHash ? (
+              <>
+                {' '}
+                <TxLink
+                  hash={bondActions.transactionHash}
+                  label={copy.viewOnPolygonscan}
+                />
+              </>
+            ) : null}
+          </StatusBanner>
+        ) : null}
+        {bondActions.warning ? (
+          <StatusBanner tone="warning">{bondActions.warning}</StatusBanner>
+        ) : null}
+        {bondActions.hasPendingHash && bondActions.transactionHash ? (
+          <StatusBanner tone="warning">
+            <div className="space-y-2">
+              <div>
+                {copy.claimTransactionPending}{' '}
+                <TxLink
+                  hash={bondActions.transactionHash}
+                  label={copy.viewOnPolygonscan}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn-hero btn-glass w-full sm:w-auto"
+                disabled={
+                  actionsLocked || bondActions.status === 'confirming'
+                }
+                onClick={() => void bondActions.resumePendingReceipt()}
+              >
+                {bondActions.status === 'confirming' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    {copy.confirmingCta}
+                  </span>
+                ) : (
+                  copy.resumeConfirmingCta
+                )}
+              </button>
+            </div>
+          </StatusBanner>
+        ) : null}
+
         {loading ? (
           <StatusBanner tone="neutral">{copy.loadingBonds}</StatusBanner>
         ) : null}
@@ -75,15 +164,26 @@ export default function ActiveBonds({
         ) : null}
 
         <div className="space-y-3">
-          {sortedBonds.map((bond) => (
-            <BondCard
-              key={`${bond.side}-${bond.version}-${bond.id}`}
-              bond={bond}
-              nowSeconds={nowSeconds}
-              locale={locale}
-              copy={copy}
-            />
-          ))}
+          {sortedBonds.map((bond) => {
+            const deploymentPaused = config
+              ? isBondDeploymentPaused(config.paused, bond.side, bond.version)
+              : false;
+
+            return (
+              <BondCard
+                key={`${bond.side}-${bond.version}-${bond.id}`}
+                bond={bond}
+                nowSeconds={nowSeconds}
+                locale={locale}
+                copy={copy}
+                actionsEnabled={configReady}
+                deploymentPaused={deploymentPaused}
+                actionsLocked={actionsLocked || bondActions.isBusy}
+                activeClaim={bondActions.action}
+                onClaim={(target) => void bondActions.claimBond(target)}
+              />
+            );
+          })}
         </div>
       </div>
     </GlassPanel>

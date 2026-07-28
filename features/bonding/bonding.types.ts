@@ -212,3 +212,18 @@ export type BondAmountParseReason =
 export type BondAmountParseResult =
   | { ok: true; raw: bigint }
   | { ok: false; reason: BondAmountParseReason };
+
+/** Active claim identity — ids collide across Buy/Sell × V1/V2. */
+export type BondClaimActionTarget = {
+  side: BondSide;
+  version: BondVersion;
+  bondId: string;
+};
+
+/** Claim eligibility derived from cumulative vesting math + pause gate. */
+export type BondActionState = {
+  claimableRaw: bigint;
+  progressPercent: number;
+  /** True when vested−claimed > 0, not fully claimed, and past lastClaimTime. */
+  canClaim: boolean;
+};

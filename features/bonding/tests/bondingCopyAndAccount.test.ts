@@ -25,6 +25,12 @@ test('getBondingCopy exposes matching VI/EN keys for all three quote modes', () 
     'targetPranaNoMaxInWarning',
     'quoteIssues',
     'amountReasons',
+    'claimBond',
+    'claimingCta',
+    'claimConfirmed',
+    'claimPausedReason',
+    'bondsConfigPending',
+    'viewOnPolygonscan',
   ] as const) {
     assert.ok(vi[key], `missing VI ${key}`);
     assert.ok(en[key], `missing EN ${key}`);

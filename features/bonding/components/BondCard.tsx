@@ -1,13 +1,14 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import {
   formatPranaAmount,
   formatWbtcAmount,
-  getBondClaimableRaw,
-  getBondProgressPercent,
+  getBondActionState,
 } from '../bondingMath.ts';
 
 import type { SiteLocale } from '../../../types/locale.types.ts';
-import type { ActiveBondRecord } from '../bonding.types.ts';
+import type { ActiveBondRecord, BondClaimActionTarget } from '../bonding.types.ts';
 import type { BondingCopy } from '../bonding.copy.ts';
 
 type BondCardProps = {
@@ -15,6 +16,13 @@ type BondCardProps = {
   nowSeconds: number;
   locale: SiteLocale;
   copy: BondingCopy;
+  /** False until config is loaded — hides write actions. */
+  actionsEnabled: boolean;
+  /** This bond's deployment is paused — show reason, disable claim. */
+  deploymentPaused: boolean;
+  actionsLocked: boolean;
+  activeClaim: BondClaimActionTarget | null;
+  onClaim: (target: BondClaimActionTarget) => void;
 };
 
 function formatBondDate(unixSeconds: number, locale: SiteLocale): string {
@@ -28,7 +36,7 @@ function formatBondDate(unixSeconds: number, locale: SiteLocale): string {
 }
 
 /**
- * Read-only active bond row (claim actions land in Bước 6).
+ * Active bond row with claim CTA.
  * Key identity is side+version+id — IDs can collide across deployments.
  */
 export default function BondCard({
@@ -36,6 +44,11 @@ export default function BondCard({
   nowSeconds,
   locale,
   copy,
+  actionsEnabled,
+  deploymentPaused,
+  actionsLocked,
+  activeClaim,
+  onClaim,
 }: BondCardProps) {
   const isBuy = bond.side === 'buy';
   const principal = isBuy
@@ -48,27 +61,33 @@ export default function BondCard({
     ? `${formatPranaAmount(bond.claimedRaw)} PRANA`
     : `${formatWbtcAmount(bond.claimedRaw)} WBTC`;
 
-  const totalPayoutRaw = BigInt(
-    isBuy ? bond.pranaAmountRaw : bond.wbtcAmountRaw,
-  );
-  const claimableRaw = getBondClaimableRaw(
-    totalPayoutRaw,
-    BigInt(bond.claimedRaw),
-    bond.creationTime,
-    bond.maturityTime,
-    nowSeconds,
-  );
+  const actionState = getBondActionState(bond, nowSeconds);
   const claimable = isBuy
-    ? `${formatPranaAmount(claimableRaw)} PRANA`
-    : `${formatWbtcAmount(claimableRaw)} WBTC`;
-
-  const progress = getBondProgressPercent(
-    bond.creationTime,
-    bond.maturityTime,
-    nowSeconds,
-  );
+    ? `${formatPranaAmount(actionState.claimableRaw)} PRANA`
+    : `${formatWbtcAmount(actionState.claimableRaw)} WBTC`;
+  const progress = actionState.progressPercent;
 
   const maturityLabel = formatBondDate(bond.maturityTime, locale);
+
+  const claimTarget: BondClaimActionTarget = {
+    side: bond.side,
+    version: bond.version,
+    bondId: bond.id,
+  };
+
+  const isThisBusy =
+    activeClaim != null &&
+    activeClaim.side === bond.side &&
+    activeClaim.version === bond.version &&
+    activeClaim.bondId === bond.id;
+
+  const canShowClaim =
+    actionsEnabled && actionState.canClaim && !deploymentPaused;
+  const buttonsDisabled =
+    !actionsEnabled ||
+    deploymentPaused ||
+    actionsLocked ||
+    Boolean(activeClaim);
 
   return (
     <article className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -125,6 +144,32 @@ export default function BondCard({
           />
         </div>
       </div>
+
+      {actionsEnabled && deploymentPaused && actionState.canClaim ? (
+        <StatusBanner tone="warning" className="text-xs">
+          {copy.claimPausedReason}
+        </StatusBanner>
+      ) : null}
+
+      {canShowClaim ? (
+        <div className="pt-1">
+          <button
+            type="button"
+            className="btn-stake btn-gold-border w-full sm:w-auto"
+            disabled={buttonsDisabled}
+            onClick={() => onClaim(claimTarget)}
+          >
+            {isThisBusy ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {copy.claimingCta}
+              </span>
+            ) : (
+              copy.claimBond
+            )}
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

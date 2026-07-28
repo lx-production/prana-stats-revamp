@@ -9,6 +9,7 @@ import {
 import { SECONDS_PER_DAY } from '../../../constants/network.ts';
 import { computeBondingQuote } from '../../../server/utils/bondingQuoteMath.ts';
 import {
+  getBondActionState,
   getBondClaimableRaw,
   getBondProgressPercent,
   getConfiguredTerm,
@@ -18,8 +19,12 @@ import {
   parseWbtcAmount,
   rawBalanceToAmountInput,
 } from '../bondingMath.ts';
+import {
+  calculateAccruedInterestRaw,
+  getEffectiveAccruedSeconds,
+} from '../../staking/stakingMath.ts';
 
-import type { BondingTermOption } from '../bonding.types.ts';
+import type { ActiveBondRecord, BondingTermOption } from '../bonding.types.ts';
 
 test('parseBondAmount rejects empty, zero, negative, scientific, and junk', () => {
   assert.deepEqual(parseWbtcAmount(''), { ok: false, reason: 'empty' });
@@ -123,7 +128,28 @@ test('getBondProgressPercent clamps 0..100 with integer floor math', () => {
   assert.equal(getBondProgressPercent(creation, maturity, 2_000), 100);
 });
 
-test('getBondClaimableRaw uses cumulative vesting minus claimedRaw', () => {
+test('getBondClaimableRaw boundaries match Solidity floor vesting', () => {
+  const total = 1000n;
+  const creation = 100;
+  const maturity = 200;
+
+  // Before / at creation → 0.
+  assert.equal(getBondClaimableRaw(total, 0n, creation, maturity, 50), 0n);
+  assert.equal(getBondClaimableRaw(total, 0n, creation, maturity, 100), 0n);
+
+  // Mid-vest: floor(1000 × 30 / 100) = 300.
+  assert.equal(getBondClaimableRaw(total, 0n, creation, maturity, 130), 300n);
+
+  // Partial claim then later day — delta only (day 50 example: 500 − 300).
+  assert.equal(getBondClaimableRaw(total, 300n, creation, maturity, 150), 200n);
+
+  // Exact maturity and after — remaining payout.
+  assert.equal(getBondClaimableRaw(total, 300n, creation, maturity, 200), 700n);
+  assert.equal(getBondClaimableRaw(total, 300n, creation, maturity, 999), 700n);
+  assert.equal(getBondClaimableRaw(total, 1000n, creation, maturity, 200), 0n);
+});
+
+test('getBondClaimableRaw multi-claim delta is cumulative vested minus claimed', () => {
   const total = 1000n;
   const creation = 0;
   const maturity = 100;
@@ -133,6 +159,95 @@ test('getBondClaimableRaw uses cumulative vesting minus claimedRaw', () => {
   assert.equal(getBondClaimableRaw(total, 300n, creation, maturity, 50), 200n);
   assert.equal(getBondClaimableRaw(total, 300n, creation, maturity, 100), 700n);
   assert.equal(getBondClaimableRaw(total, 1000n, creation, maturity, 100), 0n);
+});
+
+test('Bonding claimable ignores lastClaimTime; Staking accrued uses it', () => {
+  const bond: ActiveBondRecord = {
+    id: '1',
+    side: 'buy',
+    version: 'v2',
+    owner: '0x1111111111111111111111111111111111111111',
+    wbtcAmountRaw: '1',
+    pranaAmountRaw: '1000',
+    maturityTime: 100,
+    creationTime: 0,
+    lastClaimTime: 30,
+    claimedRaw: '300',
+    claimed: false,
+  };
+
+  // Same claimedRaw + different lastClaimTime must not change Bonding claimable.
+  const at50 = getBondClaimableRaw(1000n, 300n, 0, 100, 50);
+  assert.equal(at50, 200n);
+  assert.equal(
+    getBondActionState({ ...bond, lastClaimTime: 30 }, 50).claimableRaw,
+    200n,
+  );
+  assert.equal(
+    getBondActionState({ ...bond, lastClaimTime: 49 }, 50).claimableRaw,
+    200n,
+  );
+
+  // Progress also independent of lastClaimTime.
+  assert.equal(getBondProgressPercent(0, 100, 50), 50);
+  assert.equal(
+    getBondActionState({ ...bond, lastClaimTime: 10 }, 50).progressPercent,
+    50,
+  );
+  assert.equal(
+    getBondActionState({ ...bond, lastClaimTime: 49 }, 50).progressPercent,
+    50,
+  );
+
+  // Staking: changing lastClaimTime with same principal must change accrued.
+  const stakeBase = {
+    id: 1,
+    amountRaw: '100000000000', // 100 PRANA (9 decimals)
+    startTime: 0,
+    durationSeconds: 31_536_000,
+    apr: 10,
+    lastClaimTime: 0,
+  };
+  const early = calculateAccruedInterestRaw(
+    BigInt(stakeBase.amountRaw),
+    stakeBase.apr,
+    getEffectiveAccruedSeconds(stakeBase, 1_000_000),
+  );
+  const laterClaim = calculateAccruedInterestRaw(
+    BigInt(stakeBase.amountRaw),
+    stakeBase.apr,
+    getEffectiveAccruedSeconds(
+      { ...stakeBase, lastClaimTime: 500_000 },
+      1_000_000,
+    ),
+  );
+  assert.notEqual(early, laterClaim);
+  assert.ok(early > laterClaim);
+});
+
+test('getBondActionState canClaim requires claimable and past lastClaimTime', () => {
+  const bond: ActiveBondRecord = {
+    id: '7',
+    side: 'sell',
+    version: 'v1',
+    owner: '0x1111111111111111111111111111111111111111',
+    wbtcAmountRaw: '1000',
+    pranaAmountRaw: '1',
+    maturityTime: 100,
+    creationTime: 0,
+    lastClaimTime: 50,
+    claimedRaw: '0',
+    claimed: false,
+  };
+
+  // Same second as lastClaim — contract would revert "No new amount to claim".
+  assert.equal(getBondActionState(bond, 50).canClaim, false);
+  assert.equal(getBondActionState(bond, 51).canClaim, true);
+  assert.equal(getBondActionState({ ...bond, claimed: true }, 80).canClaim, false);
+  assert.equal(
+    getBondActionState({ ...bond, claimedRaw: '1000' }, 80).canClaim,
+    false,
+  );
 });
 
 test('quote math is deterministic for same reserves/rates/treasury regardless of clock', () => {

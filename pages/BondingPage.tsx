@@ -29,8 +29,7 @@ import {
 } from '../constants/bonds.ts';
 
 /**
- * Bonding route shell — wallet, Buy/Sell form, approve/create writes, active bonds.
- * Claim actions land in Bước 6.
+ * Bonding route shell — wallet, Buy/Sell form, approve/create writes, active bonds + claim.
  */
 export default function BondingPage() {
   const { locale } = useSiteLanguage();
@@ -42,8 +41,9 @@ export default function BondingPage() {
     wallet.isConnected ? wallet.address : undefined,
   );
 
-  // formBusy reserved for claim cross-lock in Bước 6
-  const [, setFormBusy] = useState(false);
+  // Mutual lock: form approve/create ↔ claim writes (mirror StakingPage).
+  const [formBusy, setFormBusy] = useState(false);
+  const [actionsBusy, setActionsBusy] = useState(false);
 
   const refetchAccount = useCallback(
     () => accountQuery.refetch(),
@@ -152,6 +152,7 @@ export default function BondingPage() {
               account={accountQuery.data}
               configLoading={configQuery.isLoading}
               configError={configQuery.isError}
+              actionsLocked={actionsBusy}
               onBusyChange={setFormBusy}
               refetchAccount={refetchAccount}
               refetchConfig={refetchConfig}
@@ -161,6 +162,12 @@ export default function BondingPage() {
               loading={accountQuery.isLoading}
               error={accountQuery.isError}
               blockTimestamp={accountQuery.data?.blockTimestamp}
+              config={configQuery.data}
+              configLoading={configQuery.isLoading}
+              configError={configQuery.isError}
+              refetchAccount={refetchAccount}
+              actionsLocked={formBusy}
+              onBusyChange={setActionsBusy}
             />
           </>
         ) : null}

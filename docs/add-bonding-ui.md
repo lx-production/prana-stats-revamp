@@ -149,7 +149,7 @@
     - Receipt `reverted` không báo success; receipt thành công mới reset form/invalidate quote/refetch account.
     - Refetch sau success thất bại hiển thị warning và hash Polygonscan, không đổi receipt thành error.
     - Error sanitizer test với rejection, wrong chain, insufficient POL, allowance, pause, treasury/reserve và RPC secret.
-6. **Port Active Bonds và claim**
+6. ✅ **Port Active Bonds và claim**
   - Backend hợp nhất Buy/Sell × V1/V2; UI hiển thị badge side/version, principal, payout, claimed, claimable, thời gian và tiến độ vesting.
   - Tính Bonding claimable bằng bigint đúng contract:
     - Trước maturity: `totalVestedRaw = floor(totalPayoutRaw × (now - creationTime) / (maturityTime - creationTime))`.

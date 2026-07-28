@@ -265,6 +265,53 @@ test('reverted receipt does not report success or sync account as success path',
   assert.equal(synced, false);
 });
 
+test('claim write flow uses claimBond and resume never rewrites', async () => {
+  let writeCount = 0;
+  let simulatedFn = '';
+  let simulatedArgs: readonly unknown[] = [];
+
+  const claim = await submitBondWriteFlow({
+    refetchAccount: async () => successRefetch(),
+    validateFreshAccount: () => true,
+    simulate: async () => {
+      simulatedFn = 'claimBond';
+      simulatedArgs = [42n];
+      return {
+        address: sampleAccount.address,
+        functionName: 'claimBond',
+        args: [42n],
+        account: sampleAccount.address,
+      };
+    },
+    write: async (simulated) => {
+      writeCount += 1;
+      assert.equal(simulated.functionName, 'claimBond');
+      assert.deepEqual(simulated.args, [42n]);
+      return HASH;
+    },
+    waitForReceipt: async () => {
+      throw new Error('browser RPC read failed');
+    },
+    confirmOnServer: async () => {
+      throw new Error('server unavailable');
+    },
+  });
+
+  assert.equal(claim.kind, 'confirmation_unavailable');
+  assert.equal(simulatedFn, 'claimBond');
+  assert.deepEqual(simulatedArgs, [42n]);
+  assert.equal(writeCount, 1);
+
+  // Resume confirmation only — never a second claim write.
+  const resume = await confirmBondReceipt(HASH, {
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
+    refetchAccount: async () => successRefetch(),
+  });
+  assert.equal(resume.kind, 'confirmed');
+  assert.equal(writeCount, 1);
+});
+
 test('accountFromSuccessfulRefetch stays strict for write gates', () => {
   assert.equal(accountFromSuccessfulRefetch(errorRefetch()), undefined);
   assert.deepEqual(

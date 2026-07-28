@@ -63,6 +63,16 @@ export type BondingCopy = {
   noBonds: string;
   loadingBonds: string;
   accountError: string;
+  /** Config still loading — claims stay off. */
+  bondsConfigPending: string;
+  bondsConfigError: string;
+  /** Claim CTA / lifecycle copy. */
+  claimBond: string;
+  claimingCta: string;
+  claimConfirmed: string;
+  claimPausedReason: string;
+  claimTransactionPending: string;
+  viewOnPolygonscan: string;
   bondId: (id: string) => string;
   sideBadge: Record<BondSide, string>;
   versionBadge: Record<BondVersion, string>;
@@ -147,6 +157,15 @@ const vi: BondingCopy = {
   noBonds: 'Chưa có bond nào.',
   loadingBonds: 'Đang tải danh sách bond…',
   accountError: 'Không tải được dữ liệu ví. Thử lại sau.',
+  bondsConfigPending: 'Đang tải cấu hình — claim tạm khóa.',
+  bondsConfigError: 'Không tải được cấu hình. Claim tạm khóa.',
+  claimBond: 'Claim',
+  claimingCta: 'Đang claim…',
+  claimConfirmed: 'Claim bond đã xác nhận trên Polygon.',
+  claimPausedReason: 'Deployment này đang tạm dừng — không thể claim.',
+  claimTransactionPending:
+    'Đã gửi claim nhưng chưa xác nhận được receipt. Kiểm tra Polygonscan rồi bấm Tiếp tục xác nhận.',
+  viewOnPolygonscan: 'Xem trên Polygonscan',
   bondId: (id) => `Bond #${id}`,
   sideBadge: { buy: 'Mua', sell: 'Bán' },
   versionBadge: { v1: 'V1', v2: 'V2' },
@@ -244,6 +263,15 @@ const en: BondingCopy = {
   noBonds: 'No active bonds yet.',
   loadingBonds: 'Loading bonds…',
   accountError: 'Could not load wallet data. Try again later.',
+  bondsConfigPending: 'Loading config — claims are locked.',
+  bondsConfigError: 'Could not load config. Claims are locked.',
+  claimBond: 'Claim',
+  claimingCta: 'Claiming…',
+  claimConfirmed: 'Bond claim confirmed on Polygon.',
+  claimPausedReason: 'This deployment is paused — claim unavailable.',
+  claimTransactionPending:
+    'Claim submitted but the receipt could not be confirmed. Check Polygonscan, then continue confirming.',
+  viewOnPolygonscan: 'View on Polygonscan',
   bondId: (id) => `Bond #${id}`,
   sideBadge: { buy: 'Buy', sell: 'Sell' },
   versionBadge: { v1: 'V1', v2: 'V2' },

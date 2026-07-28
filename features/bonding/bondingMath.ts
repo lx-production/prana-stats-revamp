@@ -7,6 +7,7 @@ import {
 
 import type {
   ActiveBondRecord,
+  BondActionState,
   BondAmountParseResult,
   BondingTermOption,
   BondTermId,
@@ -203,4 +204,41 @@ export function sortActiveBonds(
       return a.id.localeCompare(b.id);
     }
   });
+}
+
+/** Total payout raw for the bond's payout token (PRANA buy / WBTC sell). */
+export function getBondTotalPayoutRaw(bond: ActiveBondRecord): bigint {
+  return BigInt(bond.side === 'buy' ? bond.pranaAmountRaw : bond.wbtcAmountRaw);
+}
+
+/**
+ * Claim eligibility from cumulative vesting.
+ * lastClaimTime only gates same-second double claims — it does not change vested math.
+ */
+export function getBondActionState(
+  bond: ActiveBondRecord,
+  nowSeconds: number,
+): BondActionState {
+  const totalPayoutRaw = getBondTotalPayoutRaw(bond);
+  const claimedRaw = BigInt(bond.claimedRaw);
+  const claimableRaw = getBondClaimableRaw(
+    totalPayoutRaw,
+    claimedRaw,
+    bond.creationTime,
+    bond.maturityTime,
+    nowSeconds,
+  );
+  const progressPercent = getBondProgressPercent(
+    bond.creationTime,
+    bond.maturityTime,
+    nowSeconds,
+  );
+
+  // Contract: require(block.timestamp > lastClaimTime) and !claimed.
+  const canClaim =
+    !bond.claimed &&
+    claimableRaw > 0n &&
+    nowSeconds > bond.lastClaimTime;
+
+  return { claimableRaw, progressPercent, canClaim };
 }
