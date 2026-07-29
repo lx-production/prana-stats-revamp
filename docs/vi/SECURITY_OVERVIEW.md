@@ -62,7 +62,7 @@ Bonding tái dùng helper admission cho các POST, nhưng **không** tái dùng 
 | --- | --- | --- | --- |
 | `GET /api/bonding/config` | Snapshot paused/terms/minimum V1/V2 | n/a | nhóm limiter GET dùng chung |
 | `GET /api/bonding/account` | Balance/allowance/active bonds theo ví | n/a | 10 / IP / phút + 120 global / phút |
-| `POST /api/bonding/quote` | Quote exact WBTC / target PRANA / exact PRANA | 2 KB | 10 / IP / phút + 60 global / phút |
+| `POST /api/bonding/quote` | Quote exact WBTC / exact PRANA | 2 KB | 10 / IP / phút + 60 global / phút |
 | `POST /api/bonding/confirm-transaction` | Fallback đọc receipt khi browser RPC lỗi cho approve/create/claim cố định | 2 KB | bucket confirmation riêng |
 
 Confirmation Bonding chỉ chấp nhận hash user đã broadcast và đối chiếu sender/target/selector/args với mapping side/version nội bộ. Đây chỉ là xác nhận UX — không phải analytics tin cậy kiểu Swap.

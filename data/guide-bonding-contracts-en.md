@@ -38,7 +38,7 @@ After each bond creation, impacted reserves are updated. So the next bond sees *
 - **Impacted is the default**.
 - If impacted is better for the user than DEX market, the contract **syncs impacted to pool** and uses **market**.
 
-This applies to all three flows (buy exact WBTC, buy target PRANA, sell exact PRANA).
+This applies to both app quote modes (buy exact WBTC, sell exact PRANA) and to the on-chain create paths.
 
 **Where is the OTC edge?** 
 
@@ -58,12 +58,12 @@ Technical notes:
 
 ## 3. Buy Bond create paths
 
-BuyPranaBondV2 exposes two create functions:
+BuyPranaBondV2 exposes two create functions on-chain:
 
-- `buyBondForWbtcAmount(wbtcAmount, period)` — spend an exact WBTC amount you want to use to buy PRANA; PRANA payout is computed on-chain
+- `buyBondForWbtcAmount(wbtcAmount, period)` — spend an exact WBTC amount; PRANA payout is computed on-chain
 - `buyBondForPranaAmount(pranaAmount, period)` — target an exact PRANA payout; WBTC cost is computed on-chain
 
-If you already have WBTC, enter the WBTC amount you want to sell. That is the forward quote direction and is usually better. Do not use the PRANA input path to reverse-check, because it is not a 1:1 inverse conversion.
+The PRANA Bonding UI and quote API only use **`buyBondForWbtcAmount`**. Enter the WBTC amount you want to spend. Neither create path accepts `minPranaOut` / `maxWbtcIn`. At PRANA's current scale and traffic, adding this mechanism would be unnecessary over-engineering; PRANA Protocol prioritizes a simple design.
 
 ## 4. Sell Bond create path
 

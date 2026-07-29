@@ -45,11 +45,10 @@ function baseRequest(
   };
 }
 
-test('buildBondingQuoteRequest maps side/mode to discriminated union', () => {
+test('buildBondingQuoteRequest maps side to discriminated union', () => {
   assert.deepEqual(
     buildBondingQuoteRequest({
       side: 'buy',
-      buyMode: 'exact_wbtc',
       amountRaw: 10n,
       termId: 1,
     }),
@@ -57,17 +56,7 @@ test('buildBondingQuoteRequest maps side/mode to discriminated union', () => {
   );
   assert.deepEqual(
     buildBondingQuoteRequest({
-      side: 'buy',
-      buyMode: 'target_prana',
-      amountRaw: 20n,
-      termId: 2,
-    }),
-    { mode: 'buy_target_prana', amountRaw: '20', termId: 2 },
-  );
-  assert.deepEqual(
-    buildBondingQuoteRequest({
       side: 'sell',
-      buyMode: 'exact_wbtc',
       amountRaw: 30n,
       termId: 0,
     }),
@@ -76,7 +65,6 @@ test('buildBondingQuoteRequest maps side/mode to discriminated union', () => {
   assert.equal(
     buildBondingQuoteRequest({
       side: 'buy',
-      buyMode: 'exact_wbtc',
       amountRaw: null,
       termId: 1,
     }),

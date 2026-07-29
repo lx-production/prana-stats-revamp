@@ -45,7 +45,7 @@ export async function loadBondingQuote(
 
   const blockTag = block.number;
   const isBuy =
-    request.mode === 'buy_exact_wbtc' || request.mode === 'buy_target_prana';
+    request.mode === 'buy_exact_wbtc';
 
   const buyV2 = new ethers.Contract(BUY_BOND_ADDRESS_V2, BUY_BOND_V2_ABI, provider);
   const sellV2 = new ethers.Contract(SELL_BOND_ADDRESS_V2, SELL_BOND_V2_ABI, provider);

@@ -155,16 +155,6 @@ export function buildExpectedCall(
       };
     }
 
-    if (action.mode === 'buy_target_prana') {
-      return {
-        target: BUY_BOND_ADDRESS_V2,
-        data: BUY_V2_IFACE.encodeFunctionData('buyBondForPranaAmount', [
-          amount,
-          action.termId,
-        ]) as Hex,
-      };
-    }
-
     return {
       target: SELL_BOND_ADDRESS_V2,
       data: SELL_V2_IFACE.encodeFunctionData('sellBond', [

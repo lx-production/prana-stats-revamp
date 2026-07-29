@@ -655,14 +655,29 @@ test('POST /api/bonding/quote returns 502 with redacted RPC errors', async () =>
   }
 });
 
-test('parseBondingQuoteRequest accepts the three modes and rejects bad shapes', () => {
+test('parseBondingQuoteRequest accepts the two modes and rejects bad shapes', () => {
   assert.deepEqual(
+    parseBondingQuoteRequest({
+      mode: 'buy_exact_wbtc',
+      amountRaw: '999',
+      termId: 4,
+    }),
+    { mode: 'buy_exact_wbtc', amountRaw: '999', termId: 4 },
+  );
+  assert.deepEqual(
+    parseBondingQuoteRequest({
+      mode: 'sell_exact_prana',
+      amountRaw: '999',
+      termId: 4,
+    }),
+    { mode: 'sell_exact_prana', amountRaw: '999', termId: 4 },
+  );
+  assert.throws(() =>
     parseBondingQuoteRequest({
       mode: 'buy_target_prana',
       amountRaw: '999',
       termId: 4,
     }),
-    { mode: 'buy_target_prana', amountRaw: '999', termId: 4 },
   );
 
   assert.throws(() => parseBondingQuoteRequest({ mode: 'buy_exact_wbtc', amountRaw: '1', termId: 9 }));
@@ -724,27 +739,6 @@ test('quote math: buy_exact_wbtc syncs to market when impacted is worse for user
   assert.equal(result.issues.includes('exceeds_reserve'), false);
 });
 
-test('quote math: buy_target_prana grosses up 1% fee and takes max(impacted, market) cost', () => {
-  const pranaTarget = 5_000_000_000n;
-  const result = computeBondingQuote({
-    ...BASE_MATH,
-    mode: 'buy_target_prana',
-    amountRaw: pranaTarget,
-  });
-
-  const impactedIn = mulDiv(
-    BASE_MATH.impactedWbtc,
-    pranaTarget,
-    BASE_MATH.impactedPrana - pranaTarget,
-  );
-  const discounted = mulDiv(impactedIn, 9000n, 10000n);
-  const expected = mulDiv(discounted, 100n, 99n);
-
-  assert.equal(result.reserveSource, 'impacted');
-  assert.equal(result.pranaAmountRaw, pranaTarget);
-  assert.equal(result.wbtcAmountRaw, expected);
-});
-
 test('quote math: sell_exact_prana applies fee then premium and min(impacted, market)', () => {
   const pranaIn = 5_000_000_000n;
   const result = computeBondingQuote({
@@ -768,7 +762,7 @@ test('quote math: sell_exact_prana applies fee then premium and min(impacted, ma
   assert.deepEqual(result.issues, []);
 });
 
-test('quote math boundary: zero, below min, exceeds reserve, treasury shortfall, paused', () => {
+test('quote math boundary: zero, below min, treasury shortfall, paused', () => {
   assert.deepEqual(
     computeBondingQuote({
       ...BASE_MATH,
@@ -780,19 +774,15 @@ test('quote math boundary: zero, below min, exceeds reserve, treasury shortfall,
 
   const below = computeBondingQuote({
     ...BASE_MATH,
-    mode: 'buy_target_prana',
-    amountRaw: 1n,
-    minPranaRaw: 100n,
+    mode: 'buy_exact_wbtc',
+    amountRaw: 100_000n,
+    minPranaRaw: 50_000_000_000n,
   });
   assert.equal(below.issues.includes('below_minimum'), true);
 
-  const exceeds = computeBondingQuote({
-    ...BASE_MATH,
-    mode: 'buy_target_prana',
-    amountRaw: BASE_MATH.impactedPrana,
-  });
-  assert.equal(exceeds.issues.includes('exceeds_reserve'), true);
-  assert.equal(exceeds.wbtcAmountRaw, 0n);
+  // buy_exact_wbtc pushes exceeds_reserve when baseline >= impacted reserve.
+  // With floor math that is effectively unreachable for positive reserves; sell
+  // and buy paths still surface treasury / pause / zero / below_minimum.
 
   const treasury = computeBondingQuote({
     ...BASE_MATH,

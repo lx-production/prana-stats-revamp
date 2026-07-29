@@ -16,8 +16,6 @@ export type BondingCopy = {
   connectedAs: string;
   buyTab: string;
   sellTab: string;
-  buyExactWbtcMode: string;
-  buyTargetPranaMode: string;
   amountLabelWbtc: string;
   amountLabelPrana: string;
   balanceLabel: string;
@@ -33,8 +31,6 @@ export type BondingCopy = {
   quoteEmpty: string;
   expectedPrana: string;
   expectedWbtc: string;
-  requiredWbtc: string;
-  targetPranaNoMaxInWarning: string;
   rateLabel: string;
   durationLabel: (days: number) => string;
   /** Primary CTA phases (Approve → Review → Create → Confirming). */
@@ -53,7 +49,6 @@ export type BondingCopy = {
   confirmationUnavailable: string;
   reviewDialogTitle: string;
   reviewDialogBody: string;
-  reviewDialogWbtcCap: string;
   reviewDialogConfirm: string;
   reviewDialogCancel: string;
   processing: string;
@@ -96,7 +91,7 @@ export type BondingCopy = {
 const vi: BondingCopy = {
   pageTitle: 'Bonding',
   pageSubtitle:
-    'Mua hoặc bán bond PRANA trên Polygon. Quote đi qua backend; ví chỉ ký approve, tạo bond và claim.',
+    'Mua hoặc bán bond PRANA trên Polygon. Quote từ live contracts qua backend; ví chỉ ký approve, tạo bond và claim.',
   backHome: 'Trang chủ',
   connectWallet: 'Kết nối ví',
   disconnect: 'Ngắt kết nối',
@@ -104,8 +99,6 @@ const vi: BondingCopy = {
   connectedAs: 'Đã kết nối',
   buyTab: 'Mua Bond',
   sellTab: 'Bán Bond',
-  buyExactWbtcMode: 'WBTC Muốn Bán',
-  buyTargetPranaMode: 'PRANA Muốn Mua',
   amountLabelWbtc: 'Số lượng WBTC',
   amountLabelPrana: 'Số lượng PRANA',
   balanceLabel: 'Số dư',
@@ -121,9 +114,6 @@ const vi: BondingCopy = {
   quoteEmpty: 'Nhập số lượng hợp lệ để xem quote.',
   expectedPrana: 'PRANA nhận dự kiến',
   expectedWbtc: 'WBTC nhận dự kiến',
-  requiredWbtc: 'WBTC cần trả dự kiến',
-  targetPranaNoMaxInWarning:
-    'Contract không nhận tham số “WBTC tối đa được phép chi”. Allowance WBTC hoạt động như spending cap thay thế.',
   rateLabel: 'Tỷ lệ chiết khấu',
   durationLabel: (days) => `${days} ngày`,
   approveCta: 'Approve',
@@ -144,7 +134,6 @@ const vi: BondingCopy = {
   reviewDialogTitle: 'Xác nhận tạo bond',
   reviewDialogBody:
     'Kiểm tra lại số lượng và kỳ hạn trước khi ví mở giao dịch tạo bond.',
-  reviewDialogWbtcCap: 'Cap WBTC (allowance)',
   reviewDialogConfirm: 'Tạo Bond',
   reviewDialogCancel: 'Hủy',
   processing: 'Đang xử lý…',
@@ -199,7 +188,7 @@ const vi: BondingCopy = {
 const en: BondingCopy = {
   pageTitle: 'Bonding',
   pageSubtitle:
-    'Buy or sell PRANA bonds on Polygon. Quotes go through the backend; the wallet only signs approve, create, and claim.',
+    'Buy or sell PRANA bonds on Polygon. Quotes from live contracts through the backend; the wallet only signs approve, create, and claim.',
   backHome: 'Home',
   connectWallet: 'Connect wallet',
   disconnect: 'Disconnect',
@@ -207,8 +196,6 @@ const en: BondingCopy = {
   connectedAs: 'Connected as',
   buyTab: 'Buy Bond',
   sellTab: 'Sell Bond',
-  buyExactWbtcMode: 'WBTC To Sell',
-  buyTargetPranaMode: 'PRANA To Buy',
   amountLabelWbtc: 'WBTC amount',
   amountLabelPrana: 'PRANA amount',
   balanceLabel: 'Balance',
@@ -224,9 +211,6 @@ const en: BondingCopy = {
   quoteEmpty: 'Enter a valid amount to see a quote.',
   expectedPrana: 'Expected PRANA',
   expectedWbtc: 'Expected WBTC',
-  requiredWbtc: 'Estimated WBTC required',
-  targetPranaNoMaxInWarning:
-    'The contract does not accept a “maximum WBTC allowed” parameter. WBTC allowance acts as a spending cap instead.',
   rateLabel: 'Discount rate',
   durationLabel: (days) => `${days} days`,
   approveCta: 'Approve',
@@ -247,7 +231,6 @@ const en: BondingCopy = {
   reviewDialogTitle: 'Confirm create bond',
   reviewDialogBody:
     'Review amounts and term before your wallet opens the create-bond transaction.',
-  reviewDialogWbtcCap: 'WBTC spending cap (allowance)',
   reviewDialogConfirm: 'Create Bond',
   reviewDialogCancel: 'Cancel',
   processing: 'Processing…',

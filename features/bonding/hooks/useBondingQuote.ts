@@ -208,7 +208,6 @@ export function useBondingQuote(
 /** Build a typed quote request from form state (null when incomplete). */
 export function buildBondingQuoteRequest(args: {
   side: 'buy' | 'sell';
-  buyMode: 'exact_wbtc' | 'target_prana';
   amountRaw: bigint | null;
   termId: BondTermId | null;
 }): BondingQuoteRequest | null {
@@ -219,8 +218,5 @@ export function buildBondingQuoteRequest(args: {
   if (args.side === 'sell') {
     return { mode: 'sell_exact_prana', amountRaw, termId };
   }
-  if (args.buyMode === 'exact_wbtc') {
-    return { mode: 'buy_exact_wbtc', amountRaw, termId };
-  }
-  return { mode: 'buy_target_prana', amountRaw, termId };
+  return { mode: 'buy_exact_wbtc', amountRaw, termId };
 }

@@ -37,7 +37,6 @@ import type {
   BondSide,
   BondTermId,
 } from '../bonding.types.ts';
-import type { BuyInputMode } from '../hooks/useBondTransaction.ts';
 
 type BondingFormProps = {
   config: BondingConfig | undefined;
@@ -53,6 +52,7 @@ type BondingFormProps = {
 
 /**
  * Buy/Sell bonding form: amount, term, live quote, and Approve → Review → Create.
+ * Buy always takes exact WBTC; Sell always takes exact PRANA.
  */
 export default function BondingForm({
   config,
@@ -69,7 +69,6 @@ export default function BondingForm({
   const wallet = useInjectedWallet();
 
   const [side, setSide] = useState<BondSide>('buy');
-  const [buyMode, setBuyMode] = useState<BuyInputMode>('exact_wbtc');
   const [amount, setAmount] = useState('');
   const [termId, setTermId] = useState<BondTermId | null>(null);
 
@@ -85,11 +84,7 @@ export default function BondingForm({
     setTermId(getDefaultTermId(nextTerms));
   }, [config, side, termId]);
 
-  // Input decimals depend on side + buy mode.
-  const inputDecimals =
-    side === 'sell' || buyMode === 'target_prana'
-      ? PRANA_DECIMALS
-      : WBTC_DECIMALS;
+  const inputDecimals = side === 'sell' ? PRANA_DECIMALS : WBTC_DECIMALS;
 
   const parsedAmount =
     inputDecimals === WBTC_DECIMALS
@@ -101,11 +96,10 @@ export default function BondingForm({
     () =>
       buildBondingQuoteRequest({
         side,
-        buyMode,
         amountRaw,
         termId,
       }),
-    [side, buyMode, amountRaw, termId],
+    [side, amountRaw, termId],
   );
 
   const quoteEnabled =
@@ -124,7 +118,6 @@ export default function BondingForm({
     config,
     account,
     side,
-    buyMode,
     amountRaw,
     termId,
     quote: quoteState.quote,
@@ -153,18 +146,10 @@ export default function BondingForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- success edge only
   }, [bondTx.status]);
 
-  // Changing side / buy mode clears amount; quote hook invalidates too.
+  // Changing side clears amount; quote hook invalidates too.
   const onSideChange = (next: BondSide) => {
     if (next === side) return;
     setSide(next);
-    setAmount('');
-    quoteState.invalidate();
-    bondTx.clearMessages();
-  };
-
-  const onBuyModeChange = (next: BuyInputMode) => {
-    if (next === buyMode) return;
-    setBuyMode(next);
     setAmount('');
     quoteState.invalidate();
     bondTx.clearMessages();
@@ -184,23 +169,16 @@ export default function BondingForm({
   const wbtcBalanceRaw = account ? BigInt(account.wbtcBalanceRaw) : 0n;
   const pranaBalanceRaw = account ? BigInt(account.pranaBalanceRaw) : 0n;
 
-  // MAX only for exact WBTC Buy and exact PRANA Sell — never target PRANA.
-  const showMax =
-    side === 'sell' || (side === 'buy' && buyMode === 'exact_wbtc');
-
   const balanceFormatted = account
-    ? buyMode === 'target_prana' && side === 'buy'
+    ? side === 'sell'
       ? formatPranaAmount(pranaBalanceRaw)
-      : side === 'sell'
-        ? formatPranaAmount(pranaBalanceRaw)
-        : formatWbtcAmount(wbtcBalanceRaw)
+      : formatWbtcAmount(wbtcBalanceRaw)
     : '—';
 
-  const balanceTokenLabel =
-    side === 'sell' || buyMode === 'target_prana' ? 'PRANA' : 'WBTC';
+  const balanceTokenLabel = side === 'sell' ? 'PRANA' : 'WBTC';
 
   const onMax = () => {
-    if (!account || !showMax) return;
+    if (!account) return;
     const raw =
       side === 'sell' ? account.pranaBalanceRaw : account.wbtcBalanceRaw;
     const decimals = side === 'sell' ? PRANA_DECIMALS : WBTC_DECIMALS;
@@ -215,19 +193,12 @@ export default function BondingForm({
       ? Boolean(config?.paused.buyV2)
       : Boolean(config?.paused.sellV2);
 
-  const minBuyRaw = config ? BigInt(config.minBuyPranaRaw) : 0n;
   const minSellRaw = config ? BigInt(config.minSellPranaRaw) : 0n;
 
   const amountError = useMemo(() => {
     if (!amount) return null;
     if (parsedAmount.ok === false) {
       return copy.amountReasons[parsedAmount.reason];
-    }
-    // Target PRANA buy: compare against min buy PRANA.
-    if (side === 'buy' && buyMode === 'target_prana' && config) {
-      if (parsedAmount.raw < minBuyRaw) {
-        return copy.minBuyHint(formatPranaAmount(config.minBuyPranaRaw));
-      }
     }
     // Exact PRANA sell: compare against min sell PRANA.
     if (side === 'sell' && config) {
@@ -239,7 +210,7 @@ export default function BondingForm({
       }
     }
     // Exact WBTC buy: balance check only (min is on PRANA output, shown via quote issues).
-    if (side === 'buy' && buyMode === 'exact_wbtc' && account) {
+    if (side === 'buy' && account) {
       if (parsedAmount.raw > wbtcBalanceRaw) {
         return copy.exceedsBalance;
       }
@@ -249,9 +220,7 @@ export default function BondingForm({
     amount,
     parsedAmount,
     side,
-    buyMode,
     config,
-    minBuyRaw,
     minSellRaw,
     account,
     pranaBalanceRaw,
@@ -268,9 +237,7 @@ export default function BondingForm({
     actionsLocked;
 
   const amountLabel =
-    side === 'sell' || buyMode === 'target_prana'
-      ? copy.amountLabelPrana
-      : copy.amountLabelWbtc;
+    side === 'sell' ? copy.amountLabelPrana : copy.amountLabelWbtc;
 
   const displayQuote = bondTx.reviewQuote ?? quoteState.quote;
 
@@ -357,45 +324,6 @@ export default function BondingForm({
           <StatusBanner tone="warning">{copy.switchPolygonFirst}</StatusBanner>
         ) : null}
 
-        {side === 'buy' ? (
-          <div
-            role="radiogroup"
-            aria-label={copy.buyExactWbtcMode}
-            className="grid grid-cols-2 gap-2"
-          >
-            {(
-              [
-                ['exact_wbtc', copy.buyExactWbtcMode],
-                ['target_prana', copy.buyTargetPranaMode],
-              ] as const
-            ).map(([mode, label]) => {
-              const selected = buyMode === mode;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  disabled={formFieldsDisabled}
-                  onClick={() => onBuyModeChange(mode)}
-                  className={`
-                    rounded-xl border px-3 py-2 text-xs font-semibold transition-all
-                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5D27A]
-                    disabled:cursor-not-allowed disabled:opacity-50
-                    ${
-                      selected
-                        ? 'border-[#F5D27A]/45 bg-[#F5D27A]/10 text-white'
-                        : 'border-white/10 bg-white/5 text-white/70 hover:border-white/25'
-                    }
-                  `}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
         {/* Amount (left) + live quote (right) — mirror Staking amount/interest row. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           <div className="min-w-0 space-y-2">
@@ -407,16 +335,14 @@ export default function BondingForm({
                 <span>
                   {copy.balanceLabel}: {balanceFormatted} {balanceTokenLabel}
                 </span>
-                {showMax ? (
-                  <button
-                    type="button"
-                    disabled={formFieldsDisabled || !account}
-                    onClick={onMax}
-                    className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-[#F5D27A] transition hover:border-[#F5D27A]/35 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {copy.maxButton}
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  disabled={formFieldsDisabled || !account}
+                  onClick={onMax}
+                  className="rounded-md border border-white/15 px-2 py-0.5 font-semibold text-[#F5D27A] transition hover:border-[#F5D27A]/35 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {copy.maxButton}
+                </button>
               </div>
             </div>
             <input
@@ -438,7 +364,6 @@ export default function BondingForm({
           <QuotePanel
             copy={copy}
             side={side}
-            buyMode={buyMode}
             quote={displayQuote}
             isLoading={quoteState.isLoading && !bondTx.reviewOpen}
             error={quoteState.error}
@@ -501,8 +426,6 @@ export default function BondingForm({
       {bondTx.reviewOpen && bondTx.reviewQuote ? (
         <CreateBondReviewDialog
           quote={bondTx.reviewQuote}
-          side={side}
-          buyMode={buyMode}
           copy={copy}
           busy={bondTx.status === 'submitting' || bondTx.status === 'confirming'}
           error={
@@ -521,7 +444,6 @@ export default function BondingForm({
 type QuotePanelProps = {
   copy: ReturnType<typeof getBondingCopy>;
   side: BondSide;
-  buyMode: BuyInputMode;
   quote: BondingQuote | null;
   isLoading: boolean;
   error: string | null;
@@ -532,19 +454,13 @@ type QuotePanelProps = {
 function QuotePanel({
   copy,
   side,
-  buyMode,
   quote,
   isLoading,
   error,
   isStale,
   hasAmount,
 }: QuotePanelProps) {
-  const primaryLabel =
-    side === 'sell'
-      ? copy.expectedWbtc
-      : buyMode === 'exact_wbtc'
-        ? copy.expectedPrana
-        : copy.requiredWbtc;
+  const primaryLabel = side === 'sell' ? copy.expectedWbtc : copy.expectedPrana;
 
   // Empty / loading / error states still fill the right column so the row stays aligned.
   if (isLoading) {
@@ -579,11 +495,10 @@ function QuotePanel({
   }
 
   const primaryValue =
-    side === 'sell' || buyMode === 'target_prana'
+    side === 'sell'
       ? formatWbtcAmount(quote.wbtcAmountRaw)
       : formatPranaAmount(quote.pranaAmountRaw);
-  const primaryToken =
-    side === 'sell' || buyMode === 'target_prana' ? 'WBTC' : 'PRANA';
+  const primaryToken = side === 'sell' ? 'WBTC' : 'PRANA';
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
@@ -598,11 +513,6 @@ function QuotePanel({
       </div>
       {isStale ? (
         <StatusBanner tone="warning">{copy.quoteStale}</StatusBanner>
-      ) : null}
-      {side === 'buy' && buyMode === 'target_prana' ? (
-        <StatusBanner tone="warning">
-          {copy.targetPranaNoMaxInWarning}
-        </StatusBanner>
       ) : null}
       {quote.issues.length > 0 ? (
         <div className="space-y-1">

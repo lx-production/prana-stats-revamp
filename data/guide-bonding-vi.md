@@ -11,7 +11,7 @@ Tạo bond thường cần **Approve** ERC-20 trước:
 - **Buy Bond** chi **WBTC** — approve spender là Buy Bond V2
 - **Sell Bond** chi **PRANA** — approve spender là Sell Bond V2
 
-Nút chính đi theo các phase: **Approve** → **Review** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần (hoặc cap WBTC của Target PRANA), UI bỏ qua Approve và vào thẳng Review.
+Nút chính đi theo các phase: **Approve** → **Review** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần, UI bỏ qua Approve và vào thẳng Review.
 
 Trên lời nhắc Approve, hãy kiểm tra:
 
@@ -22,13 +22,11 @@ Trên lời nhắc Approve, hãy kiểm tra:
 
 Từ chối request nếu bất kỳ chi tiết nào bất thường.
 
-## 2. Buy Bond — hai chế độ nhập
+## 2. Buy Bond — exact WBTC
 
 Buy Bond khóa **WBTC** và vest **PRANA** theo kỳ hạn đã chọn.
 
-**Exact WBTC** — bạn nhập số WBTC muốn chi. Quote hiện PRANA payout dự kiến. Lệnh contract dùng đúng số WBTC đó (`buyBondForWbtcAmount`). Không có `minPranaOut`, nên PRANA nhận được có thể khác nếu reserves hoặc rate đổi trước khi giao dịch thực thi.
-
-**Target PRANA** — bạn nhập số PRANA muốn nhận. Quote hiện WBTC cần trả dự kiến. Lệnh contract dùng target PRANA (`buyBondForPranaAmount`) và **không** nhận tham số `maxWbtcIn`. Giao diện đặt allowance WBTC bằng quote mới nhất làm spending cap; nếu lúc thực thi cần nhiều WBTC hơn cap đó thì transaction revert thay vì lấy thêm WBTC.
+Bạn nhập số WBTC muốn chi. Quote hiện PRANA payout dự kiến. Lệnh contract dùng đúng số WBTC đó (`buyBondForWbtcAmount`). Không có `minPranaOut`, nên PRANA nhận được có thể khác nếu reserves hoặc rate đổi trước khi giao dịch thực thi.
 
 Trước khi tạo, app tự fresh-quote. Nếu raw amount không đổi thì tiếp tục; nếu đổi thì Review cập nhật trước khi cho write.
 
@@ -38,7 +36,7 @@ Sell Bond khóa **PRANA** và vest **WBTC** theo kỳ hạn đã chọn.
 
 Bạn luôn nhập exact PRANA. Quote hiện WBTC payout dự kiến. Lệnh contract là `sellBond(pranaAmount, period)`. Không có `minWbtcOut`, nên WBTC nhận được có thể khác nếu state on-chain đổi giữa lúc quote và lúc thực thi.
 
-Allowance phải ≥ đúng số PRANA nhập. MAX chỉ dùng cho exact WBTC Buy và exact PRANA Sell — Target PRANA Buy không có nút MAX.
+Allowance phải ≥ đúng số PRANA nhập. MAX dùng cho Buy WBTC và Sell PRANA.
 
 ## 4. Vesting và claim
 

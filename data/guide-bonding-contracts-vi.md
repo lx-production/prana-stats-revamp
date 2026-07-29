@@ -56,12 +56,12 @@ Lưu ý kỹ thuật:
 
 ## 3. Các đường tạo Buy Bond
 
-BuyPranaBondV2 có hai hàm tạo:
+BuyPranaBondV2 có hai hàm tạo on-chain:
 
-- `buyBondForWbtcAmount(wbtcAmount, period)` — chi đúng số WBTC muốn dùng để mua PRANA; PRANA payout được tính on-chain
+- `buyBondForWbtcAmount(wbtcAmount, period)` — chi đúng số WBTC; PRANA payout được tính on-chain
 - `buyBondForPranaAmount(pranaAmount, period)` — nhắm đúng số PRANA; chi phí WBTC được tính on-chain
 
-Nếu bạn có sẵn WBTC, hãy nhập số WBTC muốn bán. Cách đó là chiều quote thuận và thường có lợi hơn. Đừng dùng chiều nhập PRANA để kiểm tra ngược lại, vì nó không phải công thức quy đổi ngược 1:1.
+UI Bonding và API quote chỉ dùng **`buyBondForWbtcAmount`**. Nhập số WBTC muốn chi. Không path nào nhận `minPranaOut` / `maxWbtcIn`. Với quy mô và traffic hiện tại của PRANA, thêm cơ chế này là dư thừa và dễ thành over-engineering; PRANA Protocol ưu tiên thiết kế tối giản.
 
 ## 4. Đường tạo Sell Bond
 

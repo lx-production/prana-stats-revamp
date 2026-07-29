@@ -85,9 +85,6 @@ export function computeBondingQuote(input: BondingQuoteMathInput): BondingQuoteM
   if (input.mode === 'buy_exact_wbtc') {
     return quoteBuyExactWbtc(input, issues);
   }
-  if (input.mode === 'buy_target_prana') {
-    return quoteBuyTargetPrana(input, issues);
-  }
   return quoteSellExactPrana(input, issues);
 }
 
@@ -133,60 +130,6 @@ function quoteBuyExactWbtc(
   return {
     wbtcAmountRaw: input.amountRaw,
     pranaAmountRaw: hasBlockingIssue(issues) ? 0n : pranaOut,
-    reserveSource,
-    issues,
-  };
-}
-
-function quoteBuyTargetPrana(
-  input: BondingQuoteMathInput,
-  issues: BondingQuoteIssue[],
-): BondingQuoteMathResult {
-  const pranaTarget = input.amountRaw;
-  const impactedWbtc = ensurePositiveReserve(input.impactedWbtc);
-  const impactedPrana = ensurePositiveReserve(input.impactedPrana);
-  const poolWbtc = ensurePositiveReserve(input.poolWbtc);
-  const poolPrana = ensurePositiveReserve(input.poolPrana);
-
-  if (pranaTarget < input.minPranaRaw) {
-    issues.push('below_minimum');
-  }
-
-  if (pranaTarget >= impactedPrana || pranaTarget >= poolPrana) {
-    issues.push('exceeds_reserve');
-    return {
-      wbtcAmountRaw: 0n,
-      pranaAmountRaw: pranaTarget,
-      reserveSource: 'impacted',
-      issues,
-    };
-  }
-
-  if (pranaTarget > input.availableTreasuryRaw) {
-    issues.push('insufficient_treasury');
-  }
-
-  const impactedIn = mulDiv(
-    impactedWbtc,
-    pranaTarget,
-    impactedPrana - pranaTarget,
-  );
-  const marketIn = mulDiv(poolWbtc, pranaTarget, poolPrana - pranaTarget);
-
-  let baseline = impactedIn;
-  let reserveSource: BondingReserveSource = 'impacted';
-
-  if (baseline < marketIn) {
-    baseline = marketIn;
-    reserveSource = 'market';
-  }
-
-  const discounted = mulDiv(baseline, 10000n - input.rateBps, 10000n);
-  const wbtcIn = mulDiv(discounted, 100n, 99n);
-
-  return {
-    wbtcAmountRaw: hasBlockingIssue(issues) ? 0n : wbtcIn,
-    pranaAmountRaw: pranaTarget,
     reserveSource,
     issues,
   };

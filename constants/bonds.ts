@@ -64,10 +64,9 @@ export const SELL_BOND_COMMITTED_WBTC_ABI: BondAbiFunctionFragment[] = [
 // Default exports use V2 contracts
 export const SELL_BOND_ADDRESS = SELL_BOND_ADDRESS_V2;
 
-/** Create-bond function names — V2 only (never attach to V1 account ABIs). */
+/** Create-bond function names used by the app — V2 exact-WBTC only. */
 export const BUY_BOND_V2_CREATE_FUNCTION_NAMES = [
   'buyBondForWbtcAmount',
-  'buyBondForPranaAmount',
 ] as const;
 
 export const SELL_BOND_V2_CREATE_FUNCTION_NAMES = ['sellBond'] as const;

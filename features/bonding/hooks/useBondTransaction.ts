@@ -35,7 +35,6 @@ import {
 import {
   isAllowanceSufficientForCreate,
   needsExactInputApproval,
-  needsTargetPranaApproval,
   resolveApproveAmountRaw,
 } from '../utils/bondAllowance.ts';
 
@@ -52,13 +51,10 @@ import type {
 } from '../bonding.types.ts';
 import type { PendingBondTransaction } from '../bondTransactionFlow.ts';
 
-export type BuyInputMode = 'exact_wbtc' | 'target_prana';
-
 type UseBondTransactionInput = {
   config: BondingConfig | undefined;
   account: BondingAccount | undefined;
   side: BondSide;
-  buyMode: BuyInputMode;
   amountRaw: bigint | null;
   termId: BondTermId | null;
   /** Live quote used for allowance checks; create uses a fresh quote. */
@@ -68,12 +64,8 @@ type UseBondTransactionInput = {
   refetchConfig: () => Promise<unknown>;
 };
 
-function quoteModeFor(
-  side: BondSide,
-  buyMode: BuyInputMode,
-): BondingQuoteMode {
-  if (side === 'sell') return 'sell_exact_prana';
-  return buyMode === 'target_prana' ? 'buy_target_prana' : 'buy_exact_wbtc';
+function quoteModeFor(side: BondSide): BondingQuoteMode {
+  return side === 'sell' ? 'sell_exact_prana' : 'buy_exact_wbtc';
 }
 
 function currentAllowanceRaw(
@@ -94,7 +86,6 @@ export function useBondTransaction({
   config,
   account,
   side,
-  buyMode,
   amountRaw,
   termId,
   quote,
@@ -117,49 +108,26 @@ export function useBondTransaction({
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
   const [reviewQuote, setReviewQuote] = useState<BondingQuote | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
-  /** Target-PRANA spending cap set this session via approve(quote). */
-  const [sessionApprovedCapRaw, setSessionApprovedCapRaw] = useState<
-    string | null
-  >(null);
 
-  const mode = quoteModeFor(side, buyMode);
+  const mode = quoteModeFor(side);
   const amountRawString = amountRaw != null ? amountRaw.toString() : '';
 
-  // Changing form inputs before broadcast clears review + session cap.
+  // Changing form inputs before broadcast clears review snapshot.
   useEffect(() => {
     if (pending) return;
     setReviewQuote(null);
     setReviewOpen(false);
-    setSessionApprovedCapRaw(null);
     if (status === 'reviewing') setStatus('idle');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to form identity
-  }, [side, buyMode, amountRawString, termId, wallet.address, wallet.chainId]);
+  }, [side, amountRawString, termId, wallet.address, wallet.chainId]);
 
-  const quoteWbtcRaw = quote ? BigInt(quote.wbtcAmountRaw) : 0n;
   const allowance = currentAllowanceRaw(account, side);
 
   const needsApproval = useMemo(() => {
     if (amountRaw == null || amountRaw <= 0n) return false;
     if (!quote || quote.issues.length > 0) return false;
-
-    if (mode === 'buy_target_prana') {
-      return needsTargetPranaApproval({
-        currentAllowanceRaw: allowance,
-        quoteWbtcAmountRaw: quoteWbtcRaw,
-        sessionApprovedCapRaw:
-          sessionApprovedCapRaw != null ? BigInt(sessionApprovedCapRaw) : null,
-      });
-    }
-
     return needsExactInputApproval(allowance, amountRaw);
-  }, [
-    amountRaw,
-    allowance,
-    mode,
-    quote,
-    quoteWbtcRaw,
-    sessionApprovedCapRaw,
-  ]);
+  }, [amountRaw, allowance, quote]);
 
   const clearMessages = useCallback(() => {
     setError(null);
@@ -173,7 +141,6 @@ export function useBondTransaction({
     setTransactionHash(null);
     setReviewQuote(null);
     setReviewOpen(false);
-    setSessionApprovedCapRaw(null);
   }, []);
 
   const closeReview = useCallback(() => {
@@ -318,11 +285,7 @@ export function useBondTransaction({
         return;
       }
 
-      const approveAmount = resolveApproveAmountRaw({
-        mode,
-        inputAmountRaw: amountRaw,
-        quoteWbtcAmountRaw: BigInt(fresh.wbtcAmountRaw),
-      });
+      const approveAmount = resolveApproveAmountRaw(amountRaw);
 
       const tokenAddress = side === 'buy' ? WBTC_ADDRESS : PRANA_ADDRESS;
       const spender =
@@ -348,17 +311,6 @@ export function useBondTransaction({
         refetchAccount,
         validateFreshAccount: (freshAccount) => {
           const nextAllowance = currentAllowanceRaw(freshAccount, side);
-          if (mode === 'buy_target_prana') {
-            // Still need the exact-cap approve path when surplus exists.
-            return needsTargetPranaApproval({
-              currentAllowanceRaw: nextAllowance,
-              quoteWbtcAmountRaw: BigInt(fresh.wbtcAmountRaw),
-              sessionApprovedCapRaw:
-                sessionApprovedCapRaw != null
-                  ? BigInt(sessionApprovedCapRaw)
-                  : null,
-            });
-          }
           return needsExactInputApproval(nextAllowance, amountRaw);
         },
         simulate: async () => {
@@ -465,9 +417,6 @@ export function useBondTransaction({
       });
       setPending(null);
       setTransactionHash(outcome.hash);
-      if (mode === 'buy_target_prana') {
-        setSessionApprovedCapRaw(approveAmount.toString());
-      }
       setStatus('idle');
       setError(null);
       setSuccess(null);
@@ -489,7 +438,6 @@ export function useBondTransaction({
     publicClient,
     refetchAccount,
     refetchConfig,
-    sessionApprovedCapRaw,
     side,
     termId,
     wallet.address,
@@ -566,18 +514,10 @@ export function useBondTransaction({
       }
 
       const nextAllowance = currentAllowanceRaw(accountSnap, side);
-      if (
-        !isAllowanceSufficientForCreate({
-          mode,
-          currentAllowanceRaw: nextAllowance,
-          inputAmountRaw: amountRaw,
-          quoteWbtcAmountRaw: BigInt(fresh.wbtcAmountRaw),
-        })
-      ) {
-        // Fresh quote exceeded cap — back to Approve (no wallet prompt here).
+      if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
         logBondingFailure('review: insufficient_allowance', {
           nextAllowance: nextAllowance.toString(),
-          quoteWbtc: fresh.wbtcAmountRaw,
+          amountRaw: amountRaw.toString(),
         });
         setReviewOpen(false);
         setReviewQuote(null);
@@ -599,7 +539,6 @@ export function useBondTransaction({
     config,
     freshQuote,
     locale,
-    mode,
     refetchAccount,
     refetchConfig,
     side,
@@ -661,13 +600,10 @@ export function useBondTransaction({
       setReviewQuote(fresh);
 
       const createAmountRaw =
-        mode === 'buy_target_prana'
-          ? BigInt(fresh.pranaAmountRaw)
-          : mode === 'buy_exact_wbtc'
-            ? BigInt(fresh.wbtcAmountRaw)
-            : BigInt(fresh.pranaAmountRaw);
+        mode === 'buy_exact_wbtc'
+          ? BigInt(fresh.wbtcAmountRaw)
+          : BigInt(fresh.pranaAmountRaw);
 
-      // Target PRANA: if quote WBTC exceeds allowance cap → Approve again.
       const accountSnap = accountFromSuccessfulRefetch(
         await refetchAccount(),
         wallet.address,
@@ -680,17 +616,10 @@ export function useBondTransaction({
       }
 
       const nextAllowance = currentAllowanceRaw(accountSnap, side);
-      if (
-        !isAllowanceSufficientForCreate({
-          mode,
-          currentAllowanceRaw: nextAllowance,
-          inputAmountRaw: amountRaw,
-          quoteWbtcAmountRaw: BigInt(fresh.wbtcAmountRaw),
-        })
-      ) {
+      if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
         logBondingFailure('create: insufficient_allowance', {
           nextAllowance: nextAllowance.toString(),
-          quoteWbtc: fresh.wbtcAmountRaw,
+          amountRaw: amountRaw.toString(),
         });
         setReviewOpen(false);
         setReviewQuote(null);
@@ -703,18 +632,9 @@ export function useBondTransaction({
         side === 'buy' ? BUY_BOND_ADDRESS_V2 : SELL_BOND_ADDRESS_V2;
       const bondAbi = side === 'buy' ? BUY_BOND_V2_ABI : SELL_BOND_V2_ABI;
 
-      let functionName: string;
-      let args: readonly unknown[];
-      if (mode === 'buy_exact_wbtc') {
-        functionName = 'buyBondForWbtcAmount';
-        args = [createAmountRaw, termId];
-      } else if (mode === 'buy_target_prana') {
-        functionName = 'buyBondForPranaAmount';
-        args = [createAmountRaw, termId];
-      } else {
-        functionName = 'sellBond';
-        args = [createAmountRaw, termId];
-      }
+      const functionName =
+        mode === 'buy_exact_wbtc' ? 'buyBondForWbtcAmount' : 'sellBond';
+      const args = [createAmountRaw, termId] as const;
 
       console.info('[bonding] create:write-prep', {
         bondAddress,
@@ -738,12 +658,7 @@ export function useBondTransaction({
         refetchAccount,
         validateFreshAccount: (freshAccount) => {
           const allow = currentAllowanceRaw(freshAccount, side);
-          return isAllowanceSufficientForCreate({
-            mode,
-            currentAllowanceRaw: allow,
-            inputAmountRaw: amountRaw,
-            quoteWbtcAmountRaw: BigInt(fresh.wbtcAmountRaw),
-          });
+          return isAllowanceSufficientForCreate(allow, amountRaw);
         },
         simulate: async () => {
           // viem returns { result, request } — only `request` is writeContract-ready.

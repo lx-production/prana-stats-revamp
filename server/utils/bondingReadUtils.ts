@@ -28,7 +28,6 @@ export type {
 const BOND_TERM_IDS: readonly BondTermId[] = [0, 1, 2, 3, 4];
 const QUOTE_MODES: readonly BondingQuoteMode[] = [
   'buy_exact_wbtc',
-  'buy_target_prana',
   'sell_exact_prana',
 ];
 

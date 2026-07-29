@@ -11,7 +11,7 @@ Creating a bond often needs an ERC-20 **Approve** first:
 - **Buy Bond** spends **WBTC** — approve the Buy Bond V2 contract as spender
 - **Sell Bond** spends **PRANA** — approve the Sell Bond V2 contract as spender
 
-The primary button follows phases: **Approve** → **Review** → **Create Bond** → **Confirming**. One click never opens Approve and Create prompts back-to-back. If allowance already matches the required amount (or the Target PRANA WBTC cap), the UI skips Approve and goes straight to Review.
+The primary button follows phases: **Approve** → **Review** → **Create Bond** → **Confirming**. One click never opens Approve and Create prompts back-to-back. If allowance already matches the required amount, the UI skips Approve and goes straight to Review.
 
 What to check on the Approve prompt:
 
@@ -22,13 +22,11 @@ What to check on the Approve prompt:
 
 Reject the request if any detail is unexpected.
 
-## 2. Buy Bond — two input modes
+## 2. Buy Bond — exact WBTC
 
 Buy Bond locks **WBTC** and vest **PRANA** over the selected term.
 
-**Exact WBTC** — you enter how much WBTC to spend. The quote shows expected PRANA payout. The contract call uses that exact WBTC amount (`buyBondForWbtcAmount`). There is no `minPranaOut`, so the PRANA you receive can differ if reserves or rates change before the transaction executes.
-
-**Target PRANA** — you enter how much PRANA you want. The quote shows estimated WBTC required. The contract call uses the target PRANA amount (`buyBondForPranaAmount`) and does **not** accept a `maxWbtcIn` parameter. The interface sets WBTC allowance to the latest quote as a spending cap; if execution would need more WBTC than that allowance, the transaction reverts instead of pulling extra WBTC.
+You enter how much WBTC to spend. The quote shows expected PRANA payout. The contract call uses that exact WBTC amount (`buyBondForWbtcAmount`). There is no `minPranaOut`, so the PRANA you receive can differ if reserves or rates change before the transaction executes.
 
 Before create, the app refreshes the quote. If raw amounts are unchanged, the flow continues; if they changed, Review updates before you can write.
 
@@ -38,7 +36,7 @@ Sell Bond locks **PRANA** and vest **WBTC** over the selected term.
 
 You always enter an exact PRANA amount. The quote shows expected WBTC payout. The contract call is `sellBond(pranaAmount, period)`. There is no `minWbtcOut`, so the WBTC you receive can differ if on-chain state changes between quote and execution.
 
-Allowance must be at least the exact PRANA input. Use MAX only for exact WBTC Buy and exact PRANA Sell — Target PRANA Buy has no MAX button.
+Allowance must be at least the exact PRANA input. Use MAX for Buy WBTC and Sell PRANA.
 
 ## 4. Vesting and claim
 

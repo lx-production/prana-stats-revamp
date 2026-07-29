@@ -6,7 +6,7 @@
 - legacy bonding ui nằm ở thư mục `bonding-legacy-ui/`. Sau khi làm làm xong hết kế hoạch trong file này thì có thể xoá.
 - Chuyển bonding legacy thành lazy feature TypeScript trong main Vite app, dùng chung Web3 providers, React Query, VI/EN, footer và design system.
 - Giữ Buy/Sell Bond V2, quản lý và claim bond V1/V2; bỏ các donut/status trùng với Bonding Stats trên homepage.
-- Buy Bond giữ hai chế độ nhập: WBTC chính xác hoặc target PRANA.
+- Buy Bond chỉ nhập WBTC chính xác (bỏ target PRANA).
 - Contract reads, quote và fallback xác nhận receipt đi qua backend; ví chỉ trực tiếp gửi `approve`, tạo bond và `claim`.
 - Quote được tính đúng theo trạng thái on-chain tại block đọc. Nếu reserves/rates/treasury không đổi trước khi transaction thực thi thì raw amount sẽ khớp quote; thời gian trôi qua hoặc sang block mới tự nó không làm quote đổi. UI vẫn fresh-quote/preflight trước giao dịch vì contract không nhận ngưỡng output tối thiểu (`minOut`) hoặc input tối đa (`maxIn`) để khóa kết quả khi state thực sự thay đổi.
 
@@ -48,7 +48,7 @@
   - Rate limit: mở rộng factory `createSwapRateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
-  - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc`, `buy_target_prana` hoặc `sell_exact_prana`, gồm `amountRaw` và `termId`.
+  - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` và `termId`.
   - `POST /api/bonding/confirm-transaction`: `no-store`; fallback qua Polygon RPC của server khi browser RPC không đọc được receipt của hash đã broadcast.
     - Request gồm `transactionHash`, connected `account` và action snapshot tối thiểu (`approve|create|claim`, side/version và args cần đối chiếu).
     - Chỉ xác nhận sau khi receipt terminal; kiểm tra sender, chain, target từ mapping nội bộ, function selector và args tương ứng. Không tin contract address hoặc calldata do client tự khai.
@@ -71,8 +71,8 @@
     - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB hoặc union sai đều bị từ chối mà không gọi loader/RPC.
     - Quote origin: same-origin hợp lệ được nhận; browser origin không được phép bị từ chối; request không có `Origin` từ server-to-server được xử lý theo cùng policy hiện có của Swap.
     - Rate-limit test riêng cho quote/account/confirmation, gồm per-IP, global bucket, trusted proxy hop và cleanup bucket.
-    - Quote math fixture cho cả ba mode; kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
-    - Boundary fixtures: zero, dưới minimum, term ngoài `0..4`, target bằng/vượt reserve, treasury vừa đủ/thiếu một raw unit và paused state.
+    - Quote math fixture cho hai mode (`buy_exact_wbtc`, `sell_exact_prana`); kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
+    - Boundary fixtures: zero, dưới minimum, term ngoài `0..4`, vượt reserve, treasury vừa đủ/thiếu một raw unit và paused state.
     - Error test đảm bảo response/log không lộ RPC URL, API key, calldata hoặc raw provider stack.
     - Confirmation API test: reject body/hash/action sai trước RPC; success/revert/not-mined/RPC-error tách biệt; sender/target/function/args mismatch không được xác nhận.
     - Suite: `server/tests/bondingApi.test.ts` (mirror `stakingApi.test.ts`).
@@ -89,30 +89,26 @@
     - Chuyển `TxLink.tsx` trung lập từ `features/staking/components/` sang `components/ui/` để Staking/Bonding cùng dùng Polygonscan hash link.
     - Tách phần UI connect / switch Polygon / disconnect của `features/staking/components/WalletControl.tsx` sang `features/web3/`; copy và error formatter được truyền từ từng feature.
     - Mirror gate trong `features/staking/accountRefetch.ts` bằng helper Bonding typed riêng; không import `StakingAccountSnapshot` vào Bonding và không fallback sang cached account trước write.
-  - Buy có toggle:
-    - Exact WBTC → quote PRANA nhận dự kiến.
-    - Target PRANA → quote WBTC cần trả dự kiến, kèm cảnh báo contract không nhận tham số “WBTC tối đa được phép chi”.
+  - Buy chỉ nhập exact WBTC → quote PRANA nhận dự kiến.
   - Sell nhận exact PRANA và quote WBTC dự kiến.
-  - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX chỉ áp dụng cho exact WBTC và Sell PRANA.
+  - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX áp dụng cho Buy WBTC và Sell PRANA.
   - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
   - Quote debounce 600 ms: trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
-  - `maxIn` **nghĩa là gì**
-    - `maxIn` là giới hạn input tối đa do người dùng chấp nhận chi. Ví dụ target `10.000 PRANA`, quote hiện tại cần `0,001 WBTC`; nếu có `maxIn = 0,00101 WBTC`, contract phải revert khi giá đổi làm chi phí vượt mức đó.
-    - `buyBondForPranaAmount(pranaAmount, period)` hiện chỉ nhận target PRANA và kỳ hạn, không nhận `maxWbtcIn`. Vì vậy UI không thể bắt contract giữ nguyên quote.
-    - Chỉ **Target PRANA Buy** cần allowance WBTC làm “spending cap” thay thế: chi phí WBTC tính lại lúc execution mà vượt allowance thì transaction revert thay vì lấy thêm WBTC. Nếu chi phí bằng hoặc thấp hơn cap thì contract dùng số thực tế đó.
+  - **Slippage / thiếu `minOut`**
     - **Exact WBTC Buy** luôn dùng đúng số WBTC truyền vào `buyBondForWbtcAmount`; không có rủi ro chi nhiều WBTC hơn input. Giá trị có thể thay đổi là lượng PRANA nhận, vì contract không nhận `minPranaOut`.
     - **Exact PRANA Sell** luôn dùng đúng số PRANA truyền vào `sellBond`; giá trị có thể thay đổi là lượng WBTC nhận, vì contract không nhận `minWbtcOut`.
+    - Contract on-chain vẫn có `buyBondForPranaAmount`, nhưng app **không** expose path đó (không quote / không create qua UI).
     - Với volume/traffic Bonding hiện thấp, hầu hết quote sẽ khớp chính xác khi execution. Sai khác chỉ xuất hiện nếu state liên quan đổi giữa lúc quote và lúc transaction được thực thi, ví dụ có bond khác, giao dịch làm đổi WBTC/PRANA pool, hoặc manager cập nhật/sync contract.
   - **Kiểm thử Bước 4**
     - Parser table test cho empty/zero/negative/scientific notation, dấu thập phân lặp, 8/9 decimals hợp lệ và vượt decimals.
-    - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; target PRANA không hiện MAX.
-    - Toggle Buy xóa hoặc vô hiệu quote của mode cũ; đổi side, term, amount, account hoặc chain cũng invalidates quote hiện tại.
+    - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; hiện trên Buy WBTC và Sell PRANA.
+    - Đổi side, term, amount, account hoặc chain invalidates quote hiện tại.
     - Debounce fake-timer test: nhiều lần gõ chỉ gửi request cuối; request cũ bị abort; response về sai thứ tự không ghi đè quote mới.
     - Quote đủ 60 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật review/cap trước khi cho write.
     - Determinism test: cùng reserves/rates/treasury và input phải cho đúng cùng raw quote dù block timestamp khác; chỉ fixture thay đổi state mới được làm quote đổi.
     - Term refresh loại bỏ option đang chọn thì fallback 30 ngày hoặc option đầu tiên; không submit term đã biến mất.
-    - Component test đủ loading/empty/error/issue states và copy VI/EN cho cả ba quote mode.
+    - Component test đủ loading/empty/error/issue states và copy VI/EN cho hai quote mode.
 5. ✅ **Harden approve và tạo bond**
   - Template Staking: `stakeCtaPhase.ts`, `useStakeTransaction.ts`, `stakeTransactionFlow.ts` → tương ứng Bonding `bondCtaPhase` / transaction hook/flow (approve+create thay vì permit+stake).
   - Template confirmation mới từ v4.4.0: tách helper thuần `features/bonding/utils/bondTransactionConfirmation.ts` tương tự `features/swap/utils/swapTransactionConfirmation.ts`; hook chỉ orchestration/UI state.
@@ -126,8 +122,7 @@
   - Trước approve và trước create:
     - Refetch account/config/quote thành công.
     - Đảm bảo đúng wallet, Polygon, balance, minimum, term, paused và treasury capacity.
-  - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định.
-  - Target PRANA Buy phải set WBTC allowance thành cap bằng quote mới nhất, kể cả khi allowance cũ lớn hơn; nếu quote mới vượt cap thì yêu cầu approve lại. Dialog phải hiển thị cap WBTC rõ ràng.
+  - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định; không hạ allowance lớn hơn khi không cần.
   - Ngay trước write, chạy `simulateContract` rồi destructure `{ request }` (viem trả `{ result, request }` — chỉ `request` mới truyền được vào `writeContract`); không truyền nguyên object trả về của simulate.
   - Khi đã có hash, tuyệt đối không broadcast lần hai:
     - Thử `waitForTransactionReceipt` qua RPC của ví đã broadcast transaction trước (`features/web3/waitForPolygonWalletReceipt.ts`).
@@ -157,7 +152,6 @@
     - State-machine test cho mọi phase: flow cần approval có đúng hai wallet prompts tách biệt; flow đủ allowance có đúng một prompt; Review/Confirming/simulate/fresh-quote không gọi ví.
     - Đảm bảo một click không tự mở cả approve lẫn create prompt.
     - Exact WBTC Buy và Exact PRANA Sell: allowance bằng input là đủ; thiếu một raw unit phải approve; allowance lớn không bị hạ không cần thiết.
-    - Target PRANA: allowance cũ lớn hơn quote vẫn phải được cap lại; fresh quote vượt cap quay về approve; fresh quote nhỏ hơn/ bằng cap mới được review.
     - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
     - User reject approve hoặc create trước hash cho phép retry đúng phase; lỗi receipt sau hash chỉ hiện “tiếp tục xác nhận”.
     - Wallet receipt success không gọi server fallback; wallet RPC lỗi + server success/revert trả đúng terminal state.
@@ -217,7 +211,7 @@
   - Thêm VI/EN copy, metadata, Polygonscan links cho hai deployment V2 đang live (Buy/Sell), responsive mobile và `prefers-reduced-motion`. Header không gắn link V1 — V1 chỉ còn claim lịch sử trong Active Bonds.
   - Term/tabs/dialog hỗ trợ keyboard, focus trap, Escape, focus-visible và `aria-live`.
   - Thêm hai trang guide riêng, mirror Staking (`/guide/staking/` + `/guide/staking-contracts/`):
-    1. **User guide** `/guide/bonding/` — approve, hai chiều Buy, Sell, vesting, claim, treasury và giới hạn quote/slippage.
+    1. **User guide** `/guide/bonding/` — approve, Buy (exact WBTC), Sell, vesting, claim, treasury và giới hạn quote/slippage.
     2. **Contracts guide** `/guide/bonding-contracts/` — giải thích on-chain `BuyPranaBondV2` và `SellPranaBondV2` (educational; luôn đối chiếu code/params trên Polygonscan).
   - Pattern render giống Staking/Swap guides sau rename trên `main` (không dùng `LegalMarkdownPage` hay `termsRiskParser` cũ):
     - Constants trong `constants/appRoutes.ts`:
@@ -237,7 +231,7 @@
   - Nội dung tối thiểu cho `/guide/bonding-contracts/` (dựa trên `contracts/BuyPranaBondV2.sol` và `contracts/SellPranaBondV2.sol`):
     - Big picture: hai contract độc lập — Buy nhận WBTC / trả PRANA vesting; Sell nhận PRANA / trả WBTC vesting.
     - Impacted reserves và progressive price impact; `syncImpactedReserves` / `setImpactedReserves` thuộc manager.
-    - Buy: `buyBondForWbtcAmount` vs `buyBondForPranaAmount`; không có `minPranaOut` / `maxWbtcIn`.
+    - Buy: app chỉ dùng `buyBondForWbtcAmount` (contract vẫn có `buyBondForPranaAmount` nhưng không expose); không có `minPranaOut`.
     - Sell: `sellBond(pranaAmount, period)`; không có `minWbtcOut`.
     - Phí 1% trong quote math; term/rate/duration từ `bondRates`; minimum Buy/Sell.
     - Claim/vesting từ `creationTime`, `claimedPrana`/`claimedWbtc`, và `lastClaimTime` chỉ chặn double-claim cùng timestamp.
@@ -279,7 +273,7 @@
     - Chạy `nginx -t` trên Pi/VPS trước mỗi reload; lưu bản config đang chạy để rollback.
     - Sau cutover: `/bond` trả đúng `308`, `/bond/` trả main SPA build identity mới, asset URL nằm dưới `/assets/`, không còn `/bond/assets/`.
     - Kiểm tra `Content-Encoding`, `Cache-Control`, CSP/security headers và `/api/version` khớp footer SHA/tag.
-    - Read-only wallet smoke: connect, disconnect, switch Polygon, load account, đổi ba quote mode và refresh quote.
+    - Read-only wallet smoke: connect, disconnect, switch Polygon, load account, đổi Buy/Sell quote và refresh quote.
     - Không gửi approve/create/claim thật trong automated smoke. Transaction production chỉ chạy bằng ví test sau phê duyệt riêng.
     - Rollback drill trong cửa sổ 7 ngày: khôi phục legacy nginx blocks, xác nhận legacy `/bond/` hoạt động, rồi chuyển lại main app.
 
@@ -289,7 +283,7 @@
 
 - `BondingConfig`: block metadata, V1/V2 deployments và paused state, V2 minimum/terms, token/pool addresses.
 - `BondingAccount`: checksum address, block metadata, raw balances/allowances và normalized active bond records.
-- `BondingQuoteRequest`: discriminated union cho ba quote mode, nhận raw amount và term ID.
+- `BondingQuoteRequest`: discriminated union cho hai quote mode (`buy_exact_wbtc` | `sell_exact_prana`), nhận raw amount và term ID.
 - `BondingQuote`: raw PRANA/WBTC amounts, rate/duration, reserve source, quote timestamp và validation issues.
 - `BondingTransactionConfirmationRequest`: hash, account và action snapshot tối thiểu để server đối chiếu fixed target/function/args.
 - `BondingTransactionConfirmation`: terminal `confirmed|reverted`, hoặc trạng thái chưa thể xác nhận mà không suy diễn thành on-chain failure.
@@ -314,7 +308,7 @@ Checklist chi tiết nằm ngay dưới từng bước. Mỗi bước chỉ đư
 
 - Canonical route tiếp tục là `/bond/` để không đổi URL production hiện tại.
 - Chỉ tạo bond mới trên V2; V1 tồn tại để xem và claim lịch sử.
-- Giữ cả hai chiều nhập của Buy Bond theo lựa chọn của bạn.
+- Buy Bond chỉ exact WBTC; không expose target PRANA trong UI/API quote/create.
 - Bỏ donut/status panels vì dữ liệu đã có trên homepage.
 - Không sửa hoặc redeploy smart contract; do đó UI không tuyên bố slippage protection mà contract không thể enforce.
 

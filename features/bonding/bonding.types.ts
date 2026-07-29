@@ -41,7 +41,7 @@ export type BondingConfig = {
   blockNumber: number;
   blockTimestamp: number;
   paused: BondingDeploymentPaused;
-  /** Min Buy target PRANA (raw units, decimal string). */
+  /** Min Buy PRANA payout (raw units, decimal string). */
   minBuyPranaRaw: string;
   /** Min Sell input PRANA (raw units, decimal string). */
   minSellPranaRaw: string;
@@ -85,20 +85,12 @@ export type BondingAccount = {
   bonds: ActiveBondRecord[];
 };
 
-export type BondingQuoteMode =
-  | 'buy_exact_wbtc'
-  | 'buy_target_prana'
-  | 'sell_exact_prana';
+export type BondingQuoteMode = 'buy_exact_wbtc' | 'sell_exact_prana';
 
 /** Discriminated quote request for POST /api/bonding/quote. */
 export type BondingQuoteRequest =
   | {
       mode: 'buy_exact_wbtc';
-      amountRaw: string;
-      termId: BondTermId;
-    }
-  | {
-      mode: 'buy_target_prana';
       amountRaw: string;
       termId: BondTermId;
     }

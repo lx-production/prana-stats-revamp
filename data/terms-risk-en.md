@@ -105,11 +105,11 @@ When a create transaction succeeds:
 - the bond’s term, rate/duration snapshot, and payout are recorded on-chain
 - payout vests over time and must be claimed under the contract rules
 
-**Buy input modes and missing slip locks**
+**Buy input and missing slip locks**
 
-Buy Bond supports exact WBTC input and target PRANA input. Exact WBTC uses a fixed WBTC amount. Target PRANA uses a fixed PRANA target and does **not** accept an on-chain maximum WBTC input (`maxWbtcIn`). Exact WBTC Buy and exact PRANA Sell likewise have no on-chain minimum output (`minPranaOut` / `minWbtcOut`).
+Buy Bond uses exact WBTC input only (`buyBondForWbtcAmount`). Exact WBTC Buy and exact PRANA Sell have no on-chain minimum output (`minPranaOut` / `minWbtcOut`). The on-chain contract also exposes `buyBondForPranaAmount`, but this interface does **not** quote or create through that path.
 
-Displayed quotes are estimates from public chain state and the contract’s integer math, including a 1% fee path. Final amounts can differ if reserves, rates, treasury capacity, or related state change between quote and execution. The interface may refresh the quote and set a WBTC allowance cap for Target PRANA Buy, but an allowance is not the same as an on-chain `maxWbtcIn` parameter.
+Displayed quotes are estimates from public chain state and the contract’s integer math, including a 1% fee path. Final amounts can differ if reserves, rates, treasury capacity, or related state change between quote and execution. The interface may refresh the quote before write, but that is not the same as an on-chain slip lock.
 
 **Claim and vesting**
 

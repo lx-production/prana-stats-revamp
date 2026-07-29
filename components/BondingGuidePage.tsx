@@ -20,8 +20,8 @@ const BondingGuidePage: React.FC = () => {
       dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
-          ? "Covers the current PRANA Bonding flow: Approve, Buy (exact WBTC or target PRANA), Sell, vesting, claim, treasury, and quote limits."
-          : "Mô tả luồng PRANA Bonding hiện tại: Approve, Buy (exact WBTC hoặc target PRANA), Sell, vesting, claim, treasury, và giới hạn quote."
+          ? "Covers the current PRANA Bonding flow: Approve, Buy (exact WBTC), Sell, vesting, claim, treasury, and quote limits."
+          : "Mô tả luồng PRANA Bonding hiện tại: Approve, Buy (exact WBTC), Sell, vesting, claim, treasury, và giới hạn quote."
       }
     />
   );

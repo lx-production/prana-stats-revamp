@@ -105,11 +105,11 @@ Khi giao dịch tạo bond thành công:
 - kỳ hạn, snapshot rate/duration, và payout của bond được ghi nhận on-chain
 - payout vest theo thời gian và phải được claim theo quy tắc contract
 
-**Hai chế độ nhập Buy và thiếu khóa slip on-chain**
+**Nhập Buy và thiếu khóa slip on-chain**
 
-Buy Bond hỗ trợ nhập exact WBTC và target PRANA. Exact WBTC dùng đúng số WBTC cố định. Target PRANA dùng đúng target PRANA và **không** nhận tham số `maxWbtcIn` on-chain. Exact WBTC Buy và exact PRANA Sell cũng không có output tối thiểu on-chain (`minPranaOut` / `minWbtcOut`).
+Buy Bond chỉ dùng nhập exact WBTC (`buyBondForWbtcAmount`). Exact WBTC Buy và exact PRANA Sell không có output tối thiểu on-chain (`minPranaOut` / `minWbtcOut`). Contract on-chain vẫn có `buyBondForPranaAmount`, nhưng giao diện này **không** quote hay tạo bond qua path đó.
 
-Quote hiển thị là ước tính từ state chain công khai và phép toán số nguyên của contract, gồm nhánh phí 1%. Số cuối cùng có thể khác nếu reserves, rate, treasury, hoặc state liên quan đổi giữa lúc quote và lúc thực thi. Giao diện có thể fresh-quote và đặt allowance WBTC làm cap cho Target PRANA Buy, nhưng allowance không đồng nghĩa với tham số `maxWbtcIn` on-chain.
+Quote hiển thị là ước tính từ state chain công khai và phép toán số nguyên của contract, gồm nhánh phí 1%. Số cuối cùng có thể khác nếu reserves, rate, treasury, hoặc state liên quan đổi giữa lúc quote và lúc thực thi. Giao diện có thể fresh-quote trước khi write, nhưng đó không đồng nghĩa với khóa slip on-chain.
 
 **Claim và vesting**
 

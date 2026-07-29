@@ -10,13 +10,10 @@ import {
 } from '../bondingMath.ts';
 
 import type { BondingCopy } from '../bonding.copy.ts';
-import type { BondingQuote, BondSide } from '../bonding.types.ts';
-import type { BuyInputMode } from '../hooks/useBondTransaction.ts';
+import type { BondingQuote } from '../bonding.types.ts';
 
 type CreateBondReviewDialogProps = {
   quote: BondingQuote;
-  side: BondSide;
-  buyMode: BuyInputMode;
   copy: BondingCopy;
   busy: boolean;
   error: string | null;
@@ -30,8 +27,6 @@ type CreateBondReviewDialogProps = {
  */
 export default function CreateBondReviewDialog({
   quote,
-  side,
-  buyMode,
   copy,
   busy,
   error,
@@ -58,8 +53,6 @@ export default function CreateBondReviewDialog({
       },
     });
   }, []);
-
-  const showWbtcCap = side === 'buy' && buyMode === 'target_prana';
 
   return (
     <div
@@ -109,21 +102,7 @@ export default function CreateBondReviewDialog({
               {copy.durationLabel(daysFromSeconds(quote.durationSeconds))}
             </dd>
           </div>
-          {showWbtcCap ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-white/55">{copy.reviewDialogWbtcCap}</dt>
-              <dd className="font-medium text-[#F5D27A]">
-                {formatWbtcAmount(quote.wbtcAmountRaw)} WBTC
-              </dd>
-            </div>
-          ) : null}
         </dl>
-
-        {showWbtcCap ? (
-          <StatusBanner tone="warning" className="mt-3 text-xs">
-            {copy.targetPranaNoMaxInWarning}
-          </StatusBanner>
-        ) : null}
 
         {error ? (
           <StatusBanner tone="error" className="mt-3">

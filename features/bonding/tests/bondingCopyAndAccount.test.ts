@@ -7,7 +7,7 @@ import { sortActiveBonds } from '../bondingMath.ts';
 
 import type { ActiveBondRecord, BondingAccount } from '../bonding.types.ts';
 
-test('getBondingCopy exposes matching VI/EN keys for all three quote modes', () => {
+test('getBondingCopy exposes matching VI/EN keys for buy/sell quote modes', () => {
   const vi = getBondingCopy('vi');
   const en = getBondingCopy('en');
 
@@ -17,12 +17,8 @@ test('getBondingCopy exposes matching VI/EN keys for all three quote modes', () 
 
   // Mode-specific copy must exist in both locales.
   for (const key of [
-    'buyExactWbtcMode',
-    'buyTargetPranaMode',
     'expectedPrana',
     'expectedWbtc',
-    'requiredWbtc',
-    'targetPranaNoMaxInWarning',
     'quoteIssues',
     'amountReasons',
     'claimBond',
