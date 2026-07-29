@@ -9,6 +9,7 @@ export type StakingErrorCode =
   | 'invalid_duration'
   | 'below_min'
   | 'insufficient_balance'
+  | 'insufficient_interest_fund'
   | 'insufficient_gas'
   | 'expired_permit'
   | 'invalid_permit'
@@ -16,6 +17,7 @@ export type StakingErrorCode =
   | 'reverted'
   | 'rpc_unavailable'
   | 'account_refetch_failed'
+  | 'quote_failed'
   | 'generic';
 
 function messageOf(error: unknown): string {
@@ -117,6 +119,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     invalid_duration: 'Kỳ hạn đã chọn không còn khả dụng. Hãy chọn lại.',
     below_min: 'Số lượng thấp hơn mức stake tối thiểu.',
     insufficient_balance: 'Số dư PRANA không đủ.',
+    insufficient_interest_fund: 'Quỹ Interest hiện không đủ cho vị thế này.',
     insufficient_gas: 'Số dư POL không đủ để trả phí gas.',
     expired_permit: 'Permit đã hết hạn. Hãy ký lại.',
     invalid_permit: 'Permit không còn hợp lệ. Hãy ký lại.',
@@ -125,6 +128,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     rpc_unavailable: 'Không kết nối được RPC. Thử lại sau.',
     account_refetch_failed:
       'Không tải được số dư/nonce mới nhất. Thử lại trước khi ký.',
+    quote_failed: 'Không kiểm tra được quỹ Interest. Thử lại.',
     generic: 'Không thể hoàn tất giao dịch. Thử lại.',
   },
   en: {
@@ -135,6 +139,8 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     invalid_duration: 'The selected duration is no longer available. Choose again.',
     below_min: 'Amount is below the minimum stake.',
     insufficient_balance: 'Insufficient PRANA balance.',
+    insufficient_interest_fund:
+      'The Interest fund cannot cover this position right now.',
     insufficient_gas: 'Insufficient POL balance for gas.',
     expired_permit: 'Permit expired. Sign again.',
     invalid_permit: 'Permit is no longer valid. Sign again.',
@@ -143,6 +149,7 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     rpc_unavailable: 'RPC unavailable. Try again later.',
     account_refetch_failed:
       'Could not refresh balance/nonce. Try again before signing.',
+    quote_failed: 'Could not verify the Interest fund. Try again.',
     generic: 'Could not complete the transaction. Try again.',
   },
 };

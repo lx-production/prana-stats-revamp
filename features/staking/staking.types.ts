@@ -110,3 +110,42 @@ export type StakeDisplayStatus =
 
 /** Which stake-management write is in flight (locks other actions). */
 export type StakeActionKind = 'claim' | 'unstake' | 'unstakeEarly';
+
+/** Body for POST /api/staking/quote (fully-funded preflight). */
+export type StakingQuoteRequest = {
+  amountRaw: string;
+  durationSeconds: number;
+};
+
+/**
+ * Soft blockers for a stake quote — HTTP still 200 so the form can explain why.
+ * Hard input/RPC failures stay 400/502 at the route layer.
+ */
+export type StakingQuoteIssue =
+  | 'paused'
+  | 'below_minimum'
+  | 'invalid_duration'
+  | 'zero_amount'
+  | 'insufficient_interest_fund';
+
+/**
+ * Live interest-fund quote at one blockTag.
+ * All amounts are decimal strings (bigint-safe); never float.
+ */
+export type StakingQuote = {
+  amountRaw: string;
+  durationSeconds: number;
+  /** APR for the requested duration at this block (0 when invalid_duration). */
+  apr: number;
+  /** Solidity-order interest for this new stake. */
+  newStakeInterestRaw: string;
+  interestBalanceRaw: string;
+  totalInterestNeededRaw: string;
+  /** max(interestBalance − totalInterestNeeded, 0). */
+  availableInterestFundRaw: string;
+  minStakeRaw: string;
+  paused: boolean;
+  blockNumber: number;
+  blockTimestamp: number;
+  issues: StakingQuoteIssue[];
+};

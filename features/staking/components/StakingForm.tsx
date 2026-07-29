@@ -12,6 +12,10 @@ import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
 import { useStakeTransaction } from '../hooks/useStakeTransaction.ts';
 import {
+  buildStakingQuoteRequest,
+  useStakingQuote,
+} from '../hooks/useStakingQuote.ts';
+import {
   parseStakeAmount,
   formatPranaAmount,
   isStakeAmountInput,
@@ -67,12 +71,35 @@ export default function StakingForm({
   const parsedAmount = parseStakeAmount(amount);
   const amountRaw = parsedAmount.ok ? parsedAmount.raw : null;
 
+  const quoteRequest = useMemo(
+    () =>
+      buildStakingQuoteRequest({
+        amountRaw,
+        durationSeconds,
+      }),
+    [amountRaw, durationSeconds],
+  );
+
+  // Live fully-funded preflight — not /api/staking-stats (24h cache + float).
+  const quoteEnabled =
+    Boolean(config) &&
+    !configLoading &&
+    !configError &&
+    quoteRequest != null &&
+    parsedAmount.ok;
+
+  const quoteState = useStakingQuote({
+    enabled: quoteEnabled,
+    request: quoteRequest,
+  });
+
   const stakeTx = useStakeTransaction({
     config,
     account,
     amountRaw,
     durationSeconds,
     refetchAccount,
+    freshQuote: quoteState.freshQuote,
   });
 
   // A known broadcast may still be pending even when receipt polling failed.
@@ -139,6 +166,10 @@ export default function StakingForm({
   ]);
 
   const paused = Boolean(config?.paused);
+  const interestFundBlocked = Boolean(
+    quoteState.quote?.issues.includes('insufficient_interest_fund'),
+  );
+
   // Freeze fields once a transaction is broadcast. The CTA remains separately
   // enabled so the user can resume receipt confirmation without changing the
   // amount/duration associated with the pending hash.
@@ -150,14 +181,22 @@ export default function StakingForm({
     stakeTx.hasPendingHash ||
     actionsLocked;
 
+  // Soft quote blockers (e.g. insufficient Interest fund) must lock the CTA.
+  const quoteAllowsStake =
+    quoteState.quote != null && quoteState.quote.issues.length === 0;
+
   const canPermitAndStake =
     !formFieldsDisabled &&
     !amountError &&
     parsedAmount.ok &&
     selectedDuration != null &&
-    wallet.isConnected;
+    wallet.isConnected &&
+    !quoteState.isLoading &&
+    quoteAllowsStake &&
+    !interestFundBlocked;
 
   // Pending broadcast: allow receipt resume while the form fields stay frozen.
+  // Fund/quote gates do not apply to receipt-only resume (write already happened).
   const canClickCta = stakeTx.hasPendingHash
     ? wallet.isConnected && !stakeTx.isBusy && !actionsLocked
     : canPermitAndStake;
@@ -327,6 +366,12 @@ export default function StakingForm({
           />
         </div>
 
+        {interestFundBlocked ? (
+          <StatusBanner tone="warning">
+            {copy.insufficientInterestFundBanner}
+          </StatusBanner>
+        ) : null}
+
         {stakeTx.error ? (
           <StatusBanner tone="error">{stakeTx.error}</StatusBanner>
         ) : null}
@@ -361,7 +406,12 @@ export default function StakingForm({
           type="button"
           className="btn-hero btn-gold-border w-full text-sm"
           disabled={!canClickCta || actionsLocked}
-          onClick={() => void stakeTx.permitAndStake()}
+          aria-disabled={!canClickCta || actionsLocked}
+          onClick={() => {
+            // Defense in depth — never open Permit when fund/quote gate failed.
+            if (!canClickCta || actionsLocked) return;
+            void stakeTx.permitAndStake();
+          }}
         >
           {showCtaSpinner ? (
             <span className="inline-flex items-center gap-2">

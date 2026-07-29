@@ -22,6 +22,10 @@ const SWAP_VERIFY_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const STAKING_ACCOUNT_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const STAKING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
 
+// Fully-funded stake quotes (debounced typing + CTA preflight) — same shape as bonding quotes.
+const STAKING_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
+const STAKING_QUOTE_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
+
 // How often we delete expired per-IP buckets so memory does not grow forever.
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000; // 1 minute
 
@@ -141,9 +145,11 @@ export function createSwapRateLimiters() {
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
   const stakingAccountRateLimits = new Map<string, RateLimitBucket>();
+  const stakingQuoteRateLimits = new Map<string, RateLimitBucket>();
 
   let globalSwapQuoteRateLimit: RateLimitBucket | null = null;
   let globalStakingAccountRateLimit: RateLimitBucket | null = null;
+  let globalStakingQuoteRateLimit: RateLimitBucket | null = null;
   // let is used because global* buckets get reassigned, while the Maps only get mutated
 
   return {
@@ -187,6 +193,27 @@ export function createSwapRateLimiters() {
       return globalResult.limited;
     },
 
+    // Stake fund quotes: 10/IP/min + 60/server/min (typing debounce + CTA preflight).
+    isStakingQuoteRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          stakingQuoteRateLimits,
+          STAKING_QUOTE_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalStakingQuoteRateLimit,
+        STAKING_QUOTE_GLOBAL_RATE_LIMIT,
+      );
+      globalStakingQuoteRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
     getClientIp(req: IncomingMessage): string {
       return getRequestIp(req, trustedProxyHopCount);
     },
@@ -206,6 +233,7 @@ export function createSwapRateLimiters() {
         sweepRateLimitBuckets(swapLogRateLimits, now, SWAP_LOG_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(stakingAccountRateLimits, now, STAKING_ACCOUNT_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(stakingQuoteRateLimits, now, STAKING_QUOTE_RATE_LIMIT.windowMs);
 
         if (
           globalStakingAccountRateLimit &&
@@ -213,6 +241,14 @@ export function createSwapRateLimiters() {
             STAKING_ACCOUNT_GLOBAL_RATE_LIMIT.windowMs
         ) {
           globalStakingAccountRateLimit = null;
+        }
+
+        if (
+          globalStakingQuoteRateLimit &&
+          now - globalStakingQuoteRateLimit.windowStartedAt >
+            STAKING_QUOTE_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalStakingQuoteRateLimit = null;
         }
       }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
 

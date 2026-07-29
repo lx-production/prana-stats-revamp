@@ -1,17 +1,47 @@
 import { loadSwapQuote } from './loaders/swapQuote.ts';
+import { formatErrorForLog } from './helpers/logRedaction.ts';
+import { loadStakingQuote } from './loaders/stakingQuote.ts';
 import { readJsonBody, sendJson } from './helpers/requestHelpers.ts';
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
-import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './helpers/apiRoutesHelpers.ts';
-import { logSwapTransactionEvent, parseSwapTransactionLogRequest, type SwapRequestLogMetadata } from './loaders/swapLogs.ts';
+import {
+  rejectInvalidSwapApiRequest,
+  sanitizeSwapErrorMessage,
+} from './helpers/apiRoutesHelpers.ts';
+import {
+  StakingApiValidationError,
+  parseStakingQuoteRequest,
+  sanitizeStakingErrorMessage,
+} from './utils/stakingQuoteUtils.ts';
+import {
+  logSwapTransactionEvent,
+  parseSwapTransactionLogRequest,
+} from './loaders/swapLogs.ts';
 
 import type { SwapRateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
 import type { SwapQuoteRequest } from '../types/swap.types.ts';
+import type { SwapRequestLogMetadata } from './loaders/swapLogs.ts';
+import type {
+  StakingQuote,
+  StakingQuoteRequest,
+} from '../features/staking/staking.types.ts';
 
 // Max request body sizes for each POST endpoint
 const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
 const SWAP_LOG_BODY_MAX_BYTES = 8192;
 const SWAP_VERIFY_BODY_MAX_BYTES = 32768;
+const STAKING_QUOTE_BODY_MAX_BYTES = 2048;
+
+/** Optional staking POST loader overrides so route tests do not need live RPC. */
+export type StakingPostApiLoaders = {
+  loadQuote: (request: StakingQuoteRequest) => Promise<StakingQuote>;
+};
+
+const DEFAULT_STAKING_POST_API_LOADERS: StakingPostApiLoaders = {
+  loadQuote: loadStakingQuote,
+};
+
+const STAKING_QUOTE_CACHE_CONTROL = 'private, no-store';
 
 // Headers can be string | string[]; pick the first value when it's an array
 function singleHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -31,9 +61,65 @@ function createSwapRequestLogMetadata(
   };
 }
 
-// Handles POST-only swap API routes (quote, log, verify-transaction)
-export function createPostApiRouteHandler(rateLimiters: SwapRateLimiters): RequestHandler {
+// Handles POST-only swap + staking quote API routes
+export function createPostApiRouteHandler(
+  rateLimiters: SwapRateLimiters,
+  stakingLoaders: StakingPostApiLoaders = DEFAULT_STAKING_POST_API_LOADERS,
+): RequestHandler {
   return async function handlePostApiRequest(req, res, url): Promise<boolean> {
+    // Fully-funded Interest fund preflight for /stake/ (raw bigint, same block).
+    if (url.pathname === '/api/staking/quote') {
+      if (req.method !== 'POST') {
+        res.setHeader('Allow', 'POST');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use POST for staking quotes.',
+        });
+        return true;
+      }
+
+      if (rateLimiters.isStakingQuoteRateLimited(req)) {
+        sendJson(res, 429, {
+          error: 'rate_limited',
+          message: 'Too many staking quote requests. Please wait a moment and try again.',
+        });
+        return true;
+      }
+
+      // Same origin + JSON body policy as swap/bonding POSTs.
+      if (rejectInvalidSwapApiRequest(req, res)) return true;
+
+      try {
+        const body = await readJsonBody<unknown>(req, STAKING_QUOTE_BODY_MAX_BYTES);
+        const request = parseStakingQuoteRequest(body);
+        const result = await stakingLoaders.loadQuote(request);
+        // Soft issues (e.g. insufficient_interest_fund) still return 200.
+        sendJson(res, 200, result, { cacheControl: STAKING_QUOTE_CACHE_CONTROL });
+        return true;
+      } catch (err) {
+        if (
+          err instanceof StakingApiValidationError ||
+          err instanceof SyntaxError ||
+          (err instanceof Error &&
+            (err.message === 'Request body is required.' ||
+              err.message === 'Request body is too large.'))
+        ) {
+          sendJson(res, 400, {
+            error: 'invalid_request',
+            message: sanitizeStakingErrorMessage(err, 'Invalid staking quote request.'),
+          });
+          return true;
+        }
+
+        console.error('Failed to load staking quote:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to load staking quote.',
+        });
+        return true;
+      }
+    }
+
     if (url.pathname === '/api/swap/quote') {
       // Reject anything that isn't POST
       if (req.method !== 'POST') {

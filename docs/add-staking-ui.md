@@ -15,6 +15,7 @@
 - [x] **Bước 1 — Tách homepage và thiết lập lazy `/stake/`** (`40e0da1`): frontend/server typecheck pass, 70 server tests pass, production build pass; `StatsPage` và `StakingPage` đã thành chunk riêng, `/stake` redirect `308` giữ query string và direct refresh `/stake/` trả SPA shell.
 - [x] **Bước 2 — Chuẩn hóa constants, ABI và types**: `network.ts` chain ID + seconds; typed minimal ABI; permit constants; `types/blockchain.types.ts` (`Address`/`Hex`); `features/staking/staking.types.ts`; stake route tests dùng fixture dist (không phụ thuộc `dist/`); `npm test` / `test:server`; typecheck + server tests pass.
 - [x] **Bước 3 — Tạo backend staking read API**: `GET /api/staking/config` (30s cache) + `GET /api/staking/account` (`private, no-store`, checksum trước rate-limit, 10/IP + 120/global); cùng `blockTag`; amounts/nonces string; 405 non-GET; 400/502 redacted (response + logs); tests trong `stakingApi.test.ts`.
+- [x] **Fully funded gate**: `POST /api/staking/quote` (`private, no-store`, 10/IP + 60/global) trả raw bigint tại cùng block (`balanceOf(Interest)`, `totalInterestNeeded()`, lãi stake mới qua `calculateTotalInterestRaw`); soft `issues` gồm `insufficient_interest_fund`; UI khóa CTA + banner; `freshQuote()` trước Permit/broadcast. **Không** dùng `/api/staking-stats` (cache 24h + float + fallback).
 - [x] **Bước 4 — Port form và account state**: React Query `useStakingConfig` / `useStakingAccount`; `stakingMath` (Solidity bigint interest + `parseStakeAmount`); `DurationSelector` chip grid; `StakingForm` (balance+MAX trong amount header, bỏ cap 10M); `ActiveStakes`/`StakeCard` read-only; `WalletControl`; `staking.copy` VI/EN; `npm run test:staking`.
 - [x] **Bước 5 — Harden permit và transaction flow**: `useStakeTransaction` (`createPermitSnapshot` + `submitStakeWithPermit` + `permitAndStake`); một CTA gold; claim-before-unstake / grace; lỗi VI/EN; Polygonscan; tests permit/status/errors/CTA phase.
 - [x] **Bước 6 — Đồng bộ styling với main app**: shell dark + shader `0.32`; `GlassPanel`/`StatusBanner`; fixed `LanguageToggle` (cùng homepage); gold CTA/chip; Lucide; contract links; mobile layout; **a11y closeout**: `prefers-reduced-motion` (shader off + freeze gold border), EarlyUnstake focus trap/Escape, DurationSelector roving tabindex + mũi tên, GlassPanel `focus-within`. *(Commit phải `git add` các file `components/ui/*` + type mới — không dùng `-am` alone.)*
@@ -41,11 +42,13 @@ features/staking/
 ├── hooks/
 │   ├── useStakingConfig.ts
 │   ├── useStakingAccount.ts
+│   ├── useStakingQuote.ts
 │   ├── useStakeTransaction.ts
 │   └── useStakeActions.ts
 ├── formatGraceRemaining.ts
 ├── staking.copy.ts
 ├── stakingMath.ts
+├── stakingFundCheck.ts
 └── staking.types.ts
 
 components/ui/
@@ -170,6 +173,7 @@ Quy tắc backend:
 - `/config`: server/browser cache 30 giây.
 - `/account`: `private, no-store`; chỉ fetch khi wallet đã kết nối và refetch sau receipt.
 - Thêm rate limit `/account`: 10 request/IP/phút và 120 request/phút trên toàn server để bảo vệ Pi/Alchemy.
+- `POST /api/staking/quote`: fully-funded preflight (`private, no-store`, 10/IP + 60/global). Đọc `balanceOf(Interest)` + `totalInterestNeeded()` + APR tại cùng block; so sánh với `calculateTotalInterestRaw`; soft `issues` (kể cả `insufficient_interest_fund`) vẫn HTTP 200. **Không** dùng `/api/staking-stats` cho gate này.
 - Upstream RPC failure trả lỗi chung `502`, không trả URL/key hoặc raw provider error.
 - Không tạo generic JSON-RPC proxy.
 - Backend tiếp tục dùng `VITE_ALCHEMY_POLYGON_MAIN` làm Polygon RPC mặc định, theo cấu hình server hiện tại. Biến này chỉ được đọc ở server; frontend main app không tham chiếu nó.
@@ -207,9 +211,11 @@ Giữ một nút gold full-width:
 Luồng kết hợp:
 
 - Validate connected wallet, Polygon chain (switch nếu cần), config không paused, amount ≥ min và amount ≤ balance.
+- Live `useStakingQuote` (debounce 1s): nếu `insufficient_interest_fund` → banner “Quỹ Interest hiện không đủ cho vị thế này.” và khóa **Permit & Stake**.
+- `createPermitSnapshot()`: gọi `freshQuote()` ngay trước khi yêu cầu ký Permit; fail/soft-issue thì không mở popup ký.
 - `createPermitSnapshot()`: **refetch account phải thành công và đúng wallet đang thao tác** (không dùng cache stale/cross-account), lấy nonce mới, ký EIP-712, trả `PermitSnapshot` trực tiếp (và lưu state cho retry trước broadcast).
 - `submitStakeWithPermit(snapshot)` nhận Permit qua tham số — không phụ thuộc React state đã flush; sau khi có hash chỉ resume `waitForTransactionReceipt`, không `writeContract` lần hai.
-- Trước ký và trước broadcast, kiểm tra lại duration/min stake theo config hiện tại để config đổi giữa hai popup không tạo giao dịch chắc chắn revert.
+- Trước ký và trước broadcast, kiểm tra lại duration/min stake theo config hiện tại và `freshQuote()` lại (Continue Stake cũng recheck fund).
 - `permitAndStake()` điều phối resume receipt / reuse permit / create+stake; không hiện banner “Permit đã ký” giữa hai popup.
 - Chỉ `setSuccess()` sau receipt thành công; lỗi refetch account sau đó là **warning không fatal**.
 - Từ chối Permit → không gọi transaction; từ chối Stake **trước** broadcast → giữ Permit; lỗi receipt **sau** hash → CTA `Tiếp tục xác nhận` (không gửi tx mới).

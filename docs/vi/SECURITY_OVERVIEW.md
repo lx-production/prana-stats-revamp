@@ -54,6 +54,7 @@ Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin,
 | `POST /api/swap/quote` | Route + unsigned tx + HMAC | 2 KB | 5 / IP / phút + 30 global / phút |
 | `POST /api/swap/log` | Telemetry vòng đời (không tin cậy) | 8 KB | 30 / IP / phút |
 | `POST /api/swap/verify-transaction` | Chứng minh on-chain → log `swap_confirmed` đã verify | 32 KB | 10 / IP / phút |
+| `POST /api/staking/quote` | Preflight fully-funded Interest (raw bigint, cùng block) | 2 KB | 10 / IP / phút + 60 global / phút |
 
 Rate limiter dùng cửa sổ thời gian cố định trong bộ nhớ process, kèm dọn bucket định kỳ.
 

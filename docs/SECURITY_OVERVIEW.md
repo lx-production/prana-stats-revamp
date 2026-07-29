@@ -53,6 +53,7 @@ All swap endpoints are POST-only, JSON body, same-origin checks, body size caps,
 | `POST /api/swap/quote` | Route + unsigned tx + HMAC | 2 KB | 5 / IP / min + 30 global / min |
 | `POST /api/swap/log` | Untrusted lifecycle telemetry | 8 KB | 30 / IP / min |
 | `POST /api/swap/verify-transaction` | On-chain proof → verified `swap_confirmed` log | 32 KB | 10 / IP / min |
+| `POST /api/staking/quote` | Fully-funded Interest preflight (raw bigint, same block) | 2 KB | 10 / IP / min + 60 global / min |
 
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 

@@ -22,6 +22,8 @@ export type StakingCopy = {
   projectedInterestLabel: string;
   projectedInterestHint: string;
   pausedBanner: string;
+  /** Soft gate when Interest fund cannot cover this new stake. */
+  insufficientInterestFundBanner: string;
   stakesConfigPending: string;
   stakesConfigError: string;
   stakesPausedBanner: string;
@@ -101,6 +103,8 @@ const vi: StakingCopy = {
   projectedInterestLabel: 'Lãi dự kiến khi đáo hạn',
   projectedInterestHint: 'Tính theo công thức on-chain (làm tròn integer).',
   pausedBanner: 'Hợp đồng staking đang tạm dừng. Không thể mở stake mới.',
+  insufficientInterestFundBanner:
+    'Quỹ Interest hiện không đủ cho vị thế này.',
   stakesConfigPending: 'Đang tải cấu hình — tạm khóa claim/unstake để tránh mất lãi.',
   stakesConfigError: 'Không tải được cấu hình — tạm khóa claim/unstake.',
   stakesPausedBanner: 'Hợp đồng đang tạm dừng. Claim/unstake hiện không khả dụng.',
@@ -195,6 +199,8 @@ const en: StakingCopy = {
   projectedInterestLabel: 'Projected interest at maturity',
   projectedInterestHint: 'Uses on-chain integer rounding order.',
   pausedBanner: 'Staking is paused. New stakes are disabled.',
+  insufficientInterestFundBanner:
+    'The Interest fund cannot cover this position right now.',
   stakesConfigPending:
     'Loading config — claim/unstake locked to avoid losing interest.',
   stakesConfigError: 'Could not load config — claim/unstake locked.',

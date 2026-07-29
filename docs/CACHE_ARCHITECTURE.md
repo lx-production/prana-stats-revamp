@@ -16,6 +16,7 @@ The goal is to keep caching:
 - Bond refresh side effects run inside `/api/bond-metrics`, before the server reads the computed bond snapshot.
 - Top holding addresses are loaded live via `/api/top-holding-addresses` (paginated) with per-page server memory cache (no JSON file handoff).
 - Wallet-specific staking account data is live via `/api/staking/account` (`private, no-store`, rate-limited; not a shared protocol snapshot).
+- Fully-funded stake preflight is live via `POST /api/staking/quote` (`private, no-store`, rate-limited; raw bigint at one `blockTag` — do **not** use `/api/staking-stats` for this gate).
 
 ### 2. Short-lived data should have short-lived caches
 - Root JSON files can be reused briefly by the browser before revalidation.
@@ -284,9 +285,11 @@ Staking stats response cache:
 - `/api/staking-stats` (TTL = `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
 `/api/staking/account` is **not** server-cached (always live; `Cache-Control: private, no-store`).
+`POST /api/staking/quote` is also **not** server-cached (always live; `Cache-Control: private, no-store`).
 
 Browser staking UI (React Query on `/stake/`):
 - `['staking-config']` — `staleTime` 30s (aligned with config HTTP/`Cache-Control` max-age)
+- Debounced `POST /api/staking/quote` via `useStakingQuote` (1s debounce, 60s client stale mark; CTA calls `freshQuote()` before Permit)
 - `['staking-account', address]` — enabled only for a valid address; `staleTime: 0` + `refetchOnMount: 'always'` (no forever-stale cache on reconnect); no polling; invalidate after successful transaction receipts
 
 Bond refresh request dedupe:
@@ -366,6 +369,7 @@ Routes (each uses one of the header shapes above, as wired in `server/getApiRout
 - `/api/staking-stats` — `max-age=24h`
 - `/api/staking/config` — `max-age=30`
 - `/api/staking/account` — `private, no-store` (wallet-specific; rate-limited 10/IP/min + 120/server/min)
+- `POST /api/staking/quote` — `private, no-store` (fully-funded Interest preflight; rate-limited 10/IP/min + 60/server/min)
 - `/api/capital` — `max-age=30`
 - `/api/lp-capital` — `max-age=1h`
 - `/api/bond-metrics` — `max-age=24h`

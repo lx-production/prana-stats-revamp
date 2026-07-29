@@ -33,6 +33,7 @@ import type {
   StakeTransactionStatus,
   StakingAccountSnapshot,
   StakingConfig,
+  StakingQuote,
 } from '../staking.types.ts';
 
 type UseStakeTransactionInput = {
@@ -42,7 +43,32 @@ type UseStakeTransactionInput = {
   durationSeconds: number | null;
   /** Refetch account before signing/submit (fresh nonce) and after success. */
   refetchAccount: () => Promise<unknown>;
+  /**
+   * Live Interest-fund preflight (same-block raw bigint).
+   * Called immediately before Permit sign and before stake broadcast.
+   */
+  freshQuote: () => Promise<StakingQuote | null>;
 };
+
+/** Map quote soft-issues to a UI error code (fund check is the primary gate). */
+function errorCodeFromQuoteIssues(
+  issues: StakingQuote['issues'],
+):
+  | 'paused'
+  | 'below_min'
+  | 'invalid_duration'
+  | 'invalid_amount'
+  | 'insufficient_interest_fund'
+  | 'generic' {
+  if (issues.includes('insufficient_interest_fund')) {
+    return 'insufficient_interest_fund';
+  }
+  if (issues.includes('paused')) return 'paused';
+  if (issues.includes('below_minimum')) return 'below_min';
+  if (issues.includes('invalid_duration')) return 'invalid_duration';
+  if (issues.includes('zero_amount')) return 'invalid_amount';
+  return 'generic';
+}
 
 /**
  * Combined Permit & Stake flow.
@@ -55,6 +81,7 @@ export function useStakeTransaction({
   amountRaw,
   durationSeconds,
   refetchAccount,
+  freshQuote,
 }: UseStakeTransactionInput) {
   const { locale } = useSiteLanguage();
   const copy = getStakingCopy(locale);
@@ -226,9 +253,26 @@ export function useStakeTransaction({
         return null;
       }
 
-      setStatus('signing');
-
       try {
+        // Re-check Interest fund on-chain right before asking for a Permit signature.
+        const fundQuote = await freshQuote();
+        if (!fundQuote) {
+          setError(getStakingErrorMessage('quote_failed', locale));
+          setStatus('error');
+          return null;
+        }
+        if (fundQuote.issues.length > 0) {
+          setError(
+            getStakingErrorMessage(
+              errorCodeFromQuoteIssues(fundQuote.issues),
+              locale,
+            ),
+          );
+          setStatus('error');
+          return null;
+        }
+
+        setStatus('signing');
         const walletClient = await ensurePolygonWalletClient();
 
         // Must be a successful refetch — never fall back to cached nonce/balance.
@@ -304,6 +348,7 @@ export function useStakeTransaction({
       config,
       durationSeconds,
       ensurePolygonWalletClient,
+      freshQuote,
       locale,
       refetchAccount,
       wallet.address,
@@ -344,9 +389,28 @@ export function useStakeTransaction({
         return;
       }
 
-      setStatus('submitting');
-
       try {
+        // Re-check fund again before broadcast (covers Continue Stake + races).
+        const fundQuote = await freshQuote();
+        if (!fundQuote) {
+          setError(getStakingErrorMessage('quote_failed', locale));
+          setStatus('error');
+          return;
+        }
+        if (fundQuote.issues.length > 0) {
+          // Drop permit — position is no longer fundable under current reserves.
+          setPermit(null);
+          setError(
+            getStakingErrorMessage(
+              errorCodeFromQuoteIssues(fundQuote.issues),
+              locale,
+            ),
+          );
+          setStatus('error');
+          return;
+        }
+
+        setStatus('submitting');
         const walletClient = await ensurePolygonWalletClient();
 
         const outcome = await submitStakeWithPermitFlow({
@@ -443,6 +507,7 @@ export function useStakeTransaction({
       config,
       durationSeconds,
       ensurePolygonWalletClient,
+      freshQuote,
       locale,
       publicClient,
       refetchAccount,

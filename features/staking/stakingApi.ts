@@ -1,7 +1,12 @@
 import { fetchJson } from '../../utils/fetchJson.ts';
 
 import type { Address } from '../../types/blockchain.types.ts';
-import type { StakingAccountSnapshot, StakingConfig } from './staking.types.ts';
+import type {
+  StakingAccountSnapshot,
+  StakingConfig,
+  StakingQuote,
+  StakingQuoteRequest,
+} from './staking.types.ts';
 
 /** Browser React Query key for GET /api/staking/config. */
 export const STAKING_CONFIG_QUERY_KEY = ['staking-config'] as const;
@@ -20,4 +25,24 @@ export async function fetchStakingAccount(
 ): Promise<StakingAccountSnapshot> {
   const url = `/api/staking/account?address=${encodeURIComponent(address)}`;
   return await fetchJson<StakingAccountSnapshot>(url);
+}
+
+/**
+ * POST /api/staking/quote — AbortSignal so the quote hook can cancel in-flight
+ * requests when amount/duration changes. Never dedupe POSTs.
+ */
+export async function fetchStakingQuote(
+  request: StakingQuoteRequest,
+  signal?: AbortSignal,
+): Promise<StakingQuote> {
+  return await fetchJson<StakingQuote>(
+    '/api/staking/quote',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      signal,
+    },
+    { dedupeKey: null },
+  );
 }

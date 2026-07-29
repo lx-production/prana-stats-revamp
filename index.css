@@ -46,6 +46,9 @@
     @apply hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
     /* Kill browser default outline; gold ring only for keyboard focus */
     @apply outline-none focus-visible:ring-2 focus-visible:ring-[#F5D27A]/60;
+    /* Without these, disabled gold CTAs still look fully active (spin + full opacity). */
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply disabled:hover:translate-y-0 disabled:active:scale-100;
   }
 
   /* Primary: dark fill with spinning gold conic border */
@@ -71,6 +74,14 @@
   .btn-gold-border:hover {
     color: #ffe9a8;
     box-shadow: 0 0 32px rgba(183, 123, 34, 0.35), 0 16px 36px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Stop the gold spin and mute glow when the CTA is locked. */
+  .btn-gold-border:disabled,
+  .btn-gold-border:disabled:hover {
+    color: #f5d27a;
+    animation: none;
+    box-shadow: 0 0 10px rgba(183, 123, 34, 0.1), 0 8px 18px rgba(0, 0, 0, 0.35);
   }
 
   /* Secondary: frosted glass */

@@ -3,8 +3,13 @@ import { test } from 'node:test';
 
 import { createSwapRateLimiters } from '../rateLimit.ts';
 import { createGetApiRouteHandler } from '../getApiRoutes.ts';
+import { createPostApiRouteHandler } from '../postApiRoutes.ts';
 import { parseChecksumAddress } from '../helpers/addressHelpers.ts';
 import { mapDurationOptions, mapStakeRecords } from '../utils/stakingReadUtils.ts';
+import {
+  parseStakingQuoteRequest,
+  StakingApiValidationError,
+} from '../utils/stakingQuoteUtils.ts';
 import {
   INTEREST_CONTRACT_ADDRESS,
   PRANA_PERMIT_DOMAIN_NAME,
@@ -16,7 +21,11 @@ import { POLYGON_CHAIN_ID, SECONDS_PER_DAY } from '../../constants/network.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Address } from '../../types/blockchain.types.ts';
-import type { StakingAccountSnapshot, StakingConfig } from '../../features/staking/staking.types.ts';
+import type {
+  StakingAccountSnapshot,
+  StakingConfig,
+  StakingQuote,
+} from '../../features/staking/staking.types.ts';
 
 type MockHeaderValue = number | string | string[];
 
@@ -58,6 +67,26 @@ function mockRequest(
     method,
     headers: {},
     socket: { remoteAddress },
+  } as IncomingMessage;
+}
+
+function mockBodyRequest(
+  chunks: Buffer[],
+  headers: Record<string, string> = {
+    'content-type': 'application/json',
+    host: '127.0.0.1',
+  },
+  remoteAddress = '203.0.113.10',
+): IncomingMessage {
+  return {
+    method: 'POST',
+    headers,
+    socket: { remoteAddress },
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) {
+        yield chunk;
+      }
+    },
   } as IncomingMessage;
 }
 
@@ -105,6 +134,40 @@ function sampleAccount(address: Address): StakingAccountSnapshot {
       },
     ],
   };
+}
+
+function sampleQuote(overrides: Partial<StakingQuote> = {}): StakingQuote {
+  return {
+    amountRaw: '100000000000',
+    durationSeconds: SECONDS_PER_DAY * 30,
+    apr: 9,
+    newStakeInterestRaw: '1000',
+    interestBalanceRaw: '500000000000',
+    totalInterestNeededRaw: '100000000000',
+    availableInterestFundRaw: '400000000000',
+    minStakeRaw: '100000000000',
+    paused: false,
+    blockNumber: 12_345,
+    blockTimestamp: 1_700_000_000,
+    issues: [],
+    ...overrides,
+  };
+}
+
+function createQuoteHandlers(options?: {
+  loadQuote?: () => Promise<StakingQuote>;
+  quoteCalls?: { count: number };
+}) {
+  const rateLimiters = createSwapRateLimiters();
+  const quoteCalls = options?.quoteCalls ?? { count: 0 };
+  const handlePost = createPostApiRouteHandler(rateLimiters, {
+    loadQuote: async () => {
+      quoteCalls.count += 1;
+      if (options?.loadQuote) return options.loadQuote();
+      return sampleQuote();
+    },
+  });
+  return { rateLimiters, handlePost, quoteCalls };
 }
 
 test('parseChecksumAddress accepts valid addresses and rejects invalid input', () => {
@@ -382,4 +445,180 @@ test('staking upstream failures log redacted errors without RPC secrets', async 
   assert.match(combined, /\[redacted-url\]|alchemy\.com\/v2\/\[redacted\]/);
   assert.equal(combined.includes('SECRET_KEY'), false);
   assert.equal(combined.includes('https://polygon-mainnet'), false);
+});
+
+test('parseStakingQuoteRequest accepts decimal amount + duration and rejects bad shapes', () => {
+  assert.deepEqual(
+    parseStakingQuoteRequest({
+      amountRaw: '100000000000',
+      durationSeconds: SECONDS_PER_DAY * 30,
+    }),
+    {
+      amountRaw: '100000000000',
+      durationSeconds: SECONDS_PER_DAY * 30,
+    },
+  );
+
+  assert.throws(
+    () => parseStakingQuoteRequest({ amountRaw: '-1', durationSeconds: 1 }),
+    StakingApiValidationError,
+  );
+  assert.throws(
+    () => parseStakingQuoteRequest({ amountRaw: '1', durationSeconds: 1.5 }),
+    StakingApiValidationError,
+  );
+  assert.throws(
+    () => parseStakingQuoteRequest({ amountRaw: '1.0', durationSeconds: 1 }),
+    StakingApiValidationError,
+  );
+});
+
+test('POST /api/staking/quote rejects non-POST with 405', async () => {
+  const { handlePost } = createQuoteHandlers();
+  const res = mockResponse();
+  await handlePost(
+    mockRequest('203.0.113.10', 'GET'),
+    res,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(res.statusCode, 405);
+  assert.equal(res.headers.get('Allow'), 'POST');
+});
+
+test('POST /api/staking/quote rejects non-JSON / empty / oversized / bad body without loader', async () => {
+  const quoteCalls = { count: 0 };
+  const { handlePost } = createQuoteHandlers({ quoteCalls });
+
+  const plain = mockResponse();
+  await handlePost(
+    mockBodyRequest([Buffer.from('{}')], {
+      'content-type': 'text/plain',
+      host: '127.0.0.1',
+    }),
+    plain,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(plain.statusCode, 415);
+
+  const empty = mockResponse();
+  await handlePost(
+    mockBodyRequest([Buffer.from('   ')]),
+    empty,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(empty.statusCode, 400);
+
+  const oversized = mockResponse();
+  await handlePost(
+    mockBodyRequest([Buffer.from('x'.repeat(2049))]),
+    oversized,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(oversized.statusCode, 400);
+
+  const badBody = mockResponse();
+  await handlePost(
+    mockBodyRequest([
+      Buffer.from(JSON.stringify({ amountRaw: 'nope', durationSeconds: 1 })),
+    ]),
+    badBody,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(badBody.statusCode, 400);
+  assert.equal(quoteCalls.count, 0);
+});
+
+test('POST /api/staking/quote returns 200 with soft issues and private no-store', async () => {
+  const { handlePost } = createQuoteHandlers({
+    loadQuote: async () =>
+      sampleQuote({
+        issues: ['insufficient_interest_fund'],
+        availableInterestFundRaw: '0',
+      }),
+  });
+
+  const res = mockResponse();
+  await handlePost(
+    mockBodyRequest([
+      Buffer.from(
+        JSON.stringify({
+          amountRaw: '100000000000',
+          durationSeconds: SECONDS_PER_DAY * 30,
+        }),
+      ),
+    ]),
+    res,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.headers.get('Cache-Control'), 'private, no-store');
+  assert.deepEqual(parsedBody(res).issues, ['insufficient_interest_fund']);
+});
+
+test('POST /api/staking/quote returns 502 with redacted RPC errors', async () => {
+  const logged: string[] = [];
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    logged.push(args.map(String).join(' '));
+  };
+
+  try {
+    const { handlePost } = createQuoteHandlers({
+      loadQuote: async () => {
+        throw new Error(
+          'RPC https://polygon-mainnet.g.alchemy.com/v2/SECRET_ABC timed out',
+        );
+      },
+    });
+
+    const res = mockResponse();
+    await handlePost(
+      mockBodyRequest([
+        Buffer.from(
+          JSON.stringify({
+            amountRaw: '100000000000',
+            durationSeconds: SECONDS_PER_DAY,
+          }),
+        ),
+      ]),
+      res,
+      new URL('http://127.0.0.1/api/staking/quote'),
+    );
+
+    assert.equal(res.statusCode, 502);
+    assert.equal(JSON.stringify(parsedBody(res)).includes('SECRET'), false);
+    assert.equal(logged.join('\n').includes('SECRET_ABC'), false);
+  } finally {
+    console.error = originalError;
+  }
+});
+
+test('POST /api/staking/quote returns 429 when rate limited', async () => {
+  const { handlePost } = createQuoteHandlers();
+  const body = Buffer.from(
+    JSON.stringify({
+      amountRaw: '100000000000',
+      durationSeconds: SECONDS_PER_DAY,
+    }),
+  );
+
+  for (let index = 0; index < 10; index += 1) {
+    const ok = mockResponse();
+    await handlePost(
+      mockBodyRequest([body], undefined, '198.51.100.50'),
+      ok,
+      new URL('http://127.0.0.1/api/staking/quote'),
+    );
+    assert.equal(ok.statusCode, 200);
+  }
+
+  const limited = mockResponse();
+  await handlePost(
+    mockBodyRequest([body], undefined, '198.51.100.50'),
+    limited,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(limited.statusCode, 429);
+  assert.equal(parsedBody(limited).error, 'rate_limited');
 });
