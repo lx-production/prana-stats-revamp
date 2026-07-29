@@ -142,7 +142,7 @@ Implemented mainly in `features/swap/hooks/useUniswapQuote.ts` and `features/swa
 
 | Mechanism | Behavior |
 | --- | --- |
-| Debounced quoting | 650 ms after input settles; previous quote cleared when inputs change |
+| Debounced quoting | 1000 ms after input settles; previous quote cleared when inputs change |
 | Quote deadline | `SWAP_DEADLINE_SECONDS` = 3 minutes on-chain deadline in router calldata |
 | Expiry buffer | Swap blocked if deadline is within 5 seconds |
 | Request echo | Quote response includes request metadata; frontend requires match on chainId, tokens, `amountInRaw`, recipient, slippage, router/`to` before approve/swap |

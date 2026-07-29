@@ -143,7 +143,7 @@ Chủ yếu nằm trong `features/swap/hooks/useUniswapQuote.ts` và `features/s
 
 | Cơ chế | Hành vi |
 | --- | --- |
-| Debounce quote | 650 ms sau khi input ổn định; xóa quote cũ ngay khi input đổi |
+| Debounce quote | 1000 ms sau khi input ổn định; xóa quote cũ ngay khi input đổi |
 | Deadline quote | `SWAP_DEADLINE_SECONDS` = 3 phút deadline on-chain trong router calldata |
 | Buffer hết hạn | Chặn swap nếu deadline còn trong vòng 5 giây |
 | Echo request | Response quote gồm metadata request; frontend yêu cầu khớp chainId, token, `amountInRaw`, recipient, slippage, router/`to` trước khi approve/swap |

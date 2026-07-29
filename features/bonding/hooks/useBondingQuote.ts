@@ -8,7 +8,7 @@ import type {
 } from '../bonding.types.ts';
 
 /** Debounce typing before hitting POST /api/bonding/quote. */
-export const BONDING_QUOTE_DEBOUNCE_MS = 600;
+export const BONDING_QUOTE_DEBOUNCE_MS = 1000;
 
 /** After this age, the UI marks the quote stale and CTA must fresh-quote. */
 export const BONDING_QUOTE_STALE_MS = 60_000;
@@ -36,7 +36,7 @@ export type UseBondingQuoteResult = {
 };
 
 /**
- * Live bonding quote with 600ms debounce, AbortController cancel, stale drop,
+ * Live bonding quote with 1s debounce, AbortController cancel, stale drop,
  * and a 60s stale mark. CTA uses `freshQuote()` instead of a manual refresh button.
  *
  * Important: `isLoading` flips only when the debounced fetch actually starts —

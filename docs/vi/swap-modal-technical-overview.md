@@ -100,7 +100,7 @@ sequenceDiagram
   User->>Modal: Click TRADE
   User->>Modal: Connect wallet / switch to Polygon
   User->>Modal: Pick tokens + amount
-  Modal->>Quote: Debounced inputs (650ms)
+  Modal->>Quote: Debounced inputs (1000ms)
   Quote->>API: POST /api/swap/quote
   API-->>Quote: Route + unsigned tx + HMAC
   Quote-->>Modal: Show amount out, min received, route, gas
@@ -125,7 +125,7 @@ sequenceDiagram
 1. **Mở** — `hero3.tsx` set `isSwapOpen`; `SwapModal` mount với WBTC → PRANA. Focus bị trap trong dialog (`utils/focusTrap.ts`, `restoreFocus: false`) nên Escape / đóng không trả focus về nút SWAP (giữ style idle mặc định).
 2. **Kết nối** — `useInjectedWallet.connectWallet()` chọn injected connector đầu tiên có sẵn.
 3. **Mạng** — nếu `chainId !== 137`, `ensurePolygon()` gọi wagmi `switchChain`.
-4. **Quote** — khi đã connect, đang trên Polygon, và amount > 0, `useUniswapQuote` xóa quote cũ ngay, chờ **650ms**, rồi `POST /api/swap/quote`.
+4. **Quote** — khi đã connect, đang trên Polygon, và amount > 0, `useUniswapQuote` xóa quote cũ ngay, chờ **1000ms**, rồi `POST /api/swap/quote`.
 5. **Xem lại** — modal hiện amount out, minimum received, các bước route, và ước lượng gas.
 6. **Thực thi** — `useUniswapSwap.executeSwap()`:
   - Từ chối quote cũ (`isQuoteCurrent` + buffer deadline).

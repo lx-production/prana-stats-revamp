@@ -93,7 +93,7 @@
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX áp dụng cho Buy WBTC và Sell PRANA.
   - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
-  - Quote debounce 600 ms: trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
+  - Quote debounce 1000 ms (1s): trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
   - **Slippage / thiếu `minOut`**
     - **Exact WBTC Buy** luôn dùng đúng số WBTC truyền vào `buyBondForWbtcAmount`; không có rủi ro chi nhiều WBTC hơn input. Giá trị có thể thay đổi là lượng PRANA nhận, vì contract không nhận `minPranaOut`.

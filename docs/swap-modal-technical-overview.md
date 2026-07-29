@@ -98,7 +98,7 @@ sequenceDiagram
   User->>Modal: Click TRADE
   User->>Modal: Connect wallet / switch to Polygon
   User->>Modal: Pick tokens + amount
-  Modal->>Quote: Debounced inputs (650ms)
+  Modal->>Quote: Debounced inputs (1000ms)
   Quote->>API: POST /api/swap/quote
   API-->>Quote: Route + unsigned tx + HMAC
   Quote-->>Modal: Show amount out, min received, route, gas
@@ -121,7 +121,7 @@ sequenceDiagram
 1. **Open** — `hero3.tsx` sets `isSwapOpen`; `SwapModal` mounts with WBTC → PRANA. Focus is trapped in the dialog (`utils/focusTrap.ts`, `restoreFocus: false`) so Escape / close leave the SWAP trigger unfocused (default idle style).
 2. **Connect** — `useInjectedWallet.connectWallet()` picks the first available injected connector.
 3. **Network** — if `chainId !== 137`, `ensurePolygon()` calls wagmi `switchChain`.
-4. **Quote** — when connected, on Polygon, and amount &gt; 0, `useUniswapQuote` clears any previous quote immediately, waits **650ms**, then `POST /api/swap/quote`.
+4. **Quote** — when connected, on Polygon, and amount &gt; 0, `useUniswapQuote` clears any previous quote immediately, waits **1000ms**, then `POST /api/swap/quote`.
 5. **Review** — modal shows output amount, minimum received, route steps, and gas estimate.
 6. **Execute** — `useUniswapSwap.executeSwap()`:
    - Refuses stale quotes (`isQuoteCurrent` + deadline buffer).
