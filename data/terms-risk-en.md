@@ -93,33 +93,14 @@ PRANA Staking creates and manages PRANA stake positions through the Staking Cont
 
 ## 7. PRANA Bonding summary and specific risks
 
-PRANA Bonding helps users create and manage Buy and Sell bonds through Bond contracts on Polygon. **New bonds are created only on V2.** V1 deployments remain available in the interface for viewing and claiming historical bonds only.
+PRANA Bonding creates and manages Buy/Sell bonds through Bond contracts on Polygon. **New bonds are created only on V2**; V1 is for viewing and claiming historical bonds only. For wallet prompts and UI flow details, see the [Bonding Guide](/guide/bonding/) and [Bonding Contracts Explained](/guide/bonding-contracts/).
 
-**How a bond is created**
+**Key risks**
 
-The interface may require an ERC-20 Approve transaction for WBTC (Buy) or PRANA (Sell), then a separate create-bond transaction after an in-app review. One button click does not open Approve and Create wallet prompts back-to-back. If allowance is already sufficient for the intended action, Approve may be skipped.
-
-When a create transaction succeeds:
-
-- the selected input token amount is transferred to the matching Bond contract
-- the bond’s term, rate/duration snapshot, and payout are recorded on-chain
-- payout vests over time and must be claimed under the contract rules
-
-**Buy input and missing slip locks**
-
-Buy Bond uses exact WBTC input only (`buyBondForWbtcAmount`). Exact WBTC Buy and exact PRANA Sell have no on-chain minimum output (`minPranaOut` / `minWbtcOut`). The on-chain contract also exposes `buyBondForPranaAmount`, but this interface does **not** quote or create through that path.
-
-Displayed quotes are estimates from public chain state and the contract’s integer math, including a 1% fee path. Final amounts can differ if reserves, rates, treasury capacity, or related state change between quote and execution. The interface may refresh the quote before write, but that is not the same as an on-chain slip lock.
-
-**Claim and vesting**
-
-Bond payout vests from creation time. Claimable amounts are based on cumulative vested payout minus already claimed amounts. `lastClaimTime` only helps prevent two claims at the same timestamp; it does not restart vesting the way Staking interest can accrue from the last claim.
-
-A claim may fail if the relevant deployment is paused, treasury or reserves are insufficient, the network or RPC is unavailable, or a contract call otherwise reverts. THĐP does not guarantee that every expected payout will be available or successfully claimed.
-
-**Configurable and administrative controls**
-
-Bond contracts include admin and manager-controlled functions. To the extent permitted by the deployed code, those roles can pause actions, update rates and minimums, sync or set impacted reserves, and withdraw surplus under the contract rules. Existing bond records keep the payout terms stored at creation; global config changes mainly affect later actions and new bonds. Pause status, funding, and role keys remain additional risks.
+- Creating a bond may require a separate ERC-20 Approve then Create after in-app review; one click does not open both wallet prompts back-to-back. Payout vests over time and must be claimed under the contract rules.
+- Buy uses exact WBTC input; Buy and Sell have no on-chain slip locks (`minOut`). Quotes are estimates — final amounts may differ if reserves, rates, treasury, or related state change between quote and execution. Fresh-quoting before write is not an on-chain slip lock. However with the current scale and traffic of PRANA, the difference between quote and execution is rare.
+- Claims may fail if the deployment is paused, treasury/reserves are insufficient, the network/RPC is unavailable, or a call reverts. THĐP does not guarantee that every expected payout will be available or successfully claimed because of reasons beyond our control.
+- Admins/managers may pause, update rates/minimums, sync or set impacted reserves, and withdraw surplus under the contract rules. Existing bonds keep payout terms at creation; pause status, funding, and role keys remain risks. Review current on-chain state before acting.
 
 ## 8. Contract addresses to verify
 

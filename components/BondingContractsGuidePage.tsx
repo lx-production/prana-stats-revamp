@@ -20,8 +20,8 @@ const BondingContractsGuidePage: React.FC = () => {
       dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
-          ? "Explains BuyPranaBondV2 and SellPranaBondV2: reserves, create/claim rules, pause/treasury controls, and what managers can and cannot change after a bond is created."
-          : "Giải thích BuyPranaBondV2 và SellPranaBondV2: reserves, quy tắc tạo/claim, pause/treasury, và manager có thể / không thể thay đổi gì sau khi bond đã tạo."
+          ? "Explains BuyPranaBondV2 and SellPranaBondV2: reserves, create/claim rules, pause/treasury controls, and what PRANA Protocol can and cannot change after a bond is created."
+          : "Giải thích BuyPranaBondV2 và SellPranaBondV2: reserves, quy tắc tạo/claim, pause/treasury, và PRANA Protocol có thể / không thể thay đổi gì sau khi bond đã tạo."
       }
     />
   );

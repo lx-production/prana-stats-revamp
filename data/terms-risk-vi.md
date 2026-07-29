@@ -93,33 +93,14 @@ PRANA Staking tạo và quản lý vị thế stake PRANA qua Staking Contract t
 
 ## 7. Tóm tắt PRANA Bonding và rủi ro riêng
 
-PRANA Bonding giúp người dùng tạo và quản lý bond Buy và Sell qua các Bond contract trên Polygon. **Bond mới chỉ được tạo trên V2.** Deployment V1 vẫn có trong giao diện chỉ để xem và claim bond lịch sử.
+PRANA Bonding tạo và quản lý bond Buy/Sell qua các Bond contract trên Polygon. **Bond mới chỉ tạo trên V2**; V1 chỉ để xem và claim lịch sử. Chi tiết thao tác ví và luồng UI: xem [Hướng dẫn Bonding](/guide/bonding/) và [Giải thích Hợp đồng Bonding](/guide/bonding-contracts/).
 
-**Cách tạo một bond**
+**Rủi ro chính**
 
-Giao diện có thể yêu cầu giao dịch Approve ERC-20 cho WBTC (Buy) hoặc PRANA (Sell), rồi một giao dịch tạo bond riêng sau bước review trong app. Một lần bấm nút không mở liên tiếp cả Approve lẫn Create trên ví. Nếu allowance đã đủ cho hành động dự kiến, Approve có thể được bỏ qua.
-
-Khi giao dịch tạo bond thành công:
-
-- số lượng token đầu vào đã chọn được chuyển vào Bond contract tương ứng
-- kỳ hạn, snapshot rate/duration, và payout của bond được ghi nhận on-chain
-- payout vest theo thời gian và phải được claim theo quy tắc contract
-
-**Nhập Buy và thiếu khóa slip on-chain**
-
-Buy Bond chỉ dùng nhập exact WBTC (`buyBondForWbtcAmount`). Exact WBTC Buy và exact PRANA Sell không có output tối thiểu on-chain (`minPranaOut` / `minWbtcOut`). Contract on-chain vẫn có `buyBondForPranaAmount`, nhưng giao diện này **không** quote hay tạo bond qua path đó.
-
-Quote hiển thị là ước tính từ state chain công khai và phép toán số nguyên của contract, gồm nhánh phí 1%. Số cuối cùng có thể khác nếu reserves, rate, treasury, hoặc state liên quan đổi giữa lúc quote và lúc thực thi. Giao diện có thể fresh-quote trước khi write, nhưng đó không đồng nghĩa với khóa slip on-chain.
-
-**Claim và vesting**
-
-Payout bond vest từ thời điểm tạo. Claimable dựa trên tổng payout đã vest trừ phần đã claim. `lastClaimTime` chỉ giúp chặn hai claim cùng timestamp; nó không mở lại cửa sổ vesting theo cách lãi Staking có thể tính từ lần claim gần nhất.
-
-Claim có thể thất bại nếu deployment liên quan đang pause, treasury hoặc reserves không đủ, mạng hoặc RPC không sẵn có, hoặc lời gọi contract bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công.
-
-**Kiểm soát cấu hình và quản trị**
-
-Bond contract có các hàm do admin và manager kiểm soát. Trong phạm vi mã đã triển khai, các role đó có thể tạm dừng hành động, cập nhật rate và minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bản ghi bond hiện hữu giữ điều khoản payout lúc tạo; thay đổi cấu hình toàn cục chủ yếu ảnh hưởng hành động sau này và bond mới. Trạng thái pause, mức quỹ, và khóa role vẫn là rủi ro bổ sung.
+- Tạo bond có thể cần Approve ERC-20 rồi Create riêng sau bước review; một lần bấm không mở liên tiếp cả hai trên ví. Payout vest theo thời gian và phải claim theo quy tắc contract.
+- Buy dùng nhập exact WBTC; Buy và Sell không có khóa slip on-chain (`minOut`). Quote là ước tính — số cuối có thể lệch nếu reserves, rate, treasury, hoặc state đổi giữa quote và thực thi. Fresh-quote trước write không đồng nghĩa khóa slip on-chain. Tuy nhiên với quy mô và traffic hiện tại của PRANA thì số quote và số thực thi khác nhau là hiếm khi xảy ra.
+- Claim có thể thất bại nếu deployment đang pause, treasury/reserves không đủ, mạng/RPC không sẵn có, hoặc lời gọi bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công vì những lý do không thể kiểm soát nằm ngoài dự định.
+- Admin/manager có thể pause, cập nhật rate/minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bond hiện hữu giữ điều khoản payout lúc tạo; pause, mức quỹ, và khóa role vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
 ## 8. Địa chỉ contract cần đối chiếu
 

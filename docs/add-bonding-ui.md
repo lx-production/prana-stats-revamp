@@ -9,6 +9,7 @@
 - Buy Bond chỉ nhập WBTC chính xác (bỏ target PRANA).
 - Contract reads, quote và fallback xác nhận receipt đi qua backend; ví chỉ trực tiếp gửi `approve`, tạo bond và `claim`.
 - Quote được tính đúng theo trạng thái on-chain tại block đọc. Nếu reserves/rates/treasury không đổi trước khi transaction thực thi thì raw amount sẽ khớp quote; thời gian trôi qua hoặc sang block mới tự nó không làm quote đổi. UI vẫn fresh-quote/preflight trước giao dịch vì contract không nhận ngưỡng output tối thiểu (`minOut`) hoặc input tối đa (`maxIn`) để khóa kết quả khi state thực sự thay đổi.
+- Với quy mô và traffic hiện tại của PRANA, thêm cơ chế `minOut`/`maxIn` là dư thừa và over-engineered; PRANA Protocol ưu tiên thiết kế tối giản.
 
 
 
@@ -92,14 +93,14 @@
   - Buy chỉ nhập exact WBTC → quote PRANA nhận dự kiến.
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX áp dụng cho Buy WBTC và Sell PRANA.
-  - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày nếu tồn tại, nếu không chọn option đầu tiên.
+  - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày.
   - Quote debounce 1000 ms (1s): trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
   - **Slippage / thiếu `minOut`**
     - **Exact WBTC Buy** luôn dùng đúng số WBTC truyền vào `buyBondForWbtcAmount`; không có rủi ro chi nhiều WBTC hơn input. Giá trị có thể thay đổi là lượng PRANA nhận, vì contract không nhận `minPranaOut`.
     - **Exact PRANA Sell** luôn dùng đúng số PRANA truyền vào `sellBond`; giá trị có thể thay đổi là lượng WBTC nhận, vì contract không nhận `minWbtcOut`.
     - Contract on-chain vẫn có `buyBondForPranaAmount`, nhưng app **không** expose path đó (không quote / không create qua UI).
-    - Với volume/traffic Bonding hiện thấp, hầu hết quote sẽ khớp chính xác khi execution. Sai khác chỉ xuất hiện nếu state liên quan đổi giữa lúc quote và lúc transaction được thực thi, ví dụ có bond khác, giao dịch làm đổi WBTC/PRANA pool, hoặc manager cập nhật/sync contract.
+    - Với volume/traffic Bonding hiện thấp, hầu hết quote sẽ khớp chính xác khi execution. Sai khác chỉ xuất hiện (almost never - irrelevant) nếu state liên quan đổi giữa lúc quote và lúc transaction được thực thi, ví dụ có bond khác, giao dịch làm đổi WBTC/PRANA pool, hoặc manager cập nhật/sync contract.
   - **Kiểm thử Bước 4**
     - Parser table test cho empty/zero/negative/scientific notation, dấu thập phân lặp, 8/9 decimals hợp lệ và vượt decimals.
     - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; hiện trên Buy WBTC và Sell PRANA.

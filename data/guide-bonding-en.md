@@ -26,7 +26,7 @@ Reject the request if any detail is unexpected.
 
 Buy Bond locks **WBTC** and vest **PRANA** over the selected term.
 
-You enter how much WBTC to spend. The quote shows expected PRANA payout. The contract call uses that exact WBTC amount (`buyBondForWbtcAmount`). There is no `minPranaOut`, so the PRANA you receive can differ if reserves or rates change before the transaction executes.
+You enter how much WBTC to spend. The quote shows expected PRANA payout. The contract call uses that exact WBTC amount (`buyBondForWbtcAmount`).
 
 Before create, the app refreshes the quote. If raw amounts are unchanged, the flow continues; if they changed, Review updates before you can write.
 
@@ -34,7 +34,7 @@ Before create, the app refreshes the quote. If raw amounts are unchanged, the fl
 
 Sell Bond locks **PRANA** and vest **WBTC** over the selected term.
 
-You always enter an exact PRANA amount. The quote shows expected WBTC payout. The contract call is `sellBond(pranaAmount, period)`. There is no `minWbtcOut`, so the WBTC you receive can differ if on-chain state changes between quote and execution.
+You always enter an exact PRANA amount. The quote shows expected WBTC payout. The contract call is `sellBond(pranaAmount, period)`.
 
 Allowance must be at least the exact PRANA input. Use MAX for Buy WBTC and Sell PRANA.
 
@@ -51,11 +51,11 @@ Claimable math (same idea as the contracts):
 To claim:
 
 1. Connect the wallet that owns the bond
-2. Open the bond card under **Active bonds**
+2. View the bond card under **Active bonds**
 3. Review claimable amount and progress
 4. Tap **Claim** and confirm the transaction
 
-Claim is a separate on-chain transaction and costs gas. The UI picks the correct V1/V2 Buy or Sell contract from an internal mapping — do not trust a forged address in any API payload. If that deployment is paused, claim is disabled with a clear reason.
+Claim is a separate on-chain transaction and costs gas. The UI picks the correct V1/V2 Buy or Sell contract. If that deployment is paused, claim is disabled with a clear reason.
 
 ## 5. Treasury, pause, and quote limits
 
@@ -66,8 +66,6 @@ Quotes can be non-executable even when the form looks filled. Common issues:
 - payout would exceed available **reserves**
 - treasury cannot cover the committed payout
 
-Quotes include a **1% fee** in the math (same as the contracts). Term rate and duration come from on-chain `bondRates`. Quotes are computed at the block the server read; time alone does not change a quote if reserves, rates, and treasury are unchanged. The UI still refreshes before write because the contracts do not lock a minimum output or maximum input.
-
-Displayed quotes are estimates. Final on-chain amounts may differ if state changes between quote and confirmation.
+Quotes include a **1% fee** in the math (same as the contracts and swap fee on DEX pool). Term rate and duration come from on-chain `bondRates`. Quotes are computed at the block the server read; time alone does not change a quote if reserves, rates, and treasury are unchanged.
 
 For how BuyPranaBondV2 and SellPranaBondV2 work (manager powers and limits), see the [Contract explanation](/guide/bonding-contracts/). For addresses and full risk language, see the [Terms & Risk Disclosure](/terms).

@@ -24,23 +24,23 @@ Từ chối request nếu bất kỳ chi tiết nào bất thường.
 
 ## 2. Buy Bond — exact WBTC
 
-Buy Bond khóa **WBTC** và vest **PRANA** theo kỳ hạn đã chọn.
+Buy Bond khóa **WBTC** và vest (nhả dần) **PRANA** (payout) theo kỳ hạn đã chọn.
 
-Bạn nhập số WBTC muốn chi. Quote hiện PRANA payout dự kiến. Lệnh contract dùng đúng số WBTC đó (`buyBondForWbtcAmount`). Không có `minPranaOut`, nên PRANA nhận được có thể khác nếu reserves hoặc rate đổi trước khi giao dịch thực thi.
+Bạn nhập số WBTC muốn chi. Quote hiện PRANA payout dự kiến. Lệnh contract dùng đúng số WBTC đó (`buyBondForWbtcAmount`).
 
-Trước khi tạo, app tự fresh-quote. Nếu raw amount không đổi thì tiếp tục; nếu đổi thì Review cập nhật trước khi cho write.
+Trước khi tạo, app tự fresh-quote. Nếu raw amount không đổi thì tiếp tục; nếu đổi thì Review cập nhật trước khi tiếp tục tạo bond.
 
 ## 3. Sell Bond
 
 Sell Bond khóa **PRANA** và vest **WBTC** theo kỳ hạn đã chọn.
 
-Bạn luôn nhập exact PRANA. Quote hiện WBTC payout dự kiến. Lệnh contract là `sellBond(pranaAmount, period)`. Không có `minWbtcOut`, nên WBTC nhận được có thể khác nếu state on-chain đổi giữa lúc quote và lúc thực thi.
+Bạn luôn nhập exact PRANA. Quote hiện WBTC payout dự kiến. Lệnh contract là `sellBond(pranaAmount, period)`. 
 
 Allowance phải ≥ đúng số PRANA nhập. MAX dùng cho Buy WBTC và Sell PRANA.
 
 ## 4. Vesting và claim
 
-Mỗi bond đang hiệu lực hiện principal, tổng payout, đã claim, claimable, và tiến độ vesting.
+Mỗi bond đang hiệu lực hiện principal (vốn gốc), tổng payout, đã claim, claimable (có thể claim), và tiến độ vesting.
 
 Công thức claimable (cùng ý với contract):
 
@@ -51,23 +51,21 @@ Công thức claimable (cùng ý với contract):
 Để claim:
 
 1. Kết nối đúng ví sở hữu bond
-2. Mở thẻ bond trong **Active bonds**
+2. Xem bond trong danh sách **Bond đang hoạt động**
 3. Xem claimable và tiến độ
 4. Bấm **Claim** và xác nhận giao dịch
 
-Claim là giao dịch on-chain riêng và tốn gas. UI chọn đúng contract Buy/Sell × V1/V2 từ mapping nội bộ — không tin địa chỉ giả trong payload API. Nếu deployment đó đang pause, claim bị khóa kèm lý do rõ ràng.
+Claim là giao dịch on-chain riêng và tốn gas. Giao diện tự động chọn đúng contract Buy/Sell × V1/V2. Nếu deployment đó đang pause, claim bị khóa kèm lý do rõ ràng.
 
 ## 5. Treasury, pause, và giới hạn quote
 
-Quote có thể không executable dù form đã điền. Các lý do thường gặp:
+Quote có thể không thể thực thi dù đơn đã điền. Các lý do thường gặp:
 
 - contract **paused**
 - số lượng dưới **minimum** on-chain
 - payout vượt **reserves** khả dụng
 - treasury không đủ để cover payout đã commit
 
-Quote gồm **phí 1%** trong phép tính (giống contract). Rate và duration lấy từ `bondRates` on-chain. Quote được tính tại block server đọc; chỉ riêng thời gian trôi qua không làm quote đổi nếu reserves, rate và treasury không đổi. UI vẫn fresh-quote trước write vì contract không khóa `minOut` / `maxIn`.
-
-Quote hiển thị là ước tính. Số on-chain cuối cùng có thể khác nếu state đổi giữa quote và xác nhận.
+Quote gồm **phí 1%** trong phép tính (giống contract và phí swap trên DEX pool). Rate và duration lấy từ `bondRates` on-chain. Quote được tính tại block server đọc; chỉ riêng thời gian trôi qua không làm quote đổi nếu reserves, rate và treasury không đổi.
 
 Cách BuyPranaBondV2 và SellPranaBondV2 hoạt động (quyền và giới hạn của manager): xem [Giải thích Hợp đồng](/guide/bonding-contracts/). Về địa chỉ và toàn bộ ngôn ngữ rủi ro: xem [Điều khoản & Công bố rủi ro](/terms).

@@ -95,7 +95,7 @@ export default function BondingPage() {
             <h1 className="text-3xl font-medium tracking-wide sm:text-4xl">
               {copy.pageTitle}
             </h1>
-            <p className="max-w-3xl text-[15px] text-white/70">
+            <p className="max-w-xl text-[15px] text-white/70">
               {copy.pageSubtitle}
             </p>
           </div>

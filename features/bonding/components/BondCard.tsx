@@ -150,14 +150,14 @@ export default function BondCard({
           <span>{copy.progressComplete(progress)}</span>
         </div>
         <div
-          className="h-1.5 overflow-hidden rounded-full bg-white/10"
+          className="h-2 overflow-hidden rounded-full bg-white/10"
           role="progressbar"
           aria-valuenow={progress}
           aria-valuemin={0}
           aria-valuemax={100}
         >
           <div
-            className="h-full rounded-full bg-[#F5D27A]/80"
+            className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-amber-300"
             style={{ width: `${progress}%` }}
           />
         </div>

@@ -1,8 +1,6 @@
 # Bonding Contract Explanation
 
-This page explains the on-chain contracts behind **PRANA Bonding**: **BuyPranaBondV2** and **SellPranaBondV2**. Read it with the [Bonding guide](/guide/bonding/) and the [Terms & Risk Disclosure](/terms).
-
-Both contracts run on **Polygon**. This page is educational — always verify live code and parameters on-chain before bonding.
+This page explains the contracts on Polygon behind **PRANA Bonding**: **BuyPranaBondV2** and **SellPranaBondV2**. Read it with the [Bonding guide](/guide/bonding/) and the [Terms & Risk Disclosure](/terms).
 
 **V1 note:** Buy/Sell Bond V1 deployments remain only for viewing and claiming historical bonds. **New bonds are created only on V2.**
 
@@ -31,7 +29,7 @@ Each V2 contract keeps two reserve sets:
 - **Impacted reserves** (`impactedWbtcReserve`, `impactedPranaReserve`): internal reserves that already include the effect of previous bonds.
 - **Market reserves**: live Uniswap V3 pool reserves at quote/create time.
 
-After each bond creation, impacted reserves are updated. So the next bond sees **progressive price impact**, instead of always resetting to live pool price.
+After each bond creation, impacted reserves are updated. So the next bond sees **progressive price impact**, instead of always resetting to live pool price. This is the only difference between V1 and V2. V1 did not have **Impacted Reserves**.
 
 **Price selection rule for quote/create:** the contract computes both paths and picks the one that **does not give users a better price than current market**.
 
@@ -54,7 +52,7 @@ Technical notes:
 
 - `calculate*Amount` view functions read impacted only (no market comparison).
 - The market auto-sync branch exists in create functions (and backend quote mirrors this logic).
-- `BOND_MANAGER_ROLE` (PRANA Protocol) can call `syncImpactedReserves` or `setImpactedReserves` to adjust impacted reserves (admin-only; does not change payouts of existing bonds).
+- `BOND_MANAGER_ROLE` (PRANA Protocol) can call `syncImpactedReserves` or `setImpactedReserves` to adjust impacted reserves (admin-only; does not change payouts of existing bonds). Frequency and timing of syncImpactedReserves are decided internally, not announced beforehand.
 
 ## 3. Buy Bond create paths
 
