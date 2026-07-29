@@ -3,7 +3,7 @@ import { PRANA_ADDRESS, PRANA_DECIMALS, USDT_DECIMALS, WBTC_ADDRESS, WBTC_DECIMA
 import type { HexAddress, SwapToken, SwapTokenSymbol } from '../types/swap.types.ts';
 
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 50; // 0.5%
-export const SWAP_QUOTE_DEBOUNCE_MS = 650; // waits 650ms after the last change before fetching
+export const SWAP_QUOTE_DEBOUNCE_MS = 1000; // waits 1s after the last change before fetching
 export const SWAP_QUOTE_MANUAL_REFRESH_COOLDOWN_MS = 60_000;
 export const SWAP_DEADLINE_SECONDS = 3 * 60; // 3 minutes
 
