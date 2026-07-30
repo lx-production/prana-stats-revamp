@@ -22,35 +22,39 @@ Có. Treasury từng bị hack vào ngày 07/09/2022. 3,324,010 PRANA bị bán 
 
 Memecoin sống bằng narrative ngắn hạn. PRANA xây dựng hạ tầng: staking contract riêng, bonding contract riêng, treasury logic, quản trị thanh khoản, chiến lược Buy The Dips ở cấp độ protocol. Nó không phụ thuộc vào influencer pump. Nó phụ thuộc vào thiết kế cơ chế và khả năng vận hành bền bỉ qua nhiều chu kỳ.
 
-**7. Nếu Bitcoin đi vào downtrend 2-3 năm, PRANA sống thế nào?**
+**7. Những yếu tố nào xác định PRANA không phải là một dự án lừa đảo?**
+
+Ba tín hiệu có thể kiểm chứng. Thứ nhất, Protocol tự cung cấp 100% thanh khoản giao dịch từ ngày đầu, không gọi vốn từ nhà đầu tư để “bơm” thị trường. Thứ hai, mọi hợp đồng tương tác (Swap / Stake / Bond), và ngay cả toàn bộ trang này (frontend + backend) cũng đều mã nguồn mở 100%, ai cũng đọc và xác minh được. Thứ ba, PRANA không nhắm tới thị trường đại chúng. Nó chỉ dành cho những ai đã thật sự tìm hiểu lịch sử Triết Học Đường Phố từ 2011, và cộng hưởng, đồng cảm với hệ giá trị THĐP đại diện (xem thêm trang 10 Giao Ước). Một dự án lừa đảo cần niềm tin mù quáng từ đám đông. PRANA chọn lọc người hiểu.
+
+**8. Nếu Bitcoin đi vào downtrend 2-3 năm, PRANA sống thế nào?**
 
 Chiến lược Buy The Dips của protocol được kích hoạt cả khi giá PRANA/WBTC giảm lẫn khi giá BTC giảm. Nghĩa là hệ thống được thiết kế để tích lũy thay vì chết trong mùa đông. PRANA không đặt cược vào thị trường luôn tăng mà đặt cược vào việc sống sót qua thị trường giảm. Bitcoin càng rớt PRANA càng outperform Bitcoin.
 
-**8. PRANA có kế hoạch mở rộng sang chain khác không?**
+**9. PRANA có kế hoạch mở rộng sang chain khác không?**
 
 PRANA sử dụng LayerZero OFT, hiện hoạt động trên Polygon. Kiến trúc đã sẵn sàng cho cross-chain, nhưng mở rộng hay không là quyết định chiến lược, không phải phong trào. Multi-chain chỉ có ý nghĩa khi nó tăng thanh khoản thực và người dùng thực. Nếu không, nó chỉ là phân tán lực.
 
-**9. PRANA có DAO governance không? Holder có quyền bỏ phiếu không?**
+**10. PRANA có DAO governance không? Holder có quyền bỏ phiếu không?**
 
 Không. PRANA không thiết kế theo mô hình DAO bỏ phiếu phổ thông. Không có NFT, không có governance token riêng. Đây là một mô hình vận hành tập trung có trách nhiệm, thay vì dân chủ hình thức. Nhà đầu tư cần hiểu rõ điều này trước khi tham gia. Nếu bạn tìm một dự án “vote để cảm thấy mình có quyền”, PRANA không phải nơi đó.
 
-**10. Tại sao tôi nên tin PRANA có thể outperform Bitcoin?**
+**11. Tại sao tôi nên tin PRANA có thể outperform Bitcoin?**
 
 Bạn không nên “tin”. Bạn nên quan sát. Quan sát cách hệ thống vận hành qua downtrend. Quan sát cách thanh khoản được quản lý. Quan sát cách treasury hành động khi thị trường đỏ lửa. Câu hỏi cuối cùng không phải là PRANA nói gì, mà là: Qua thời gian, nó có làm được điều nó nói không? PRANA không cố outperform bằng đòn bẩy hay in thêm token, mà bằng cấu trúc cung cố định + tích lũy (buy the dips) + quản trị thanh khoản. Outperform đến từ cơ chế, không phải may mắn.
 
-**11. PRANA có quá phụ thuộc vào founder không? Nếu founder rời đi thì sao?**
+**12. PRANA có quá phụ thuộc vào founder không? Nếu founder rời đi thì sao?**
 
 Đúng, hiện tại PRANA phụ thuộc nhiều vào founder, từ chiến lược thanh khoản, staking, bonding, đến định hướng dài hạn. Nhưng phụ thuộc vào một người chỉ là giai đoạn đầu. Mục tiêu dài hạn là chuyển từ “niềm tin vào cá nhân” sang “niềm tin vào hệ thống”: hợp đồng thông minh minh bạch, tokenomics cố định, treasury có logic rõ ràng, quy trình vận hành được chuẩn hóa và tự động hóa dần bằng hệ thống automation 24/7. Founder chỉ là người tạo đà. Hệ thống sẽ dần tự đứng vững.
 
-**12. Tại sao tôi nên tin founder?**
+**13. Tại sao tôi nên tin founder?**
 
 Bạn không nên tin chỉ vì lời nói. Hãy nhìn hành vi: xử lý vụ hack bằng tiền cá nhân, không mint thêm token, giữ tổng cung cố định, duy trì 100% định giá theo Bitcoin xuyên suốt nhiều năm. Niềm tin không xây bằng lời hứa mà được xây bằng nhất quán qua các chu kỳ. Nếu founder đánh đổi nguyên tắc khi thị trường khó khăn, mọi thứ sụp đổ, chính founder là người mất nhiều nhất. Nếu nguyên tắc vẫn được giữ, niềm tin tăng theo thời gian. Và nếu một ngày nào đó cấu trúc khuyến khích lệch khỏi lợi ích holder, nhà đầu tư có thể rời đi ngay. Một hệ thống khỏe mạnh không sợ người tham gia có quyền rời bỏ.
 
-**13. PRANA có liên hệ thế nào với Triết Học Đường Phố (THĐP)?**
+**14. PRANA có liên hệ thế nào với Triết Học Đường Phố (THĐP)?**
 
 PRANA sinh ra từ cộng đồng Triết Học Đường Phố. THĐP là nền tảng tư tưởng và cộng đồng đã tồn tại từ năm 2011, nơi chia sẻ triết học Đông-Tây và hành trình phát triển nội tâm. PRANA là lớp hạ tầng kinh tế được xây trên cộng đồng đó. Nói đơn giản: THĐP là nền văn hóa và tầm nhìn; PRANA là công cụ tài chính giúp cộng đồng đó vận hành trong thế giới số.
 
-**14. PRANA đóng vai trò gì đối với THĐP?**
+**15. PRANA đóng vai trò gì đối với THĐP?**
 
 PRANA là “economic layer” của THĐP. Nó tạo ra cơ chế tích lũy giá trị, khuyến khích kỷ luật dài hạn, và gắn lợi ích kinh tế với cộng đồng. Thay vì chỉ là một diễn đàn triết học, THĐP có thêm một hệ sinh thái tài chính thực sự. Mục tiêu cuối cùng là xây dựng một cộng đồng nơi tư tưởng, kỷ luật cá nhân, và tài sản dài hạn cùng phát triển.
 
