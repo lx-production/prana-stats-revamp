@@ -80,54 +80,16 @@ The WBTC/PRANA pool currently uses a 1% liquidity-provider fee, and THĐP has pr
 
 ## 6. PRANA Staking summary and specific risks
 
-PRANA Staking helps users create and manage PRANA stakes through the Staking Contract on Polygon.
+PRANA Staking creates and manages PRANA stake positions through the Staking Contract on Polygon. For wallet actions and UI flow details, see the [Staking Guide](/guide/staking/) and [Staking Contracts Explained](/guide/staking-contracts/).
 
-**How a stake is created**
+**Key risks**
 
-The interface uses an EIP-2612 Permit signature for the exact PRANA amount and then submits a `stakeWithPermit` transaction. The Permit signature is off-chain, but the Stake transaction is on-chain and requires a separate wallet confirmation. A single “Permit & Stake” button may therefore trigger two wallet prompts.
-
-When the Stake transaction succeeds:
-
-- the selected PRANA principal is transferred to the Staking Contract
-- the duration and APR for that stake are recorded on-chain
-- the principal is locked until maturity unless you use early unstake
-
-A Permit signature is an authorization. Read the spender, token, amount, chain, nonce, and deadline displayed by your wallet before signing. Reject the signature if any detail is unexpected.
-
-**APR and interest**
-
-APR is an annualized rate used by the contract to calculate PRANA-denominated interest. It is not a guarantee of fiat value, market return, purchasing power, or profit.
-
-Displayed projected or accrued interest is an estimate based on public contract data and the contract’s integer-rounding formula. The final on-chain amount may differ slightly because of block timestamps, integer rounding, configuration changes, or stale interface data.
-
-Interest payments depend on the Interest Contract having enough PRANA and functioning as expected. A claim may fail if the contract is paused, the Interest Contract is insufficiently funded, the network or RPC is unavailable, or a contract call otherwise reverts. THĐP does not guarantee that every expected interest payment will be available or successfully paid.
-
-**Claim, maturity, and grace period**
-
-Interest accrues only under the Staking Contract’s rules. You may claim eligible interest while a stake is active and, after maturity, only until the applicable grace period ends.
-
-If you unstake a matured position before claiming its remaining eligible interest, the stake record is removed and that unclaimed interest may be lost. The official interface therefore requires you to claim eligible interest before unstaking during the grace period.
-
-After the grace period ends, unclaimed interest can no longer be claimed, although the principal may still be eligible for unstaking under the contract rules. You are responsible for monitoring maturity and claiming in time.
-
-**Early unstake**
-
-Early unstake returns less than the original principal:
-
-- the configured early-unstake penalty is deducted from principal
-- all accrued but unclaimed interest for that stake is lost
-- the penalty is transferred by the Staking Contract to the Interest Contract
-- you also pay Polygon gas
-
-The early-unstake penalty is a smart-contract rule, not a separate interface fee charged by THĐP. Review the currently displayed percentage and estimated return before confirming.
-
-**Configurable and administrative controls**
-
-The Staking Contract includes owner-controlled functions. To the extent permitted by the deployed contract, its owner can pause contract actions and change available APRs, the minimum stake, the grace period, and the early-unstake penalty.
-
-The APR stored for an existing stake is set when that stake is created. Other global settings and paused status may affect actions taken later. Current values shown in the interface are read from the blockchain and may change; do not rely on older screenshots, announcements, or cached values.
-
-Administrative keys, contract ownership, configuration changes, and the availability of the Interest Contract are additional risks. Review current on-chain state before acting.
+- The interface uses an EIP-2612 Permit and then `stakeWithPermit`; one button may trigger two wallet prompts in sequence. A Permit is an authorization — reject it if any detail looks unexpected.
+- Principal is locked until maturity unless you early-unstake. Early unstake deducts a penalty from principal and forfeits all unclaimed interest for that position; the penalty is a smart-contract rule, not a THĐP interface fee.
+- Displayed APR and interest are PRANA-denominated estimates and do not guarantee fiat value, purchasing power, or profit. Final on-chain amounts may differ because of timestamps, rounding, or stale interface data.
+- Claiming interest depends on the Interest Contract being sufficiently funded and not paused; claims may fail due to network/RPC issues or reverts. THĐP does not guarantee that every expected interest amount will be available or successfully paid for reasons beyond its control.
+- After maturity, interest can be claimed only during the grace period. Unstaking before claiming may forfeit unclaimed interest, even though the UI has safeguards against this. After the grace period ends, unclaimed interest can no longer be claimed; you are responsible for monitoring and claiming on time.
+- The owner can pause and change global configuration (available APRs, minimums, grace period, penalty). The APR of an existing position is fixed at creation; pause, administrative keys, and Interest Contract funding remain risks. Cross-check on-chain state before acting.
 
 ## 7. Contract addresses to verify
 

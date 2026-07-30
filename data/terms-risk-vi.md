@@ -80,54 +80,16 @@ Pool WBTC/PRANA hiện dùng phí nhà cung cấp thanh khoản 1%, và THĐP đ
 
 ## 6. Tóm tắt PRANA Staking và rủi ro riêng
 
-PRANA Staking giúp người dùng tạo và quản lý các vị thế stake PRANA qua Staking Contract trên Polygon.
+PRANA Staking tạo và quản lý vị thế stake PRANA qua Staking Contract trên Polygon. Chi tiết thao tác ví và luồng UI: xem [Hướng dẫn Staking](/guide/staking/) và [Giải thích Hợp đồng Staking](/guide/staking-contracts/).
 
-**Cách tạo một vị thế stake**
+**Rủi ro chính**
 
-Giao diện dùng chữ ký EIP-2612 Permit cho đúng số lượng PRANA, sau đó gửi giao dịch `stakeWithPermit`. Chữ ký Permit diễn ra off-chain, nhưng giao dịch Stake là on-chain và cần một lần xác nhận ví riêng. Vì vậy, một nút “Permit & Stake” có thể kích hoạt hai lời nhắc trên ví.
-
-Khi giao dịch Stake thành công:
-
-- số dư gốc PRANA đã chọn được chuyển vào Staking Contract
-- thời hạn và APR của vị thế đó được ghi nhận on-chain
-- số dư gốc bị khóa đến khi đáo hạn, trừ khi bạn dùng early unstake
-
-Chữ ký Permit là một ủy quyền. Hãy đọc spender, token, số lượng, chain, nonce, và deadline mà ví hiển thị trước khi ký. Từ chối chữ ký nếu bất kỳ chi tiết nào bất thường.
-
-**APR và lãi**
-
-APR là tỷ lệ quy năm mà contract dùng để tính lãi denominated bằng PRANA. Đó không phải bảo đảm về giá trị fiat, lợi nhuận thị trường, sức mua, hoặc lợi nhuận.
-
-Lãi dự kiến hoặc lãi đã tích lũy được hiển thị chỉ là ước tính dựa trên dữ liệu contract công khai và công thức làm tròn số nguyên của contract. Số lượng cuối cùng on-chain có thể hơi khác vì timestamp khối, làm tròn số nguyên, thay đổi cấu hình, hoặc dữ liệu giao diện cũ.
-
-Việc thanh toán lãi phụ thuộc vào Interest Contract còn đủ PRANA và hoạt động đúng như kỳ vọng. Một giao dịch claim có thể thất bại nếu contract bị tạm dừng, Interest Contract không đủ quỹ, mạng hoặc RPC không sẵn có, hoặc lời gọi contract bị revert vì lý do khác. THĐP không bảo đảm mọi khoản lãi dự kiến sẽ sẵn có hoặc được thanh toán thành công.
-
-**Claim, đáo hạn, và thời gian ân hạn**
-
-Lãi chỉ tích lũy theo quy tắc của Staking Contract. Bạn có thể claim lãi đủ điều kiện khi vị thế còn hiệu lực và, sau đáo hạn, chỉ đến khi thời gian ân hạn áp dụng kết thúc.
-
-Nếu bạn unstake một vị thế đã đáo hạn trước khi claim phần lãi còn đủ điều kiện, bản ghi stake sẽ bị xóa và phần lãi chưa claim đó có thể bị mất. Vì vậy, giao diện chính thức yêu cầu bạn claim lãi đủ điều kiện trước khi unstake trong thời gian ân hạn.
-
-Sau khi thời gian ân hạn kết thúc, lãi chưa claim không còn được claim nữa, dù số dư gốc vẫn có thể đủ điều kiện unstake theo quy tắc contract. Bạn có trách nhiệm theo dõi đáo hạn và claim đúng hạn.
-
-**Early unstake**
-
-Early unstake trả lại ít hơn số dư gốc ban đầu:
-
-- mức phạt early-unstake đã cấu hình được trừ vào gốc
-- toàn bộ lãi đã tích lũy nhưng chưa claim của vị thế đó bị mất
-- khoản phạt được Staking Contract chuyển sang Interest Contract
-- bạn cũng phải trả gas Polygon
-
-Phạt early-unstake là quy tắc của smart contract, không phải phí giao diện riêng do THĐP thu. Hãy xem tỷ lệ phần trăm và số nhận ước tính đang hiển thị trước khi xác nhận.
-
-**Kiểm soát cấu hình và quản trị**
-
-Staking Contract có các hàm do owner kiểm soát. Trong phạm vi contract đã triển khai cho phép, owner có thể tạm dừng các hành động của contract và thay đổi các APR sẵn có, mức stake tối thiểu, thời gian ân hạn, và phạt early-unstake.
-
-APR được lưu cho một vị thế stake hiện hữu được xác định tại thời điểm tạo vị thế đó. Các thiết lập toàn cục khác và trạng thái tạm dừng có thể ảnh hưởng đến các hành động thực hiện sau này. Các giá trị hiện tại hiển thị trên giao diện được đọc từ blockchain và có thể thay đổi; đừng dựa vào ảnh chụp màn hình cũ, thông báo cũ, hoặc giá trị đã cache.
-
-Khóa quản trị, quyền sở hữu contract, thay đổi cấu hình, và khả năng sẵn có của Interest Contract là các rủi ro bổ sung. Hãy xem xét trạng thái on-chain hiện tại trước khi hành động.
+- Giao diện dùng EIP-2612 Permit rồi `stakeWithPermit`; một nút có thể kích hoạt hai lời nhắc ví lần lượt. Permit là ủy quyền — từ chối nếu chi tiết bất thường.
+- Gốc bị khóa đến đáo hạn trừ khi unstake sớm. Unstake sớm trừ phạt vào gốc và mất toàn bộ lãi chưa claim của vị thế đó; phạt là quy tắc smart contract, không phải phí giao diện của THĐP.
+- APR và lãi hiển thị là ước tính denominated bằng PRANA, không bảo đảm giá trị fiat, sức mua, hoặc lợi nhuận. Số on-chain cuối cùng có thể lệch vì timestamp, làm tròn, hoặc dữ liệu giao diện cũ.
+- Claim lãi phụ thuộc Interest Contract còn đủ quỹ và không bị pause; có thể thất bại vì mạng/RPC hoặc revert. THĐP không bảo đảm mọi khoản lãi dự kiến sẽ sẵn có hoặc được thanh toán thành công vì những lý do bất khả kháng.
+- Sau đáo hạn, lãi chỉ claim được trong thời gian ân hạn. Unstake trước khi claim có thể mất lãi chưa claim, mặc dù UI đã có cơ chế ngăn chặn chuyện này. Hết ân hạn thì lãi chưa claim không còn claim được; bạn có trách nhiệm theo dõi và claim đúng hạn.
+- Owner có thể pause và đổi cấu hình toàn cục (APR sẵn có, minimum, ân hạn, phạt). APR của vị thế hiện hữu được cố định lúc tạo; pause, khóa quản trị, và quỹ Interest Contract vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
 ## 7. Địa chỉ contract cần đối chiếu
 
