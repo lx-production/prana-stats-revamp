@@ -1,5 +1,7 @@
 # Tích hợp Bonding UI vào main app tại `/bond/`
 
+Overview cho contributors (architecture + flow đã ship): [`bonding-technical-overview.md`](./bonding-technical-overview.md).
+
 ## Tóm tắt
 
 - Template song song: [`docs/add-staking-ui.md`](./add-staking-ui.md) — lazy route, API, CTA phases, guide stack và deployment.

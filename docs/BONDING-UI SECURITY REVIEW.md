@@ -2,7 +2,8 @@
 
 **Ngày review:** 2026-07-30  
 **Branch / commit:** `bonding-ui` / `b869b8297839b4570011909405987bcc3a269a23`  
-**Tài liệu gốc:** `docs/add-bonding-ui.md`
+**Tài liệu gốc:** `docs/add-bonding-ui.md`  
+**Overview kỹ thuật:** [`bonding-technical-overview.md`](./bonding-technical-overview.md)
 
 ## 1. Kết luận ngắn
 
@@ -290,19 +291,19 @@ Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi k�
 
 Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 
-- Fresh-quote response bị reject nếu `mode`, `termId` hoặc exact input không khớp
-  review snapshot.
+- ~~Fresh-quote response bị reject nếu `mode`, `termId` hoặc exact input không khớp
+  review snapshot.~~ (covered by `bondQuoteEcho.test.ts`; wired in approve/review/create via `isBondingQuoteEchoValid`)
 - ~~Pending hash sống qua reload và bind đúng account/chain.~~ (covered by `bondPendingTransactionStorage` + confirmation resume tests)
 - ~~Malformed requests không tiêu global expensive-RPC quota.~~ (BUI-SEC-06: validate-before-rate-limit on bonding POST)
-- Raw amount vượt `uint256`.
+- ~~Raw amount vượt `uint256`.~~ (BUI-SEC-07: `parseUnsignedDecimalRaw` + `bondingApi.test.ts` bounds)
 - Account endpoint dưới tải khi tổng bond history tăng lớn.
 
 ## 7. Thứ tự khắc phục đề xuất
 
 1. Thay full-array account scans bằng event indexer và thêm timeout/concurrency protection.
-2. Bật HSTS tại TLS edge.
+2. ~~Bật HSTS tại TLS edge.~~ (BUI-SEC-04: HSTS host-scoped (`max-age=31536000` + `always`))
 3. ~~Persist và bind pending transaction với account/chain.~~ (BUI-SEC-05 mitigated)
-4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood), thêm `uint256` bounds; ~~quote/confirm `private, no-store`~~ (OBS-01).
-5. Giữ override Axios/`ws`; refresh `docs/npm-audit-report.md` khi inventory đổi; cân nhắc CI `npm audit --omit=dev` (chấp nhận `npm ls` ELSPROBLEMS khi override còn). Không bump `ethers`/`viem` chỉ vì `ws@8.21.1`.
+4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood); ~~thêm `uint256` bounds~~ (BUI-SEC-07); ~~quote/confirm `private, no-store`~~ (OBS-01).
+5. ~~`Giữ override Axios/`ws`; refresh `docs/npm-audit-report.md` khi inventory đổi; cân nhắc CI `npm audit --omit=dev` (chấp nhận `npm ls` ELSPROBLEMS khi override còn). Không bump `ethers`/`viem` chỉ vì `ws@8.21.1`.~~
 6. Theo dõi quote/execution delta, volume, liquidity và pending time; chỉ mở lại
    quyết định `minOut`/deadline/second consent khi các giả định quy mô không còn đúng.
