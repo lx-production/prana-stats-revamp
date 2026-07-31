@@ -255,13 +255,12 @@ Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi k�
 
 `POST /api/bonding/quote` và `POST /api/bonding/confirm-transaction` giờ trả `Cache-Control: private, no-store` (cùng constant pattern với staking quote), khớp `docs/add-bonding-ui.md` / `docs/CACHE_ARCHITECTURE.md`. Route tests assert header trên success path.
 
-### OBS-02 — Dependency audit chưa có baseline sạch, tái lập được
+### OBS-02 — Dependency audit baseline cần tái lập định kỳ (đã refresh 2026-07-31)
 
-- Báo cáo gần nhất trong repo (`docs/npm-audit-report.md`, 2026-07-18) ghi 44 advisories: 20 low, 13 moderate, 11 high, 0 critical; tài liệu đánh giá phần lớn là transitive tooling/contract packages.
-- Installed tree hiện có `axios@1.18.1` và `ws@8.21.1`, nhưng `npm ls axios ws --all` trả `ELSPROBLEMS` vì `ws@8.21.1` bị đánh dấu không thỏa exact ranges `8.21.0`/`8.18.0` của một số consumer.
-- Live `npm audit --json` không hoàn tất trong môi trường review do không truy cập được npm registry, nên báo cáo này không khẳng định advisory count ngày 2026-07-30.
-
-Nên làm sạch override/lockfile để `npm ci` và `npm ls` pass trong CI, rồi chạy `npm audit --omit=dev` định kỳ và phân loại theo production reachability.
+- Baseline mới: `docs/npm-audit-report.md` (2026-07-31) — full tree **51** (20 low, 12 moderate, 19 high, 0 critical); `npm audit --omit=dev` **49** (20 low, 12 moderate, 17 high). Count tăng so với snapshot 2026-07-18 (44) chủ yếu vì advisory mới trên transitive tooling, không phải regress Axios/`ws`.
+- Production HTTP/WebSocket đã vá bằng overrides: `axios@1.18.1`, nested `ws@8.21.1` cho `ethers` / `viem` / `@ethersproject/providers`. `npm audit` không còn list `axios` hay `ws`.
+- `npm ls axios ws --all` vẫn `ELSPROBLEMS`: đây là **noise đã biết** — override cài `ws@8.21.1` trong khi upstream vẫn pin exact `8.21.0` (`ethers@6.17.0` / `viem@2.55.x`) và `8.18.0` (`@ethersproject/providers`). **Không** cần bump `ethers`/`viem` chỉ để “lên `ws@8.21.1`”; latest trên npm vẫn khai báo `ws@8.21.0`, override đã giao đúng bản patched tại runtime.
+- Việc còn lại: chạy lại audit khi đổi dependency, giữ phân loại theo production reachability trong `docs/npm-audit-report.md`, và (tuỳ chọn) thêm CI check `npm audit --omit=dev` + chấp nhận `npm ls` exit 1 khi override còn hiệu lực.
 
 ## 5. Controls đã kiểm tra và đánh giá tốt
 
@@ -286,8 +285,8 @@ Nên làm sạch override/lockfile để `npm ci` và `npm ls` pass trong CI, r�
 | `npm test` | 154 server + 38 client tests pass |
 | `npm run test:staking` | 35/35 pass |
 | `npm run build` | Pass, tạo lazy `BondingEntry` chunk |
-| `npm ls axios ws --all` | Fail `ELSPROBLEMS` do `ws` override/range mismatch |
-| `npm audit --json` | Không hoàn tất: npm registry không truy cập được trong môi trường review |
+| `npm ls axios ws --all` | Exit 1 `ELSPROBLEMS` (known: override `ws@8.21.1` vs exact upstream pins) |
+| `npm audit` / `--omit=dev` (2026-07-31) | 51 full / 49 omit-dev; 0 critical; `axios`/`ws` không còn trong vulns — xem `docs/npm-audit-report.md` |
 
 Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 
@@ -304,6 +303,6 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 2. Bật HSTS tại TLS edge.
 3. ~~Persist và bind pending transaction với account/chain.~~ (BUI-SEC-05 mitigated)
 4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood), thêm `uint256` bounds; ~~quote/confirm `private, no-store`~~ (OBS-01).
-5. Làm sạch dependency override/lockfile và thiết lập audit CI có baseline.
+5. Giữ override Axios/`ws`; refresh `docs/npm-audit-report.md` khi inventory đổi; cân nhắc CI `npm audit --omit=dev` (chấp nhận `npm ls` ELSPROBLEMS khi override còn). Không bump `ethers`/`viem` chỉ vì `ws@8.21.1`.
 6. Theo dõi quote/execution delta, volume, liquidity và pending time; chỉ mở lại
    quyết định `minOut`/deadline/second consent khi các giả định quy mô không còn đúng.
