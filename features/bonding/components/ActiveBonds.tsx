@@ -1,14 +1,15 @@
+import BondCard from './BondCard.tsx';
+import TxLink from '../../../components/ui/TxLink.tsx';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import TxLink from '../../../components/ui/TxLink.tsx';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+
+import { Loader2 } from 'lucide-react';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { sortActiveBonds } from '../utils/bondingMath.ts';
 import { useBondActions } from '../hooks/useBondActions.ts';
+import { sortActiveBonds } from '../utils/bondingMath.ts';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { isBondDeploymentPaused } from '../utils/bondClaimTarget.ts';
-import BondCard from './BondCard.tsx';
 
 import type { ActiveBondRecord, BondingConfig } from '../bonding.types.ts';
 

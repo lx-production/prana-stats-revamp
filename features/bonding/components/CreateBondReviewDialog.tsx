@@ -1,13 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+
+import { Loader2 } from 'lucide-react';
 import { trapFocus } from '../../../utils/focusTrap.ts';
-import {
-  daysFromSeconds,
-  formatPranaAmount,
-  formatRateBpsPercent,
-  formatWbtcAmount,
-} from '../utils/bondingMath.ts';
+import { daysFromSeconds, formatPranaAmount, formatRateBpsPercent, formatWbtcAmount } from '../utils/bondingMath.ts';
 
 import type { BondingCopy } from '../bonding.copy.ts';
 import type { BondingQuote } from '../bonding.types.ts';

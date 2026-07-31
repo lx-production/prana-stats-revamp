@@ -1,42 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import GlassPanel from '../../../components/ui/GlassPanel.tsx';
-import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+import BondSideTabs from './BondSideTabs.tsx';
+import TermSelector from './TermSelector.tsx';
 import TxLink from '../../../components/ui/TxLink.tsx';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
-import {
-  PRANA_DECIMALS,
-  WBTC_DECIMALS,
-} from '../../../constants/sharedContracts.ts';
+import React, { useEffect, useMemo, useState } from 'react';
+import GlassPanel from '../../../components/ui/GlassPanel.tsx';
+import CreateBondReviewDialog from './CreateBondReviewDialog.tsx';
+import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+
+import { Loader2 } from 'lucide-react';
 import { getBondingCopy } from '../bonding.copy.ts';
 import { getBondCtaPhase } from '../utils/bondCtaPhase.ts';
-import TermSelector from './TermSelector.tsx';
-import BondSideTabs from './BondSideTabs.tsx';
-import CreateBondReviewDialog from './CreateBondReviewDialog.tsx';
-import {
-  buildBondingQuoteRequest,
-  useBondingQuote,
-} from '../hooks/useBondingQuote.ts';
 import { useBondTransaction } from '../hooks/useBondTransaction.ts';
-import {
-  formatPranaAmount,
-  formatWbtcAmount,
-  getConfiguredTerm,
-  getDefaultTermId,
-  isBondAmountInput,
-  parsePranaAmount,
-  parseWbtcAmount,
-  rawBalanceToAmountInput,
-} from '../utils/bondingMath.ts';
+import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { PRANA_DECIMALS, WBTC_DECIMALS } from '../../../constants/sharedContracts.ts';
+import { buildBondingQuoteRequest, useBondingQuote } from '../hooks/useBondingQuote.ts';
+import { formatPranaAmount, formatWbtcAmount, getConfiguredTerm, getDefaultTermId, isBondAmountInput, parsePranaAmount, parseWbtcAmount, rawBalanceToAmountInput } from '../utils/bondingMath.ts';
 
-import type {
-  BondingAccount,
-  BondingConfig,
-  BondingQuote,
-  BondSide,
-  BondTermId,
-} from '../bonding.types.ts';
+import type { BondingAccount, BondingConfig, BondingQuote, BondSide, BondTermId } from '../bonding.types.ts';
 
 type BondingFormProps = {
   config: BondingConfig | undefined;

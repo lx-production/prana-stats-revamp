@@ -1,8 +1,5 @@
 import React, { useRef } from 'react';
-import {
-  daysFromSeconds,
-  formatRateBpsPercent,
-} from '../utils/bondingMath.ts';
+import { daysFromSeconds, formatRateBpsPercent } from '../utils/bondingMath.ts';
 
 import type { BondingTermOption, BondTermId } from '../bonding.types.ts';
 
