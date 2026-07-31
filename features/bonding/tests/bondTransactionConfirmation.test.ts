@@ -81,3 +81,47 @@ test('server not_mined stays confirmation_unavailable, not failed', async () => 
 
   assert.equal(outcome.kind, 'confirmation_unavailable');
 });
+
+test('requireServerValidation still calls server after browser receipt success', async () => {
+  let serverCalls = 0;
+
+  const outcome = await confirmBondTransaction({
+    requireServerValidation: true,
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+  });
+
+  assert.deepEqual(outcome, { kind: 'confirmed', source: 'server' });
+  assert.equal(serverCalls, 1);
+});
+
+test('requireServerValidation does not confirm when server cannot validate', async () => {
+  const outcome = await confirmBondTransaction({
+    requireServerValidation: true,
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmation_unavailable' }),
+  });
+
+  assert.equal(outcome.kind, 'confirmation_unavailable');
+});
+
+test('requireServerValidation surfaces server mismatch as unavailable', async () => {
+  const verificationError = new Error('confirmation_mismatch');
+
+  const outcome = await confirmBondTransaction({
+    requireServerValidation: true,
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => {
+      throw verificationError;
+    },
+  });
+
+  assert.deepEqual(outcome, {
+    kind: 'confirmation_unavailable',
+    receiptError: null,
+    verificationError,
+  });
+});

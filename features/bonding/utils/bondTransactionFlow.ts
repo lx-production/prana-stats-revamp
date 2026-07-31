@@ -3,7 +3,7 @@ import { confirmBondTransaction } from './bondTransactionConfirmation.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
 import type { BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
-import type { BondingAccount, BondingTransactionActionSnapshot, BondingTransactionConfirmation } from '../bonding.types.ts';
+import type { BondingAccount, BondingTransactionConfirmation } from '../bonding.types.ts';
 
 /** What the primary CTA should do on the next click. */
 export type BondCtaAction =
@@ -34,6 +34,11 @@ export type ConfirmBondReceiptDeps = {
     hash: Hex,
   ) => Promise<BondingTransactionConfirmation>;
   refetchAccount: () => Promise<unknown>;
+  /**
+   * Resume / reload path — browser receipt success still needs server
+   * sender/target/calldata validation before UI reports confirmed.
+   */
+  requireServerValidation?: boolean;
 };
 
 export type ConfirmBondReceiptOutcome =
@@ -56,6 +61,7 @@ export async function confirmBondReceipt(
   const confirmation = await confirmBondTransaction({
     waitForReceipt: () => deps.waitForReceipt(hash),
     confirmOnServer: () => deps.confirmOnServer(hash),
+    requireServerValidation: deps.requireServerValidation,
   });
 
   if (confirmation.kind === 'reverted') {
@@ -219,9 +225,3 @@ export async function runBondCtaBranch(options: {
       return 'open_review';
   }
 }
-
-/** Keep action snapshot + hash together for confirmation resume. */
-export type PendingBondTransaction = {
-  hash: Hex;
-  action: BondingTransactionActionSnapshot;
-};

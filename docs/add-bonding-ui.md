@@ -196,6 +196,7 @@
   - Sort theo maturity gần nhất, tie-break bằng side/version/id.
   - Claim chọn contract từ mapping nội bộ side/version, không tin địa chỉ do UI hoặc API truyền vào.
   - Claim flow: switch Polygon → simulate → write → wallet receipt / server confirmation fallback → refetch account; dùng cùng cơ chế resume pending hash.
+  - Pending hash được persist theo `{account, chainId}` (TTL 24h). Sau reload, UI restore và chỉ cho resume confirmation — không broadcast lại. Resume bắt buộc server validate sender/target/calldata; đổi ví không gắn success sang account mới.
   - Khóa form và các claim khác khi có một write đang chạy; nếu contract tương ứng paused thì disable action với lý do rõ ràng.
   - **Kiểm thử Bước 6**
     - Mapper fixtures cho bốn deployment, gồm ID trùng nhau; React key và contract dispatch vẫn phân biệt side/version.

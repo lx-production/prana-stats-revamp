@@ -161,6 +161,19 @@ export type BondingTransactionConfirmationRequest = {
 };
 
 /**
+ * Broadcast tx awaiting confirmation. Persisted + bound to the submitting
+ * account/chain so reload / wallet switch cannot orphan or mis-attribute it.
+ */
+export type PendingBondTransaction = {
+  version: 1;
+  chainId: number;
+  account: Address;
+  hash: Hex;
+  action: BondingTransactionActionSnapshot;
+  createdAt: number;
+};
+
+/**
  * Terminal confirmation, or non-terminal when neither browser nor server
  * can decide — never treat RPC read failure as on-chain revert.
  */

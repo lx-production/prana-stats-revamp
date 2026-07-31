@@ -4,23 +4,39 @@ import { usePublicClient } from 'wagmi';
 import { getBondingCopy } from '../bonding.copy.ts';
 import { getConfiguredTerm } from '../utils/bondingMath.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
 import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
 import { BUY_BOND_ADDRESS_V2, BUY_BOND_V2_ABI, SELL_BOND_ADDRESS_V2, SELL_BOND_V2_ABI } from '../../../constants/bonds.ts';
+import {
+  buildPendingBondTransaction,
+  pendingBondTransactionMatchesWallet,
+} from '../utils/bondPendingTransactionStorage.ts';
 import { isAllowanceSufficientForCreate, needsExactInputApproval, resolveApproveAmountRaw } from '../utils/bondAllowance.ts';
 import { confirmBondReceipt, resolveBondCtaAction, runBondCtaBranch, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type { PendingBondTransaction } from '../utils/bondTransactionFlow.ts';
-import type { BondingAccount, BondingConfig, BondingQuote, BondingQuoteMode, BondingTransactionActionSnapshot, BondSide, BondTermId, BondTransactionStatus } from '../bonding.types.ts';
+import type {
+  BondingAccount,
+  BondingConfig,
+  BondingQuote,
+  BondingQuoteMode,
+  BondingTransactionActionSnapshot,
+  BondSide,
+  BondTermId,
+  BondTransactionStatus,
+  PendingBondTransaction,
+} from '../bonding.types.ts';
+
+const FORM_PENDING_KINDS = ['approve', 'create'] as const;
 
 type UseBondTransactionInput = {
   config: BondingConfig | undefined;
@@ -73,15 +89,41 @@ export function useBondTransaction({
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  /** Broadcast awaiting confirmation (resume path). Cleared on success/revert. */
-  const [pending, setPending] = useState<PendingBondTransaction | null>(null);
   /** Last hash to show on Polygonscan (success or pending). */
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
   const [reviewQuote, setReviewQuote] = useState<BondingQuote | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
 
+  const {
+    pending,
+    pendingLoaded,
+    rememberPending,
+    clearPendingRecord,
+    discardLocalPending,
+  } = usePendingBondTransaction({
+    account: wallet.address,
+    chainId: wallet.chainId,
+    kinds: FORM_PENDING_KINDS,
+  });
+
+  // Latest wallet identity for post-await guards (avoid stale closures).
+  const walletIdentityRef = useRef({
+    address: wallet.address,
+    chainId: wallet.chainId,
+  });
+  walletIdentityRef.current = {
+    address: wallet.address,
+    chainId: wallet.chainId,
+  };
+
   const mode = quoteModeFor(side);
   const amountRawString = amountRaw != null ? amountRaw.toString() : '';
+
+  // Restore Polygonscan hash after reload / reconnect.
+  useEffect(() => {
+    if (!pendingLoaded || !pending) return;
+    setTransactionHash(pending.hash);
+  }, [pending, pendingLoaded]);
 
   // Changing form inputs before broadcast clears review snapshot.
   useEffect(() => {
@@ -108,11 +150,11 @@ export function useBondTransaction({
 
   const resetAfterSuccess = useCallback(() => {
     setStatus('idle');
-    setPending(null);
+    clearPendingRecord();
     setTransactionHash(null);
     setReviewQuote(null);
     setReviewOpen(false);
-  }, []);
+  }, [clearPendingRecord]);
 
   const closeReview = useCallback(() => {
     if (status === 'submitting' || status === 'confirming') return;
@@ -133,8 +175,8 @@ export function useBondTransaction({
   }, [publicClient, wallet]);
 
   const applyConfirmed = useCallback(
-    (hash: Hex, syncFailed: boolean) => {
-      setPending(null);
+    (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
+      clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setReviewOpen(false);
       setReviewQuote(null);
@@ -143,36 +185,58 @@ export function useBondTransaction({
       setSuccess(copy.bondConfirmed);
       setWarning(syncFailed ? copy.accountSyncWarning : null);
     },
-    [copy.accountSyncWarning, copy.bondConfirmed],
+    [clearPendingRecord, copy.accountSyncWarning, copy.bondConfirmed],
   );
 
   const resumeConfirmReceipt = useCallback(
     async (pendingTx: PendingBondTransaction) => {
-      if (!wallet.address) return;
+      if (
+        !pendingBondTransactionMatchesWallet(
+          pendingTx,
+          wallet.address,
+          wallet.chainId,
+        )
+      ) {
+        return;
+      }
 
       setStatus('confirming');
       setError(null);
       setWarning(null);
 
       const outcome = await confirmBondReceipt(pendingTx.hash, {
+        requireServerValidation: true,
         waitForReceipt: waitForPolygonWalletReceipt,
         confirmOnServer: (txHash) =>
           confirmBondingTransactionOnServer({
             transactionHash: txHash,
-            account: wallet.address as Address,
+            account: pendingTx.account,
             action: pendingTx.action,
           }),
         refetchAccount,
       });
 
+      // Wallet switched mid-wait — keep storage for the original account.
+      if (
+        !pendingBondTransactionMatchesWallet(
+          pendingTx,
+          walletIdentityRef.current.address,
+          walletIdentityRef.current.chainId,
+        )
+      ) {
+        discardLocalPending();
+        setStatus('idle');
+        return;
+      }
+
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(pendingTx.hash, outcome.syncFailed);
+        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
         return;
       }
 
       if (outcome.kind === 'reverted') {
         logBondingFailure('resume: reverted', { hash: pendingTx.hash });
-        setPending(null);
+        clearPendingRecord(pendingTx);
         setTransactionHash(null);
         setStatus('error');
         setError(getBondingErrorMessage('reverted', locale));
@@ -185,21 +249,27 @@ export function useBondTransaction({
         receiptError: outcome.receiptError,
         verificationError: outcome.verificationError,
       });
-      setPending(pendingTx);
+      rememberPending(pendingTx);
       setTransactionHash(pendingTx.hash);
       setStatus('confirmation_unavailable');
       setError(copy.confirmationUnavailable);
     },
     [
       applyConfirmed,
+      clearPendingRecord,
       copy.confirmationUnavailable,
+      discardLocalPending,
       locale,
       refetchAccount,
+      rememberPending,
       wallet.address,
+      wallet.chainId,
     ],
   );
 
   const runApprove = useCallback(async () => {
+    if (!pendingLoaded || pending != null) return;
+
     if (!wallet.isConnected || !wallet.address) {
       logBondingFailure('approve: not_connected');
       setError(getBondingErrorMessage('not_connected', locale));
@@ -232,6 +302,9 @@ export function useBondTransaction({
       return;
     }
 
+    // Capture identity before wallet prompts — may change mid-flight.
+    const submittingAccount = wallet.address as Address;
+
     setStatus('approving');
     setError(null);
     setWarning(null);
@@ -243,7 +316,7 @@ export function useBondTransaction({
       mode,
       amountRaw: amountRaw.toString(),
       termId,
-      account: wallet.address,
+      account: submittingAccount,
     });
 
     try {
@@ -300,6 +373,7 @@ export function useBondTransaction({
       };
 
       const walletClient = await ensurePolygonWalletClient();
+      let broadcastPending: PendingBondTransaction | null = null;
 
       const outcome = await submitBondWriteFlow({
         refetchAccount,
@@ -310,7 +384,7 @@ export function useBondTransaction({
         simulate: async () => {
           // viem returns { result, request } — only `request` is writeContract-ready.
           const { request } = await publicClient!.simulateContract({
-            account: wallet.address!,
+            account: submittingAccount,
             address: tokenAddress,
             abi: erc20Abi,
             functionName: 'approve',
@@ -321,7 +395,7 @@ export function useBondTransaction({
             address: tokenAddress,
             functionName: 'approve',
             args: [spender, approveAmount] as const,
-            account: wallet.address!,
+            account: submittingAccount,
             request,
           };
         },
@@ -340,7 +414,13 @@ export function useBondTransaction({
           } as never);
         },
         waitForReceipt: async (hash) => {
-          setPending({ hash, action });
+          broadcastPending = buildPendingBondTransaction({
+            account: submittingAccount,
+            chainId: POLYGON_CHAIN_ID,
+            hash,
+            action,
+          });
+          rememberPending(broadcastPending);
           setTransactionHash(hash);
           setStatus('confirming');
           return waitForPolygonWalletReceipt(hash);
@@ -348,10 +428,24 @@ export function useBondTransaction({
         confirmOnServer: (hash) =>
           confirmBondingTransactionOnServer({
             transactionHash: hash,
-            account: wallet.address!,
+            account: submittingAccount,
             action,
           }),
       });
+
+      // Wallet switched after broadcast — keep storage, hide local success.
+      if (
+        broadcastPending &&
+        !pendingBondTransactionMatchesWallet(
+          broadcastPending,
+          walletIdentityRef.current.address,
+          walletIdentityRef.current.chainId,
+        )
+      ) {
+        discardLocalPending();
+        setStatus('idle');
+        return;
+      }
 
       if (outcome.kind === 'fresh_account_failed') {
         logBondingFailure('approve: fresh_account_failed');
@@ -362,20 +456,20 @@ export function useBondTransaction({
       if (outcome.kind === 'validation_failed') {
         // Allowance became sufficient mid-flight — fall through to review.
         console.info('[bonding] approve: validation_failed (allowance ok)');
-        setPending(null);
+        clearPendingRecord(broadcastPending);
         setStatus('idle');
         return;
       }
       if (outcome.kind === 'simulate_failed') {
         logBondingFailure('approve: simulate_failed', outcome.error);
-        setPending(null);
+        clearPendingRecord(broadcastPending);
         setStatus('error');
         setError(getBondingErrorMessage('simulate_failed', locale));
         return;
       }
       if (outcome.kind === 'rejected_before_broadcast') {
         // formatBondingError already logs the classified code + raw error.
-        setPending(null);
+        clearPendingRecord(broadcastPending);
         setStatus('error');
         setError(formatBondingError(outcome.error, locale));
         return;
@@ -386,7 +480,15 @@ export function useBondTransaction({
           receiptError: outcome.receiptError,
           verificationError: outcome.verificationError,
         });
-        setPending({ hash: outcome.hash, action });
+        const pendingTx =
+          broadcastPending ??
+          buildPendingBondTransaction({
+            account: submittingAccount,
+            chainId: POLYGON_CHAIN_ID,
+            hash: outcome.hash,
+            action,
+          });
+        rememberPending(pendingTx);
         setTransactionHash(outcome.hash);
         setStatus('confirmation_unavailable');
         setError(copy.confirmationUnavailable);
@@ -397,7 +499,7 @@ export function useBondTransaction({
           hash: outcome.hash,
           source: outcome.source,
         });
-        setPending(null);
+        clearPendingRecord(broadcastPending);
         setTransactionHash(null);
         setStatus('error');
         setError(getBondingErrorMessage('reverted', locale));
@@ -409,29 +511,34 @@ export function useBondTransaction({
         hash: outcome.hash,
         syncFailed: outcome.syncFailed,
       });
-      setPending(null);
+      clearPendingRecord(broadcastPending);
       setTransactionHash(outcome.hash);
       setStatus('idle');
       setError(null);
       setSuccess(null);
       setWarning(outcome.syncFailed ? copy.accountSyncWarning : null);
     } catch (err) {
-      setPending(null);
+      clearPendingRecord();
       setStatus('error');
       setError(formatBondingError(err, locale));
     }
   }, [
     amountRaw,
+    clearPendingRecord,
     config,
     copy.accountSyncWarning,
     copy.confirmationUnavailable,
+    discardLocalPending,
     ensurePolygonWalletClient,
     freshQuote,
     locale,
     mode,
+    pending,
+    pendingLoaded,
     publicClient,
     refetchAccount,
     refetchConfig,
+    rememberPending,
     side,
     termId,
     wallet.address,
@@ -439,6 +546,8 @@ export function useBondTransaction({
   ]);
 
   const openReview = useCallback(async () => {
+    if (!pendingLoaded || pending != null) return;
+
     if (!wallet.isConnected || !wallet.address) {
       logBondingFailure('review: not_connected');
       setError(getBondingErrorMessage('not_connected', locale));
@@ -555,6 +664,8 @@ export function useBondTransaction({
     config,
     freshQuote,
     locale,
+    pending,
+    pendingLoaded,
     refetchAccount,
     refetchConfig,
     side,
@@ -564,6 +675,8 @@ export function useBondTransaction({
   ]);
 
   const runCreate = useCallback(async () => {
+    if (!pendingLoaded || pending != null) return;
+
     if (!wallet.isConnected || !wallet.address) {
       logBondingFailure('create: not_connected');
       setError(getBondingErrorMessage('not_connected', locale));
@@ -589,6 +702,9 @@ export function useBondTransaction({
       setStatus('error');
       return;
     }
+
+    // Capture identity before wallet prompts — may change mid-flight.
+    const submittingAccount = wallet.address as Address;
 
     setStatus('submitting');
     setError(null);
@@ -643,7 +759,7 @@ export function useBondTransaction({
 
       const accountSnap = accountFromSuccessfulRefetch(
         await refetchAccount(),
-        wallet.address,
+        submittingAccount,
       );
       if (!accountSnap) {
         logBondingFailure('create: fresh_account_failed');
@@ -690,6 +806,7 @@ export function useBondTransaction({
       };
 
       const walletClient = await ensurePolygonWalletClient();
+      let broadcastPending: PendingBondTransaction | null = null;
 
       const outcome = await submitBondWriteFlow({
         refetchAccount,
@@ -700,7 +817,7 @@ export function useBondTransaction({
         simulate: async () => {
           // viem returns { result, request } — only `request` is writeContract-ready.
           const { request } = await publicClient!.simulateContract({
-            account: wallet.address!,
+            account: submittingAccount,
             address: bondAddress,
             abi: bondAbi,
             functionName,
@@ -711,7 +828,7 @@ export function useBondTransaction({
             address: bondAddress,
             functionName,
             args,
-            account: wallet.address!,
+            account: submittingAccount,
             request,
           };
         },
@@ -731,7 +848,13 @@ export function useBondTransaction({
           } as never);
         },
         waitForReceipt: async (hash) => {
-          setPending({ hash, action });
+          broadcastPending = buildPendingBondTransaction({
+            account: submittingAccount,
+            chainId: POLYGON_CHAIN_ID,
+            hash,
+            action,
+          });
+          rememberPending(broadcastPending);
           setTransactionHash(hash);
           setReviewOpen(false);
           setStatus('confirming');
@@ -740,10 +863,24 @@ export function useBondTransaction({
         confirmOnServer: (hash) =>
           confirmBondingTransactionOnServer({
             transactionHash: hash,
-            account: wallet.address!,
+            account: submittingAccount,
             action,
           }),
       });
+
+      // Wallet switched after broadcast — keep storage, hide local success.
+      if (
+        broadcastPending &&
+        !pendingBondTransactionMatchesWallet(
+          broadcastPending,
+          walletIdentityRef.current.address,
+          walletIdentityRef.current.chainId,
+        )
+      ) {
+        discardLocalPending();
+        setStatus('idle');
+        return;
+      }
 
       if (outcome.kind === 'fresh_account_failed') {
         logBondingFailure('create: fresh_account_failed');
@@ -777,7 +914,15 @@ export function useBondTransaction({
           receiptError: outcome.receiptError,
           verificationError: outcome.verificationError,
         });
-        setPending({ hash: outcome.hash, action });
+        const pendingTx =
+          broadcastPending ??
+          buildPendingBondTransaction({
+            account: submittingAccount,
+            chainId: POLYGON_CHAIN_ID,
+            hash: outcome.hash,
+            action,
+          });
+        rememberPending(pendingTx);
         setTransactionHash(outcome.hash);
         setReviewOpen(false);
         setStatus('confirmation_unavailable');
@@ -789,7 +934,7 @@ export function useBondTransaction({
           hash: outcome.hash,
           source: outcome.source,
         });
-        setPending(null);
+        clearPendingRecord(broadcastPending);
         setTransactionHash(null);
         setReviewOpen(false);
         setStatus('error');
@@ -797,7 +942,7 @@ export function useBondTransaction({
         return;
       }
 
-      applyConfirmed(outcome.hash, outcome.syncFailed);
+      applyConfirmed(outcome.hash, outcome.syncFailed, broadcastPending);
     } catch (err) {
       setStatus('error');
       setError(formatBondingError(err, locale));
@@ -805,15 +950,20 @@ export function useBondTransaction({
   }, [
     amountRaw,
     applyConfirmed,
+    clearPendingRecord,
     config,
     copy.confirmationUnavailable,
+    discardLocalPending,
     ensurePolygonWalletClient,
     freshQuote,
     locale,
     mode,
+    pending,
+    pendingLoaded,
     publicClient,
     refetchAccount,
     refetchConfig,
+    rememberPending,
     side,
     termId,
     wallet.address,
@@ -834,7 +984,6 @@ export function useBondTransaction({
     });
 
     if (action !== 'resume_confirmation' && status === 'success') {
-      setPending(null);
       setSuccess(null);
     }
 
@@ -870,12 +1019,15 @@ export function useBondTransaction({
     await runCreate();
   }, [clearMessages, pending, resumeConfirmReceipt, runCreate, status]);
 
+  const hasPendingHash = pending != null && status !== 'success';
+
+  // Own work only — parent cross-locks via onBusyChange, not externallyBusy echo.
   const isBusy =
+    !pendingLoaded ||
     status === 'approving' ||
     status === 'submitting' ||
-    status === 'confirming';
-
-  const hasPendingHash = pending != null && status !== 'success';
+    status === 'confirming' ||
+    hasPendingHash;
 
   return {
     status,
@@ -886,6 +1038,7 @@ export function useBondTransaction({
     isBusy,
     needsApproval,
     hasPendingHash,
+    pendingLoaded,
     reviewOpen,
     reviewQuote,
     onPrimaryCta,

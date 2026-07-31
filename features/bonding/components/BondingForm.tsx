@@ -213,6 +213,8 @@ export default function BondingForm({
     configLoading ||
     !config ||
     bondTx.isBusy ||
+    bondTx.hasPendingHash ||
+    !bondTx.pendingLoaded ||
     bondTx.reviewOpen ||
     actionsLocked;
 
@@ -233,9 +235,14 @@ export default function BondingForm({
     quoteState.quote.issues.length === 0;
 
   // Pending broadcast: allow confirmation resume while fields stay frozen.
-  const canClickCta = bondTx.hasPendingHash
-    ? wallet.isConnected && !bondTx.isBusy && !actionsLocked
-    : canSubmit;
+  // isBusy includes hasPendingHash for cross-lock, so resume uses status only.
+  const canClickCta = !bondTx.pendingLoaded
+    ? false
+    : bondTx.hasPendingHash
+      ? wallet.isConnected &&
+        bondTx.status !== 'confirming' &&
+        !actionsLocked
+      : canSubmit;
 
   const ctaPhase = getBondCtaPhase(
     bondTx.status,

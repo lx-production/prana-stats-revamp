@@ -239,6 +239,25 @@ test('browser receipt success does not call server fallback', async () => {
   assert.equal(serverCalls, 0);
 });
 
+test('resume path requires server validation even after browser receipt success', async () => {
+  let serverCalls = 0;
+  const outcome = await confirmBondReceipt(HASH, {
+    requireServerValidation: true,
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+    refetchAccount: async () => successRefetch(),
+  });
+  assert.equal(outcome.kind, 'confirmed');
+  if (outcome.kind === 'confirmed') {
+    assert.equal(outcome.source, 'server');
+    assert.equal(outcome.syncFailed, false);
+  }
+  assert.equal(serverCalls, 1);
+});
+
 test('receipt success with failed account sync stays confirmed with warning flag', async () => {
   const outcome = await confirmBondReceipt(HASH, {
     waitForReceipt: async () => ({ status: 'success' }),

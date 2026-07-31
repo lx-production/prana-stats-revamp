@@ -64,9 +64,9 @@ Bonding reuses the same admission helpers for its POSTs, but does **not** reuse 
 | `GET /api/bonding/config` | Shared V1/V2 paused/terms/minimum snapshot | n/a | shared GET limiter family |
 | `GET /api/bonding/account` | Wallet balances/allowances/active bonds | n/a | 10 / IP / min + 120 global / min |
 | `POST /api/bonding/quote` | Exact WBTC / exact PRANA quote | 2 KB | 10 / IP / min + 60 global / min |
-| `POST /api/bonding/confirm-transaction` | Browser-RPC fallback receipt check for fixed approve/create/claim actions | 2 KB | separate confirmation bucket |
+| `POST /api/bonding/confirm-transaction` | Browser-RPC fallback + required validation on resume/reload for fixed approve/create/claim actions | 2 KB | separate confirmation bucket |
 
-Bonding confirmation only accepts hashes already broadcast by the user and validates sender/target/selector/args against an internal side/version mapping. It is UX confirmation only — not Swap-style trusted analytics.
+Bonding confirmation only accepts hashes already broadcast by the user and validates sender/target/selector/args against an internal side/version mapping. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server. It is UX confirmation only — not Swap-style trusted analytics.
 
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 

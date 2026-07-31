@@ -1,12 +1,10 @@
 import { polygon } from 'wagmi/chains';
 import { usePublicClient } from 'wagmi';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { getBondingCopy } from '../bonding.copy.ts';
 import { bondClaimKey } from '../utils/bondClaimTarget.ts';
-import { logBondingFailure } from '../utils/bondingErrors.ts';
-import { formatBondingError } from '../utils/bondingErrors.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import { getBondingErrorMessage } from '../utils/bondingErrors.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { confirmBondReceipt } from '../utils/bondTransactionFlow.ts';
@@ -15,11 +13,29 @@ import { resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
 import { submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 
+import {
+  formatBondingError,
+  getBondingErrorMessage,
+  logBondingFailure,
+} from '../utils/bondingErrors.ts';
+import {
+  buildPendingBondTransaction,
+  pendingBondTransactionMatchesWallet,
+} from '../utils/bondPendingTransactionStorage.ts';
+
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type { PendingBondTransaction } from '../utils/bondTransactionFlow.ts';
-import type { BondClaimActionTarget, BondingConfig, BondingTransactionActionSnapshot, BondTransactionStatus } from '../bonding.types.ts';
+import type {
+  BondClaimActionTarget,
+  BondingConfig,
+  BondingTransactionActionSnapshot,
+  BondTransactionStatus,
+  PendingBondTransaction,
+} from '../bonding.types.ts';
+
+const CLAIM_PENDING_KINDS = ['claim'] as const;
 
 type UseBondActionsInput = {
   config: BondingConfig | undefined;
@@ -51,20 +67,53 @@ export function useBondActions({
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [pending, setPending] = useState<PendingBondTransaction | null>(null);
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
+
+  const {
+    pending,
+    pendingLoaded,
+    rememberPending,
+    clearPendingRecord,
+    discardLocalPending,
+  } = usePendingBondTransaction({
+    account: wallet.address,
+    chainId: wallet.chainId,
+    kinds: CLAIM_PENDING_KINDS,
+  });
+
+  // Latest wallet identity for post-await guards (avoid stale closures).
+  const walletIdentityRef = useRef({
+    address: wallet.address,
+    chainId: wallet.chainId,
+  });
+  walletIdentityRef.current = {
+    address: wallet.address,
+    chainId: wallet.chainId,
+  };
+
+  // Restore Polygonscan hash + claim target after reload.
+  useEffect(() => {
+    if (!pendingLoaded || !pending || pending.action.kind !== 'claim') return;
+    setTransactionHash(pending.hash);
+    setAction({
+      side: pending.action.side,
+      version: pending.action.version,
+      bondId: pending.action.bondId,
+    });
+  }, [pending, pendingLoaded]);
 
   const hasPendingHash = pending != null && status !== 'success';
 
+  // Own work only — externallyBusy locks writes but must not echo into parent.
   const isBusy =
-    externallyBusy ||
+    !pendingLoaded ||
     status === 'submitting' ||
     status === 'confirming' ||
     hasPendingHash;
 
   const applyConfirmed = useCallback(
-    (hash: Hex, syncFailed: boolean) => {
-      setPending(null);
+    (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
+      clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setAction(null);
       setStatus('success');
@@ -72,36 +121,58 @@ export function useBondActions({
       setSuccess(copy.claimConfirmed);
       setWarning(syncFailed ? copy.accountSyncWarning : null);
     },
-    [copy.accountSyncWarning, copy.claimConfirmed],
+    [clearPendingRecord, copy.accountSyncWarning, copy.claimConfirmed],
   );
 
   const resumeConfirmReceipt = useCallback(
     async (pendingTx: PendingBondTransaction) => {
-      if (!wallet.address) return;
+      if (
+        !pendingBondTransactionMatchesWallet(
+          pendingTx,
+          wallet.address,
+          wallet.chainId,
+        )
+      ) {
+        return;
+      }
 
       setStatus('confirming');
       setError(null);
       setWarning(null);
 
       const outcome = await confirmBondReceipt(pendingTx.hash, {
+        requireServerValidation: true,
         waitForReceipt: waitForPolygonWalletReceipt,
         confirmOnServer: (txHash) =>
           confirmBondingTransactionOnServer({
             transactionHash: txHash,
-            account: wallet.address as Address,
+            account: pendingTx.account,
             action: pendingTx.action,
           }),
         refetchAccount,
       });
 
+      // Wallet switched mid-wait — keep storage for the original account.
+      if (
+        !pendingBondTransactionMatchesWallet(
+          pendingTx,
+          walletIdentityRef.current.address,
+          walletIdentityRef.current.chainId,
+        )
+      ) {
+        discardLocalPending();
+        setStatus('idle');
+        return;
+      }
+
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(pendingTx.hash, outcome.syncFailed);
+        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
         return;
       }
 
       if (outcome.kind === 'reverted') {
         logBondingFailure('claim-resume: reverted', { hash: pendingTx.hash });
-        setPending(null);
+        clearPendingRecord(pendingTx);
         setTransactionHash(null);
         setAction(null);
         setStatus('error');
@@ -115,17 +186,21 @@ export function useBondActions({
         receiptError: outcome.receiptError,
         verificationError: outcome.verificationError,
       });
-      setPending(pendingTx);
+      rememberPending(pendingTx);
       setTransactionHash(pendingTx.hash);
       setStatus('confirmation_unavailable');
       setError(copy.confirmationUnavailable);
     },
     [
       applyConfirmed,
+      clearPendingRecord,
       copy.confirmationUnavailable,
+      discardLocalPending,
       locale,
       refetchAccount,
+      rememberPending,
       wallet.address,
+      wallet.chainId,
     ],
   );
 
@@ -134,6 +209,7 @@ export function useBondActions({
       if (
         externallyBusy ||
         !configReady ||
+        !pendingLoaded ||
         status === 'submitting' ||
         status === 'confirming' ||
         hasPendingHash
@@ -176,6 +252,9 @@ export function useBondActions({
         return;
       }
 
+      // Capture identity before wallet prompts — may change mid-flight.
+      const submittingAccount = wallet.address as Address;
+
       // Internal mapping only — ignore any contract address from API/UI.
       const claimTarget = resolveBondClaimTarget(target.side, target.version);
       const bondId = BigInt(target.bondId);
@@ -199,13 +278,15 @@ export function useBondActions({
           throw new Error('RPC unavailable');
         }
 
+        let broadcastPending: PendingBondTransaction | null = null;
+
         const outcome = await submitBondWriteFlow({
           refetchAccount,
           validateFreshAccount: () => true,
           simulate: async () => {
             // viem returns { result, request } — only `request` is writeContract-ready.
             const { request } = await publicClient.simulateContract({
-              account: wallet.address!,
+              account: submittingAccount,
               address: claimTarget.address,
               abi: claimTarget.abi,
               functionName: 'claimBond',
@@ -216,7 +297,7 @@ export function useBondActions({
               address: claimTarget.address,
               functionName: 'claimBond',
               args: [bondId] as const,
-              account: wallet.address!,
+              account: submittingAccount,
               request,
             };
           },
@@ -235,7 +316,13 @@ export function useBondActions({
             } as never);
           },
           waitForReceipt: async (hash) => {
-            setPending({ hash, action: actionSnapshot });
+            broadcastPending = buildPendingBondTransaction({
+              account: submittingAccount,
+              chainId: POLYGON_CHAIN_ID,
+              hash,
+              action: actionSnapshot,
+            });
+            rememberPending(broadcastPending);
             setTransactionHash(hash);
             setStatus('confirming');
             return waitForPolygonWalletReceipt(hash);
@@ -243,10 +330,25 @@ export function useBondActions({
           confirmOnServer: (hash) =>
             confirmBondingTransactionOnServer({
               transactionHash: hash,
-              account: wallet.address!,
+              account: submittingAccount,
               action: actionSnapshot,
             }),
         });
+
+        // Wallet switched after broadcast — keep storage, hide local success.
+        if (
+          broadcastPending &&
+          !pendingBondTransactionMatchesWallet(
+            broadcastPending,
+            walletIdentityRef.current.address,
+            walletIdentityRef.current.chainId,
+          )
+        ) {
+          discardLocalPending();
+          setAction(null);
+          setStatus('idle');
+          return;
+        }
 
         if (outcome.kind === 'fresh_account_failed') {
           logBondingFailure('claim: fresh_account_failed');
@@ -265,14 +367,14 @@ export function useBondActions({
         if (outcome.kind === 'simulate_failed') {
           logBondingFailure('claim: simulate_failed', outcome.error);
           setAction(null);
-          setPending(null);
+          clearPendingRecord(broadcastPending);
           setStatus('error');
           setError(getBondingErrorMessage('simulate_failed', locale));
           return;
         }
         if (outcome.kind === 'rejected_before_broadcast') {
           setAction(null);
-          setPending(null);
+          clearPendingRecord(broadcastPending);
           setStatus('error');
           setError(formatBondingError(outcome.error, locale));
           return;
@@ -283,7 +385,15 @@ export function useBondActions({
             receiptError: outcome.receiptError,
             verificationError: outcome.verificationError,
           });
-          setPending({ hash: outcome.hash, action: actionSnapshot });
+          const pendingTx =
+            broadcastPending ??
+            buildPendingBondTransaction({
+              account: submittingAccount,
+              chainId: POLYGON_CHAIN_ID,
+              hash: outcome.hash,
+              action: actionSnapshot,
+            });
+          rememberPending(pendingTx);
           setTransactionHash(outcome.hash);
           setStatus('confirmation_unavailable');
           setError(copy.confirmationUnavailable);
@@ -294,7 +404,7 @@ export function useBondActions({
             hash: outcome.hash,
             source: outcome.source,
           });
-          setPending(null);
+          clearPendingRecord(broadcastPending);
           setTransactionHash(null);
           setAction(null);
           setStatus('error');
@@ -302,24 +412,28 @@ export function useBondActions({
           return;
         }
 
-        applyConfirmed(outcome.hash, outcome.syncFailed);
+        applyConfirmed(outcome.hash, outcome.syncFailed, broadcastPending);
       } catch (err) {
         setAction(null);
-        setPending(null);
+        clearPendingRecord();
         setStatus('error');
         setError(formatBondingError(err, locale));
       }
     },
     [
       applyConfirmed,
+      clearPendingRecord,
       config,
       configReady,
       copy.confirmationUnavailable,
+      discardLocalPending,
       externallyBusy,
       hasPendingHash,
       locale,
+      pendingLoaded,
       publicClient,
       refetchAccount,
+      rememberPending,
       status,
       wallet,
     ],
@@ -356,6 +470,7 @@ export function useBondActions({
     success,
     transactionHash,
     hasPendingHash,
+    pendingLoaded,
     isBusy,
     claimBond,
     resumePendingReceipt,

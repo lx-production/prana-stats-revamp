@@ -179,30 +179,26 @@ Chỉ thêm `includeSubDomains`/`preload` sau khi audit toàn bộ subdomain và
 
 ### BUI-SEC-05 — Low — Pending transaction chỉ tồn tại trong React memory và không bind account/chain
 
+**Trạng thái:** Mitigated (2026-07-31)
+
 **Vị trí**
 
-- `features/bonding/hooks/useBondTransaction.ts:106`
-- `features/bonding/hooks/useBondActions.ts:65`
-- `features/bonding/hooks/useBondTransaction.ts:117`
-- `features/bonding/utils/bondTransactionConfirmation.ts:18`
-- `features/bonding/tests/bondTransactionFlow.test.ts:224`
+- `features/bonding/utils/bondPendingTransactionStorage.ts`
+- `features/bonding/hooks/usePendingBondTransaction.ts`
+- `features/bonding/hooks/useBondTransaction.ts`
+- `features/bonding/hooks/useBondActions.ts`
+- `features/bonding/utils/bondTransactionConfirmation.ts`
 
-**Mô tả**
+**Mô tả (ban đầu)**
 
 Pending state chỉ lưu `{hash, action}` bằng `useState`. Reload/tab crash làm mất state; account/chain không được lưu cùng pending record. Khi browser RPC trả receipt success, client không gọi server validator để đối chiếu sender/target/calldata.
 
-Trong cùng component lifetime, code tránh broadcast lần hai tốt. Nhưng sau reload, một transaction còn pending có thể không xuất hiện trong account snapshot và UI cho phép user tạo/claim lại. Nếu đổi account khi pending, browser receipt success của transaction cũ có thể được hiển thị như success trong context account mới.
+**Cách khắc phục**
 
-**Ảnh hưởng**
-
-Rủi ro duplicate transaction hoặc success state gắn sai wallet. Severity thấp hơn vì user vẫn phải xác nhận wallet prompt lần hai.
-
-**Khuyến nghị**
-
-- Persist `{chainId, account, hash, action, createdAt}` trong storage có TTL.
-- Khi mount/reconnect, resume confirmation trước khi cho write mới.
-- Bind pending record với account/chain ban đầu; account switch phải chuyển sang read-only pending notice hoặc clear sau khi đã reconcile.
-- Với resumed transactions, dùng server full-calldata validation hoặc client `getTransaction` validation trước khi báo success.
+- Persist `{version, chainId, account, hash, action, createdAt}` vào `localStorage` với TTL 24h, key bind theo account/chain.
+- Form (`approve`/`create`) và claim mỗi bên restore đúng action kind khi mount/reconnect; write bị khóa cho đến khi storage đã load và không còn pending của chính flow đó.
+- Pending record luôn dùng account lúc broadcast; đổi wallet giữa chừng không báo success cho ví mới (storage của ví cũ vẫn giữ để resume khi quay lại).
+- Resume / reload bắt buộc `requireServerValidation`: browser receipt success vẫn phải qua server sender/target/full calldata trước khi UI báo confirmed.
 
 ### BUI-SEC-06 — Low — Invalid requests tiêu hao global rate-limit quota trước admission
 
@@ -297,7 +293,7 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 
 - Fresh-quote response bị reject nếu `mode`, `termId` hoặc exact input không khớp
   review snapshot.
-- Pending hash sống qua reload và bind đúng account/chain.
+- ~~Pending hash sống qua reload và bind đúng account/chain.~~ (covered by `bondPendingTransactionStorage` + confirmation resume tests)
 - Malformed requests không tiêu global expensive-RPC quota.
 - Raw amount vượt `uint256`.
 - Account endpoint dưới tải khi tổng bond history tăng lớn.
@@ -306,7 +302,7 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 
 1. Thay full-array account scans bằng event indexer và thêm timeout/concurrency protection.
 2. Bật HSTS tại TLS edge.
-3. Persist và bind pending transaction với account/chain.
+3. ~~Persist và bind pending transaction với account/chain.~~ (BUI-SEC-05 mitigated)
 4. Tách admission/global RPC quota, thêm `uint256` bounds và `no-store`.
 5. Làm sạch dependency override/lockfile và thiết lập audit CI có baseline.
 6. Theo dõi quote/execution delta, volume, liquidity và pending time; chỉ mở lại
