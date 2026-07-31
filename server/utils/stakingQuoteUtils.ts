@@ -1,4 +1,8 @@
+import { parseUnsignedDecimalRaw } from './parseUnsignedDecimalRaw.ts';
+
 import type { StakingQuoteRequest } from '../../features/staking/staking.types.ts';
+
+export { parseUnsignedDecimalRaw } from './parseUnsignedDecimalRaw.ts';
 
 /** Thrown for bad quote bodies so the route can map to HTTP 400 (not 502). */
 export class StakingApiValidationError extends Error {
@@ -6,14 +10,6 @@ export class StakingApiValidationError extends Error {
     super(message);
     this.name = 'StakingApiValidationError';
   }
-}
-
-/** Strict unsigned decimal string → bigint (null when not a plain digit string). */
-export function parseUnsignedDecimalRaw(value: unknown): bigint | null {
-  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return BigInt(value);
 }
 
 /** Validate POST /api/staking/quote JSON body. */

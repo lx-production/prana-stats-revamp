@@ -1,3 +1,4 @@
+import { parseUnsignedDecimalRaw } from './parseUnsignedDecimalRaw.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 
 import type { Address, Hex } from '../../types/blockchain.types.ts';
@@ -24,6 +25,12 @@ export type {
   BondingQuoteMathInput,
   BondingQuoteMathResult,
 } from './bondingQuoteMath.ts';
+
+export {
+  MAX_UINT256,
+  MAX_UINT256_DECIMAL_DIGITS,
+  parseUnsignedDecimalRaw,
+} from './parseUnsignedDecimalRaw.ts';
 
 const BOND_TERM_IDS: readonly BondTermId[] = [0, 1, 2, 3, 4];
 const QUOTE_MODES: readonly BondingQuoteMode[] = [
@@ -106,12 +113,38 @@ export function mergeActiveBondRecords(
   return groups.flat();
 }
 
-/** Parse a non-negative decimal integer string into bigint (rejects hex / floats / signs). */
-export function parseUnsignedDecimalRaw(value: unknown): bigint | null {
-  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
-    return null;
+/** Input/shape errors for Bonding POST APIs — routes map these to HTTP 400. */
+export class BondingApiValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BondingApiValidationError';
   }
-  return BigInt(value);
+}
+
+/** Sender/target/calldata mismatch — never report as confirmed. */
+export class BondingConfirmationMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BondingConfirmationMismatchError';
+  }
+}
+
+/** uint256 decimal in range; used for approve (zero = revoke allowance is supported). */
+function requireUint256Raw(value: unknown, message: string): bigint {
+  const parsed = parseUnsignedDecimalRaw(value);
+  if (parsed === null) {
+    throw new BondingApiValidationError(message);
+  }
+  return parsed;
+}
+
+/** uint256 decimal that must be strictly greater than zero (quote/create/claim). */
+function requirePositiveUint256Raw(value: unknown, message: string): bigint {
+  const parsed = requireUint256Raw(value, message);
+  if (parsed === 0n) {
+    throw new BondingApiValidationError(message);
+  }
+  return parsed;
 }
 
 export function parseBondingQuoteRequest(body: unknown): BondingQuoteRequest {
@@ -125,10 +158,11 @@ export function parseBondingQuoteRequest(body: unknown): BondingQuoteRequest {
     throw new BondingApiValidationError('Invalid bonding quote mode.');
   }
 
-  const amountRaw = parseUnsignedDecimalRaw(payload.amountRaw);
-  if (amountRaw === null) {
-    throw new BondingApiValidationError('Invalid bonding quote amount.');
-  }
+  // Quote amount must be > 0 so we never burn RPC on a no-op uint256 zero.
+  const amountRaw = requirePositiveUint256Raw(
+    payload.amountRaw,
+    'Invalid bonding quote amount.',
+  );
 
   const termIdRaw = payload.termId;
   if (typeof termIdRaw !== 'number' || !isBondTermId(termIdRaw)) {
@@ -185,10 +219,11 @@ function parseBondingActionSnapshot(value: unknown): BondingTransactionActionSna
     if (action.side !== 'buy' && action.side !== 'sell') {
       throw new BondingApiValidationError('Invalid bonding approve side.');
     }
-    const amountRaw = parseUnsignedDecimalRaw(action.amountRaw);
-    if (amountRaw === null) {
-      throw new BondingApiValidationError('Invalid bonding approve amount.');
-    }
+    // Approve zero is supported (ERC-20 revoke / clear allowance).
+    const amountRaw = requireUint256Raw(
+      action.amountRaw,
+      'Invalid bonding approve amount.',
+    );
     return { kind: 'approve', side: action.side, amountRaw: amountRaw.toString() };
   }
 
@@ -212,10 +247,10 @@ function parseBondingActionSnapshot(value: unknown): BondingTransactionActionSna
     if (action.side === 'sell' && action.mode !== 'sell_exact_prana') {
       throw new BondingApiValidationError('Invalid bonding create mode for side.');
     }
-    const amountRaw = parseUnsignedDecimalRaw(action.amountRaw);
-    if (amountRaw === null) {
-      throw new BondingApiValidationError('Invalid bonding create amount.');
-    }
+    const amountRaw = requirePositiveUint256Raw(
+      action.amountRaw,
+      'Invalid bonding create amount.',
+    );
     if (typeof action.termId !== 'number' || !isBondTermId(action.termId)) {
       throw new BondingApiValidationError('Invalid bonding create term.');
     }
@@ -236,10 +271,10 @@ function parseBondingActionSnapshot(value: unknown): BondingTransactionActionSna
     if (action.version !== 'v1' && action.version !== 'v2') {
       throw new BondingApiValidationError('Invalid bonding claim version.');
     }
-    const bondId = parseUnsignedDecimalRaw(action.bondId);
-    if (bondId === null) {
-      throw new BondingApiValidationError('Invalid bonding claim id.');
-    }
+    const bondId = requirePositiveUint256Raw(
+      action.bondId,
+      'Invalid bonding claim id.',
+    );
     return {
       kind: 'claim',
       side: action.side,
@@ -249,20 +284,4 @@ function parseBondingActionSnapshot(value: unknown): BondingTransactionActionSna
   }
 
   throw new BondingApiValidationError('Invalid bonding confirmation action kind.');
-}
-
-/** Input/shape errors for Bonding POST APIs — routes map these to HTTP 400. */
-export class BondingApiValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'BondingApiValidationError';
-  }
-}
-
-/** Sender/target/calldata mismatch — never report as confirmed. */
-export class BondingConfirmationMismatchError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'BondingConfirmationMismatchError';
-  }
 }

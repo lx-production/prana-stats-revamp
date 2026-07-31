@@ -3,6 +3,7 @@ import { erc20Abi } from 'viem';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 import {
+  BondingApiValidationError,
   computeBondingQuote,
   computePoolReserves,
   parseUnsignedDecimalRaw,
@@ -32,9 +33,10 @@ import type {
 export async function loadBondingQuote(
   request: BondingQuoteRequest,
 ): Promise<BondingQuote> {
+  // Defensive re-parse: route already validated, but keep 400 (not 502) on bad amount.
   const amountRaw = parseUnsignedDecimalRaw(request.amountRaw);
-  if (amountRaw === null) {
-    throw new Error('Invalid bonding quote amount.');
+  if (amountRaw === null || amountRaw === 0n) {
+    throw new BondingApiValidationError('Invalid bonding quote amount.');
   }
 
   const provider = await getServerPolygonProvider();

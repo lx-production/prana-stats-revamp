@@ -229,28 +229,25 @@ User hợp lệ có thể bị `429` dù attacker chỉ gửi junk; không phả
 
 ### BUI-SEC-07 — Low — Decimal raw input không bị giới hạn trong miền `uint256`
 
+**Trạng thái:** Mitigated (2026-07-31)
+
 **Vị trí**
 
-- `server/utils/bondingReadUtils.ts:101`
-- `server/utils/bondingReadUtils.ts:111`
-- `server/utils/bondingReadUtils.ts:166`
+- `server/utils/parseUnsignedDecimalRaw.ts`
+- `server/utils/bondingReadUtils.ts` (quote / approve / create / claim parse)
 
-**Mô tả**
+**Mô tả (ban đầu)**
 
 `parseUnsignedDecimalRaw` nhận mọi chuỗi digit không âm nhưng không giới hạn `<= 2^256 - 1`, không giới hạn số digit độc lập với body cap, và chấp nhận zero cho create/claim.
 
-Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi kết quả trở nên vô nghĩa. Confirmation có thể đi tới ABI encoder rồi ném lỗi range; route hiện phân loại lỗi này thành `502 upstream_unavailable` thay vì `400 invalid_request`.
+Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi kết quả trở nên vô nghĩa. Confirmation có thể đi tới ABI encoder rồi ném lỗi range; route phân loại lỗi này thành `502 upstream_unavailable` thay vì `400 invalid_request`.
 
-**Ảnh hưởng**
+**Cách khắc phục**
 
-Không dẫn tới write tùy ý, nhưng tạo log noise, tốn quote/RPC quota và làm sai health/error semantics.
-
-**Khuyến nghị**
-
-- Validate decimal canonical form và `0 <= value <= MAX_UINT256`.
-- Require `> 0` cho create amount và claim bond ID; quy định rõ approve zero có được hỗ trợ hay không.
-- Reject trước RPC/ABI encoding với `400`.
-- Thêm boundary tests cho `MAX_UINT256`, `MAX_UINT256 + 1`, zero và chuỗi digit sát body cap.
+- Parser chung yêu cầu canonical decimal (`0` hoặc `[1-9]\d*`), `value <= MAX_UINT256`, và reject chuỗi dài hơn 78 digit trước BigInt.
+- Quote amount, create amount, claim bond ID: require `> 0`. Approve zero vẫn được hỗ trợ (ERC-20 revoke).
+- Reject ở parse (trước RPC/ABI encode) → route map `BondingApiValidationError` thành `400 invalid_request`.
+- Boundary tests: `MAX_UINT256`, `MAX_UINT256 + 1`, zero, leading zeros, và chuỗi digit sát body cap (`bondingApi.test.ts`).
 
 ## 4. Observations / hardening
 

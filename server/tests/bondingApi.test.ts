@@ -10,11 +10,16 @@ import {
   confirmBondingTransaction,
 } from '../loaders/bondingTransactionConfirmation.ts';
 import {
+  BondingApiValidationError,
   computeBondingQuote,
   mapActiveBondRecords,
   mergeActiveBondRecords,
   mulDiv,
+  MAX_UINT256,
+  MAX_UINT256_DECIMAL_DIGITS,
+  parseBondingConfirmationRequest,
   parseBondingQuoteRequest,
+  parseUnsignedDecimalRaw,
 } from '../utils/bondingReadUtils.ts';
 import {
   BUY_BOND_ADDRESS_V1,
@@ -765,6 +770,154 @@ test('parseBondingQuoteRequest accepts the two modes and rejects bad shapes', ()
   assert.throws(() =>
     parseBondingQuoteRequest({ mode: 'buy_exact_wbtc', amountRaw: '0x1', termId: 1 }),
   );
+});
+
+test('parseUnsignedDecimalRaw enforces canonical uint256 bounds', () => {
+  assert.equal(parseUnsignedDecimalRaw('0'), 0n);
+  assert.equal(parseUnsignedDecimalRaw('1'), 1n);
+  assert.equal(parseUnsignedDecimalRaw(MAX_UINT256.toString()), MAX_UINT256);
+
+  // Above uint256, leading zeros, hex, floats, and overlong digit strings.
+  assert.equal(parseUnsignedDecimalRaw((MAX_UINT256 + 1n).toString()), null);
+  assert.equal(parseUnsignedDecimalRaw('01'), null);
+  assert.equal(parseUnsignedDecimalRaw('0x1'), null);
+  assert.equal(parseUnsignedDecimalRaw('1.0'), null);
+  assert.equal(parseUnsignedDecimalRaw('-1'), null);
+  assert.equal(parseUnsignedDecimalRaw('9'.repeat(MAX_UINT256_DECIMAL_DIGITS + 1)), null);
+  // Digit string near typical POST body cap (~2KB) must not parse as uint256.
+  assert.equal(parseUnsignedDecimalRaw('9'.repeat(2000)), null);
+});
+
+test('bonding quote/create/claim reject zero and out-of-range decimals with validation errors', () => {
+  assert.throws(
+    () =>
+      parseBondingQuoteRequest({
+        mode: 'buy_exact_wbtc',
+        amountRaw: '0',
+        termId: 1,
+      }),
+    (err: unknown) =>
+      err instanceof BondingApiValidationError &&
+      err.message === 'Invalid bonding quote amount.',
+  );
+  assert.throws(
+    () =>
+      parseBondingQuoteRequest({
+        mode: 'buy_exact_wbtc',
+        amountRaw: (MAX_UINT256 + 1n).toString(),
+        termId: 1,
+      }),
+    (err: unknown) => err instanceof BondingApiValidationError,
+  );
+  assert.deepEqual(
+    parseBondingQuoteRequest({
+      mode: 'buy_exact_wbtc',
+      amountRaw: MAX_UINT256.toString(),
+      termId: 1,
+    }),
+    {
+      mode: 'buy_exact_wbtc',
+      amountRaw: MAX_UINT256.toString(),
+      termId: 1,
+    },
+  );
+
+  // Approve zero is supported (ERC-20 revoke).
+  assert.deepEqual(
+    parseBondingConfirmationRequest(
+      {
+        transactionHash: SAMPLE_TX_HASH,
+        account: SAMPLE_ADDRESS,
+        action: { kind: 'approve', side: 'buy', amountRaw: '0' },
+      },
+      parseChecksumAddress,
+    ).action,
+    { kind: 'approve', side: 'buy', amountRaw: '0' },
+  );
+
+  assert.throws(
+    () =>
+      parseBondingConfirmationRequest(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action: {
+            kind: 'create',
+            side: 'buy',
+            version: 'v2',
+            mode: 'buy_exact_wbtc',
+            amountRaw: '0',
+            termId: 1,
+          },
+        },
+        parseChecksumAddress,
+      ),
+    (err: unknown) =>
+      err instanceof BondingApiValidationError &&
+      err.message === 'Invalid bonding create amount.',
+  );
+
+  assert.throws(
+    () =>
+      parseBondingConfirmationRequest(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action: { kind: 'claim', side: 'buy', version: 'v2', bondId: '0' },
+        },
+        parseChecksumAddress,
+      ),
+    (err: unknown) =>
+      err instanceof BondingApiValidationError &&
+      err.message === 'Invalid bonding claim id.',
+  );
+
+  assert.throws(
+    () =>
+      parseBondingConfirmationRequest(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action: {
+            kind: 'create',
+            side: 'buy',
+            version: 'v2',
+            mode: 'buy_exact_wbtc',
+            amountRaw: (MAX_UINT256 + 1n).toString(),
+            termId: 1,
+          },
+        },
+        parseChecksumAddress,
+      ),
+    (err: unknown) => err instanceof BondingApiValidationError,
+  );
+});
+
+test('POST /api/bonding/quote returns 400 for out-of-range amountRaw before loader RPC', async () => {
+  const { handlePost, quoteCalls } = createHandlers({
+    loadQuote: async () => {
+      throw new Error('loader should not run for invalid amountRaw');
+    },
+  });
+
+  const res = mockResponse();
+  await handlePost(
+    mockBodyRequest([
+      Buffer.from(
+        JSON.stringify({
+          mode: 'buy_exact_wbtc',
+          amountRaw: (MAX_UINT256 + 1n).toString(),
+          termId: 1,
+        }),
+      ),
+    ]),
+    res,
+    new URL('http://127.0.0.1/api/bonding/quote'),
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(parsedBody(res).error, 'invalid_request');
+  assert.equal(quoteCalls.count, 0);
 });
 
 // ---------------------------------------------------------------------------

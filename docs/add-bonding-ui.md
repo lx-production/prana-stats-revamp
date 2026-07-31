@@ -49,9 +49,10 @@
   - Rate limit: mở rộng factory `createSwapRateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
-  - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` và `termId`.
+  - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` (canonical decimal string, `1…MAX_UINT256`) và `termId`.
   - `POST /api/bonding/confirm-transaction`: `no-store`; fallback qua Polygon RPC của server khi browser RPC không đọc được receipt của hash đã broadcast.
     - Request gồm `transactionHash`, connected `account` và action snapshot tối thiểu (`approve|create|claim`, side/version và args cần đối chiếu).
+    - `amountRaw` / `bondId` là canonical uint256 decimal; create amount và claim id phải `> 0`; approve `0` được hỗ trợ (revoke allowance).
     - Chỉ xác nhận sau khi receipt terminal; kiểm tra sender, chain, target từ mapping nội bộ, function selector và args tương ứng. Không tin contract address hoặc calldata do client tự khai.
     - Endpoint này chỉ dự phòng xác nhận UX, không ghi trusted analytics hay tạo side effect; vì vậy không tái dùng HMAC hoặc `/api/swap/verify-transaction` riêng của Swap.
   - Quote response trả `wbtcAmountRaw`, `pranaAmountRaw`, rate/duration, block timestamp, nguồn reserve `impacted|market` và các issue như paused, dưới minimum, vượt reserve hoặc thiếu treasury.
@@ -69,7 +70,7 @@
     - Config: chỉ nhận `GET`, trả cache 30 giây, đúng bốn paused state/terms/minimum và mọi read dùng cùng `blockTag`.
     - Account: thiếu/sai address trả `400` trước khi tiêu rate-limit quota; address hợp lệ được checksum; response có `private, no-store`.
     - Account mapper: hợp nhất đủ Buy/Sell × V1/V2, không làm rơi bond khi ID trùng giữa deployment, và hard-fail `502` thay vì trả danh sách thiếu nếu một contract read lỗi.
-    - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB hoặc union sai đều bị từ chối mà không gọi loader/RPC **và không tiêu** global quote/confirmation budget.
+    - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB, union sai, `amountRaw` ngoài `1…MAX_UINT256` (kể cả zero / leading zeros / digit string sát body cap) đều bị từ chối mà không gọi loader/RPC **và không tiêu** global quote/confirmation budget.
     - Quote origin: same-origin hợp lệ được nhận; browser origin không được phép bị từ chối; request không có `Origin` từ server-to-server được xử lý theo cùng policy hiện có của Swap.
     - Rate-limit test riêng cho quote/account/confirmation, gồm per-IP, global bucket, trusted proxy hop, cleanup bucket, và junk/forbidden không làm cạn global RPC quota.
     - Quote math fixture cho hai mode (`buy_exact_wbtc`, `sell_exact_prana`); kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
