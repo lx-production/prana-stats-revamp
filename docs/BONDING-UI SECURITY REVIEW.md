@@ -251,9 +251,9 @@ Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi k�
 
 ## 4. Observations / hardening
 
-### OBS-01 — POST cache policy lệch tài liệu
+### ~~OBS-01 — POST cache policy lệch tài liệu~~ (mitigated)
 
-`docs/add-bonding-ui.md` yêu cầu quote/confirmation `no-store`, nhưng `server/postApiRoutes.ts:314` và `:364` dùng default `Cache-Control: no-cache`. POST thường không được intermediary cache nếu thiếu explicit freshness và confirmation response không chứa bí mật, nên đây không được tính thành vulnerability riêng. Vẫn nên đổi thành `private, no-store` để đúng thiết kế và tránh lưu response trạng thái giao dịch.
+`POST /api/bonding/quote` và `POST /api/bonding/confirm-transaction` giờ trả `Cache-Control: private, no-store` (cùng constant pattern với staking quote), khớp `docs/add-bonding-ui.md` / `docs/CACHE_ARCHITECTURE.md`. Route tests assert header trên success path.
 
 ### OBS-02 — Dependency audit chưa có baseline sạch, tái lập được
 
@@ -303,7 +303,7 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 1. Thay full-array account scans bằng event indexer và thêm timeout/concurrency protection.
 2. Bật HSTS tại TLS edge.
 3. ~~Persist và bind pending transaction với account/chain.~~ (BUI-SEC-05 mitigated)
-4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood), thêm `uint256` bounds và `no-store`.
+4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood), thêm `uint256` bounds; ~~quote/confirm `private, no-store`~~ (OBS-01).
 5. Làm sạch dependency override/lockfile và thiết lập audit CI có baseline.
 6. Theo dõi quote/execution delta, volume, liquidity và pending time; chỉ mở lại
    quyết định `minOut`/deadline/second consent khi các giả định quy mô không còn đúng.

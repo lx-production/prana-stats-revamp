@@ -49,8 +49,8 @@
   - Rate limit: mở rộng factory `createSwapRateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
-  - `POST /api/bonding/quote`: `no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` (canonical decimal string, `1…MAX_UINT256`) và `termId`.
-  - `POST /api/bonding/confirm-transaction`: `no-store`; fallback qua Polygon RPC của server khi browser RPC không đọc được receipt của hash đã broadcast.
+  - `POST /api/bonding/quote`: `private, no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` (canonical decimal string, `1…MAX_UINT256`) và `termId`.
+  - `POST /api/bonding/confirm-transaction`: `private, no-store`; fallback qua Polygon RPC của server khi browser RPC không đọc được receipt của hash đã broadcast.
     - Request gồm `transactionHash`, connected `account` và action snapshot tối thiểu (`approve|create|claim`, side/version và args cần đối chiếu).
     - `amountRaw` / `bondId` là canonical uint256 decimal; create amount và claim id phải `> 0`; approve `0` được hỗ trợ (revoke allowance).
     - Chỉ xác nhận sau khi receipt terminal; kiểm tra sender, chain, target từ mapping nội bộ, function selector và args tương ứng. Không tin contract address hoặc calldata do client tự khai.

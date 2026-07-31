@@ -675,7 +675,7 @@ test('POST /api/bonding/quote rejects junk before consuming global rate-limit qu
   assert.equal(rateLimiters.isBondingQuoteRateLimited(mockRequest('198.51.100.78')), false);
 });
 
-test('POST /api/bonding/quote returns 200 with issues without treating as hard failure', async () => {
+test('POST /api/bonding/quote returns 200 with issues and private no-store', async () => {
   const { handlePost } = createHandlers({
     loadQuote: async () => ({
       ...sampleQuote(),
@@ -700,6 +700,7 @@ test('POST /api/bonding/quote returns 200 with issues without treating as hard f
   );
 
   assert.equal(res.statusCode, 200);
+  assert.equal(res.headers.get('Cache-Control'), 'private, no-store');
   const body = parsedBody(res);
   assert.deepEqual(body.issues, ['below_minimum', 'paused']);
 });
@@ -1158,6 +1159,7 @@ test('POST /api/bonding/confirm-transaction rejects junk before consuming global
     new URL('http://127.0.0.1/api/bonding/confirm-transaction'),
   );
   assert.equal(ok.statusCode, 200);
+  assert.equal(ok.headers.get('Cache-Control'), 'private, no-store');
   assert.equal(confirmCalls, 1);
   assert.equal(rateLimiters.isBondingConfirmRateLimited(mockRequest('198.51.100.78')), false);
 });

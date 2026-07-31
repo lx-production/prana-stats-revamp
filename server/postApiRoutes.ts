@@ -77,6 +77,8 @@ const DEFAULT_BONDING_POST_API_LOADERS: BondingPostApiLoaders = {
 };
 
 const STAKING_QUOTE_CACHE_CONTROL = 'private, no-store';
+// Quote + confirmation are live transaction state — never store in HTTP caches.
+const BONDING_POST_CACHE_CONTROL = 'private, no-store';
 
 // Headers can be string | string[]; pick the first value when it's an array
 function singleHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -315,7 +317,7 @@ export function createPostApiRouteHandler(
 
         const result = await bondingLoaders.loadQuote(request);
         // Non-executable quotes still return 200 with issues for the form.
-        sendJson(res, 200, result);
+        sendJson(res, 200, result, { cacheControl: BONDING_POST_CACHE_CONTROL });
         return true;
       } catch (err) {
         if (
@@ -367,7 +369,7 @@ export function createPostApiRouteHandler(
         }
 
         const result = await bondingLoaders.confirmTransaction(request);
-        sendJson(res, 200, result);
+        sendJson(res, 200, result, { cacheControl: BONDING_POST_CACHE_CONTROL });
         return true;
       } catch (err) {
         if (
