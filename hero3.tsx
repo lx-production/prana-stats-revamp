@@ -1,5 +1,4 @@
 import React, { Suspense, lazy, useRef, useState } from "react";
-import Covenants from "./components/Covenants";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";
@@ -9,16 +8,17 @@ import {
 } from "./features/swap/SwapLazyShell";
 import { STAKE_CANONICAL_PATH } from "./constants/appRoutes";
 
+import type { PranaHeroProps } from "./types/hero.types";
+
 /** Module-level lazy entry — remount retry not needed; failed loads use full page reload. */
 const LazySwapEntry = lazy(() => import("./features/swap/SwapEntry"));
 
-export default function PranaHero() {
+export default function PranaHero({ onOpenCovenants }: PranaHeroProps) {
   const { locale } = useSiteLanguage();
   const heroHeadlines = useHeroHeadlines();
   const { mvRef, mvReady, onKeyDown, spinCoin, coinStyle, coinModelUrl, cameraOrbitAttr, cameraRadiusClamp } = useHeroCoinModel();
 
   const heroRef = useRef<HTMLElement | null>(null);
-  const [isCovenantsOpen, setIsCovenantsOpen] = useState(false);
   const [isSwapOpen, setIsSwapOpen] = useState(false);
   // First SWAP click mounts the lazy tree; later open/close keep it mounted.
   const [hasRequestedSwap, setHasRequestedSwap] = useState(false);
@@ -113,17 +113,13 @@ export default function PranaHero() {
           </a>
           <button
             type="button"
-            onClick={() => setIsCovenantsOpen(true)}
+            onClick={onOpenCovenants}
             className="btn-hero btn-glass"
           >
             {locale === "en" ? "COVENANTS" : "GIAO ƯỚC"}
           </button>
         </div>
       </div>
-      <Covenants
-        isOpen={isCovenantsOpen}
-        onClose={() => setIsCovenantsOpen(false)}
-      />
       {hasRequestedSwap && (
         <SwapLazyErrorBoundary isOpen={isSwapOpen} onClose={closeSwap}>
           <Suspense fallback={isSwapOpen ? <SwapLazyFallback onClose={closeSwap} /> : null}>

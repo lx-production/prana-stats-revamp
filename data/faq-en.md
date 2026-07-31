@@ -24,7 +24,7 @@ Memecoins live on short-term narrative. PRANA builds infrastructure: a dedicated
 
 **7. How can you tell PRANA is not a scam?**
 
-Three verifiable signals. First, the Protocol itself has supplied 100% of trading liquidity from day one. It did not raise capital from investors to “pump” the market. Second, every interactive contract (Swap / Stake / Bond), and even this entire site (frontend + backend), is 100% open source, anyone can read and verify it. Third, PRANA does not aim at the mass market. It is only for those who have genuinely studied the history of Triết Học Đường Phố since 2011, and who resonate with the values THĐP stands for (see page 10 Covenants). A scam needs blind faith from the crowd. PRANA selects for those who understand.
+Three verifiable signals. First, the Protocol itself has supplied 100% of trading liquidity from day one. It did not raise capital from investors to “pump” the market. Second, every interactive contract (Swap / Stake / Bond), and even this entire site (frontend + backend), is 100% open source, anyone can read and verify it. Third, PRANA does not aim at the mass market. It is only for those who have genuinely studied the history of Triết Học Đường Phố since 2011, and who resonate with the values THĐP stands for (see page [10 Covenants](#covenants)). A scam needs blind faith from the crowd. PRANA selects for those who understand.
 
 **8. If Bitcoin enters a 2–3 year downtrend, how does PRANA survive?**
 

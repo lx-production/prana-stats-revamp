@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { ReactNode } from "react";
+import type { InlineMarkdownOptions } from "../types/inlineMarkdown.types";
 
 /** One block after splitting body text into paragraphs vs lists. */
 type MarkdownBlock =
@@ -79,14 +80,22 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   return blocks;
 }
 
+const INLINE_LINK_CLASS =
+  "text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60";
+
 /**
  * Render a plain-text markdown snippet with:
  * - **bold**
  * - `inline code`
- * - [links](url) — open in a new tab with rel="nofollow noopener noreferrer"
+ * - [links](url) — external open in a new tab; hash links can call onHashLinkClick
  * Newlines stay as text so the parent can use whitespace-pre-line.
  */
-export function renderInlineMarkdown(text: string): ReactNode[] {
+export function renderInlineMarkdown(
+  text: string,
+  options: InlineMarkdownOptions = {},
+): ReactNode[] {
+  const { onHashLinkClick } = options;
+
   // Capture **bold**, `code`, and [label](url) tokens; leave everything else as plain text.
   const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
 
@@ -110,7 +119,7 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
       );
     }
 
-    // Markdown link: [label](url) — external vs same-site paths style differently.
+    // Markdown link: [label](url) — external vs same-site paths vs hash actions.
     const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
     if (linkMatch) {
       const [, label, href] = linkMatch;
@@ -130,12 +139,30 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
         );
       }
 
+      // Hash links (e.g. #covenants): optional in-app action instead of scrolling.
+      if (href.startsWith("#") && onHashLinkClick) {
+        const hash = href.slice(1);
+        return (
+          <a
+            key={index}
+            href={href}
+            className={INLINE_LINK_CLASS}
+            onClick={(event) => {
+              event.preventDefault();
+              onHashLinkClick(hash);
+            }}
+          >
+            {label}
+          </a>
+        );
+      }
+
       // Internal paths (e.g. /terms, /privacy): same tab, plain text link.
       return (
         <a
           key={index}
           href={href}
-          className="text-cyan-100 underline decoration-cyan-100/40 underline-offset-2 transition hover:text-white hover:decoration-white/60"
+          className={INLINE_LINK_CLASS}
         >
           {label}
         </a>
@@ -151,13 +178,16 @@ const LIST_CLASS = "space-y-1.5 pl-5 marker:text-slate-400";
 /**
  * Render markdown body with paragraphs, `- ` / `1.` lists, and inline tokens.
  */
-export function renderMarkdownBody(text: string): ReactNode[] {
+export function renderMarkdownBody(
+  text: string,
+  options: InlineMarkdownOptions = {},
+): ReactNode[] {
   return parseMarkdownBlocks(text).map((block, index) => {
     if (block.type === "unordered-list") {
       return (
         <ul key={index} className={`list-disc ${LIST_CLASS}`}>
           {block.items.map((item, itemIndex) => (
-            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+            <li key={itemIndex}>{renderInlineMarkdown(item, options)}</li>
           ))}
         </ul>
       );
@@ -167,7 +197,7 @@ export function renderMarkdownBody(text: string): ReactNode[] {
       return (
         <ol key={index} className={`list-decimal ${LIST_CLASS}`}>
           {block.items.map((item, itemIndex) => (
-            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+            <li key={itemIndex}>{renderInlineMarkdown(item, options)}</li>
           ))}
         </ol>
       );
@@ -175,7 +205,7 @@ export function renderMarkdownBody(text: string): ReactNode[] {
 
     return (
       <p key={index} className="whitespace-pre-line">
-        {renderInlineMarkdown(block.text)}
+        {renderInlineMarkdown(block.text, options)}
       </p>
     );
   });

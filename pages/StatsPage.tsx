@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import Supply from "../components/Supply";
 import Capital from "../components/Capital";
 import PranaHero from "../hero3.tsx";
 import Liquidity from "../components/Liquidity";
 import Timeline from "../components/Timeline";
+import Covenants from "../components/Covenants";
 import AppFooter from "../components/AppFooter";
 import FaqSection from "../components/FaqSection";
 import BasicStats from "../components/BasicStats";
@@ -24,10 +25,14 @@ preloadHeroAssets();
 
 /** Homepage content — shell (shader, language toggle) stays in main.tsx. */
 export default function StatsPage() {
+  // Shared so hero CTA and FAQ `#covenants` links open the same dialog.
+  const [isCovenantsOpen, setIsCovenantsOpen] = useState(false);
+  const openCovenants = () => setIsCovenantsOpen(true);
+
   return (
     <>
       <main className="relative z-10 flex flex-col gap-6 pb-24">
-        <PranaHero />
+        <PranaHero onOpenCovenants={openCovenants} />
         <TopHoldingAddressesProvider>
           <section className="relative z-20 mx-auto mt-12 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
@@ -50,8 +55,12 @@ export default function StatsPage() {
         </TopHoldingAddressesProvider>
         <PriceChartsSection />
         <Timeline />
-        <FaqSection />
+        <FaqSection onOpenCovenants={openCovenants} />
       </main>
+      <Covenants
+        isOpen={isCovenantsOpen}
+        onClose={() => setIsCovenantsOpen(false)}
+      />
       <AppFooter />
     </>
   );

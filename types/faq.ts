@@ -3,3 +3,8 @@ export type FaqItem = {
   question: string;
   answer: string;
 };
+
+export type FaqSectionProps = {
+  /** Opens the shared 10 Covenants dialog from FAQ hash links. */
+  onOpenCovenants: () => void;
+};

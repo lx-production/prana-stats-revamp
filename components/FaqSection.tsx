@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { ChevronDown, MessageCircleQuestion } from "lucide-react";
+
 import { useFaqItems } from "../hooks/useFaqItems";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
+import { renderInlineMarkdown } from "../utils/inlineMarkdown";
+import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 
-const FaqSection: React.FC = () => {
+import type { FaqSectionProps } from "../types/faq";
+
+const FaqSection: React.FC<FaqSectionProps> = ({ onOpenCovenants }) => {
   const { locale } = useSiteLanguage();
   const faqItems = useFaqItems();
   const [openItemId, setOpenItemId] = useState<string>("");
@@ -53,7 +57,12 @@ const FaqSection: React.FC = () => {
                 >
                   <div className="min-h-0">
                     <div className="px-4 pb-4 text-sm sm:text-base leading-relaxed text-slate-300 whitespace-pre-line">
-                      {item.answer}
+                      {renderInlineMarkdown(item.answer, {
+                        // `#covenants` in FAQ markdown opens the shared dialog.
+                        onHashLinkClick: (hash) => {
+                          if (hash === "covenants") onOpenCovenants();
+                        },
+                      })}
                     </div>
                   </div>
                 </div>

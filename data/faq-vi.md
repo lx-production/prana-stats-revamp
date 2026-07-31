@@ -24,7 +24,7 @@ Memecoin sống bằng narrative ngắn hạn. PRANA xây dựng hạ tầng: st
 
 **7. Những yếu tố nào xác định PRANA không phải là một dự án lừa đảo?**
 
-Ba tín hiệu có thể kiểm chứng. Thứ nhất, Protocol tự cung cấp 100% thanh khoản giao dịch từ ngày đầu, không gọi vốn từ nhà đầu tư để “bơm” thị trường. Thứ hai, mọi hợp đồng tương tác (Swap / Stake / Bond), và ngay cả toàn bộ trang này (frontend + backend) cũng đều mã nguồn mở 100%, ai cũng đọc và xác minh được. Thứ ba, PRANA không nhắm tới thị trường đại chúng. Nó chỉ dành cho những ai đã thật sự tìm hiểu lịch sử Triết Học Đường Phố từ 2011, và cộng hưởng, đồng cảm với hệ giá trị THĐP đại diện (xem thêm trang 10 Giao Ước). Một dự án lừa đảo cần niềm tin mù quáng từ đám đông. PRANA chọn lọc người hiểu.
+Ba tín hiệu có thể kiểm chứng. Thứ nhất, Protocol tự cung cấp 100% thanh khoản giao dịch từ ngày đầu, không gọi vốn từ nhà đầu tư để “bơm” thị trường. Thứ hai, mọi hợp đồng tương tác (Swap / Stake / Bond), và ngay cả toàn bộ trang này (frontend + backend) cũng đều mã nguồn mở 100%, ai cũng đọc và xác minh được. Thứ ba, PRANA không nhắm tới thị trường đại chúng. Nó chỉ dành cho những ai đã thật sự tìm hiểu lịch sử Triết Học Đường Phố từ 2011, và cộng hưởng, đồng cảm với hệ giá trị THĐP đại diện (xem thêm trang [10 Giao Ước](#covenants)). Một dự án lừa đảo cần niềm tin mù quáng từ đám đông. PRANA chọn lọc người hiểu.
 
 **8. Nếu Bitcoin đi vào downtrend 2-3 năm, PRANA sống thế nào?**
 
