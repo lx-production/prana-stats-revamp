@@ -34,6 +34,11 @@ server {
     ssl_prefer_server_ciphers on;
     ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384";
 
+    # HSTS for this host (/, /stake/, /bond/, swap modal, APIs). `always` covers
+    # 200, redirects, and errors. Do not add includeSubDomains/preload without
+    # auditing every subdomain of the parent domain.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
     # Dynamic gzip is only a fallback for responses that are not already
     # Content-Encoding: gzip (API JSON, legacy assets without a .gz sibling).
     # Hashed JS/CSS/HTML ship as Vite level-9 `*.gz` from the origin.
@@ -103,6 +108,9 @@ server {
 
         # Keep this if you still want asset CORS
         add_header Access-Control-Allow-Origin "*" always;
+
+        # Locations with their own add_header drop server-level add_header — repeat HSTS
+        add_header Strict-Transport-Security "max-age=31536000" always;
 
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;

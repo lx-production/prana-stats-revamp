@@ -67,6 +67,7 @@ IP from the two-hop proxy chain instead of the Pi nginx localhost hop.
 
 - **Port 80:** Redirect to `https://prana.triethocduongpho.net`.
 - **Port 443:** HTTPS with TLS 1.2/1.3 and Let’s Encrypt cert (path references `content.triethocduongpho.net`; may be a multi-domain cert).
+- **HSTS:** `Strict-Transport-Security: max-age=31536000` on the HTTPS server (`always`). Host-scoped only — no `includeSubDomains` / `preload`. Repeated under `/bond/assets/` because that location sets its own `add_header`s (nginx inheritance).
 - **Rate limiting:** 50 req/s per IP (`burst=40 nodelay`), 20 concurrent connections per IP; 429 and a custom `rate_limited.html` for blocked requests.
 - **Security:** Block common scan paths (e.g. `.env`, `wp-`, `phpunit`, etc.) with immediate close (444).
 - **Gzip:** `gzip on` with `gzip_comp_level 1` as fallback for API/HTML/legacy bodies without a `.gz` sibling. **Do not** strip `Accept-Encoding` on proxy — origin must see the client encoding so it can return precompressed `*.gz` (smaller payloads over the SSH tunnel, zero compress CPU per asset request).

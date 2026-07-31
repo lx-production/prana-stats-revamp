@@ -69,6 +69,7 @@ từ chuỗi proxy hai hop, thay vì hop localhost của Pi nginx.
 
 - **Port 80:** Redirect sang `https://prana.triethocduongpho.net`.
 - **Port 443:** HTTPS với TLS 1.2/1.3 và cert Let’s Encrypt (đường dẫn tham chiếu `content.triethocduongpho.net`; có thể là cert multi-domain).
+- **HSTS:** `Strict-Transport-Security: max-age=31536000` trên HTTPS server (`always`). Chỉ theo host — không `includeSubDomains` / `preload`. Lặp lại trong `/bond/assets/` vì location đó có `add_header` riêng (nginx không kế thừa).
 - **Rate limiting:** 50 req/s mỗi IP (`burst=40 nodelay`), 20 kết nối đồng thời mỗi IP; 429 và trang tùy chỉnh `rate_limited.html` cho request bị chặn.
 - **Bảo mật:** Chặn các path quét phổ biến (ví dụ `.env`, `wp-`, `phpunit`, …) bằng đóng kết nối ngay (444).
 - **Gzip:** `gzip on` với `gzip_comp_level 1` làm fallback cho API/HTML/legacy chưa có sibling `.gz`. **Không** xóa `Accept-Encoding` khi proxy — origin cần thấy encoding của client để trả `*.gz` (nhẹ hơn qua SSH tunnel, không tốn CPU nén từng request asset).

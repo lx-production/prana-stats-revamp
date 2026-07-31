@@ -22,6 +22,8 @@ Applied to API and static responses via `setSecurityHeaders()` (`server/security
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 
+HSTS is **not** set by Node. The TLS edge (`docs/vps-prana.triethocduongpho.net`) sends `Strict-Transport-Security: max-age=31536000` for `prana.triethocduongpho.net`, covering the homepage (swap), `/stake/`, `/bond/`, and APIs. See [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
+
 ---
 
 ## 2. Swap modal — security model

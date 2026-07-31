@@ -23,6 +23,8 @@ Tài liệu liên quan:
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 
+HSTS **không** do Node đặt. TLS edge (`docs/vps-prana.triethocduongpho.net`) gửi `Strict-Transport-Security: max-age=31536000` cho `prana.triethocduongpho.net`, bao gồm homepage (swap), `/stake/`, `/bond/` và API. Xem [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
+
 ---
 
 ## 2. Swap modal — mô hình bảo mật

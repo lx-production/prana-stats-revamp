@@ -173,7 +173,9 @@ Trong lần truy cập HTTP đầu tiên, network attacker có thể chặn trư
 add_header Strict-Transport-Security "max-age=31536000" always;
 ```
 
-Chỉ thêm `includeSubDomains`/`preload` sau khi audit toàn bộ subdomain và hoàn tất preload requirements. Kiểm tra header trên response 200, redirect và error.
+Chỉ thêm `includeSubDomains`/`preload` sau khi audit toàn bộ subdomain và hoàn tất preload requirements. Kiểm tra header trên response 200, redirect và error. (future work)
+
+**Trạng thái (tracked config):** `docs/vps-prana.triethocduongpho.net` đã thêm HSTS host-scoped (`max-age=31536000` + `always`), kể cả lặp lại dưới `/bond/assets/`. Vẫn cần deploy lên VPS nginx thực tế rồi verify bằng `curl -I`.
 
 ### BUI-SEC-05 — Low — Pending transaction chỉ tồn tại trong React memory và không bind account/chain
 
