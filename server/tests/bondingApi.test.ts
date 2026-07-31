@@ -589,6 +589,87 @@ test('POST /api/bonding/quote origin policy matches swap (same-origin / no Origi
   assert.equal(forbidden.statusCode, 403);
 });
 
+test('POST /api/bonding/quote rejects junk before consuming global rate-limit quota', async () => {
+  const quoteCalls = { count: 0 };
+  const { handlePost, rateLimiters } = createHandlers({ quoteCalls });
+
+  // Fill would-be global budget (60) with malformed / forbidden requests.
+  for (let index = 0; index < 60; index += 1) {
+    const plain = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from('{}')],
+        { 'content-type': 'text/plain', host: '127.0.0.1' },
+        `203.0.113.${index}`,
+      ),
+      plain,
+      new URL('http://127.0.0.1/api/bonding/quote'),
+    );
+    assert.equal(plain.statusCode, 415);
+
+    const forbidden = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [
+          Buffer.from(
+            JSON.stringify({
+              mode: 'buy_exact_wbtc',
+              amountRaw: '1000',
+              termId: 1,
+            }),
+          ),
+        ],
+        {
+          'content-type': 'application/json',
+          host: 'prana.example',
+          origin: 'https://evil.test',
+        },
+        `198.51.100.${index}`,
+      ),
+      forbidden,
+      new URL('http://127.0.0.1/api/bonding/quote'),
+    );
+    assert.equal(forbidden.statusCode, 403);
+
+    const badShape = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(JSON.stringify({ mode: 'nope', amountRaw: '1', termId: 1 }))],
+        { 'content-type': 'application/json', host: '127.0.0.1' },
+        `192.0.2.${index}`,
+      ),
+      badShape,
+      new URL('http://127.0.0.1/api/bonding/quote'),
+    );
+    assert.equal(badShape.statusCode, 400);
+  }
+
+  assert.equal(quoteCalls.count, 0);
+
+  // Valid request must still succeed — junk did not burn the 60/min global budget.
+  const ok = mockResponse();
+  await handlePost(
+    mockBodyRequest(
+      [
+        Buffer.from(
+          JSON.stringify({
+            mode: 'buy_exact_wbtc',
+            amountRaw: '1000',
+            termId: 1,
+          }),
+        ),
+      ],
+      { 'content-type': 'application/json', host: '127.0.0.1' },
+      '198.51.100.77',
+    ),
+    ok,
+    new URL('http://127.0.0.1/api/bonding/quote'),
+  );
+  assert.equal(ok.statusCode, 200);
+  assert.equal(quoteCalls.count, 1);
+  assert.equal(rateLimiters.isBondingQuoteRateLimited(mockRequest('198.51.100.78')), false);
+});
+
 test('POST /api/bonding/quote returns 200 with issues without treating as hard failure', async () => {
   const { handlePost } = createHandlers({
     loadQuote: async () => ({
@@ -859,6 +940,73 @@ test('POST /api/bonding/confirm-transaction rejects bad body/hash/action before 
   );
   assert.equal(badHash.statusCode, 400);
   assert.equal(confirmCalls, 0);
+});
+
+test('POST /api/bonding/confirm-transaction rejects junk before consuming global rate-limit quota', async () => {
+  let confirmCalls = 0;
+  const { handlePost, rateLimiters } = createHandlers({
+    confirmTransaction: async () => {
+      confirmCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+  });
+
+  const validBody = JSON.stringify({
+    transactionHash: SAMPLE_TX_HASH,
+    account: SAMPLE_ADDRESS,
+    action: { kind: 'claim', side: 'buy', version: 'v2', bondId: '1' },
+  });
+
+  // Fill would-be global confirmation budget (120) with junk.
+  for (let index = 0; index < 120; index += 1) {
+    const plain = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(validBody)],
+        { 'content-type': 'text/plain', host: '127.0.0.1' },
+        `203.0.113.${index % 200}`,
+      ),
+      plain,
+      new URL('http://127.0.0.1/api/bonding/confirm-transaction'),
+    );
+    assert.equal(plain.statusCode, 415);
+
+    const badHash = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [
+          Buffer.from(
+            JSON.stringify({
+              transactionHash: '0x1234',
+              account: SAMPLE_ADDRESS,
+              action: { kind: 'claim', side: 'buy', version: 'v2', bondId: '1' },
+            }),
+          ),
+        ],
+        { 'content-type': 'application/json', host: '127.0.0.1' },
+        `198.51.100.${index % 200}`,
+      ),
+      badHash,
+      new URL('http://127.0.0.1/api/bonding/confirm-transaction'),
+    );
+    assert.equal(badHash.statusCode, 400);
+  }
+
+  assert.equal(confirmCalls, 0);
+
+  const ok = mockResponse();
+  await handlePost(
+    mockBodyRequest(
+      [Buffer.from(validBody)],
+      { 'content-type': 'application/json', host: '127.0.0.1' },
+      '198.51.100.77',
+    ),
+    ok,
+    new URL('http://127.0.0.1/api/bonding/confirm-transaction'),
+  );
+  assert.equal(ok.statusCode, 200);
+  assert.equal(confirmCalls, 1);
+  assert.equal(rateLimiters.isBondingConfirmRateLimited(mockRequest('198.51.100.78')), false);
 });
 
 test('confirmBondingTransaction distinguishes success / revert / not_mined / RPC error', async () => {

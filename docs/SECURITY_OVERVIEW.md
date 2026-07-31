@@ -68,6 +68,8 @@ Bonding reuses the same admission helpers for its POSTs, but does **not** reuse 
 
 Bonding confirmation only accepts hashes already broadcast by the user and validates sender/target/selector/args against an internal side/version mapping. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server. It is UX confirmation only — not Swap-style trusted analytics.
 
+Bonding POST quote/confirm (and GET account address checks) validate admission **before** consuming per-IP/global RPC rate-limit budget; flood volume is handled at the VPS nginx edge.
+
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 
 Client IP for rate limiting (`server/rateLimit.ts`): `X-Forwarded-For` is only trusted when the direct socket peer is a localhost proxy (`127.0.0.1` / `::1`). The client IP is then taken by counting hops from the right of the header (`TRUSTED_PROXY_HOP_COUNT`; production uses `2` because both VPS and Pi nginx append — see [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Otherwise the socket address is used.

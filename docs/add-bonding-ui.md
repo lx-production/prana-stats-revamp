@@ -56,7 +56,7 @@
     - Endpoint này chỉ dự phòng xác nhận UX, không ghi trusted analytics hay tạo side effect; vì vậy không tái dùng HMAC hoặc `/api/swap/verify-transaction` riêng của Swap.
   - Quote response trả `wbtcAmountRaw`, `pranaAmountRaw`, rate/duration, block timestamp, nguồn reserve `impacted|market` và các issue như paused, dưới minimum, vượt reserve hoặc thiếu treasury.
   - Mọi reads trong một response dùng cùng `blockTag`; quote mô phỏng đúng thứ tự bigint/rounding/1% fee của Solidity và nhánh tự đồng bộ market reserve.
-  - Validate body/content-type/origin, giới hạn body 2 KB, 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút; confirmation có bucket riêng để hash polling không tiêu quota quote. Tái dùng `rejectInvalidSwapApiRequest` từ `server/helpers/apiRoutesHelpers.ts` và `readJsonBody()` từ `server/helpers/requestHelpers.ts`.
+  - Validate body/content-type/origin **trước** rate-limit (giống account address check), giới hạn body 2 KB, rồi mới tiêu 10 quote/IP/phút + 60 toàn server/phút; account dùng 10/IP + 120 toàn server/phút; confirmation có bucket riêng để hash polling không tiêu quota quote. Flood volume dựa vào VPS nginx edge. Tái dùng `rejectInvalidSwapApiRequest` từ `server/helpers/apiRoutesHelpers.ts` và `readJsonBody()` từ `server/helpers/requestHelpers.ts`.
   - Lỗi RPC trả `502` đã redact; input sai trả `400`; trạng thái quote không executable vẫn trả `200` kèm issue để form hiển thị đúng lý do.
   - **Vì sao Bonding có body/content-type/origin validation và confirmation fallback**
     - Hai Staking endpoint hiện tại đều là `GET`. Chúng không nhận JSON body, nên không có body size hoặc `Content-Type` để kiểm tra. Staking vẫn validate method, checksum `address`, rate limit và redact lỗi RPC.
@@ -69,9 +69,9 @@
     - Config: chỉ nhận `GET`, trả cache 30 giây, đúng bốn paused state/terms/minimum và mọi read dùng cùng `blockTag`.
     - Account: thiếu/sai address trả `400` trước khi tiêu rate-limit quota; address hợp lệ được checksum; response có `private, no-store`.
     - Account mapper: hợp nhất đủ Buy/Sell × V1/V2, không làm rơi bond khi ID trùng giữa deployment, và hard-fail `502` thay vì trả danh sách thiếu nếu một contract read lỗi.
-    - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB hoặc union sai đều bị từ chối mà không gọi loader/RPC.
+    - Quote method/content: non-POST trả `405`; content type không phải JSON, body rỗng, JSON lỗi, body trên 2 KB hoặc union sai đều bị từ chối mà không gọi loader/RPC **và không tiêu** global quote/confirmation budget.
     - Quote origin: same-origin hợp lệ được nhận; browser origin không được phép bị từ chối; request không có `Origin` từ server-to-server được xử lý theo cùng policy hiện có của Swap.
-    - Rate-limit test riêng cho quote/account/confirmation, gồm per-IP, global bucket, trusted proxy hop và cleanup bucket.
+    - Rate-limit test riêng cho quote/account/confirmation, gồm per-IP, global bucket, trusted proxy hop, cleanup bucket, và junk/forbidden không làm cạn global RPC quota.
     - Quote math fixture cho hai mode (`buy_exact_wbtc`, `sell_exact_prana`); kiểm tra đúng nhánh `impacted`/`market`, 1% fee, basis points, thứ tự chia bigint và rounding xuống như Solidity.
     - Boundary fixtures: zero, dưới minimum, term ngoài `0..4`, vượt reserve, treasury vừa đủ/thiếu một raw unit và paused state.
     - Error test đảm bảo response/log không lộ RPC URL, API key, calldata hoặc raw provider stack.

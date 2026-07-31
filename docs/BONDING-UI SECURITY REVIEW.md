@@ -204,25 +204,28 @@ Pending state chỉ lưu `{hash, action}` bằng `useState`. Reload/tab crash l�
 
 **Vị trí**
 
-- `server/postApiRoutes.ts:299`
-- `server/postApiRoutes.ts:307`
-- `server/postApiRoutes.ts:350`
-- `server/postApiRoutes.ts:358`
+- `server/postApiRoutes.ts` (bonding quote + confirm-transaction)
 
 **Mô tả**
 
-Quote và confirmation rate limit chạy trước Content-Type/origin validation và trước body parsing/shape validation. Vì vậy request sai media type, forbidden origin, JSON lỗi hoặc action sai vẫn làm tăng per-IP/global counters.
+Quote và confirmation rate limit từng chạy trước Content-Type/origin validation và trước body parsing/shape validation. Vì vậy request sai media type, forbidden origin, JSON lỗi hoặc action sai vẫn làm tăng per-IP/global counters.
 
 Global quote quota chỉ 60/phút và confirmation quota 120/phút. Một nhóm nhỏ IP có thể làm cạn quota mà không cần tạo request hợp lệ hay gọi RPC.
 
-**Khuyến nghị**
+**Ảnh hưởng**
 
-Dùng hai tầng:
+User hợp lệ có thể bị `429` dù attacker chỉ gửi junk; không phải RCE/write tùy ý.
 
-1. Cheap edge/per-IP limiter trước khi đọc body.
+**Mitigation (shipped)**
+
+- Reorder bonding POST quote/confirm: Content-Type/origin → body/shape parse → rồi mới `isBonding*RateLimited` trước RPC.
+- Flood volume vẫn dựa vào VPS nginx edge (không thêm Node admission bucket riêng).
+- Tests: malformed/forbidden requests không làm giảm global bonding quote/confirmation budget (`bondingApi.test.ts`).
+
+**Khuyến nghị gốc (đã áp dụng tối giản)**
+
+1. Cheap edge limiter trước khi đọc body → VPS nginx hiện có.
 2. Sau Content-Type/origin/body/shape validation, mới consume quota dành cho expensive RPC/global capacity.
-
-Thêm test: malformed/forbidden requests không làm giảm global bonding quote/confirmation budget.
 
 ### BUI-SEC-07 — Low — Decimal raw input không bị giới hạn trong miền `uint256`
 
@@ -294,7 +297,7 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 - Fresh-quote response bị reject nếu `mode`, `termId` hoặc exact input không khớp
   review snapshot.
 - ~~Pending hash sống qua reload và bind đúng account/chain.~~ (covered by `bondPendingTransactionStorage` + confirmation resume tests)
-- Malformed requests không tiêu global expensive-RPC quota.
+- ~~Malformed requests không tiêu global expensive-RPC quota.~~ (BUI-SEC-06: validate-before-rate-limit on bonding POST)
 - Raw amount vượt `uint256`.
 - Account endpoint dưới tải khi tổng bond history tăng lớn.
 
@@ -303,7 +306,7 @@ Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 1. Thay full-array account scans bằng event indexer và thêm timeout/concurrency protection.
 2. Bật HSTS tại TLS edge.
 3. ~~Persist và bind pending transaction với account/chain.~~ (BUI-SEC-05 mitigated)
-4. Tách admission/global RPC quota, thêm `uint256` bounds và `no-store`.
+4. ~~Tách admission/global RPC quota~~ (BUI-SEC-06: validate trước rate-limit; edge nginx giữ flood), thêm `uint256` bounds và `no-store`.
 5. Làm sạch dependency override/lockfile và thiết lập audit CI có baseline.
 6. Theo dõi quote/execution delta, volume, liquidity và pending time; chỉ mở lại
    quyết định `minOut`/deadline/second consent khi các giả định quy mô không còn đúng.

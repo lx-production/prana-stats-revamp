@@ -69,6 +69,8 @@ Bonding tái dùng helper admission cho các POST, nhưng **không** tái dùng 
 
 Confirmation Bonding chỉ chấp nhận hash user đã broadcast và đối chiếu sender/target/selector/args với mapping side/version nội bộ. Write mới trong cùng session có thể tin browser receipt; resume/reload luôn validate lại trên server. Đây chỉ là xác nhận UX — không phải analytics tin cậy kiểu Swap.
 
+POST quote/confirm Bonding (và check address của GET account) validate admission **trước** khi tiêu budget rate-limit per-IP/global dành cho RPC; chống flood volume nằm ở VPS nginx edge.
+
 Rate limiter dùng cửa sổ thời gian cố định trong bộ nhớ process, kèm dọn bucket định kỳ.
 
 IP client cho rate limiting (`server/rateLimit.ts`): chỉ tin `X-Forwarded-For` khi peer socket trực tiếp là proxy localhost (`127.0.0.1` / `::1`). Khi đó IP client được lấy bằng cách đếm hop từ bên phải của header (`TRUSTED_PROXY_HOP_COUNT`; production dùng `2` vì cả VPS lẫn Pi nginx đều append — xem [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Nếu không, dùng địa chỉ socket.

@@ -296,19 +296,23 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rateLimiters.isBondingQuoteRateLimited(req)) {
-        sendJson(res, 429, {
-          error: 'rate_limited',
-          message: 'Too many bonding quote requests.',
-        });
-        return true;
-      }
-
+      // Content-Type / origin first — junk must not burn RPC quota.
+      // Flood volume is handled by VPS nginx edge limits.
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, BONDING_BODY_MAX_BYTES);
         const request = parseBondingQuoteRequest(body);
+
+        // Consume per-IP + global quote budget only after shape validation.
+        if (rateLimiters.isBondingQuoteRateLimited(req)) {
+          sendJson(res, 429, {
+            error: 'rate_limited',
+            message: 'Too many bonding quote requests.',
+          });
+          return true;
+        }
+
         const result = await bondingLoaders.loadQuote(request);
         // Non-executable quotes still return 200 with issues for the form.
         sendJson(res, 200, result);
@@ -347,19 +351,21 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rateLimiters.isBondingConfirmRateLimited(req)) {
-        sendJson(res, 429, {
-          error: 'rate_limited',
-          message: 'Too many bonding confirmation requests.',
-        });
-        return true;
-      }
-
+      // Same admission order as quote: validate before consuming confirmation budget.
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, BONDING_BODY_MAX_BYTES);
         const request = parseBondingConfirmationRequest(body, parseChecksumAddress);
+
+        if (rateLimiters.isBondingConfirmRateLimited(req)) {
+          sendJson(res, 429, {
+            error: 'rate_limited',
+            message: 'Too many bonding confirmation requests.',
+          });
+          return true;
+        }
+
         const result = await bondingLoaders.confirmTransaction(request);
         sendJson(res, 200, result);
         return true;
