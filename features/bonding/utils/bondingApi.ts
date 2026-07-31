@@ -1,14 +1,7 @@
-import { fetchJson } from '../../utils/fetchJson.ts';
+import { fetchJson } from '../../../utils/fetchJson.ts';
 
-import type { Address } from '../../types/blockchain.types.ts';
-import type {
-  BondingAccount,
-  BondingConfig,
-  BondingQuote,
-  BondingQuoteRequest,
-  BondingTransactionConfirmation,
-  BondingTransactionConfirmationRequest,
-} from './bonding.types.ts';
+import type { Address } from '../../../types/blockchain.types.ts';
+import type { BondingAccount, BondingConfig, BondingQuote, BondingQuoteRequest, BondingTransactionConfirmation, BondingTransactionConfirmationRequest } from '../bonding.types.ts';
 
 /** Browser React Query key for GET /api/bonding/config. */
 export const BONDING_CONFIG_QUERY_KEY = ['bonding-config'] as const;

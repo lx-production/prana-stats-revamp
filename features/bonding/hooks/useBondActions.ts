@@ -1,36 +1,25 @@
-import { useCallback, useState } from 'react';
-import { usePublicClient } from 'wagmi';
 import { polygon } from 'wagmi/chains';
+import { usePublicClient } from 'wagmi';
+import { useCallback, useState } from 'react';
+import { getBondingCopy } from '../bonding.copy.ts';
+import { bondClaimKey } from '../utils/bondClaimTarget.ts';
+import { logBondingFailure } from '../utils/bondingErrors.ts';
+import { formatBondingError } from '../utils/bondingErrors.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
+import { getBondingErrorMessage } from '../utils/bondingErrors.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { confirmBondReceipt } from '../utils/bondTransactionFlow.ts';
+import { isBondDeploymentPaused } from '../utils/bondClaimTarget.ts';
+import { resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
+import { submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
+import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { confirmBondingTransactionOnServer } from '../bondingApi.ts';
-import { getBondingCopy } from '../bonding.copy.ts';
-import {
-  formatBondingError,
-  getBondingErrorMessage,
-  logBondingFailure,
-} from '../bondingErrors.ts';
-import {
-  confirmBondReceipt,
-  submitBondWriteFlow,
-} from '../bondTransactionFlow.ts';
-import {
-  bondClaimKey,
-  isBondDeploymentPaused,
-  resolveBondClaimTarget,
-} from '../utils/bondClaimTarget.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type {
-  BondClaimActionTarget,
-  BondingConfig,
-  BondingTransactionActionSnapshot,
-  BondTransactionStatus,
-} from '../bonding.types.ts';
-import type { PendingBondTransaction } from '../bondTransactionFlow.ts';
+import type { PendingBondTransaction } from '../utils/bondTransactionFlow.ts';
+import type { BondClaimActionTarget, BondingConfig, BondingTransactionActionSnapshot, BondTransactionStatus } from '../bonding.types.ts';
 
 type UseBondActionsInput = {
   config: BondingConfig | undefined;

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getBondCtaPhase } from '../bondCtaPhase.ts';
+import { getBondCtaPhase } from '../utils/bondCtaPhase.ts';
 
 test('getBondCtaPhase prefers live wallet statuses over allowance', () => {
   assert.equal(getBondCtaPhase('approving', true), 'approve');

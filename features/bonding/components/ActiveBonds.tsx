@@ -5,7 +5,7 @@ import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import TxLink from '../../../components/ui/TxLink.tsx';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { sortActiveBonds } from '../bondingMath.ts';
+import { sortActiveBonds } from '../utils/bondingMath.ts';
 import { useBondActions } from '../hooks/useBondActions.ts';
 import { isBondDeploymentPaused } from '../utils/bondClaimTarget.ts';
 import BondCard from './BondCard.tsx';

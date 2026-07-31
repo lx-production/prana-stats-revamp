@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import { formatPranaAmount, formatWbtcAmount, getBondActionState } from '../bondingMath.ts';
+import { formatPranaAmount, formatWbtcAmount, getBondActionState } from '../utils/bondingMath.ts';
 
 import type { BondingCopy } from '../bonding.copy.ts';
 import type { SiteLocale } from '../../../types/locale.types.ts';

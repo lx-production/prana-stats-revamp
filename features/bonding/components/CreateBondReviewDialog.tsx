@@ -7,7 +7,7 @@ import {
   formatPranaAmount,
   formatRateBpsPercent,
   formatWbtcAmount,
-} from '../bondingMath.ts';
+} from '../utils/bondingMath.ts';
 
 import type { BondingCopy } from '../bonding.copy.ts';
 import type { BondingQuote } from '../bonding.types.ts';

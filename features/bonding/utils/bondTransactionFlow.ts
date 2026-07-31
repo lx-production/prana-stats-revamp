@@ -1,13 +1,9 @@
 import { accountFromSuccessfulRefetch } from './accountRefetch.ts';
-import { confirmBondTransaction } from './utils/bondTransactionConfirmation.ts';
+import { confirmBondTransaction } from './bondTransactionConfirmation.ts';
 
-import type { Address, Hex } from '../../types/blockchain.types.ts';
-import type {
-  BondingAccount,
-  BondingTransactionActionSnapshot,
-  BondingTransactionConfirmation,
-} from './bonding.types.ts';
-import type { BondWaitReceiptResult } from './utils/bondTransactionConfirmation.ts';
+import type { Address, Hex } from '../../../types/blockchain.types.ts';
+import type { BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
+import type { BondingAccount, BondingTransactionActionSnapshot, BondingTransactionConfirmation } from '../bonding.types.ts';
 
 /** What the primary CTA should do on the next click. */
 export type BondCtaAction =

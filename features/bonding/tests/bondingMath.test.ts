@@ -18,7 +18,7 @@ import {
   parsePranaAmount,
   parseWbtcAmount,
   rawBalanceToAmountInput,
-} from '../bondingMath.ts';
+} from '../utils/bondingMath.ts';
 import {
   calculateAccruedInterestRaw,
   getEffectiveAccruedSeconds,

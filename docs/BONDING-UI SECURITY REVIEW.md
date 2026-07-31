@@ -93,7 +93,7 @@ Flow hiện tại:
 3. `runCreate()` lấy quote B.
 4. Code gọi `setReviewQuote(B)` rồi tiếp tục simulate/write ngay.
 
-Nếu quote B khác quote A, React state update không tạo một bước consent mới. Wallet mở sau đó chỉ hiển thị input/term, không hiển thị payout. Ngoài ra client không assert quote response khớp `{mode, termId, exact input}` của review snapshot, và amount dùng cho calldata được lấy lại từ response (`fresh.wbtcAmountRaw` hoặc `fresh.pranaAmountRaw`) thay vì exact input đã khóa trong form.
+Nếu quote B khác quote A, React state update không tạo một bước consent mới. Wallet mở sau đó chỉ hiển thị input/term, không hiển thị payout.
 
 Behavior này phù hợp với quyết định trong `docs/add-bonding-ui.md:97-109`: khi exact
 raw input không đổi, app cập nhật quote/cap rồi tiếp tục flow. Với giả định state
@@ -107,12 +107,14 @@ thứ hai.
 - Đây không được tính là vulnerability trong threat model hiện tại, nhưng cần
   re-evaluate cùng BUI-SEC-01 nếu quy mô/traffic thay đổi.
 
-**Hardening không làm thay đổi thiết kế**
+**Hardening không làm thay đổi thiết kế (đã ship)**
 
-- Vẫn nên validate response echo để tránh regression/race:
+- Client validate response echo trước approve/review/create (`features/bonding/utils/bondQuoteEcho.ts`):
   - Buy: `mode`, `termId`, `wbtcAmountRaw === reviewedInputRaw`.
   - Sell: `mode`, `termId`, `pranaAmountRaw === reviewedInputRaw`.
-- Luôn build calldata input từ review/form snapshot, không lấy input leg từ quote response.
+  - Mismatch → dừng flow với `quote_issues` (không mở ví / không broadcast).
+- Calldata input luôn lấy từ form/review snapshot (`resolveCreateAmountRaw`), không lấy
+  input leg từ quote response.
 - Có thể thêm telemetry cho chênh lệch quote A/B; chỉ yêu cầu confirm lần hai nếu
   sau này protocol đặt threshold thay đổi tối đa.
 

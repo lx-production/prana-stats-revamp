@@ -1,17 +1,8 @@
 import { formatUnits, parseUnits } from 'viem';
-import { SECONDS_PER_DAY } from '../../constants/network.ts';
-import {
-  PRANA_DECIMALS,
-  WBTC_DECIMALS,
-} from '../../constants/sharedContracts.ts';
+import { SECONDS_PER_DAY } from '../../../constants/network.ts';
+import { PRANA_DECIMALS, WBTC_DECIMALS } from '../../../constants/sharedContracts.ts';
 
-import type {
-  ActiveBondRecord,
-  BondActionState,
-  BondAmountParseResult,
-  BondingTermOption,
-  BondTermId,
-} from './bonding.types.ts';
+import type { ActiveBondRecord, BondActionState, BondAmountParseResult, BondingTermOption, BondTermId } from '../bonding.types.ts';
 
 /** Preferred default term length when present in V2 config. */
 export const DEFAULT_BOND_TERM_DAYS = 30;

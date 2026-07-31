@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { classifyBondingError } from '../bondingErrors.ts';
+import { classifyBondingError } from '../utils/bondingErrors.ts';
 
 test('classifyBondingError maps rejection, chain, gas, allowance, pause, treasury, reserve, RPC', () => {
   assert.equal(

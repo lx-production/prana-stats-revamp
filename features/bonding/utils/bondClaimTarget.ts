@@ -1,19 +1,8 @@
-import {
-  BUY_BOND_ACCOUNT_ABI,
-  BUY_BOND_ADDRESS_V1,
-  BUY_BOND_ADDRESS_V2,
-  SELL_BOND_ACCOUNT_ABI,
-  SELL_BOND_ADDRESS_V1,
-  SELL_BOND_ADDRESS_V2,
-} from '../../../constants/bonds.ts';
+import { BUY_BOND_ACCOUNT_ABI, BUY_BOND_ADDRESS_V1, BUY_BOND_ADDRESS_V2, SELL_BOND_ACCOUNT_ABI, SELL_BOND_ADDRESS_V1, SELL_BOND_ADDRESS_V2 } from '../../../constants/bonds.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
 import type { BondAbiFunctionFragment } from '../../../constants/bonds.types.ts';
-import type {
-  BondingDeploymentPaused,
-  BondSide,
-  BondVersion,
-} from '../bonding.types.ts';
+import type { BondingDeploymentPaused, BondSide, BondVersion } from '../bonding.types.ts';
 
 /** Fixed claim write target resolved from side/version only (never from API/UI address). */
 export type BondClaimTarget = {

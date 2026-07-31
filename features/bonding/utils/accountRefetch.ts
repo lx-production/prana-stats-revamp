@@ -1,5 +1,5 @@
-import type { BondingAccount } from './bonding.types.ts';
-import type { Address } from '../../types/blockchain.types.ts';
+import type { BondingAccount } from '../bonding.types.ts';
+import type { Address } from '../../../types/blockchain.types.ts';
 
 type RefetchLike = {
   isSuccess?: boolean;

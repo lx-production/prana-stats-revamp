@@ -1,8 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  BONDING_CONFIG_QUERY_KEY,
-  fetchBondingConfig,
-} from '../bondingApi.ts';
+import { BONDING_CONFIG_QUERY_KEY, fetchBondingConfig } from '../utils/bondingApi.ts';
 
 /** Matches server Cache-Control max-age for /api/bonding/config. */
 const BONDING_CONFIG_STALE_TIME_MS = 30_000;

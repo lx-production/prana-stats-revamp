@@ -1,13 +1,13 @@
 /// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
 import {
   confirmBondReceipt,
   resolveBondCtaAction,
   runBondCtaBranch,
   submitBondWriteFlow,
-} from '../bondTransactionFlow.ts';
+} from '../utils/bondTransactionFlow.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type { BondingAccount } from '../bonding.types.ts';

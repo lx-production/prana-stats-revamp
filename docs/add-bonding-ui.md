@@ -80,7 +80,7 @@
 4. ✅ **Port form và dữ liệu client**
   - Cấu trúc client mirror Staking:
     - `pages/BondingPage.tsx` — shell (shader, `LanguageToggle`, `AppFooter`, `usePageMetadata`, header/links).
-    - `features/bonding/bondingApi.ts` — browser adapter qua `fetchJson` (mirror `stakingApi.ts`).
+    - `features/bonding/utils/bondingApi.ts` — browser adapter qua `fetchJson` (mirror `stakingApi.ts`).
     - `features/bonding/bonding.copy.ts` — VI/EN copy.
     - `features/bonding/components/` — form, tabs, Active Bonds, term selector.
     - `features/bonding/hooks/` — config/account/quote hooks.
@@ -123,6 +123,8 @@
   - Trước approve và trước create:
     - Refetch account/config/quote thành công.
     - Đảm bảo đúng wallet, Polygon, balance, minimum, term, paused và treasury capacity.
+    - Validate quote response echo khớp `{mode, termId, exact input}` của form/review (`bondQuoteEcho.ts`); mismatch thì dừng với `quote_issues`.
+    - Calldata create dùng exact input từ form/review snapshot — không lấy input leg từ quote response.
   - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định; không hạ allowance lớn hơn khi không cần.
   - Ngay trước write, chạy `simulateContract` rồi destructure `{ request }` (viem trả `{ result, request }` — chỉ `request` mới truyền được vào `writeContract`); không truyền nguyên object trả về của simulate.
   - Khi đã có hash, tuyệt đối không broadcast lần hai:

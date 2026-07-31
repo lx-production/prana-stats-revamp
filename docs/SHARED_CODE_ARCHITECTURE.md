@@ -280,7 +280,7 @@ The Bonding UI primarily uses:
 
 - `BondingEntry` and the shared `Web3Providers`
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, and wallet address formatting
-- React Query hooks backed by `bondingApi.ts` and shared `fetchJson`
+- React Query hooks backed by `utils/bondingApi.ts` and shared `fetchJson`
 - `network.ts` for Polygon, explorer links, and time units
 - `sharedContracts.ts` for PRANA/WBTC decimals and addresses
 - `bonds.ts` for deployed Buy/Sell V1/V2 contracts and ABIs

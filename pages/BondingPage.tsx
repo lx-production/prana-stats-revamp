@@ -11,7 +11,7 @@ import LanguageToggle from '../components/LanguageToggle';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
 import FlutterShaderBackground from '../flutterShader.tsx';
-import { formatBondingError } from '../features/bonding/bondingErrors';
+import { formatBondingError } from '../features/bonding/utils/bondingErrors';
 import { getBondingCopy } from '../features/bonding/bonding.copy';
 import BondingForm from '../features/bonding/components/BondingForm';
 import ActiveBonds from '../features/bonding/components/ActiveBonds';

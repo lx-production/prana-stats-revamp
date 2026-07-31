@@ -1,55 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
-import { usePublicClient } from 'wagmi';
 import { polygon } from 'wagmi/chains';
-import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import {
-  BUY_BOND_ADDRESS_V2,
-  BUY_BOND_V2_ABI,
-  SELL_BOND_ADDRESS_V2,
-  SELL_BOND_V2_ABI,
-} from '../../../constants/bonds.ts';
-import {
-  PRANA_ADDRESS,
-  WBTC_ADDRESS,
-} from '../../../constants/sharedContracts.ts';
-import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
-import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
-import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { confirmBondingTransactionOnServer } from '../bondingApi.ts';
+import { usePublicClient } from 'wagmi';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
-import {
-  formatBondingError,
-  getBondingErrorMessage,
-  logBondingFailure,
-} from '../bondingErrors.ts';
-import { getConfiguredTerm } from '../bondingMath.ts';
-import {
-  confirmBondReceipt,
-  resolveBondCtaAction,
-  runBondCtaBranch,
-  submitBondWriteFlow,
-} from '../bondTransactionFlow.ts';
-import {
-  isAllowanceSufficientForCreate,
-  needsExactInputApproval,
-  resolveApproveAmountRaw,
-} from '../utils/bondAllowance.ts';
+import { getConfiguredTerm } from '../utils/bondingMath.ts';
+import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
+import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
+import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
+import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
+import { BUY_BOND_ADDRESS_V2, BUY_BOND_V2_ABI, SELL_BOND_ADDRESS_V2, SELL_BOND_V2_ABI } from '../../../constants/bonds.ts';
+import { isAllowanceSufficientForCreate, needsExactInputApproval, resolveApproveAmountRaw } from '../utils/bondAllowance.ts';
+import { confirmBondReceipt, resolveBondCtaAction, runBondCtaBranch, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type {
-  BondingAccount,
-  BondingConfig,
-  BondingQuote,
-  BondingQuoteMode,
-  BondingTransactionActionSnapshot,
-  BondSide,
-  BondTermId,
-  BondTransactionStatus,
-} from '../bonding.types.ts';
-import type { PendingBondTransaction } from '../bondTransactionFlow.ts';
+import type { PendingBondTransaction } from '../utils/bondTransactionFlow.ts';
+import type { BondingAccount, BondingConfig, BondingQuote, BondingQuoteMode, BondingTransactionActionSnapshot, BondSide, BondTermId, BondTransactionStatus } from '../bonding.types.ts';
 
 type UseBondTransactionInput = {
   config: BondingConfig | undefined;
@@ -285,6 +256,29 @@ export function useBondTransaction({
         return;
       }
 
+      // Reject mismatched echo before any wallet prompt (race/regression guard).
+      if (
+        !isBondingQuoteEchoValid({
+          quote: fresh,
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw,
+        })
+      ) {
+        logBondingFailure('approve: quote_echo_mismatch', {
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw.toString(),
+          quoteMode: fresh.mode,
+          quoteTermId: fresh.termId,
+          quoteWbtc: fresh.wbtcAmountRaw,
+          quotePrana: fresh.pranaAmountRaw,
+        });
+        setStatus('error');
+        setError(getBondingErrorMessage('quote_issues', locale));
+        return;
+      }
+
       const approveAmount = resolveApproveAmountRaw(amountRaw);
 
       const tokenAddress = side === 'buy' ? WBTC_ADDRESS : PRANA_ADDRESS;
@@ -513,6 +507,28 @@ export function useBondTransaction({
         return;
       }
 
+      if (
+        !isBondingQuoteEchoValid({
+          quote: fresh,
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw,
+        })
+      ) {
+        logBondingFailure('review: quote_echo_mismatch', {
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw.toString(),
+          quoteMode: fresh.mode,
+          quoteTermId: fresh.termId,
+          quoteWbtc: fresh.wbtcAmountRaw,
+          quotePrana: fresh.pranaAmountRaw,
+        });
+        setStatus('error');
+        setError(getBondingErrorMessage('quote_issues', locale));
+        return;
+      }
+
       const nextAllowance = currentAllowanceRaw(accountSnap, side);
       if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
         logBondingFailure('review: insufficient_allowance', {
@@ -596,13 +612,34 @@ export function useBondTransaction({
         return;
       }
 
-      // Update dialog numbers if quote moved but still executable.
+      // Echo must match the locked form/review input before we build calldata.
+      if (
+        !isBondingQuoteEchoValid({
+          quote: fresh,
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw,
+        })
+      ) {
+        logBondingFailure('create: quote_echo_mismatch', {
+          mode,
+          termId,
+          reviewedInputRaw: amountRaw.toString(),
+          quoteMode: fresh.mode,
+          quoteTermId: fresh.termId,
+          quoteWbtc: fresh.wbtcAmountRaw,
+          quotePrana: fresh.pranaAmountRaw,
+        });
+        setStatus('reviewing');
+        setError(getBondingErrorMessage('quote_issues', locale));
+        return;
+      }
+
+      // Update dialog numbers if payout moved but input echo still matches.
       setReviewQuote(fresh);
 
-      const createAmountRaw =
-        mode === 'buy_exact_wbtc'
-          ? BigInt(fresh.wbtcAmountRaw)
-          : BigInt(fresh.pranaAmountRaw);
+      // Calldata input from form/review snapshot — never the quote response leg.
+      const createAmountRaw = resolveCreateAmountRaw(amountRaw);
 
       const accountSnap = accountFromSuccessfulRefetch(
         await refetchAccount(),

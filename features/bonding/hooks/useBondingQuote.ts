@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchBondingQuote } from '../bondingApi.ts';
+import { fetchBondingQuote } from '../utils/bondingApi.ts';
 
-import type {
-  BondingQuote,
-  BondingQuoteRequest,
-  BondTermId,
-} from '../bonding.types.ts';
+import type { BondingQuote, BondingQuoteRequest, BondTermId } from '../bonding.types.ts';
 
 /** Debounce typing before hitting POST /api/bonding/quote. */
 export const BONDING_QUOTE_DEBOUNCE_MS = 1000;

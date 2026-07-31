@@ -1,9 +1,6 @@
 import { isAddress } from 'viem';
 import { useQuery } from '@tanstack/react-query';
-import {
-  bondingAccountQueryKey,
-  fetchBondingAccount,
-} from '../bondingApi.ts';
+import { bondingAccountQueryKey, fetchBondingAccount } from '../utils/bondingApi.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
 

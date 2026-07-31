@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
-import { sortActiveBonds } from '../bondingMath.ts';
+import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
+import { sortActiveBonds } from '../utils/bondingMath.ts';
 
 import type { ActiveBondRecord, BondingAccount } from '../bonding.types.ts';
 

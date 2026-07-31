@@ -10,7 +10,7 @@ import {
   WBTC_DECIMALS,
 } from '../../../constants/sharedContracts.ts';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { getBondCtaPhase } from '../bondCtaPhase.ts';
+import { getBondCtaPhase } from '../utils/bondCtaPhase.ts';
 import TermSelector from './TermSelector.tsx';
 import BondSideTabs from './BondSideTabs.tsx';
 import CreateBondReviewDialog from './CreateBondReviewDialog.tsx';
@@ -28,7 +28,7 @@ import {
   parsePranaAmount,
   parseWbtcAmount,
   rawBalanceToAmountInput,
-} from '../bondingMath.ts';
+} from '../utils/bondingMath.ts';
 
 import type {
   BondingAccount,

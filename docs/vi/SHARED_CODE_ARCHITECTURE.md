@@ -277,7 +277,7 @@ Bonding UI chủ yếu dùng:
 
 - `BondingEntry` và `Web3Providers` dùng chung
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, và format địa chỉ ví
-- React Query hooks qua `bondingApi.ts` và `fetchJson` dùng chung
+- React Query hooks qua `utils/bondingApi.ts` và `fetchJson` dùng chung
 - `network.ts` cho Polygon, explorer links, và đơn vị thời gian
 - `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI

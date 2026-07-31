@@ -1,4 +1,4 @@
-import type { BondCtaPhase, BondTransactionStatus } from './bonding.types.ts';
+import type { BondCtaPhase, BondTransactionStatus } from '../bonding.types.ts';
 
 /**
  * Map tx status + allowance / pending-hash to the single CTA phase.

@@ -1,4 +1,4 @@
-import type { SiteLocale } from '../../types/locale.types.ts';
+import type { SiteLocale } from '../../../types/locale.types.ts';
 
 /** Stable error codes — UI maps these to VI/EN copy, never raw provider text. */
 export type BondingErrorCode =
