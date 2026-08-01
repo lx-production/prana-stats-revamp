@@ -8,7 +8,7 @@
     "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
     "preview": "vite preview --config config/vite.config.js",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:server && npm run test:client",
+    "test": "npm run test:server && npm run test:client && npm run test:staking && npm run test:bonding && npm run test:rate-limit",
     "test:server": "node --import tsx --test 'server/tests/**/*.test.ts'",
     "test:client": "node --import tsx --test --experimental-test-module-mocks 'utils/tests/**/*.test.ts' 'hooks/tests/**/*.test.ts' 'features/swap/tests/**/*.test.ts' 'features/web3/tests/**/*.test.ts'",
     "test:staking": "node --import tsx --test --experimental-test-module-mocks 'features/staking/tests/**/*.test.ts'",

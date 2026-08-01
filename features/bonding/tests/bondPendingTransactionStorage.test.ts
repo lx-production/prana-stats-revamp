@@ -168,3 +168,53 @@ test('pendingBondTransactionMatchesWallet binds account and chain', () => {
   assert.equal(pendingBondTransactionMatchesWallet(pending, ACCOUNT, 1), false);
   assert.equal(pendingBondTransactionMatchesWallet(pending, undefined, 137), false);
 });
+
+test('account or chain change mid-wait must not show success for the new wallet', () => {
+  // Hooks call matchesWallet after await; false means discardLocalPending + idle,
+  // never applyConfirmed for the newly connected identity.
+  const pending = samplePending();
+
+  assert.equal(pendingBondTransactionMatchesWallet(pending, ACCOUNT, 137), true);
+  assert.equal(pendingBondTransactionMatchesWallet(pending, OTHER, 137), false);
+  assert.equal(pendingBondTransactionMatchesWallet(pending, ACCOUNT, 1), false);
+  assert.equal(
+    pendingBondTransactionMatchesWallet(pending, undefined, 137),
+    false,
+  );
+});
+
+test('identity-mismatched payload under the key is cleared', () => {
+  const storage = memoryStorage();
+  const key = pendingBondTransactionStorageKey(ACCOUNT, 137);
+
+  storage.setItem(
+    key,
+    JSON.stringify({
+      version: 1,
+      chainId: 137,
+      account: OTHER,
+      hash: HASH,
+      createdAt: 1_700_000_000_000,
+      action: {
+        kind: 'create',
+        side: 'buy',
+        version: 'v2',
+        mode: 'buy_exact_wbtc',
+        amountRaw: '1000',
+        termId: 0,
+      },
+    }),
+  );
+
+  assert.equal(
+    loadPendingBondTransaction(
+      ACCOUNT,
+      137,
+      undefined,
+      storage,
+      1_700_000_000_000,
+    ),
+    null,
+  );
+  assert.equal(storage.getItem(key), null);
+});

@@ -15,6 +15,7 @@ import type { Address, Hex } from '../../../types/blockchain.types.ts';
 import type { StakePendingStorage } from '../stakePendingTransactionStorage.ts';
 
 const ACCOUNT = '0x1111111111111111111111111111111111111111' as Address;
+const OTHER = '0x2222222222222222222222222222222222222222' as Address;
 const HASH =
   '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as Hex;
 const R =
@@ -127,6 +128,70 @@ test('expired and malformed payloads are cleared', () => {
   assert.equal(storage.map.size, 0);
 });
 
+test('wrong account or chain does not restore a pending record', () => {
+  const storage = memoryStorage();
+  const pending = buildPendingStakeTransaction({
+    account: ACCOUNT,
+    chainId: 137,
+    hash: HASH,
+    action: { kind: 'claim', stakeId: 1 },
+    nowMs: 1_700_000_000_000,
+  });
+  savePendingStakeTransaction(pending, storage);
+
+  // Different storage keys — never surface another wallet's pending hash.
+  assert.equal(
+    loadPendingStakeTransaction(
+      OTHER,
+      137,
+      undefined,
+      storage,
+      1_700_000_000_000,
+    ),
+    null,
+  );
+  assert.equal(
+    loadPendingStakeTransaction(
+      ACCOUNT,
+      1,
+      undefined,
+      storage,
+      1_700_000_000_000,
+    ),
+    null,
+  );
+});
+
+test('identity-mismatched payload under the key is cleared', () => {
+  const storage = memoryStorage();
+  const key = `prana:staking:pending:v1:137:${ACCOUNT.toLowerCase()}`;
+
+  // Key says ACCOUNT, body says OTHER — reject and clear.
+  storage.setItem(
+    key,
+    JSON.stringify({
+      version: 1,
+      chainId: 137,
+      account: OTHER,
+      hash: HASH,
+      createdAt: 1_700_000_000_000,
+      action: { kind: 'claim', stakeId: 1 },
+    }),
+  );
+
+  assert.equal(
+    loadPendingStakeTransaction(
+      ACCOUNT,
+      137,
+      undefined,
+      storage,
+      1_700_000_000_000,
+    ),
+    null,
+  );
+  assert.equal(storage.getItem(key), null);
+});
+
 test('parsePendingStakeTransaction rejects corrupt stake signatures', () => {
   assert.equal(
     parsePendingStakeTransaction(
@@ -168,6 +233,25 @@ test('wallet identity match is case-insensitive on account', () => {
   );
   assert.equal(
     pendingStakeTransactionMatchesWallet(pending, ACCOUNT, 1),
+    false,
+  );
+});
+
+test('account or chain change mid-wait must not show success for the new wallet', () => {
+  // Hooks call matchesWallet after await; false means discardLocalPending + idle,
+  // never applyConfirmed for the newly connected identity.
+  const pending = buildPendingStakeTransaction({
+    account: ACCOUNT,
+    chainId: 137,
+    hash: HASH,
+    action: { kind: 'stake', amountRaw: '1', durationSeconds: 1, deadline: 1, v: 28, r: R, s: S },
+  });
+
+  assert.equal(pendingStakeTransactionMatchesWallet(pending, ACCOUNT, 137), true);
+  assert.equal(pendingStakeTransactionMatchesWallet(pending, OTHER, 137), false);
+  assert.equal(pendingStakeTransactionMatchesWallet(pending, ACCOUNT, 1), false);
+  assert.equal(
+    pendingStakeTransactionMatchesWallet(pending, undefined, 137),
     false,
   );
 });

@@ -100,14 +100,14 @@ nếu abstraction làm feature wrappers khó đọc hơn code hiện tại.
   - `npm run test:server`
 - Ghi lại số test và mọi lỗi đã tồn tại trước refactor.
 - Bổ sung test còn thiếu cho các invariant:
-  - Browser receipt `reverted` là terminal.
-  - Browser RPC lỗi phải thử server fallback.
-  - `requireServerValidation` buộc gọi server dù browser receipt thành công.
-  - Account/chain đổi trong lúc chờ không được hiển thị success cho ví mới.
-  - Pending record malformed, expired, sai account, hoặc sai chain bị loại.
-  - Quote response cũ không ghi đè response mới.
-  - Abort không tạo error UI.
-  - `freshQuote()` bỏ debounce và hủy request cũ.
+  - ✅ Browser receipt `reverted` là terminal.
+  - ✅ Browser RPC lỗi phải thử server fallback.
+  - ✅ `requireServerValidation` buộc gọi server dù browser receipt thành công.
+  - ✅ Account/chain đổi trong lúc chờ không được hiển thị success cho ví mới.
+  - ✅ Pending record malformed, expired, sai account, hoặc sai chain bị loại.
+  - ✅ Quote response cũ không ghi đè response mới.
+  - ✅ Abort không tạo error UI.
+  - ✅ `freshQuote()` bỏ debounce và hủy request cũ.
 
 ### Điều kiện hoàn thành
 

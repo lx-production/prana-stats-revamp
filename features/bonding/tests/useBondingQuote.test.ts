@@ -309,6 +309,143 @@ test('useBondingQuote marks quote stale after 60 seconds; freshQuote bypasses de
   }
 });
 
+test('useBondingQuote abort rejection does not set error UI', async () => {
+  const signals: AbortSignal[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const signal = init?.signal;
+    if (signal) signals.push(signal);
+
+    if (signals.length === 1) {
+      return await new Promise<Response>((_resolve, reject) => {
+        const onAbort = () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        };
+        if (signal.aborted) {
+          onAbort();
+          return;
+        }
+        signal.addEventListener('abort', onAbort, { once: true });
+      });
+    }
+
+    return new Response(
+      JSON.stringify(sampleQuote({ wbtcAmountRaw: '999', pranaAmountRaw: '1' })),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'], now: 4_000 });
+
+  try {
+    const { useBondingQuote } = await import('../hooks/useBondingQuote.ts');
+
+    let amountRaw = '100';
+    const { result, rerender, unmount } = await renderHook(() =>
+      useBondingQuote({
+        enabled: true,
+        request: baseRequest({ amountRaw }),
+      }),
+    );
+
+    await act(async () => {
+      mock.timers.tick(BONDING_QUOTE_DEBOUNCE_MS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    assert.equal(signals.length, 1);
+
+    amountRaw = '200';
+    await act(async () => {
+      rerender();
+    });
+    await act(async () => {
+      mock.timers.tick(BONDING_QUOTE_DEBOUNCE_MS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.equal(signals[0]?.aborted, true);
+    assert.equal(result.current.error, null);
+    assert.equal(result.current.quote?.wbtcAmountRaw, '999');
+
+    await unmount();
+  } finally {
+    mock.timers.reset();
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('freshQuote skips debounce and aborts the in-flight auto-quote', async () => {
+  const signals: AbortSignal[] = [];
+  let fetchCount = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    fetchCount += 1;
+    if (init?.signal) signals.push(init.signal);
+
+    if (fetchCount === 1) {
+      return await new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        const onAbort = () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        };
+        if (!signal) return;
+        if (signal.aborted) {
+          onAbort();
+          return;
+        }
+        signal.addEventListener('abort', onAbort, { once: true });
+      });
+    }
+
+    return new Response(
+      JSON.stringify(sampleQuote({ wbtcAmountRaw: '99' })),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  mock.timers.enable({
+    apis: ['setTimeout', 'setInterval', 'Date'],
+    now: 20_000,
+  });
+
+  try {
+    const { useBondingQuote } = await import('../hooks/useBondingQuote.ts');
+    const { result, unmount } = await renderHook(() =>
+      useBondingQuote({ enabled: true, request: baseRequest() }),
+    );
+
+    await act(async () => {
+      mock.timers.tick(BONDING_QUOTE_DEBOUNCE_MS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    assert.equal(fetchCount, 1);
+    assert.equal(signals.length, 1);
+
+    let fresh: BondingQuote | null = null;
+    await act(async () => {
+      fresh = await result.current.freshQuote();
+    });
+
+    assert.equal(signals[0]?.aborted, true);
+    assert.equal(fetchCount, 2);
+    assert.equal(fresh?.wbtcAmountRaw, '99');
+    assert.equal(result.current.quote?.wbtcAmountRaw, '99');
+    assert.equal(result.current.error, null);
+
+    await unmount();
+  } finally {
+    mock.timers.reset();
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('invalidate clears quote when buy mode / side would change', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () =>
