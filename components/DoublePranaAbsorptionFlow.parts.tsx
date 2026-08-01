@@ -142,7 +142,8 @@ const PranaAbsorptionToken: React.FC<{
           x: token.distancePath,
           opacity: token.opacityPath,
           scale: token.scalePath,
-          rotate: PRANA_TOKEN_TIMES.map((stop) => -token.spin * stop),
+          // Clockwise self-spin around the token's own center while orbiting inward
+          rotate: PRANA_TOKEN_TIMES.map((stop) => token.spin * stop),
         }}
         transition={{
           duration: token.duration,
