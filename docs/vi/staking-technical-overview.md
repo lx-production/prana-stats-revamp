@@ -290,7 +290,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking không import nội bộ Bonding/Swap để giữ ownership; Web3 dùng chung):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals
@@ -317,7 +317,7 @@ server/utils/stakingConfirmationUtils.ts
 server/rateLimit.ts
 ```
 
-Client confirmation helpers: `stakeTransactionConfirmation.ts`, `stakePendingTransactionStorage.ts`, `hooks/usePendingStakeTransaction.ts`.
+Client confirmation helpers: thin adapter `stakeTransactionConfirmation.ts` trên `features/web3/transactionConfirmation.ts`, cộng `stakePendingTransactionStorage.ts`, `hooks/usePendingStakeTransaction.ts`.
 
 ### Contracts (read-only reference trong repo)
 

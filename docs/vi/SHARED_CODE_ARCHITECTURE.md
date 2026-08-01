@@ -102,6 +102,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `utils/swapTokens.ts` | Không có consumer thuộc Stats | Swap client và server | Không | Không | Lookup trên Swap allowlist |
 | `features/web3/getPolygonWalletClient.ts` và `waitForPolygonWalletReceipt.ts` | Không | Không | Transaction hooks | Transaction hooks | Lấy wallet client Polygon mới nhất và chờ receipt qua cùng provider đã broadcast |
 | `features/web3/accountRefetch.ts` | Không | Không | Transaction flows/hooks | Transaction flows/hooks | Gate refetch thành công dùng chung; từ chối cache cũ và address mismatch trước write |
+| `features/web3/transactionConfirmation.ts` | Không | Không | Thin stake adapter | Thin bond adapter | Confirmation browser-receipt → server-fallback; Swap tạm giữ helper riêng |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
 
@@ -143,10 +144,11 @@ Staking giữ domain behavior riêng:
   Staking.
 - `stakingFundCheck.ts` dựng kết quả quote thuần theo quy tắc quỹ Interest; server
   loader gọi lại helper feature này thay vì lặp math.
-- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`,
-  `stakeTransactionFlow.ts`, và `stakeTransactionConfirmation.ts` mô hình hóa
-  validation và transaction state riêng của Staking. Gate account refetch dùng
-  chung `features/web3/accountRefetch.ts`.
+- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`, và
+  `stakeTransactionFlow.ts` mô hình hóa validation và transaction state riêng
+  của Staking. Gate account refetch dùng chung
+  `features/web3/accountRefetch.ts`. `stakeTransactionConfirmation.ts` là thin
+  adapter trên `features/web3/transactionConfirmation.ts`.
 - `stakePendingTransactionStorage.ts` và `usePendingStakeTransaction.ts` lưu
   hash/action snapshot theo account + chain để chỉ resume confirmation sau
   reload, không gửi lại write.
@@ -158,9 +160,10 @@ Bonding giữ semantic Buy/Sell, deployment version, và quote riêng:
 - `features/bonding/utils/bondingMath.ts`, `bondAllowance.ts`,
   `bondClaimTarget.ts`, `bondQuoteEcho.ts`, và `bondingErrors.ts` xử lý amount,
   allowance, target V1/V2, quote snapshot, và error mapping của Bonding.
-- `bondTransactionFlow.ts`, `bondTransactionConfirmation.ts`,
-  `bondPendingTransactionStorage.ts`, và `usePendingBondTransaction.ts` quản lý
-  approve/create/claim cùng resume confirmation theo account + chain.
+- `bondTransactionFlow.ts`, `bondPendingTransactionStorage.ts`, và
+  `usePendingBondTransaction.ts` quản lý approve/create/claim cùng resume
+  confirmation theo account + chain. `bondTransactionConfirmation.ts` là thin
+  adapter trên `features/web3/transactionConfirmation.ts`.
 - `bondingApi.ts` là browser adapter cho config/account/quote/confirmation và
   tái sử dụng `fetchJson`.
 - Quote math đọc contract/pool riêng của Bonding nằm dưới

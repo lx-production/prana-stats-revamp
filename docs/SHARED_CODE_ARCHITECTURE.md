@@ -104,6 +104,7 @@ generic helper.
 | `utils/swapTokens.ts` | No Stats-owned consumer | Swap client and server | No | No | Lookup over the Swap allowlist |
 | `features/web3/getPolygonWalletClient.ts` and `waitForPolygonWalletReceipt.ts` | No | No | Transaction hooks | Transaction hooks | Fetch the latest Polygon wallet client and wait for receipt via the same provider that broadcast |
 | `features/web3/accountRefetch.ts` | No | No | Transaction flows/hooks | Transaction flows/hooks | Generic successful-refetch gate; rejects stale cache and address mismatch before writes |
+| `features/web3/transactionConfirmation.ts` | No | No | Thin stake adapter | Thin bond adapter | Browser-receipt → server-fallback confirmation; Swap keeps its own helper for now |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | No | Server loaders | Server loaders | RPC transform, sleep, and rate-limit detection primitives; legacy filename, but consumers now span Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | No | No | Quote/confirmation server | Quote/confirmation server | Canonical `uint256` decimal parse and oversized-input rejection |
 
@@ -145,10 +146,11 @@ Staking keeps its own domain behavior:
   formatting.
 - `stakingFundCheck.ts` builds pure quote results from Interest fund rules;
   the server loader reuses this feature helper instead of duplicating math.
-- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`,
-  `stakeTransactionFlow.ts`, and `stakeTransactionConfirmation.ts` model
-  Staking-specific validation and transaction state. Account refetch gating
-  uses shared `features/web3/accountRefetch.ts`.
+- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`, and
+  `stakeTransactionFlow.ts` model Staking-specific validation and transaction
+  state. Account refetch gating uses shared `features/web3/accountRefetch.ts`.
+  `stakeTransactionConfirmation.ts` is a thin adapter over shared
+  `features/web3/transactionConfirmation.ts`.
 - `stakePendingTransactionStorage.ts` and `usePendingStakeTransaction.ts` store
   hash/action snapshots by account + chain so reload only resumes confirmation,
   never re-sends the write.
@@ -160,9 +162,10 @@ Bonding keeps its own Buy/Sell, deployment-version, and quote semantics:
 - `features/bonding/utils/bondingMath.ts`, `bondAllowance.ts`,
   `bondClaimTarget.ts`, `bondQuoteEcho.ts`, and `bondingErrors.ts` handle
   Bonding amounts, allowance, V1/V2 targets, quote snapshots, and error mapping.
-- `bondTransactionFlow.ts`, `bondTransactionConfirmation.ts`,
-  `bondPendingTransactionStorage.ts`, and `usePendingBondTransaction.ts`
-  manage approve/create/claim plus account + chain confirmation resume.
+- `bondTransactionFlow.ts`, `bondPendingTransactionStorage.ts`, and
+  `usePendingBondTransaction.ts` manage approve/create/claim plus account +
+  chain confirmation resume. `bondTransactionConfirmation.ts` is a thin
+  adapter over shared `features/web3/transactionConfirmation.ts`.
 - `bondingApi.ts` is the browser adapter for config/account/quote/confirmation
   and reuses `fetchJson`.
 - Bonding-specific contract/pool quote math lives under

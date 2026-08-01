@@ -157,7 +157,7 @@ accountFromSuccessfulRefetch<TAccount extends { address: string }>(
 - ✅ Kết quả lỗi hoặc thiếu data vẫn trả `undefined`.
 - ✅ Staking và Bonding tests giữ nguyên kết quả.
 
-## 7. Điểm 2 — Dùng chung transaction confirmation phía client
+## 7. Điểm 2 — Dùng chung transaction confirmation phía client ✅
 
 ### Hiện trạng
 
@@ -200,21 +200,21 @@ Shared outcome giữ:
 
 ### Migration
 
-1. Chuyển các test trùng nhau thành
+1. ✅ Chuyển các test trùng nhau thành
    `features/web3/tests/transactionConfirmation.test.ts`.
-2. Giữ thin feature adapters trong bước đầu để giảm diff:
+2. ✅ Giữ thin feature adapters trong bước đầu để giảm diff:
    - `confirmStakeTransaction()` gọi shared helper.
    - `confirmBondTransaction()` gọi shared helper.
 3. Khi tất cả consumer đã ổn định, quyết định giữ adapter để tên domain rõ hoặc
    import shared helper trực tiếp.
-4. Không migrate `confirmSwapTransaction()` trong bước này.
+4. ✅ Không migrate `confirmSwapTransaction()` trong bước này.
 
 ### Điều kiện hoàn thành
 
-- Fresh transaction có thể thành công từ browser receipt mà không gọi server.
-- Resume transaction luôn gọi server khi `requireServerValidation` là `true`.
-- `not_mined` không bị map thành revert.
-- Lỗi browser và lỗi server được giữ để logging/debug.
+- ✅ Fresh transaction có thể thành công từ browser receipt mà không gọi server.
+- ✅ Resume transaction luôn gọi server khi `requireServerValidation` là `true`.
+- ✅ `not_mined` không bị map thành revert.
+- ✅ Lỗi browser và lỗi server được giữ để logging/debug.
 
 ## 8. Điểm 3 — Dùng chung pending transaction storage và hook
 
