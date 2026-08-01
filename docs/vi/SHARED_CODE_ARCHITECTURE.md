@@ -108,6 +108,27 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
 
+### Quyết định cố ý không share
+
+Staking và Bonding **cố ý giữ riêng API adapters và React Query hooks**. Không
+tạo factory dùng chung như `useWalletAccountQuery` hay `useFeatureConfigQuery`
+chỉ vì wrapper trông giống nhau.
+
+Giữ feature-local:
+
+- `features/staking/stakingApi.ts` và `features/bonding/utils/bondingApi.ts`
+- `useStakingConfig` / `useBondingConfig`
+- `useStakingAccount` / `useBondingAccount`
+
+Lớp dùng chung dừng ở `utils/fetchJson.ts` (dedupe GET; POST quote/confirmation
+đặt `dedupeKey: null`). Named fetch helpers, query keys, và query options ở lại
+từng feature để endpoint cùng hành vi cache/refetch vẫn dễ tìm.
+
+Đây là kết quả decision gate của Điểm 5 trong
+[`STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md`](../STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md):
+wrapper đã ngắn và typed, mỗi pattern chỉ có hai consumer, và helper generic sẽ
+thêm lớp mà không giảm độ phức tạp một cách rõ ràng.
+
 Thư mục gốc `utils/` cũng chứa các module dữ liệu và tính toán hướng Stats.
 Các nhóm quan trọng gồm:
 
@@ -314,7 +335,8 @@ Staking UI chủ yếu dùng:
 
 - `StakingEntry` và `Web3Providers` dùng chung
 - `useInjectedWallet`, `wagmiConfig`, và format địa chỉ wallet
-- React Query hooks dựa trên `stakingApi.ts` và `fetchJson` dùng chung
+- React Query hooks dựa trên `stakingApi.ts` feature-local và `fetchJson` dùng
+  chung (config/account hooks cố ý ở lại feature staking)
 - `network.ts` cho Polygon, link explorer, và đơn vị thời gian
 - `sharedContracts.ts` cho consumers decimals/địa chỉ PRANA
 - `stakingContracts.ts` cho contract đã deploy, permit typed data, và ABIs
@@ -335,7 +357,8 @@ Bonding UI chủ yếu dùng:
 
 - `BondingEntry` và `Web3Providers` dùng chung
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, và format địa chỉ ví
-- React Query hooks qua `features/bonding/utils/bondingApi.ts` và `fetchJson` dùng chung
+- React Query hooks qua `features/bonding/utils/bondingApi.ts` feature-local và
+  `fetchJson` dùng chung (config/account hooks cố ý ở lại feature bonding)
 - `network.ts` cho Polygon, explorer links, và đơn vị thời gian
 - `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI

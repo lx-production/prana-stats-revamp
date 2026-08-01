@@ -110,6 +110,27 @@ generic helper.
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | No | Server loaders | Server loaders | RPC transform, sleep, and rate-limit detection primitives; legacy filename, but consumers now span Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | No | No | Quote/confirmation server | Quote/confirmation server | Canonical `uint256` decimal parse and oversized-input rejection |
 
+### Explicit non-sharing decisions
+
+Staking and Bonding **keep separate API adapters and React Query hooks** on
+purpose. Do not introduce shared factories such as `useWalletAccountQuery` or
+`useFeatureConfigQuery` just because the wrappers look similar.
+
+Keep feature-local:
+
+- `features/staking/stakingApi.ts` and `features/bonding/utils/bondingApi.ts`
+- `useStakingConfig` / `useBondingConfig`
+- `useStakingAccount` / `useBondingAccount`
+
+Shared layer stops at `utils/fetchJson.ts` (GET dedupe; POST quote/confirmation
+sets `dedupeKey: null`). Named fetch helpers, query keys, and query options stay
+in each feature so endpoints and cache/refetch behavior remain easy to find.
+
+This was the decision-gate outcome for Điểm 5 in
+[`STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md`](./STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md):
+the wrappers are already short and typed, only two consumers exist per pattern,
+and a generic helper would add layers without a clear complexity win.
+
 The root `utils/` directory also contains Stats-oriented data and calculation
 modules. Important groups include:
 
@@ -317,7 +338,8 @@ The Staking UI primarily uses:
 
 - `StakingEntry` and the shared `Web3Providers`
 - `useInjectedWallet`, `wagmiConfig`, and wallet address formatting
-- React Query hooks backed by `stakingApi.ts` and shared `fetchJson`
+- React Query hooks backed by feature-local `stakingApi.ts` and shared
+  `fetchJson` (config/account hooks stay in the staking feature by design)
 - `network.ts` for Polygon, explorer links, and time units
 - `sharedContracts.ts` for PRANA decimals/address consumers
 - `stakingContracts.ts` for deployed contracts, permit typed data, and ABIs
@@ -338,7 +360,8 @@ The Bonding UI primarily uses:
 
 - `BondingEntry` and the shared `Web3Providers`
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, and wallet address formatting
-- React Query hooks via `features/bonding/utils/bondingApi.ts` and shared `fetchJson`
+- React Query hooks via feature-local `features/bonding/utils/bondingApi.ts` and
+  shared `fetchJson` (config/account hooks stay in the bonding feature by design)
 - `network.ts` for Polygon, explorer links, and time units
 - `sharedContracts.ts` for PRANA/WBTC decimals and addresses
 - `bonds.ts` for Buy/Sell V1/V2 contracts and ABIs

@@ -34,6 +34,10 @@ Các phần sau tiếp tục thuộc feature:
 - Action snapshot và parser action của từng feature.
 - ABI, contract mapping, và `buildExpectedCall` của từng feature.
 - Error codes, nội dung VI/EN, và UI components của từng feature.
+- API adapters và React Query config/account hooks (`stakingApi.ts`,
+  `bondingApi.ts`, `useStakingConfig` / `useBondingConfig`,
+  `useStakingAccount` / `useBondingAccount`) — decision gate Điểm 5 không đạt;
+  xem mục 10.
 - Swap transaction flow trong đợt đầu. Swap có verification contract khác và
   chưa có pending-storage/resume giống Staking/Bonding.
 
@@ -85,8 +89,9 @@ server/types/
 └── transactionConfirmationTypes.ts
 ```
 
-API/query helpers chỉ được thêm sau decision gate ở mục 10. Không tạo file mới
-nếu abstraction làm feature wrappers khó đọc hơn code hiện tại.
+API/query helpers **không** được thêm: decision gate mục 10 đã kết luận giữ
+wrapper feature-local. Không tạo `useWalletAccountQuery` /
+`useFeatureConfigQuery`.
 
 ## 5. Bước 0 — Baseline và characterization tests
 
@@ -369,23 +374,32 @@ từ Điểm 1.
 - ✅ Source `browser | server` không bị mất.
 - ✅ Không thay đổi outcome unions mà UI hooks đang xử lý.
 
-## 10. Điểm 5 — API adapters và React Query hooks
+## 10. Điểm 5 — API adapters và React Query hooks ❌ không refactor
 
-### Đánh giá trước khi làm
+### Quyết định
 
-Đây là phần có rủi ro over-abstraction cao nhất. Các wrapper hiện tại ngắn,
-typed, và giúp tìm endpoint nhanh:
+Sau Điểm 1–4 (`ecdfc24` → `ab2978b`), decision gate **không đạt**. Giữ nguyên
+wrapper feature-local; không tạo `useWalletAccountQuery` /
+`useFeatureConfigQuery` hay factory API chung.
 
-- `features/staking/stakingApi.ts`
-- `features/bonding/utils/bondingApi.ts`
-- `useStakingConfig` / `useBondingConfig`
-- `useStakingAccount` / `useBondingAccount`
+Lý do:
 
-Không tạo factory chỉ để giảm vài dòng.
+- Sáu file API/account/config không đổi trong phạm vi Điểm 1–4; chưa có prototype generic nào chứng minh lợi ích.
+- Wrapper hiện tại ngắn, typed, và lộ endpoint + query key ngay tại feature:
+  - `features/staking/stakingApi.ts`
+  - `features/bonding/utils/bondingApi.ts`
+  - `useStakingConfig` / `useBondingConfig`
+  - `useStakingAccount` / `useBondingAccount`
+- Chỉ hai consumer cho mỗi pattern; thêm shared hooks + types + tests dễ tăng
+  số lớp và che cache/refetch options hơn là giảm độ phức tạp thật.
+- Không có shared tests bắt buộc cho query options khi không có shared helper.
 
-### Phạm vi refactor tối thiểu đề xuất
+Decision record nằm trong `docs/SHARED_CODE_ARCHITECTURE.md` và
+`docs/vi/SHARED_CODE_ARCHITECTURE.md`.
 
-Chỉ tách hành vi có invariant giống nhau:
+### Phạm vi đã cân nhắc (không làm)
+
+Chỉ tách hành vi có invariant giống nhau nếu gate đạt:
 
 - GET account URL phải encode address.
 - Wallet account query:
@@ -396,39 +410,29 @@ Chỉ tách hành vi có invariant giống nhau:
 - Config query dùng stale time 30 giây.
 - POST quote/confirmation dùng `dedupeKey: null`.
 
-Giữ các named functions hiện tại để call site vẫn rõ:
+Vẫn giữ named functions hiện tại:
 
 - `fetchStakingConfig`, `fetchStakingAccount`, `fetchStakingQuote`
 - `fetchBondingConfig`, `fetchBondingAccount`, `fetchBondingQuote`
 - Hai hàm confirmation POST
 
-### Decision gate
+### Decision gate (đã đánh giá)
 
-Sau khi Điểm 1–4 hoàn thành:
+Sau Điểm 1–4:
 
-1. Prototype helper query generic trong một branch nhỏ.
+1. Prototype helper query generic trong một branch nhỏ. — **chưa có / không làm**
 2. So sánh số dòng, type inference, stack trace, và độ rõ của feature files.
 3. Chỉ merge khi:
    - Không cần type cast ở consumer.
    - Không che endpoint hoặc query key.
    - Shared tests bảo vệ toàn bộ query options.
    - Tổng code và độ phức tạp thực sự giảm.
-4. Nếu không đạt, giữ wrapper hiện tại và ghi quyết định “không refactor” vào
-   `SHARED_CODE_ARCHITECTURE.md`.
-
-### Phương án nếu đạt decision gate
-
-- Tạo `hooks/useWalletAccountQuery.ts` và type riêng.
-- Tạo `hooks/useFeatureConfigQuery.ts` và type riêng.
-- Feature hooks chỉ cung cấp query key và query function.
-- Không gộp quote hooks tại đây; quote lifecycle được xử lý riêng ở Điểm 7.
+4. **Không đạt** → giữ wrapper hiện tại và ghi quyết định “không refactor”.
 
 ### Điều kiện hoàn thành
 
-- Query keys không đổi.
-- Cache behavior và refetch behavior không đổi.
-- Invalid address không gọi API.
-- Feature API exports vẫn giữ tên domain rõ ràng.
+- ✅ Quyết định “không refactor” đã ghi vào shared architecture docs.
+- ✅ Query keys, cache/refetch behavior, và named feature API exports không đổi.
 
 ## 11. Điểm 6 — Dùng chung server transaction confirmation lookup
 
@@ -606,7 +610,7 @@ Thực hiện theo các PR hoặc commit độc lập sau:
 6. Generic pending transaction hook.
 7. Generic debounced quote hook.
 8. Server confirmation lookup.
-9. Decision gate cho API/query wrappers.
+9. Decision gate cho API/query wrappers. — **đã xong: không refactor**
 10. Cleanup imports, dead files, tests trùng, và cập nhật docs.
 
 Lý do:
@@ -661,10 +665,10 @@ Sau khi code được merge:
 Refactor hoàn thành khi:
 
 - Bảy nhóm đã được xử lý hoặc có decision record rõ ràng cho phần cố ý không
-  refactor.
+  refactor (Điểm 5: API/query wrappers giữ feature-local).
 - Không còn implementation trùng của account refetch, client confirmation,
   confirm+sync, pending envelope/storage, pending hook, quote lifecycle, và
-  server lookup.
+  server lookup (trừ phần cố ý không share đã ghi trong docs).
 - Feature-local action parsing, contract mapping, CTA state, math, và copy vẫn
   tách biệt.
 - Không đổi localStorage compatibility, endpoints, query keys, hoặc response
