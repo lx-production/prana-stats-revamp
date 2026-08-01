@@ -66,7 +66,7 @@ function currentAllowanceRaw(
 }
 
 /**
- * Approve → Review → Create Bond → Confirming.
+ * Approve → Create Bond → Confirming.
  * Max two wallet prompts on separate clicks; never auto-chain approve+create.
  */
 export function useBondTransaction({
@@ -91,8 +91,6 @@ export function useBondTransaction({
   const [success, setSuccess] = useState<string | null>(null);
   /** Last hash to show on Polygonscan (success or pending). */
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
-  const [reviewQuote, setReviewQuote] = useState<BondingQuote | null>(null);
-  const [reviewOpen, setReviewOpen] = useState(false);
 
   const {
     pending,
@@ -117,22 +115,12 @@ export function useBondTransaction({
   };
 
   const mode = quoteModeFor(side);
-  const amountRawString = amountRaw != null ? amountRaw.toString() : '';
 
   // Restore Polygonscan hash after reload / reconnect.
   useEffect(() => {
     if (!pendingLoaded || !pending) return;
     setTransactionHash(pending.hash);
   }, [pending, pendingLoaded]);
-
-  // Changing form inputs before broadcast clears review snapshot.
-  useEffect(() => {
-    if (pending) return;
-    setReviewQuote(null);
-    setReviewOpen(false);
-    if (status === 'reviewing') setStatus('idle');
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to form identity
-  }, [side, amountRawString, termId, wallet.address, wallet.chainId]);
 
   const allowance = currentAllowanceRaw(account, side);
 
@@ -152,16 +140,7 @@ export function useBondTransaction({
     setStatus('idle');
     clearPendingRecord();
     setTransactionHash(null);
-    setReviewQuote(null);
-    setReviewOpen(false);
   }, [clearPendingRecord]);
-
-  const closeReview = useCallback(() => {
-    if (status === 'submitting' || status === 'confirming') return;
-    setReviewOpen(false);
-    setReviewQuote(null);
-    if (status === 'reviewing') setStatus('idle');
-  }, [status]);
 
   const ensurePolygonWalletClient = useCallback(async () => {
     if (!wallet.isPolygon) {
@@ -178,8 +157,6 @@ export function useBondTransaction({
     (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
       clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
-      setReviewOpen(false);
-      setReviewQuote(null);
       setStatus('success');
       setError(null);
       setSuccess(copy.bondConfirmed);
@@ -335,13 +312,13 @@ export function useBondTransaction({
           quote: fresh,
           mode,
           termId,
-          reviewedInputRaw: amountRaw,
+          formInputRaw: amountRaw,
         })
       ) {
         logBondingFailure('approve: quote_echo_mismatch', {
           mode,
           termId,
-          reviewedInputRaw: amountRaw.toString(),
+          formInputRaw: amountRaw.toString(),
           quoteMode: fresh.mode,
           quoteTermId: fresh.termId,
           quoteWbtc: fresh.wbtcAmountRaw,
@@ -454,7 +431,7 @@ export function useBondTransaction({
         return;
       }
       if (outcome.kind === 'validation_failed') {
-        // Allowance became sufficient mid-flight — fall through to review.
+        // Allowance became sufficient mid-flight — ready for Create.
         console.info('[bonding] approve: validation_failed (allowance ok)');
         clearPendingRecord(broadcastPending);
         setStatus('idle');
@@ -506,7 +483,7 @@ export function useBondTransaction({
         return;
       }
 
-      // Approve confirmed — ready for Review (separate click).
+      // Approve confirmed — ready for Create (separate click).
       console.info('[bonding] approve:confirmed', {
         hash: outcome.hash,
         syncFailed: outcome.syncFailed,
@@ -545,135 +522,6 @@ export function useBondTransaction({
     wallet.isConnected,
   ]);
 
-  const openReview = useCallback(async () => {
-    if (!pendingLoaded || pending != null) return;
-
-    if (!wallet.isConnected || !wallet.address) {
-      logBondingFailure('review: not_connected');
-      setError(getBondingErrorMessage('not_connected', locale));
-      setStatus('error');
-      return;
-    }
-    if (!config) {
-      logBondingFailure('review: missing config');
-      setError(getBondingErrorMessage('generic', locale));
-      setStatus('error');
-      return;
-    }
-
-    const paused =
-      side === 'buy' ? config.paused.buyV2 : config.paused.sellV2;
-    if (paused) {
-      logBondingFailure('review: paused', { side });
-      setError(getBondingErrorMessage('paused', locale));
-      setStatus('error');
-      return;
-    }
-
-    if (amountRaw == null || termId == null) {
-      logBondingFailure('review: invalid_amount', {
-        amountRaw: amountRaw?.toString() ?? null,
-        termId,
-      });
-      setError(getBondingErrorMessage('invalid_amount', locale));
-      setStatus('error');
-      return;
-    }
-
-    if (!getConfiguredTerm(
-      side === 'buy' ? config.buyTerms : config.sellTerms,
-      termId,
-    )) {
-      logBondingFailure('review: invalid_term', { side, termId });
-      setError(getBondingErrorMessage('invalid_term', locale));
-      setStatus('error');
-      return;
-    }
-
-    setStatus('reviewing');
-    setError(null);
-    setWarning(null);
-    setSuccess(null);
-
-    try {
-      await refetchConfig();
-      const accountSnap = accountFromSuccessfulRefetch(
-        await refetchAccount(),
-        wallet.address,
-      );
-      if (!accountSnap) {
-        logBondingFailure('review: fresh_account_failed');
-        setStatus('error');
-        setError(getBondingErrorMessage('account_refetch_failed', locale));
-        return;
-      }
-
-      const fresh = await freshQuote();
-      if (!fresh || fresh.issues.length > 0) {
-        logBondingFailure('review: quote_issues', fresh);
-        setStatus('error');
-        setError(getBondingErrorMessage('quote_issues', locale));
-        return;
-      }
-
-      if (
-        !isBondingQuoteEchoValid({
-          quote: fresh,
-          mode,
-          termId,
-          reviewedInputRaw: amountRaw,
-        })
-      ) {
-        logBondingFailure('review: quote_echo_mismatch', {
-          mode,
-          termId,
-          reviewedInputRaw: amountRaw.toString(),
-          quoteMode: fresh.mode,
-          quoteTermId: fresh.termId,
-          quoteWbtc: fresh.wbtcAmountRaw,
-          quotePrana: fresh.pranaAmountRaw,
-        });
-        setStatus('error');
-        setError(getBondingErrorMessage('quote_issues', locale));
-        return;
-      }
-
-      const nextAllowance = currentAllowanceRaw(accountSnap, side);
-      if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
-        logBondingFailure('review: insufficient_allowance', {
-          nextAllowance: nextAllowance.toString(),
-          amountRaw: amountRaw.toString(),
-        });
-        setReviewOpen(false);
-        setReviewQuote(null);
-        setStatus('idle');
-        setError(getBondingErrorMessage('insufficient_allowance', locale));
-        return;
-      }
-
-      // Review is an in-app dialog only — never opens the wallet.
-      setReviewQuote(fresh);
-      setReviewOpen(true);
-      setStatus('reviewing');
-    } catch (err) {
-      setStatus('error');
-      setError(formatBondingError(err, locale));
-    }
-  }, [
-    amountRaw,
-    config,
-    freshQuote,
-    locale,
-    pending,
-    pendingLoaded,
-    refetchAccount,
-    refetchConfig,
-    side,
-    termId,
-    wallet.address,
-    wallet.isConnected,
-  ]);
-
   const runCreate = useCallback(async () => {
     if (!pendingLoaded || pending != null) return;
 
@@ -703,6 +551,16 @@ export function useBondTransaction({
       return;
     }
 
+    if (!getConfiguredTerm(
+      side === 'buy' ? config.buyTerms : config.sellTerms,
+      termId,
+    )) {
+      logBondingFailure('create: invalid_term', { side, termId });
+      setError(getBondingErrorMessage('invalid_term', locale));
+      setStatus('error');
+      return;
+    }
+
     // Capture identity before wallet prompts — may change mid-flight.
     const submittingAccount = wallet.address as Address;
 
@@ -723,38 +581,35 @@ export function useBondTransaction({
       const fresh = await freshQuote();
       if (!fresh || fresh.issues.length > 0) {
         logBondingFailure('create: quote_issues', fresh);
-        setStatus('reviewing');
+        setStatus('error');
         setError(getBondingErrorMessage('quote_issues', locale));
         return;
       }
 
-      // Echo must match the locked form/review input before we build calldata.
+      // Echo must match the locked form input before we build calldata.
       if (
         !isBondingQuoteEchoValid({
           quote: fresh,
           mode,
           termId,
-          reviewedInputRaw: amountRaw,
+          formInputRaw: amountRaw,
         })
       ) {
         logBondingFailure('create: quote_echo_mismatch', {
           mode,
           termId,
-          reviewedInputRaw: amountRaw.toString(),
+          formInputRaw: amountRaw.toString(),
           quoteMode: fresh.mode,
           quoteTermId: fresh.termId,
           quoteWbtc: fresh.wbtcAmountRaw,
           quotePrana: fresh.pranaAmountRaw,
         });
-        setStatus('reviewing');
+        setStatus('error');
         setError(getBondingErrorMessage('quote_issues', locale));
         return;
       }
 
-      // Update dialog numbers if payout moved but input echo still matches.
-      setReviewQuote(fresh);
-
-      // Calldata input from form/review snapshot — never the quote response leg.
+      // Calldata input from form snapshot — never the quote response leg.
       const createAmountRaw = resolveCreateAmountRaw(amountRaw);
 
       const accountSnap = accountFromSuccessfulRefetch(
@@ -774,8 +629,6 @@ export function useBondTransaction({
           nextAllowance: nextAllowance.toString(),
           amountRaw: amountRaw.toString(),
         });
-        setReviewOpen(false);
-        setReviewQuote(null);
         setStatus('idle');
         setError(getBondingErrorMessage('insufficient_allowance', locale));
         return;
@@ -856,7 +709,6 @@ export function useBondTransaction({
           });
           rememberPending(broadcastPending);
           setTransactionHash(hash);
-          setReviewOpen(false);
           setStatus('confirming');
           return waitForPolygonWalletReceipt(hash);
         },
@@ -890,21 +742,18 @@ export function useBondTransaction({
       }
       if (outcome.kind === 'validation_failed') {
         logBondingFailure('create: validation_failed (allowance)');
-        setReviewOpen(false);
         setStatus('idle');
         setError(getBondingErrorMessage('insufficient_allowance', locale));
         return;
       }
       if (outcome.kind === 'simulate_failed') {
         logBondingFailure('create: simulate_failed', outcome.error);
-        setStatus('reviewing');
-        setReviewOpen(true);
+        setStatus('error');
         setError(getBondingErrorMessage('simulate_failed', locale));
         return;
       }
       if (outcome.kind === 'rejected_before_broadcast') {
-        setStatus('reviewing');
-        setReviewOpen(true);
+        setStatus('error');
         setError(formatBondingError(outcome.error, locale));
         return;
       }
@@ -924,7 +773,6 @@ export function useBondTransaction({
           });
         rememberPending(pendingTx);
         setTransactionHash(outcome.hash);
-        setReviewOpen(false);
         setStatus('confirmation_unavailable');
         setError(copy.confirmationUnavailable);
         return;
@@ -936,7 +784,6 @@ export function useBondTransaction({
         });
         clearPendingRecord(broadcastPending);
         setTransactionHash(null);
-        setReviewOpen(false);
         setStatus('error');
         setError(getBondingErrorMessage('reverted', locale));
         return;
@@ -970,7 +817,7 @@ export function useBondTransaction({
     wallet.isConnected,
   ]);
 
-  /** Primary CTA: resume / approve / open review — never auto-create. */
+  /** Primary CTA: resume / approve / create — never auto-chain approve+create. */
   const onPrimaryCta = useCallback(async () => {
     clearMessages();
 
@@ -980,7 +827,6 @@ export function useBondTransaction({
     const action = resolveBondCtaAction({
       hasPendingHash: pendingHash != null,
       needsApproval,
-      createRequested: false,
     });
 
     if (action !== 'resume_confirmation' && status === 'success') {
@@ -994,30 +840,17 @@ export function useBondTransaction({
         await resumeConfirmReceipt(pendingHash);
       },
       runApprove,
-      openReview,
-      runCreate: async () => {
-        // Create only from the review dialog confirm button.
-      },
+      runCreate,
     });
   }, [
     clearMessages,
     needsApproval,
-    openReview,
     pending,
     resumeConfirmReceipt,
     runApprove,
+    runCreate,
     status,
   ]);
-
-  /** Dialog confirm → create bond (second wallet prompt, separate click). */
-  const onConfirmCreate = useCallback(async () => {
-    clearMessages();
-    if (pending != null && status !== 'success') {
-      await resumeConfirmReceipt(pending);
-      return;
-    }
-    await runCreate();
-  }, [clearMessages, pending, resumeConfirmReceipt, runCreate, status]);
 
   const hasPendingHash = pending != null && status !== 'success';
 
@@ -1039,11 +872,7 @@ export function useBondTransaction({
     needsApproval,
     hasPendingHash,
     pendingLoaded,
-    reviewOpen,
-    reviewQuote,
     onPrimaryCta,
-    onConfirmCreate,
-    closeReview,
     resetAfterSuccess,
     clearMessages,
   };

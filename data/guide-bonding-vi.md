@@ -11,7 +11,7 @@ Tạo bond thường cần **Approve** ERC-20 trước:
 - **Buy Bond** chi **WBTC** — approve spender là Buy Bond V2
 - **Sell Bond** chi **PRANA** — approve spender là Sell Bond V2
 
-Nút chính đi theo các phase: **Approve** → **Review** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần, UI bỏ qua Approve và vào thẳng Review.
+Nút chính đi theo các phase: **Approve** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần, UI bỏ qua Approve và vào thẳng Create Bond.
 
 Trên lời nhắc Approve, hãy kiểm tra:
 
@@ -28,7 +28,7 @@ Buy Bond khóa **WBTC** và vest (nhả dần) **PRANA** (payout) theo kỳ hạ
 
 Bạn nhập số WBTC muốn chi. Quote hiện PRANA payout dự kiến. Lệnh contract dùng đúng số WBTC đó (`buyBondForWbtcAmount`).
 
-Trước khi tạo, app tự fresh-quote. Nếu raw amount không đổi thì tiếp tục; nếu đổi thì Review cập nhật trước khi tiếp tục tạo bond.
+Trước khi tạo, app tự fresh-quote. Nếu raw amount không đổi thì tiếp tục; nếu payout dự kiến đổi thì form cập nhật trước khi ví mở.
 
 ## 3. Sell Bond
 

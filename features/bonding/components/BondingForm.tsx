@@ -3,7 +3,6 @@ import TermSelector from './TermSelector.tsx';
 import TxLink from '../../../components/ui/TxLink.tsx';
 import React, { useEffect, useMemo, useState } from 'react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
-import CreateBondReviewDialog from './CreateBondReviewDialog.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 
 import { Loader2 } from 'lucide-react';
@@ -31,7 +30,7 @@ type BondingFormProps = {
 };
 
 /**
- * Buy/Sell bonding form: amount, term, live quote, and Approve → Review → Create.
+ * Buy/Sell bonding form: amount, term, live quote, and Approve → Create.
  * Buy always takes exact WBTC; Sell always takes exact PRANA.
  */
 export default function BondingForm({
@@ -107,15 +106,8 @@ export default function BondingForm({
   });
 
   useEffect(() => {
-    onBusyChange?.(
-      bondTx.isBusy || quoteState.isLoading || bondTx.status === 'reviewing',
-    );
-  }, [
-    onBusyChange,
-    bondTx.isBusy,
-    bondTx.status,
-    quoteState.isLoading,
-  ]);
+    onBusyChange?.(bondTx.isBusy || quoteState.isLoading);
+  }, [onBusyChange, bondTx.isBusy, quoteState.isLoading]);
 
   // Clear amount only after a confirmed create — keep success + tx hash visible.
   useEffect(() => {
@@ -215,13 +207,10 @@ export default function BondingForm({
     bondTx.isBusy ||
     bondTx.hasPendingHash ||
     !bondTx.pendingLoaded ||
-    bondTx.reviewOpen ||
     actionsLocked;
 
   const amountLabel =
     side === 'sell' ? copy.amountLabelPrana : copy.amountLabelWbtc;
-
-  const displayQuote = bondTx.reviewQuote ?? quoteState.quote;
 
   const canSubmit =
     !formFieldsDisabled &&
@@ -250,8 +239,9 @@ export default function BondingForm({
     bondTx.hasPendingHash,
   );
 
+  // After success, once the form is ready again, show Create (not "Bond created").
   const displayPhase =
-    ctaPhase === 'success' && canSubmit ? 'review' : ctaPhase;
+    ctaPhase === 'success' && canSubmit ? 'create' : ctaPhase;
 
   const ctaLabel = (() => {
     switch (displayPhase) {
@@ -262,7 +252,9 @@ export default function BondingForm({
       case 'create':
         return bondTx.status === 'submitting'
           ? copy.creatingBondCta
-          : copy.createBondCta;
+          : quoteState.isLoading
+            ? copy.refreshingQuote
+            : copy.createBondCta;
       case 'confirming':
         return copy.confirmingCta;
       case 'confirmation_unavailable':
@@ -270,18 +262,14 @@ export default function BondingForm({
       case 'success':
         return copy.bondSuccessCta;
       case 'error':
-        return bondTx.needsApproval ? copy.approveCta : copy.reviewQuote;
+        return bondTx.needsApproval ? copy.approveCta : copy.createBondCta;
       default:
-        return quoteState.isLoading || bondTx.status === 'reviewing'
-          ? copy.refreshingQuote
-          : copy.reviewQuote;
+        return copy.createBondCta;
     }
   })();
 
   const showCtaSpinner =
-    bondTx.isBusy ||
-    bondTx.status === 'reviewing' ||
-    (quoteState.isLoading && displayPhase === 'review');
+    bondTx.isBusy || (quoteState.isLoading && displayPhase === 'create');
 
   return (
     <GlassPanel hoverable>
@@ -351,10 +339,10 @@ export default function BondingForm({
           <QuotePanel
             copy={copy}
             side={side}
-            quote={displayQuote}
-            isLoading={quoteState.isLoading && !bondTx.reviewOpen}
+            quote={quoteState.quote}
+            isLoading={quoteState.isLoading}
             error={quoteState.error}
-            isStale={quoteState.isStale && bondTx.reviewQuote == null}
+            isStale={quoteState.isStale}
             hasAmount={Boolean(amount) && parsedAmount.ok}
           />
         </div>
@@ -409,21 +397,6 @@ export default function BondingForm({
           {ctaLabel}
         </button>
       </div>
-
-      {bondTx.reviewOpen && bondTx.reviewQuote ? (
-        <CreateBondReviewDialog
-          quote={bondTx.reviewQuote}
-          copy={copy}
-          busy={bondTx.status === 'submitting' || bondTx.status === 'confirming'}
-          error={
-            bondTx.reviewOpen && bondTx.status !== 'confirmation_unavailable'
-              ? bondTx.error
-              : null
-          }
-          onConfirm={() => void bondTx.onConfirmCreate()}
-          onCancel={bondTx.closeReview}
-        />
-      ) : null}
     </GlassPanel>
   );
 }

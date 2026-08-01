@@ -283,8 +283,6 @@ Bonding UI chủ yếu dùng:
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI
 - Math, adapter config/account/quote, map lỗi, và state machine approve/create/claim riêng của Bonding
 - UI language/footer/shader dùng chung cộng `GlassPanel`, `StatusBanner`, và `TxLink`
-- `focusTrap` trong dialog review tạo bond
-
 Các thẻ Bonding Stats trên homepage không phải Bonding transaction UI. Chúng dùng
 `/api/bond-metrics` và các đường dữ liệu Stats liên quan.
 

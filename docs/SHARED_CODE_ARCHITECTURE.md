@@ -288,8 +288,6 @@ The Bonding UI primarily uses:
 - Bonding-local math, config/account/quote adapters, error mapping, and
   approve/create/claim transaction state machines
 - shared language/footer/shader UI plus `GlassPanel`, `StatusBanner`, and `TxLink`
-- `focusTrap` in the create-bond review dialog
-
 The homepage Bonding Stats cards are not the Bonding transaction UI. They use
 aggregate `/api/bond-metrics` and related Stats data paths.
 

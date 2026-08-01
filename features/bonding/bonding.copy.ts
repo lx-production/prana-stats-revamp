@@ -33,10 +33,9 @@ export type BondingCopy = {
   expectedWbtc: string;
   rateLabel: string;
   durationLabel: (days: number) => string;
-  /** Primary CTA phases (Approve → Review → Create → Confirming). */
+  /** Primary CTA phases (Approve → Create → Confirming). */
   approveCta: string;
   approvingCta: string;
-  reviewQuote: string;
   refreshingQuote: string;
   createBondCta: string;
   creatingBondCta: string;
@@ -47,10 +46,6 @@ export type BondingCopy = {
   bondConfirmed: string;
   accountSyncWarning: string;
   confirmationUnavailable: string;
-  reviewDialogTitle: string;
-  reviewDialogBody: string;
-  reviewDialogConfirm: string;
-  reviewDialogCancel: string;
   processing: string;
   activeBondsHeading: string;
   noBonds: string;
@@ -118,7 +113,6 @@ const vi: BondingCopy = {
   durationLabel: (days) => `${days} ngày`,
   approveCta: 'Approve',
   approvingCta: 'Đang approve…',
-  reviewQuote: 'Xem lại',
   refreshingQuote: 'Đang làm mới quote…',
   createBondCta: 'Tạo Bond',
   creatingBondCta: 'Đang tạo bond…',
@@ -131,11 +125,6 @@ const vi: BondingCopy = {
     'Giao dịch thành công nhưng chưa tải lại số dư. Làm mới trang nếu cần.',
   confirmationUnavailable:
     'Đã gửi giao dịch nhưng chưa xác nhận được receipt. Kiểm tra Polygonscan rồi bấm Tiếp tục xác nhận.',
-  reviewDialogTitle: 'Xác nhận tạo bond',
-  reviewDialogBody:
-    'Kiểm tra lại số lượng và kỳ hạn trước khi ví mở giao dịch tạo bond.',
-  reviewDialogConfirm: 'Tạo Bond',
-  reviewDialogCancel: 'Hủy',
   processing: 'Đang xử lý…',
   activeBondsHeading: 'Bond đang hoạt động',
   noBonds: 'Chưa có bond nào.',
@@ -215,7 +204,6 @@ const en: BondingCopy = {
   durationLabel: (days) => `${days} days`,
   approveCta: 'Approve',
   approvingCta: 'Approving…',
-  reviewQuote: 'Review',
   refreshingQuote: 'Refreshing quote…',
   createBondCta: 'Create Bond',
   creatingBondCta: 'Creating bond…',
@@ -228,11 +216,6 @@ const en: BondingCopy = {
     'Transaction succeeded but the balance refresh failed. Reload if needed.',
   confirmationUnavailable:
     'Transaction submitted but the receipt could not be confirmed. Check Polygonscan, then continue confirming.',
-  reviewDialogTitle: 'Confirm create bond',
-  reviewDialogBody:
-    'Review amounts and term before your wallet opens the create-bond transaction.',
-  reviewDialogConfirm: 'Create Bond',
-  reviewDialogCancel: 'Cancel',
   processing: 'Processing…',
   activeBondsHeading: 'Active bonds',
   noBonds: 'No active bonds yet.',

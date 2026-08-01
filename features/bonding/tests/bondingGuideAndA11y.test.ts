@@ -93,7 +93,6 @@ test('Bonding and Staking share neutral WalletControl / TxLink; no Bonding→Sta
     'features/bonding/components/BondingForm.tsx',
     'features/bonding/components/ActiveBonds.tsx',
     'features/bonding/components/BondCard.tsx',
-    'features/bonding/components/CreateBondReviewDialog.tsx',
   ];
 
   for (const relative of bondingFiles) {
@@ -176,16 +175,22 @@ test('BondSideTabs uses tablist; TermSelector keeps radiogroup keyboard pattern'
   }
 });
 
-test('CreateBondReviewDialog traps focus and supports Escape', () => {
-  const dialog = readRepoFile(
+test('Bonding create flow has no in-app review dialog', () => {
+  const form = readRepoFile(
     'features',
     'bonding',
     'components',
-    'CreateBondReviewDialog.tsx',
+    'BondingForm.tsx',
+  );
+  const hook = readRepoFile(
+    'features',
+    'bonding',
+    'hooks',
+    'useBondTransaction.ts',
   );
 
-  assert.match(dialog, /trapFocus/);
-  assert.match(dialog, /role="dialog"/);
-  assert.match(dialog, /aria-modal="true"/);
-  assert.match(dialog, /onEscape/);
+  assert.doesNotMatch(form, /CreateBondReviewDialog/);
+  assert.doesNotMatch(form, /reviewOpen|reviewQuote|closeReview/);
+  assert.doesNotMatch(hook, /openReview|reviewOpen|reviewQuote|reviewing/);
+  assert.match(hook, /Approve → Create Bond → Confirming/);
 });

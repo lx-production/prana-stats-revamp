@@ -9,7 +9,6 @@ import type { BondingAccount, BondingTransactionConfirmation } from '../bonding.
 export type BondCtaAction =
   | 'resume_confirmation'
   | 'approve'
-  | 'open_review'
   | 'create';
 
 /**
@@ -19,13 +18,10 @@ export type BondCtaAction =
 export function resolveBondCtaAction(input: {
   hasPendingHash: boolean;
   needsApproval: boolean;
-  /** True when the review dialog is open and user confirmed create. */
-  createRequested: boolean;
 }): BondCtaAction {
   if (input.hasPendingHash) return 'resume_confirmation';
   if (input.needsApproval) return 'approve';
-  if (input.createRequested) return 'create';
-  return 'open_review';
+  return 'create';
 }
 
 export type ConfirmBondReceiptDeps = {
@@ -200,14 +196,13 @@ export async function submitBondWriteFlow(
 }
 
 /**
- * Orchestrate resume / approve / review / create as separate user actions.
+ * Orchestrate resume / approve / create as separate user actions.
  * Returns which branch ran — used to assert one click never chains approve+create.
  */
 export async function runBondCtaBranch(options: {
   action: BondCtaAction;
   resumeConfirmation: () => Promise<void>;
   runApprove: () => Promise<void>;
-  openReview: () => Promise<void>;
   runCreate: () => Promise<void>;
 }): Promise<BondCtaAction> {
   switch (options.action) {
@@ -220,8 +215,5 @@ export async function runBondCtaBranch(options: {
     case 'create':
       await options.runCreate();
       return 'create';
-    default:
-      await options.openReview();
-      return 'open_review';
   }
 }

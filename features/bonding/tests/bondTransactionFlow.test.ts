@@ -43,7 +43,6 @@ test('resolveBondCtaAction never chains approve into create on one click', () =>
     resolveBondCtaAction({
       hasPendingHash: false,
       needsApproval: true,
-      createRequested: true,
     }),
     'approve',
   );
@@ -51,15 +50,6 @@ test('resolveBondCtaAction never chains approve into create on one click', () =>
     resolveBondCtaAction({
       hasPendingHash: false,
       needsApproval: false,
-      createRequested: false,
-    }),
-    'open_review',
-  );
-  assert.equal(
-    resolveBondCtaAction({
-      hasPendingHash: false,
-      needsApproval: false,
-      createRequested: true,
     }),
     'create',
   );
@@ -67,7 +57,6 @@ test('resolveBondCtaAction never chains approve into create on one click', () =>
     resolveBondCtaAction({
       hasPendingHash: true,
       needsApproval: true,
-      createRequested: true,
     }),
     'resume_confirmation',
   );
@@ -84,9 +73,6 @@ test('runBondCtaBranch runs exactly one branch per action', async () => {
     runApprove: async () => {
       calls.push('approve');
     },
-    openReview: async () => {
-      calls.push('review');
-    },
     runCreate: async () => {
       calls.push('create');
     },
@@ -96,21 +82,18 @@ test('runBondCtaBranch runs exactly one branch per action', async () => {
 
   calls.length = 0;
   await runBondCtaBranch({
-    action: 'open_review',
+    action: 'create',
     resumeConfirmation: async () => {
       calls.push('resume');
     },
     runApprove: async () => {
       calls.push('approve');
     },
-    openReview: async () => {
-      calls.push('review');
-    },
     runCreate: async () => {
       calls.push('create');
     },
   });
-  assert.deepEqual(calls, ['review']);
+  assert.deepEqual(calls, ['create']);
 });
 
 test('submitBondWriteFlow does not write when fresh account refetch fails', async () => {

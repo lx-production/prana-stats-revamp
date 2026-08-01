@@ -97,7 +97,7 @@ PRANA Bonding creates and manages Buy/Sell bonds through Bond contracts on Polyg
 
 **Key risks**
 
-- Creating a bond may require a separate ERC-20 Approve then Create after in-app review; one click does not open both wallet prompts back-to-back. Payout vests over time and must be claimed under the contract rules.
+- Creating a bond may require a separate ERC-20 Approve then Create; one click does not open both wallet prompts back-to-back. Payout vests over time and must be claimed under the contract rules.
 - Buy uses exact WBTC input; Buy and Sell have no on-chain slip locks (`minOut`). Quotes are estimates — final amounts may differ if reserves, rates, treasury, or related state change between quote and execution. Fresh-quoting before write is not an on-chain slip lock. However with the current scale and traffic of PRANA, the difference between quote and execution is rare.
 - Claims may fail if the deployment is paused, treasury/reserves are insufficient, the network/RPC is unavailable, or a call reverts. THĐP does not guarantee that every expected payout will be available or successfully claimed because of reasons beyond our control.
 - Admins/managers may pause, update rates/minimums, sync or set impacted reserves, and withdraw surplus under the contract rules. Existing bonds keep payout terms at creation; pause status, funding, and role keys remain risks. Review current on-chain state before acting.

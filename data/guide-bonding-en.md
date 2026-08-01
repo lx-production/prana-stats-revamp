@@ -11,7 +11,7 @@ Creating a bond often needs an ERC-20 **Approve** first:
 - **Buy Bond** spends **WBTC** — approve the Buy Bond V2 contract as spender
 - **Sell Bond** spends **PRANA** — approve the Sell Bond V2 contract as spender
 
-The primary button follows phases: **Approve** → **Review** → **Create Bond** → **Confirming**. One click never opens Approve and Create prompts back-to-back. If allowance already matches the required amount, the UI skips Approve and goes straight to Review.
+The primary button follows phases: **Approve** → **Create Bond** → **Confirming**. One click never opens Approve and Create prompts back-to-back. If allowance already matches the required amount, the UI skips Approve and goes straight to Create Bond.
 
 What to check on the Approve prompt:
 
@@ -28,7 +28,7 @@ Buy Bond locks **WBTC** and vest **PRANA** over the selected term.
 
 You enter how much WBTC to spend. The quote shows expected PRANA payout. The contract call uses that exact WBTC amount (`buyBondForWbtcAmount`).
 
-Before create, the app refreshes the quote. If raw amounts are unchanged, the flow continues; if they changed, Review updates before you can write.
+Before create, the app refreshes the quote. If raw amounts are unchanged, the flow continues; if the expected payout changed, the form quote updates before the wallet opens.
 
 ## 3. Sell Bond
 

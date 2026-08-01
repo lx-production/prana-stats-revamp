@@ -97,7 +97,7 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX áp dụng cho Buy WBTC và Sell PRANA.
   - Term selector đọc on-chain V2 config; mirror `features/staking/components/DurationSelector.tsx` (chip grid, roving `tabIndex`, keyboard); mặc định 30 ngày.
-  - Quote debounce 1000 ms (1s): trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi review/write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
+  - Quote debounce 1000 ms (1s): trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash loading mỗi lần gõ); chỉ sau khi user ngừng gõ mới fetch. Hủy request cũ, bỏ response stale; sau 60 giây (1 phút) đánh dấu quote cũ. Khi user bấm CTA, app tự fresh-quote trước khi write thay vì bắt refresh thủ công; nếu raw amount không đổi thì tiếp tục bình thường.
   - Không mang `BuyBondBalance`, `SellBondBalance`, `DonutChart` hoặc logic scan volume vào route mới.
   - **Slippage / thiếu `minOut`**
     - **Exact WBTC Buy** luôn dùng đúng số WBTC truyền vào `buyBondForWbtcAmount`; không có rủi ro chi nhiều WBTC hơn input. Giá trị có thể thay đổi là lượng PRANA nhận, vì contract không nhận `minPranaOut`.
@@ -109,25 +109,24 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
     - MAX dùng raw balance chính xác, không đi qua `Number`/`parseFloat`; hiện trên Buy WBTC và Sell PRANA.
     - Đổi side, term, amount, account hoặc chain invalidates quote hiện tại.
     - Debounce fake-timer test: nhiều lần gõ chỉ gửi request cuối; request cũ bị abort; response về sai thứ tự không ghi đè quote mới.
-    - Quote đủ 60 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật review/cap trước khi cho write.
+    - Quote đủ 60 giây bị đánh dấu stale; bấm CTA phải tự fresh-quote. Quote không đổi tiếp tục flow, quote đổi cập nhật panel trước khi cho write.
     - Determinism test: cùng reserves/rates/treasury và input phải cho đúng cùng raw quote dù block timestamp khác; chỉ fixture thay đổi state mới được làm quote đổi.
     - Term refresh loại bỏ option đang chọn thì fallback 30 ngày hoặc option đầu tiên; không submit term đã biến mất.
     - Component test đủ loading/empty/error/issue states và copy VI/EN cho hai quote mode.
 5. ✅ **Harden approve và tạo bond**
   - Template Staking: `stakeCtaPhase.ts`, `useStakeTransaction.ts`, `stakeTransactionFlow.ts` → tương ứng Bonding `bondCtaPhase` / transaction hook/flow (approve+create thay vì permit+stake).
   - Template confirmation mới từ v4.4.0: tách helper thuần `features/bonding/utils/bondTransactionConfirmation.ts` tương tự `features/swap/utils/swapTransactionConfirmation.ts`; hook chỉ orchestration/UI state.
-  - Dùng một CTA theo phase: `Approve` → `Review` → `Create Bond` → `Confirming`; không tự bật hai wallet prompt liên tiếp.
-  - Bốn phase là trạng thái UI, không phải bốn yêu cầu ký trên ví:
+  - Dùng một CTA theo phase: `Approve` → `Create Bond` → `Confirming`; không tự bật hai wallet prompt liên tiếp. Không có in-app review dialog — form đã hiện amount/term/quote.
+  - Ba phase là trạng thái UI, không phải ba yêu cầu ký trên ví:
     - `Approve`: nếu allowance chưa phù hợp, user bấm CTA và xác nhận một transaction `approve` trên ví.
-    - `Review`: app fresh-quote rồi mở dialog review nội bộ; không gọi ví.
-    - `Create Bond`: user xác nhận dialog, sau đó ví hiện một transaction tạo bond.
+    - `Create Bond`: user bấm CTA; app fresh-quote rồi ví hiện một transaction tạo bond.
     - `Confirming`: app chờ receipt; không gọi ví và không ký thêm.
   - Vì vậy flow cần approval có tối đa hai wallet transaction prompts, xuất hiện ở hai hành động chủ động riêng. Nếu allowance đã đủ thì bỏ qua `Approve` và chỉ còn prompt tạo bond. `simulateContract`, fresh quote và chờ receipt đều không mở ví.
   - Trước approve và trước create:
     - Refetch account/config/quote thành công.
     - Đảm bảo đúng wallet, Polygon, balance, minimum, term, paused và treasury capacity.
-    - Validate quote response echo khớp `{mode, termId, exact input}` của form/review (`bondQuoteEcho.ts`); mismatch thì dừng với `quote_issues`.
-    - Calldata create dùng exact input từ form/review snapshot — không lấy input leg từ quote response.
+    - Validate quote response echo khớp `{mode, termId, exact input}` của form (`bondQuoteEcho.ts`); mismatch thì dừng với `quote_issues`.
+    - Calldata create dùng exact input từ form snapshot — không lấy input leg từ quote response.
   - Exact WBTC Buy và Exact PRANA Sell chỉ cần allowance `>=` input cố định; không hạ allowance lớn hơn khi không cần.
   - Ngay trước write, chạy `simulateContract` rồi destructure `{ request }` (viem trả `{ result, request }` — chỉ `request` mới truyền được vào `writeContract`); không truyền nguyên object trả về của simulate.
   - Khi đã có hash, tuyệt đối không broadcast lần hai:
@@ -155,10 +154,10 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
   - Chỉ báo thành công sau receipt; account refetch thất bại sau receipt là warning, không biến giao dịch thành failed.
   - Chuẩn hóa lỗi VI/EN cho rejection, wrong chain, gas, allowance, pause, minimum, treasury, reserve, revert và RPC; không render raw provider error.
   - **Kiểm thử Bước 5**
-    - State-machine test cho mọi phase: flow cần approval có đúng hai wallet prompts tách biệt; flow đủ allowance có đúng một prompt; Review/Confirming/simulate/fresh-quote không gọi ví.
+    - State-machine test cho mọi phase: flow cần approval có đúng hai wallet prompts tách biệt; flow đủ allowance có đúng một prompt; Confirming/simulate/fresh-quote không gọi ví.
     - Đảm bảo một click không tự mở cả approve lẫn create prompt.
     - Exact WBTC Buy và Exact PRANA Sell: allowance bằng input là đủ; thiếu một raw unit phải approve; allowance lớn không bị hạ không cần thiết.
-    - Thay amount/term/account/chain trước broadcast làm mất review snapshot; thay UI state sau khi đã có hash không được tạo write thứ hai.
+    - Thay amount/term/account/chain trước broadcast dùng form snapshot mới; thay UI state sau khi đã có hash không được tạo write thứ hai.
     - User reject approve hoặc create trước hash cho phép retry đúng phase; lỗi receipt sau hash chỉ hiện “tiếp tục xác nhận”.
     - Wallet receipt success không gọi server fallback; wallet RPC lỗi + server success/revert trả đúng terminal state.
     - Wallet và server cùng unavailable giữ `Confirmation unavailable`, hash và action snapshot; không log/render như transaction failed và không gọi write lần hai.
@@ -216,7 +215,7 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
   - Dùng dark shell, shader brightness thấp, `GlassPanel`, `StatusBanner`, gold CTA, Lucide và `AppFooter`; không thêm MUI hoặc PropTypes.
   - Xác nhận shared wallet control / `TxLink` đã được cả Staking và Bonding dùng sau refactor ở Bước 4; không còn import ngược từ Bonding vào `features/staking/`.
   - Thêm VI/EN copy, metadata, Polygonscan links cho hai deployment V2 đang live (Buy/Sell), responsive mobile và `prefers-reduced-motion`. Header không gắn link V1 — V1 chỉ còn claim lịch sử trong Active Bonds.
-  - Term/tabs/dialog hỗ trợ keyboard, focus trap, Escape, focus-visible và `aria-live`.
+  - Term/tabs hỗ trợ keyboard, focus-visible và `aria-live`.
   - Thêm hai trang guide riêng, mirror Staking (`/guide/staking/` + `/guide/staking-contracts/`):
     1. **User guide** `/guide/bonding/` — approve, Buy (exact WBTC), Sell, vesting, claim, treasury và giới hạn quote/slippage.
     2. **Contracts guide** `/guide/bonding-contracts/` — giải thích on-chain `BuyPranaBondV2` và `SellPranaBondV2` (educational; luôn đối chiếu code/params trên Polygonscan).
@@ -257,7 +256,6 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
   - Sau khi mọi test pass, xóa toàn bộ `bonding-legacy-ui/`; không mang theme context, staking constants hay hooks thống kê dư thừa sang feature mới.
   - **Kiểm thử Bước 7**
     - Keyboard test cho Buy/Sell tabs (`role="tablist"`) và term chips (`role="radiogroup"`): Tab, mũi tên, Enter/Space và roving `tabIndex`.
-    - Dialog test: focus vào dialog khi mở, Tab không thoát, Escape đóng, đóng xong trả focus về CTA.
     - `StatusBanner` có đúng `role`, `aria-live`; input/CTA có label và disabled reason đọc được bằng screen reader.
     - Reduced-motion test/class audit: shader/decorative animation và spinner không tạo chuyển động liên tục khi user yêu cầu giảm chuyển động.
     - Responsive QA ở 320, 375, 768 và desktop: không overflow amount/hash/address, CTA full width trên mobile.

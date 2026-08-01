@@ -35,12 +35,12 @@ function buyCheck(
     quote: sampleQuote(quoteOverrides ?? {}),
     mode: 'buy_exact_wbtc',
     termId: 1,
-    reviewedInputRaw: 1000n,
+    formInputRaw: 1000n,
     ...rest,
   };
 }
 
-test('buy echo: mode, termId, and wbtcAmountRaw must match reviewed input', () => {
+test('buy echo: mode, termId, and wbtcAmountRaw must match form input', () => {
   assert.equal(isBondingQuoteEchoValid(buyCheck()), true);
 
   assert.equal(
@@ -55,16 +55,16 @@ test('buy echo: mode, termId, and wbtcAmountRaw must match reviewed input', () =
     false,
   );
   assert.equal(
-    isBondingQuoteEchoValid(buyCheck({ reviewedInputRaw: 999n })),
+    isBondingQuoteEchoValid(buyCheck({ formInputRaw: 999n })),
     false,
   );
 });
 
-test('sell echo: mode, termId, and pranaAmountRaw must match reviewed input', () => {
+test('sell echo: mode, termId, and pranaAmountRaw must match form input', () => {
   const sell = buyCheck({
     mode: 'sell_exact_prana',
     termId: 0,
-    reviewedInputRaw: 5_000_000_000n,
+    formInputRaw: 5_000_000_000n,
     quote: {
       mode: 'sell_exact_prana',
       termId: 0,
@@ -91,7 +91,7 @@ test('sell echo: mode, termId, and pranaAmountRaw must match reviewed input', ()
   );
 });
 
-test('create calldata amount always comes from the review/form snapshot', () => {
+test('create calldata amount always comes from the form snapshot', () => {
   assert.equal(resolveCreateAmountRaw(1000n), 1000n);
   assert.equal(resolveCreateAmountRaw(5_000_000_000n), 5_000_000_000n);
 });

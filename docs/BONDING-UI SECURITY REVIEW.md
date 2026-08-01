@@ -75,48 +75,42 @@ khả năng state thay đổi giữa quote và execution là không đáng kể 
   trung bình mỗi bond tăng đáng kể; nếu threat model thay đổi, contract mới là nơi
   duy nhất có thể enforce bảo vệ này.
 
-### BUI-SEC-02 — Accepted design risk — Fresh quote thay đổi không yêu cầu consent lần hai
+### BUI-SEC-02 — Accepted design risk — Fresh quote trước create không có bước consent in-app riêng
 
 **Vị trí**
 
-- `features/bonding/hooks/useBondTransaction.ts:508`
-- `features/bonding/hooks/useBondTransaction.ts:530`
-- `features/bonding/hooks/useBondTransaction.ts:591`
-- `features/bonding/hooks/useBondTransaction.ts:600`
-- `features/bonding/hooks/useBondTransaction.ts:602`
+- `features/bonding/hooks/useBondTransaction.ts` (`runCreate`)
 
 **Quyết định thiết kế**
 
 Flow hiện tại:
 
-1. `openReview()` lấy quote A và mở dialog.
-2. User bấm Confirm dựa trên quote A.
-3. `runCreate()` lấy quote B.
-4. Code gọi `setReviewQuote(B)` rồi tiếp tục simulate/write ngay.
+1. Form đã hiện amount, term và live quote.
+2. User bấm CTA **Create Bond**.
+3. `runCreate()` fresh-quote rồi simulate/write ngay (không mở in-app review dialog).
 
-Nếu quote B khác quote A, React state update không tạo một bước consent mới. Wallet mở sau đó chỉ hiển thị input/term, không hiển thị payout.
-
-Behavior này phù hợp với quyết định trong `docs/add-bonding-ui.md:97-109`: khi exact
-raw input không đổi, app cập nhật quote/cap rồi tiếp tục flow. Với giả định state
-hầu như không đổi ở quy mô hiện tại, PRANA chấp nhận không thêm một bước confirm
-thứ hai.
+Wallet prompt sau đó chỉ hiển thị input/term, không hiển thị payout. Behavior này
+phù hợp với quyết định trong `docs/add-bonding-ui.md`: khi exact raw input không
+đổi, app cập nhật quote rồi tiếp tục flow. Với giả định state hầu như không đổi ở
+quy mô hiện tại, PRANA chấp nhận không thêm một bước confirm in-app riêng trước
+write.
 
 **Giới hạn kỹ thuật cần tiếp tục công bố**
 
-- User xác nhận dialog theo số liệu A nhưng transaction có thể thực thi theo trạng
-  thái B; BUI-SEC-01 khiến chênh lệch này không được contract chặn.
+- Expected payout trên form có thể lệch so với trạng thái lúc transaction thực thi;
+  BUI-SEC-01 khiến chênh lệch này không được contract chặn.
 - Đây không được tính là vulnerability trong threat model hiện tại, nhưng cần
   re-evaluate cùng BUI-SEC-01 nếu quy mô/traffic thay đổi.
 
 **Hardening không làm thay đổi thiết kế (đã ship)**
 
-- Client validate response echo trước approve/review/create (`features/bonding/utils/bondQuoteEcho.ts`):
-  - Buy: `mode`, `termId`, `wbtcAmountRaw === reviewedInputRaw`.
-  - Sell: `mode`, `termId`, `pranaAmountRaw === reviewedInputRaw`.
+- Client validate response echo trước approve/create (`features/bonding/utils/bondQuoteEcho.ts`):
+  - Buy: `mode`, `termId`, `wbtcAmountRaw === formInputRaw`.
+  - Sell: `mode`, `termId`, `pranaAmountRaw === formInputRaw`.
   - Mismatch → dừng flow với `quote_issues` (không mở ví / không broadcast).
-- Calldata input luôn lấy từ form/review snapshot (`resolveCreateAmountRaw`), không lấy
+- Calldata input luôn lấy từ form snapshot (`resolveCreateAmountRaw`), không lấy
   input leg từ quote response.
-- Có thể thêm telemetry cho chênh lệch quote A/B; chỉ yêu cầu confirm lần hai nếu
+- Có thể thêm telemetry cho chênh lệch quote; chỉ yêu cầu confirm lần hai nếu
   sau này protocol đặt threshold thay đổi tối đa.
 
 ### BUI-SEC-03 — Medium — Account API là RPC amplification point với scan không giới hạn theo tổng số bond
@@ -292,7 +286,7 @@ Quote với amount ngoài `uint256` vẫn thực hiện RPC/math trước khi k�
 Các test pass xác nhận behavior hiện tại, nhưng chưa có test cho:
 
 - ~~Fresh-quote response bị reject nếu `mode`, `termId` hoặc exact input không khớp
-  review snapshot.~~ (covered by `bondQuoteEcho.test.ts`; wired in approve/review/create via `isBondingQuoteEchoValid`)
+  form snapshot.~~ (covered by `bondQuoteEcho.test.ts`; wired in approve/create via `isBondingQuoteEchoValid`)
 - ~~Pending hash sống qua reload và bind đúng account/chain.~~ (covered by `bondPendingTransactionStorage` + confirmation resume tests)
 - ~~Malformed requests không tiêu global expensive-RPC quota.~~ (BUI-SEC-06: validate-before-rate-limit on bonding POST)
 - ~~Raw amount vượt `uint256`.~~ (BUI-SEC-07: `parseUnsignedDecimalRaw` + `bondingApi.test.ts` bounds)

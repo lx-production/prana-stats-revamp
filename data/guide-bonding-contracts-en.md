@@ -36,7 +36,7 @@ After each bond creation, impacted reserves are updated. So the next bond sees *
 - **Impacted is the default**.
 - If impacted is better for the user than DEX market, the contract **syncs impacted to pool** and uses **market**.
 
-This applies to both app quote modes (buy exact WBTC, sell exact PRANA) and to the on-chain create paths.
+This applies to both app quote modes (buy & sell PRANA) and to the on-chain create paths.
 
 **Where is the OTC edge?** 
 

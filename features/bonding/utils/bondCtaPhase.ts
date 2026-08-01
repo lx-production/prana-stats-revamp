@@ -15,10 +15,9 @@ export function getBondCtaPhase(
   if (hasPendingHash) return 'confirmation_unavailable';
   if (status === 'approving') return 'approve';
   if (status === 'submitting') return 'create';
-  if (status === 'reviewing') return 'create';
   if (needsApproval) return 'approve';
   if (status === 'error') {
-    return needsApproval ? 'approve' : 'review';
+    return needsApproval ? 'approve' : 'create';
   }
-  return 'review';
+  return 'create';
 }

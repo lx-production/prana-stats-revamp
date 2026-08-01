@@ -184,12 +184,11 @@ export type BondingTransactionConfirmation =
   | { status: 'confirmation_unavailable' };
 
 /**
- * Approve → Review → Create Bond → Confirming UI lifecycle (Bước 5).
- * Phases are UI states, not four wallet signature prompts.
+ * Approve → Create Bond → Confirming UI lifecycle.
+ * Phases are UI states, not three wallet signature prompts.
  */
 export type BondCtaPhase =
   | 'approve'
-  | 'review'
   | 'create'
   | 'confirming'
   | 'confirmation_unavailable'
@@ -199,7 +198,6 @@ export type BondCtaPhase =
 export type BondTransactionStatus =
   | 'idle'
   | 'approving'
-  | 'reviewing'
   | 'submitting'
   | 'confirming'
   | 'success'

@@ -35,7 +35,7 @@ Token amounts, allowance và bond ID đi qua JSON dưới dạng **decimal strin
 2. **Reads qua backend** — config, account, quote và fallback confirmation dùng RPC server; ví chỉ trực tiếp `approve` / create / `claim`.
 3. **Write target cố định trong code** — create/claim không nhận contract address từ API hay UI; mapping nội bộ `side` × `version`.
 4. **Exact input only** — Buy khóa WBTC; Sell khóa PRANA. Contract không có `minOut` / deadline; residual quote↔execution risk được chấp nhận ở quy mô hiện tại.
-5. **Một CTA theo phase** — Approve → Review → Create Bond → Confirming; tối đa hai wallet prompts (approve + create), không tự mở liên tiếp.
+5. **Một CTA theo phase** — Approve → Create Bond → Confirming; tối đa hai wallet prompts (approve + create), không tự mở liên tiếp.
 6. **Confirmation không suy diễn** — lỗi đọc RPC ≠ revert on-chain; sau khi đã có hash không broadcast lần hai.
 
 ---
@@ -87,7 +87,7 @@ Guides `/guide/bonding/` và `/guide/bonding-contracts/` nằm trong homepage/le
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên Buy/Sell Bond V1/V2 + ERC-20 `approve` |
 
-Browser **không** xây create/claim calldata từ địa chỉ do API trả. Input create lấy từ form/review snapshot; target lấy từ `constants/bonds.ts` + `bondClaimTarget.ts`.
+Browser **không** xây create/claim calldata từ địa chỉ do API trả. Input create lấy từ form snapshot; target lấy từ `constants/bonds.ts` + `bondClaimTarget.ts`.
 
 ### Ba lớp RPC
 
@@ -155,11 +155,7 @@ sequenceDiagram
     Wallet->>Chain: Approval tx
   end
 
-  User->>Tx: CTA Review
-  Tx->>API: Fresh quote + echo check
-  Tx-->>Form: CreateBondReviewDialog
-
-  User->>Tx: Confirm create
+  User->>Tx: CTA Create Bond
   Tx->>API: Fresh quote + echo check
   Tx->>Wallet: simulate then write create
   Wallet->>Chain: Create bond tx
@@ -180,19 +176,18 @@ Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy 
 
 ## CTA phase machine
 
-Phases là **trạng thái UI**, không phải bốn lần ký ví:
+Phases là **trạng thái UI**, không phải ba lần ký ví:
 
 ```
-approve → review → create → confirming → success
-                                      ↘ confirmation_unavailable
-                         error ↗ (retry đúng phase)
+approve → create → confirming → success
+                             ↘ confirmation_unavailable
+                error ↗ (retry đúng phase)
 ```
 
 | Phase | Wallet? | Việc xảy ra |
 | --- | --- | --- |
 | `approve` | Có (1 tx) | `approve` exact input nếu allowance thiếu |
-| `review` | Không | Fresh-quote → dialog nội bộ |
-| `create` | Có (1 tx) | User confirm dialog → simulate → write create |
+| `create` | Có (1 tx) | Fresh-quote → simulate → write create |
 | `confirming` | Không | Chờ receipt |
 | `confirmation_unavailable` | Không | Giữ hash + snapshot; CTA “Tiếp tục xác nhận” |
 | `success` / `error` | Không | Reset form hoặc cho retry |
@@ -204,7 +199,7 @@ Trước approve và trước create:
 1. Refetch account/config/quote thành công (không fallback cached account lỗi).
 2. Đúng wallet, Polygon, balance, minimum, term, paused, treasury.
 3. Validate quote echo (`bondQuoteEcho.ts`): Buy khớp `mode` + `termId` + `wbtcAmountRaw`; Sell khớp `pranaAmountRaw`. Mismatch → dừng với `quote_issues`.
-4. Calldata input từ form/review snapshot — **không** lấy input leg từ quote response.
+4. Calldata input từ form snapshot — **không** lấy input leg từ quote response.
 5. `simulateContract` rồi chỉ truyền `{ request }` vào `writeContract`.
 
 Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn khi không cần.
@@ -219,7 +214,7 @@ Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn
 
 - Debounce **1000 ms** — trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash mỗi lần gõ).
 - Abort request cũ; bỏ response stale theo monotonic request id.
-- Sau **60 s** đánh dấu quote stale; CTA tự `freshQuote()` trước review/write.
+- Sau **60 s** đánh dấu quote stale; CTA tự `freshQuote()` trước write.
 - Đổi side / term / amount / account / chain → invalidate.
 
 Parsers: WBTC tối đa **8** decimals, PRANA **9**. MAX dùng raw balance exact (`rawBalanceToAmountInput`), không qua `Number`/`parseFloat`.
@@ -280,7 +275,7 @@ features/bonding/
   BondingEntry.tsx              # lazy root + Web3Providers
   bonding.types.ts              # config, account, quote, tx lifecycle
   bonding.copy.ts               # VI/EN
-  components/                   # Form, tabs, TermSelector, review dialog, ActiveBonds, BondCard
+  components/                   # Form, tabs, TermSelector, ActiveBonds, BondCard
   hooks/                        # config, account, quote, useBondTransaction, useBondActions, pending
   utils/
     bondingApi.ts               # fetchJson adapters + React Query keys
@@ -346,7 +341,7 @@ Deployments (Polygon): xem `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 Chi tiết đầy đủ: [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md). Contributors cần biết khi thay đổi flow:
 
 1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate là guard UX, không phải bảo đảm on-chain.
-2. **Fresh quote B sau dialog không bắt confirm lần hai** — nếu raw input không đổi, app cập nhật quote rồi tiếp tục. Echo check vẫn bắt `mode` / `termId` / exact input khớp snapshot.
+2. **Fresh quote trước create không bắt confirm in-app riêng** — form đã hiện amount/term/quote; CTA Create Bond fresh-quote rồi mở ví. Echo check vẫn bắt `mode` / `termId` / exact input khớp form snapshot.
 3. **Account API scan `getUserActiveBonds` trên cả bốn deployment** — chi phí tăng theo tổng lịch sử bond; rate limit giảm tải nhưng không thay indexer dài hạn.
 4. Bonding confirmation **không** tái dùng HMAC / `/api/swap/verify-transaction` — mapping contract/function cố định; endpoint chỉ dự phòng UX, không ghi verified analytics.
 

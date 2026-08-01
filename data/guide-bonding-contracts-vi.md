@@ -34,16 +34,16 @@ Sau mỗi lần tạo bond, impacted reserves được cập nhật. Vì vậy b
 - **Mặc định dùng impacted**.
 - Nếu impacted đang cho user lợi hơn giá DEX, hợp đồng sẽ **đồng bộ hóa (sync) impacted về pool** và dùng **market**.
 
-Áp dụng cho cả 2 luồng (mua bằng WBTC, bán PRANA).
+Áp dụng cho cả 2 luồng (mua & bán PRANA).
 
 **Bonding OTC còn lợi ở đâu?**
 
 **OTC** (Over-The-Counter — giao dịch thỏa thuận ngoài sàn) nghĩa là đổi token qua bonding với Protocol thay vì swap trực tiếp trên DEX pool. Lệnh không đụng thanh khoản spot ngay; giá và payout do hợp đồng bonding tính, rồi token nhận về vest theo kỳ hạn.
 
-Phần chặn trên chỉ chặn baseline AMM (trước ưu đãi). Lợi thế OTC đến từ `bondRates`:
+Phần đồng bộ hóa impacted reserves trên chỉ được thực hiện với giá gốc (trước ưu đãi). Lợi thế OTC đến từ `bondRates`:
 
-- Buy có thể được phần trăm **discount**
-- Sell có thể được phần trăm **premium**
+- Buy có thể được phần trăm **discount** (rẻ hơn giá gốc)
+- Sell có thể được phần trăm **premium** (cao hơn giá gốc)
 - Đổi lại payout sẽ **vest theo kỳ hạn**
 
 Nếu sau khi tính discount/premium + thời gian vesting mà bonding không tốt hơn swap DEX, thì nên swap trực tiếp trên DEX.
@@ -61,7 +61,7 @@ BuyPranaBondV2 có hai hàm tạo on-chain:
 - `buyBondForWbtcAmount(wbtcAmount, period)` — chi đúng số WBTC; PRANA payout được tính on-chain
 - `buyBondForPranaAmount(pranaAmount, period)` — nhắm đúng số PRANA; chi phí WBTC được tính on-chain
 
-UI Bonding và API quote chỉ dùng **`buyBondForWbtcAmount`**. Nhập số WBTC muốn chi. Không path nào nhận `minPranaOut` / `maxWbtcIn`. Với quy mô và traffic hiện tại của PRANA, thêm cơ chế này là dư thừa và dễ thành over-engineering; PRANA Protocol ưu tiên thiết kế tối giản.
+UI Bonding và API quote chỉ dùng **`buyBondForWbtcAmount`**. Nhập số WBTC muốn chi. Không path nào nhận `minPranaOut` / `maxWbtcIn`. Với quy mô và traffic hiện tại của PRANA, thêm cơ chế này là dư thừa và phức tạp hóa thiết kế không cần thiết; PRANA Protocol ưu tiên sự tối giản.
 
 ## 4. Đường tạo Sell Bond
 
@@ -71,7 +71,7 @@ SellPranaBondV2 tạo bond bằng:
 
 ## 5. Phí, kỳ hạn và minimum
 
-Phép tính create/quote gồm **phí 1%**, khớp mức phí 1% của DEX pool.
+Phép tính create/quote gồm **phí 1%**, giống mức phí 1% của DEX pool.
 
 Kỳ hạn lấy từ `bondRates` on-chain (rate và duration theo period id). UI đọc configs V2 live và mặc định kỳ hạn 30 ngày.
 
