@@ -34,7 +34,8 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md)                   | How prod is exposed (VPS ↔ Pi)             |
 | [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md)                       | API/data caching, including `/api/version` |
 | [docs/swap-modal-technical-overview.md](docs/swap-modal-technical-overview.md) | Swap quote / verify flow                   |
-| [docs/add-staking-ui.md](docs/add-staking-ui.md)                               | Lazy `/stake/` staking UI integration      |
+| [docs/bonding-technical-overview.md](docs/bonding-technical-overview.md)       | Bonding create / claim flow                |
+| [docs/staking-technical-overview.md](docs/staking-technical-overview.md)       | Staking permit / claim / unstake flow      |
 | `/terms`                                                                       | Terms / Risk Disclosure page (footer link) |
 | `/privacy`                                                                     | Privacy Policy page (footer link)          |
 | `/guide/swap/`                                                                 | Swap user guide (approve, slippage, …)     |
@@ -44,14 +45,13 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | `/guide/bonding-contracts/`                                                    | Buy/Sell Bond V2 contract explanation      |
 | `/stake/`                                                                      | Personal staking (permit, stake, claim)    |
 | `/bond/`                                                                       | Personal bonding (approve, create, claim)  |
-| [docs/add-bonding-ui.md](docs/add-bonding-ui.md)                               | Lazy `/bond/` bonding UI integration       |
 
 
 Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.
 
-## Staking contract license
+## Staking and Bonding contracts license
 
-The PRANA staking and interest contracts are MIT-licensed. Smart-contract author: `prana@triethocduongpho`. Other vendored or protocol contracts retain their own SPDX license headers.
+The PRANA staking, interest, and Buy/Sell Bond (V1/V2) contracts are MIT-licensed. Smart-contract author: `prana@triethocduongpho`. Other vendored or protocol contracts retain their own SPDX license headers.
 
 ## Contact
 

@@ -8,6 +8,8 @@ Tài liệu liên quan:
 
 - [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md) — reverse tunnel VPS ↔ Pi và nginx ở edge
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — swap feature end-to-end
+- [`staking-technical-overview.md`](./staking-technical-overview.md) — staking feature end-to-end
+- [`bonding-technical-overview.md`](./bonding-technical-overview.md) — bonding feature end-to-end
 - Bản tiếng Anh: [`SECURITY_OVERVIEW.md`](../SECURITY_OVERVIEW.md)
 
 ---

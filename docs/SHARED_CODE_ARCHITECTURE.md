@@ -12,6 +12,7 @@ Related documents:
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — browser and server data caches
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — Swap client/server flow
 - [`add-staking-ui.md`](./add-staking-ui.md) — Staking UI and transaction flow
+- [`staking-technical-overview.md`](./staking-technical-overview.md) — Staking client/server flow
 - [`add-bonding-ui.md`](./add-bonding-ui.md) — Bonding UI implementation plan
 - [`bonding-technical-overview.md`](./bonding-technical-overview.md) — Bonding client/server flow
 

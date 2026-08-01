@@ -11,7 +11,9 @@ Tài liệu liên quan:
 - [`CACHE_ARCHITECTURE.md`](../CACHE_ARCHITECTURE.md) — cache dữ liệu trên browser và server
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — luồng Swap client/server
 - [`add-staking-ui.md`](../add-staking-ui.md) — Staking UI và luồng giao dịch
+- [`staking-technical-overview.md`](./staking-technical-overview.md) — luồng Staking client/server
 - [`add-bonding-ui.md`](../add-bonding-ui.md) — Bonding UI và luồng giao dịch
+- [`bonding-technical-overview.md`](./bonding-technical-overview.md) — luồng Bonding client/server
 - Bản tiếng Anh: [`SHARED_CODE_ARCHITECTURE.md`](../SHARED_CODE_ARCHITECTURE.md)
 
 ---

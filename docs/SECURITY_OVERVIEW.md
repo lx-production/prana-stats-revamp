@@ -8,6 +8,8 @@ Related docs:
 
 - [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md) — VPS ↔ Pi reverse tunnel and edge nginx
 - [`swap-modal-technical-overview.md`](./swap-modal-technical-overview.md) — swap feature end-to-end
+- [`staking-technical-overview.md`](./staking-technical-overview.md) — staking feature end-to-end
+- [`bonding-technical-overview.md`](./bonding-technical-overview.md) — bonding feature end-to-end
 
 ---
 

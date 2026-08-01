@@ -1,42 +1,43 @@
 # Bonding UI — Technical Overview
 
-Tài liệu này mô tả Bonding UI end-to-end: route `/bond/`, luồng Buy/Sell/claim, API backend, ranh giới trust với ví, và các quyết định thiết kế đã khóa. Viết cho contributors muốn hiểu feature trước khi đọc code.
+This document describes the Bonding UI end to end: the `/bond/` route, Buy/Sell/claim flows, backend APIs, trust boundaries with the wallet, and locked design decisions. It is written for contributors who want to understand the feature before reading the code.
 
 Related docs:
 
-- [`add-bonding-ui.md`](./add-bonding-ui.md) — kế hoạch triển khai từng bước + checklist test
-- [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md) — threat model, accepted design risks, hardening đã ship
-- [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI dùng chung với Swap và Staking
+- [`add-bonding-ui.md`](./add-bonding-ui.md) — step-by-step implementation plan + test checklist
+- [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md) — threat model, accepted design risks, hardening already shipped
+- [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI shared with Swap and Staking
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
-- [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — inventory bảo mật toàn app
-- Guide người dùng: `/guide/bonding/` · Guide contract: `/guide/bonding-contracts/`
+- [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — app-wide security inventory
+- User guide: `/guide/bonding/` · Contracts guide: `/guide/bonding-contracts/`
+- Vietnamese: [`vi/bonding-technical-overview.md`](./vi/bonding-technical-overview.md)
 
-Template song song: Staking (`/stake/`) và Swap modal — Bonding mirror cấu trúc lazy entry, API, CTA phases và confirmation fallback.
+Parallel templates: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) and the Swap modal — Bonding mirrors their lazy entry, API, CTA phases, and confirmation fallback structure.
 
 ---
 
 ## What it is
 
-Trang **`/bond/`** cho phép user tạo và claim bond PRANA trên **Polygon mainnet**:
+The **`/bond/`** page lets users create and claim PRANA bonds on **Polygon mainnet**:
 
-- **Buy Bond (V2):** gửi exact WBTC → nhận PRANA vesting theo kỳ hạn.
-- **Sell Bond (V2):** gửi exact PRANA → nhận WBTC vesting theo kỳ hạn.
-- **Active Bonds:** xem + claim bond đang vesting từ cả **Buy/Sell × V1/V2**. Bond mới chỉ tạo trên V2; V1 chỉ còn lịch sử/claim.
+- **Buy Bond (V2):** send exact WBTC → receive vesting PRANA for a chosen term.
+- **Sell Bond (V2):** send exact PRANA → receive vesting WBTC for a chosen term.
+- **Active Bonds:** view + claim vesting bonds from **Buy/Sell × V1/V2**. New bonds are created on V2 only; V1 is history/claim only.
 
-Không có donut/status trùng Bonding Stats trên homepage. Không expose path `buyBondForPranaAmount` (target PRANA) trong UI/API.
+There is no donut/status that duplicates Bonding Stats on the homepage. The `buyBondForPranaAmount` (target PRANA) path is not exposed in the UI/API.
 
-Token amounts, allowance và bond ID đi qua JSON dưới dạng **decimal string** (không ép `number`) để an toàn với `uint256`.
+Token amounts, allowance, and bond IDs travel through JSON as **decimal strings** (never coerced to `number`) for `uint256` safety.
 
 ---
 
-## Design goals / giả định đã khóa
+## Design goals / locked assumptions
 
-1. **Lazy route riêng** — `/bond/` không kéo `StatsPage`, GLB hay dữ liệu homepage.
-2. **Reads qua backend** — config, account, quote và fallback confirmation dùng RPC server; ví chỉ trực tiếp `approve` / create / `claim`.
-3. **Write target cố định trong code** — create/claim không nhận contract address từ API hay UI; mapping nội bộ `side` × `version`.
-4. **Exact input only** — Buy khóa WBTC; Sell khóa PRANA. Contract không có `minOut` / deadline; residual quote↔execution risk được chấp nhận ở quy mô hiện tại.
-5. **Một CTA theo phase** — Approve → Create Bond → Confirming; tối đa hai wallet prompts (approve + create), không tự mở liên tiếp.
-6. **Confirmation không suy diễn** — lỗi đọc RPC ≠ revert on-chain; sau khi đã có hash không broadcast lần hai.
+1. **Dedicated lazy route** — `/bond/` does not pull in `StatsPage`, GLB, or homepage data.
+2. **Reads via backend** — config, account, quote, and confirmation fallback use server RPC; the wallet only does `approve` / create / `claim` directly.
+3. **Hardcoded write targets** — create/claim do not take contract addresses from the API or UI; internal mapping is `side` × `version`.
+4. **Exact input only** — Buy locks WBTC; Sell locks PRANA. Contracts have no `minOut` / deadline; residual quote↔execution risk is accepted at current scale.
+5. **One CTA by phase** — Approve → Create Bond → Confirming; at most two wallet prompts (approve + create), never auto-chained.
+6. **Confirmation without inference** — an RPC read error ≠ an on-chain revert; once a hash exists, never broadcast a second time.
 
 ---
 
@@ -74,30 +75,30 @@ flowchart TD
   injected --> chain["Buy/Sell Bond V2 + ERC-20"]
 ```
 
-`main.tsx` lazy-load `BondingEntry` trên nhánh `isBondPath` (ngoài homepage shader shell), giống `isStakePath`. `BondingEntry` bọc `BondingPage` bằng shared `Web3Providers`.
+`main.tsx` lazy-loads `BondingEntry` on the `isBondPath` branch (outside the homepage shader shell), same pattern as `isStakePath`. `BondingEntry` wraps `BondingPage` with shared `Web3Providers`.
 
-Guides `/guide/bonding/` và `/guide/bonding-contracts/` nằm trong homepage/legal shell — **không** kéo chunk Bonding/Web3.
+Guides `/guide/bonding/` and `/guide/bonding-contracts/` live in the homepage/legal shell — they do **not** pull the Bonding/Web3 chunk.
 
 ### Trust split
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, `simulateContract` + `writeContract`, chờ receipt trên wallet RPC |
-| **Node backend** | Config/account/quote reads (cùng `blockTag`), quote math mirror Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
-| **User wallet** | Final authority: chỉ ví mới move funds |
-| **Polygon** | Execution trên Buy/Sell Bond V1/V2 + ERC-20 `approve` |
+| **Browser** | UI, wallet connect, amount parse, CTA phases, `simulateContract` + `writeContract`, wait for receipt on wallet RPC |
+| **Node backend** | Config/account/quote reads (same `blockTag`), quote math mirrored from Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
+| **User wallet** | Final authority: only the wallet moves funds |
+| **Polygon** | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve` |
 
-Browser **không** xây create/claim calldata từ địa chỉ do API trả. Input create lấy từ form snapshot; target lấy từ `constants/bonds.ts` + `bondClaimTarget.ts`.
+The browser does **not** build create/claim calldata from addresses returned by the API. Create inputs come from the form snapshot; targets come from `constants/bonds.ts` + `bondClaimTarget.ts`.
 
-### Ba lớp RPC
+### Three RPC layers
 
-Bonding write-path đi qua tối thiểu ba lớp độc lập:
+The Bonding write path goes through at least three independent layers:
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` và đọc chain từ browser khi cần HTTP transport của app.
-2. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim; sau broadcast, chờ receipt trên **cùng** provider đã gửi tx (`waitForPolygonWalletReceipt`).
-3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
+1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` and chain reads from the browser when the app's HTTP transport is needed.
+2. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`).
+3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
 
-Lỗi đọc receipt trên dRPC **không** đồng nghĩa transaction failed. Flow đúng: catch → server fallback → chỉ coi failed khi receipt explicit `reverted`.
+A failed receipt read on dRPC does **not** mean the transaction failed. Correct flow: catch → server fallback → only treat as failed when the receipt is explicitly `reverted`.
 
 ---
 
@@ -105,32 +106,32 @@ Lỗi đọc receipt trên dRPC **không** đồng nghĩa transaction failed. Fl
 
 ### Routes
 
-| Path | Vai trò |
+| Path | Role |
 | --- | --- |
-| `/bond` → `/bond/` | Canonical SPA; bare path `308` (giữ query) |
+| `/bond` → `/bond/` | Canonical SPA; bare path `308` (preserve query) |
 | `/guide/bonding/` | User guide (approve, Buy/Sell, vesting, claim) |
-| `/guide/bonding-contracts/` | Contracts guide (educational; đối chiếu Polygonscan) |
+| `/guide/bonding-contracts/` | Contracts guide (educational; cross-check Polygonscan) |
 
-Constants: `BOND_*`, `GUIDE_BONDING_*`, `GUIDE_BONDING_CONTRACTS_*`, `isBondPath`, `isGuideBondingPath`, `isGuideBondingContractsPath` trong `constants/appRoutes.ts`.
+Constants: `BOND_*`, `GUIDE_BONDING_*`, `GUIDE_BONDING_CONTRACTS_*`, `isBondPath`, `isGuideBondingPath`, `isGuideBondingContractsPath` in `constants/appRoutes.ts`.
 
 ### APIs
 
-| Endpoint | Cache | Ghi chú |
+| Endpoint | Cache | Notes |
 | --- | --- | --- |
-| `GET /api/bonding/config` | `private`, 30s | Paused × 4, min, terms V2, addresses |
-| `GET /api/bonding/account?address=` | `private, no-store` | Balances, allowances V2, active bonds V1+V2 |
+| `GET /api/bonding/config` | `private`, 30s | Paused × 4, min, V2 terms, addresses |
+| `GET /api/bonding/account?address=` | `private, no-store` | Balances, V2 allowances, active bonds V1+V2 |
 | `POST /api/bonding/quote` | `private, no-store` | Union `buy_exact_wbtc` \| `sell_exact_prana` |
-| `POST /api/bonding/confirm-transaction` | `private, no-store` | Fallback UX; không ghi trusted analytics |
+| `POST /api/bonding/confirm-transaction` | `private, no-store` | UX fallback; does not write trusted analytics |
 
-Admission POST: Content-Type / origin → body ≤ 2 KB / shape parse → rồi mới rate-limit → RPC. Invalid request không tiêu global quote/confirmation budget.
+POST admission: Content-Type / origin → body ≤ 2 KB / shape parse → then rate-limit → RPC. Invalid requests do not consume the global quote/confirmation budget.
 
-Raw amounts: canonical decimal (`0` hoặc `[1-9]\d*`), `≤ MAX_UINT256`. Quote/create/claim require `> 0`; approve `0` (revoke) được hỗ trợ.
+Raw amounts: canonical decimal (`0` or `[1-9]\d*`), `≤ MAX_UINT256`. Quote/create/claim require `> 0`; approve `0` (revoke) is supported.
 
 ---
 
 ## End-to-end user flows
 
-### Create bond (Buy hoặc Sell)
+### Create bond (Buy or Sell)
 
 ```mermaid
 sequenceDiagram
@@ -168,41 +169,41 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern: switch Polygon → simulate → write → wallet receipt / server fallback → refetch. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
+Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern: switch Polygon → simulate → write → wallet receipt / server fallback → refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
 
-Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`).
+Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`).
 
 ---
 
 ## CTA phase machine
 
-Phases là **trạng thái UI**, không phải ba lần ký ví:
+Phases are **UI state**, not three separate wallet signatures:
 
 ```
 approve → create → confirming → success
                              ↘ confirmation_unavailable
-                error ↗ (retry đúng phase)
+                error ↗ (retry the correct phase)
 ```
 
-| Phase | Wallet? | Việc xảy ra |
+| Phase | Wallet? | What happens |
 | --- | --- | --- |
-| `approve` | Có (1 tx) | `approve` exact input nếu allowance thiếu |
-| `create` | Có (1 tx) | Fresh-quote → simulate → write create |
-| `confirming` | Không | Chờ receipt |
-| `confirmation_unavailable` | Không | Giữ hash + snapshot; CTA “Tiếp tục xác nhận” |
-| `success` / `error` | Không | Reset form hoặc cho retry |
+| `approve` | Yes (1 tx) | `approve` exact input if allowance is short |
+| `create` | Yes (1 tx) | Fresh-quote → simulate → write create |
+| `confirming` | No | Wait for receipt |
+| `confirmation_unavailable` | No | Keep hash + snapshot; CTA “Continue confirmation” |
+| `success` / `error` | No | Reset form or allow retry |
 
 Helper: `features/bonding/utils/bondCtaPhase.ts` → `getBondCtaPhase(status, needsApproval, hasPendingHash)`.
 
-Trước approve và trước create:
+Before approve and before create:
 
-1. Refetch account/config/quote thành công (không fallback cached account lỗi).
-2. Đúng wallet, Polygon, balance, minimum, term, paused, treasury.
-3. Validate quote echo (`bondQuoteEcho.ts`): Buy khớp `mode` + `termId` + `wbtcAmountRaw`; Sell khớp `pranaAmountRaw`. Mismatch → dừng với `quote_issues`.
-4. Calldata input từ form snapshot — **không** lấy input leg từ quote response.
-5. `simulateContract` rồi chỉ truyền `{ request }` vào `writeContract`.
+1. Successfully refetch account/config/quote (do not fall back to a failed cached account).
+2. Correct wallet, Polygon, balance, minimum, term, paused, treasury.
+3. Validate quote echo (`bondQuoteEcho.ts`): Buy matches `mode` + `termId` + `wbtcAmountRaw`; Sell matches `pranaAmountRaw`. Mismatch → stop with `quote_issues`.
+4. Calldata inputs come from the form snapshot — **not** the input leg from the quote response.
+5. `simulateContract`, then pass only `{ request }` into `writeContract`.
 
-Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn khi không cần.
+Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance when unnecessary.
 
 ---
 
@@ -212,23 +213,23 @@ Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn
 
 `useBondingQuote`:
 
-- Debounce **1000 ms** — trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash mỗi lần gõ).
-- Abort request cũ; bỏ response stale theo monotonic request id.
-- Sau **60 s** đánh dấu quote stale; CTA tự `freshQuote()` trước write.
-- Đổi side / term / amount / account / chain → invalidate.
+- Debounce **1000 ms** — within the debounce window, do not call the API and do not flip `isLoading` (avoids flash on every keystroke).
+- Abort older requests; drop stale responses via a monotonic request id.
+- After **60 s**, mark the quote stale; the CTA runs `freshQuote()` itself before write.
+- Side / term / amount / account / chain changes → invalidate.
 
-Parsers: WBTC tối đa **8** decimals, PRANA **9**. MAX dùng raw balance exact (`rawBalanceToAmountInput`), không qua `Number`/`parseFloat`.
+Parsers: WBTC max **8** decimals, PRANA **9**. MAX uses the exact raw balance (`rawBalanceToAmountInput`), never `Number`/`parseFloat`.
 
 ### Server
 
-Orchestration: `server/loaders/bondingQuote.ts` + math thuần `server/utils/bondingQuoteMath.ts` / `bondingReadUtils.ts`.
+Orchestration: `server/loaders/bondingQuote.ts` + pure math in `server/utils/bondingQuoteMath.ts` / `bondingReadUtils.ts`.
 
-- Mọi reads trong một response dùng cùng `blockTag`.
-- Mirror thứ tự bigint / rounding / **1% fee** của Solidity và nhánh tự đồng bộ market reserve.
-- Contract chọn nhánh output bất lợi hơn giữa **impacted** và **market** reserves → response có `reserveSource: 'impacted' | 'market'`.
-- Non-executable (paused, below min, vượt reserve, thiếu treasury, …) vẫn **200** kèm `issues[]` để form hiển thị lý do.
+- All reads in one response share the same `blockTag`.
+- Mirror Solidity bigint order / rounding / **1% fee** and the branch that auto-syncs market reserves.
+- The contract picks the worse output branch between **impacted** and **market** reserves → response includes `reserveSource: 'impacted' | 'market'`.
+- Non-executable quotes (paused, below min, over reserve, missing treasury, …) still return **200** with `issues[]` so the form can show why.
 
-Quote ổn định theo reserves/rates/treasury tại block đọc — thời gian trôi qua hoặc block mới **tự nó** không đổi raw amount nếu state không đổi. UI vẫn fresh-quote vì calldata không khóa `minOut`.
+A quote is stable for the reserves/rates/treasury at the read block — elapsed time or a new block **alone** does not change raw amounts if state is unchanged. The UI still fresh-quotes because calldata does not lock `minOut`.
 
 ### Modes
 
@@ -237,32 +238,32 @@ Quote ổn định theo reserves/rates/treasury tại block đọc — thời gi
 | `buy_exact_wbtc` | WBTC | PRANA payout | `buyBondForWbtcAmount(wbtcAmount, period)` |
 | `sell_exact_prana` | PRANA | WBTC payout | `sellBond(pranaAmount, period)` |
 
-Contract vẫn có `buyBondForPranaAmount` nhưng app **không** quote / create qua path đó.
+The contract still has `buyBondForPranaAmount`, but the app does **not** quote / create through that path.
 
 ---
 
-## Vesting và claimable
+## Vesting and claimable
 
-Thời gian UI: `blockTimestamp + elapsed` (không chỉ clock thiết bị).
+UI time: `blockTimestamp + elapsed` (not device clock alone).
 
-### Bonding (cumulative từ `creationTime`)
+### Bonding (cumulative from `creationTime`)
 
 ```text
 totalVestedRaw = floor(totalPayoutRaw × (now - creationTime) / (maturityTime - creationTime))
 claimableRaw   = max(totalVestedRaw - claimedRaw, 0)
 ```
 
-Từ maturity: claim toàn bộ `totalPayoutRaw - claimedRaw`; contract đánh dấu `claimed = true`.
+From maturity: claim the full `totalPayoutRaw - claimedRaw`; the contract marks `claimed = true`.
 
-`lastClaimTime` chỉ chặn hai claim cùng timestamp — **không** tham gia công thức payout. Progress bar = % thời gian creation→maturity (clamp `0..100`), độc lập với `lastClaimTime`.
+`lastClaimTime` only blocks two claims at the same timestamp — it does **not** enter the payout formula. Progress bar = % of time from creation→maturity (clamped `0..100`), independent of `lastClaimTime`.
 
-### Khác Staking
+### Differs from Staking
 
-Staking tính lãi mới từ `lastClaimTime` (sau khi cap tại maturity). Bonding trừ `claimedPrana` / `claimedWbtc` khỏi tổng đã vest từ `creationTime`. Đổi `lastClaimTime` mà giữ `claimedRaw` **không** đổi Bonding claimable.
+Staking accrues new interest from `lastClaimTime` (after capping at maturity). Bonding subtracts `claimedPrana` / `claimedWbtc` from the total vested since `creationTime`. Changing `lastClaimTime` while keeping `claimedRaw` does **not** change Bonding claimable.
 
-Helpers: `getBondClaimableRaw`, `getBondProgressPercent`, `sortActiveBonds` trong `features/bonding/utils/bondingMath.ts`.
+Helpers: `getBondClaimableRaw`, `getBondProgressPercent`, `sortActiveBonds` in `features/bonding/utils/bondingMath.ts`.
 
-Active bonds sort: maturity gần nhất → side → version → id. React key / claim identity: `bondClaimKey(side, version, bondId)` vì id có thể trùng giữa deployments.
+Active bonds sort: nearest maturity → side → version → id. React key / claim identity: `bondClaimKey(side, version, bondId)` because ids can collide across deployments.
 
 ---
 
@@ -292,11 +293,11 @@ features/bonding/
 pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, footer
 ```
 
-Shared (không import ngược Bonding → Staking):
+Shared (Bonding must not import Staking in reverse):
 
 - `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
-- `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (không nhân đôi ABI)
+- `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (do not duplicate ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals
 
 ### Server
@@ -314,54 +315,54 @@ server/utils/
   parseUnsignedDecimalRaw.ts
 server/getApiRoutes.ts          # GET config + account (+ BondingApiLoaders)
 server/postApiRoutes.ts         # POST quote + confirm (+ BondingPostApiLoaders)
-server/rateLimit.ts             # buckets trong createSwapRateLimiters()
+server/rateLimit.ts             # buckets inside createSwapRateLimiters()
 ```
 
-### Contracts (read-only reference trong repo)
+### Contracts (read-only reference in repo)
 
-- `contracts/BuyPranaBondV2.sol`, `SellPranaBondV2.sol` — create + claim live
+- `contracts/BuyPranaBondV2.sol`, `SellPranaBondV2.sol` — live create + claim
 - `contracts/BuyPranaBondV1.sol`, `SellPranaBondV1.sol` — claim/history
 
-Deployments (Polygon): xem `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL_BOND_ADDRESS_V1/V2`).
+Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL_BOND_ADDRESS_V1/V2`).
 
 ---
 
 ## Pending transaction persistence
 
-`bondPendingTransactionStorage` lưu `{version, chainId, account, hash, action, createdAt}` vào `localStorage` (TTL 24h), key bind theo account/chain.
+`bondPendingTransactionStorage` stores `{version, chainId, account, hash, action, createdAt}` in `localStorage` (24h TTL), keyed by account/chain.
 
-- Reload/reconnect: restore đúng action kind; khóa write đến khi storage load xong và không còn pending của flow đó.
-- Đổi ví giữa chừng: không báo success cho ví mới; storage ví cũ giữ để resume khi quay lại.
-- Resume / reload: `requireServerValidation` — kể cả khi browser receipt success vẫn phải qua server đối chiếu sender/target/full calldata.
-
----
-
-## Design constraints (không phải bug cần “fix” trong scope hiện tại)
-
-Chi tiết đầy đủ: [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md). Contributors cần biết khi thay đổi flow:
-
-1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate là guard UX, không phải bảo đảm on-chain.
-2. **Fresh quote trước create không bắt confirm in-app riêng** — form đã hiện amount/term/quote; CTA Create Bond fresh-quote rồi mở ví. Echo check vẫn bắt `mode` / `termId` / exact input khớp form snapshot.
-3. **Account API scan `getUserActiveBonds` trên cả bốn deployment** — chi phí tăng theo tổng lịch sử bond; rate limit giảm tải nhưng không thay indexer dài hạn.
-4. Bonding confirmation **không** tái dùng HMAC / `/api/swap/verify-transaction` — mapping contract/function cố định; endpoint chỉ dự phòng UX, không ghi verified analytics.
-
-Re-evaluate `minOut` / second consent chỉ khi volume, concurrency, MEV exposure hoặc giá trị trung bình mỗi bond tăng đáng kể — và khi đó cần **contract mới** để enforce.
+- Reload/reconnect: restore the correct action kind; lock writes until storage has loaded and that flow has no pending tx.
+- Mid-flow wallet switch: do not report success for the new wallet; keep the old wallet's storage so it can resume on return.
+- Resume / reload: `requireServerValidation` — even a successful browser receipt must still pass server checks of sender/target/full calldata.
 
 ---
 
-## Controls đã có (tóm tắt)
+## Design constraints (not bugs to “fix” in current scope)
 
-- Write target từ mapping nội bộ; confirmation kiểm tra sender, fixed target, full calldata.
-- Exact approval; simulate trước broadcast; không retry write sau khi đã có hash.
-- Quote/account cùng `blockTag`; bigint = decimal string; `uint256` bounds ở parse.
+Full detail: [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md). Contributors should know these when changing the flow:
+
+1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + simulate are UX guards, not on-chain guarantees.
+2. **Fresh quote before create has no separate in-app confirm** — the form already shows amount/term/quote; Create Bond fresh-quotes then opens the wallet. Echo check still requires `mode` / `termId` / exact input to match the form snapshot.
+3. **Account API scans `getUserActiveBonds` on all four deployments** — cost grows with total bond history; rate limits reduce load but are not a long-term indexer substitute.
+4. Bonding confirmation does **not** reuse HMAC / `/api/swap/verify-transaction` — contract/function mapping is fixed; the endpoint is UX backup only and does not write verified analytics.
+
+Re-evaluate `minOut` / second consent only when volume, concurrency, MEV exposure, or average bond value rises materially — and that would need a **new contract** to enforce.
+
+---
+
+## Controls already in place (summary)
+
+- Write targets from internal mapping; confirmation checks sender, fixed target, full calldata.
+- Exact approval; simulate before broadcast; no write retry after a hash exists.
+- Quote/account share `blockTag`; bigint = decimal string; `uint256` bounds at parse.
 - POST: origin, JSON, 2 KB body, validate-before-rate-limit, redact RPC secrets, `private, no-store`.
-- CSP / frame denial / `nosniff`; lỗi ví được sanitize VI/EN (`bondingErrors.ts`).
+- CSP / frame denial / `nosniff`; wallet errors sanitized VI/EN (`bondingErrors.ts`).
 
 ---
 
-## Tests và lệnh hữu ích
+## Tests and useful commands
 
-| Suite | Lệnh / vị trí |
+| Suite | Command / location |
 | --- | --- |
 | Client Bonding | `npm run test:bonding` → `features/bonding/tests/**` |
 | API / admission | `server/tests/bondingApi.test.ts` |
@@ -369,14 +370,14 @@ Re-evaluate `minOut` / second consent chỉ khi volume, concurrency, MEV exposur
 | Guides | `server/tests/guideRoutes.test.ts` |
 | Typecheck / full | `npm run typecheck`, `npm test` |
 
-Khi đổi bonding math, claimable, CTA phases, echo, pending storage hoặc API admission — cập nhật test tương ứng và, nếu đổi hành vi public, cập nhật guide + doc này.
+When changing bonding math, claimable, CTA phases, echo, pending storage, or API admission — update the matching tests and, if public behavior changes, update the guide + this doc.
 
 ---
 
-## Deployment notes (tóm tắt)
+## Deployment notes (summary)
 
-- Production build phải có chunk `BondingEntry` / `BondingPage` riêng; Stats/Staking không kéo bonding.
-- Cutover nginx: bỏ alias legacy `/bond/assets/`; bare `/bond` dùng `308` như `/stake`.
-- Smoke production: connect, quote, switch chain — **không** tự gửi approve/create/claim thật trong automated smoke.
+- Production builds must keep separate `BondingEntry` / `BondingPage` chunks; Stats/Staking must not pull bonding.
+- Nginx cutover: drop the legacy `/bond/assets/` alias; bare `/bond` uses `308` like `/stake`.
+- Production smoke: connect, quote, switch chain — do **not** send real approve/create/claim in automated smoke.
 
-Chi tiết migration legacy: bước 8 trong [`add-bonding-ui.md`](./add-bonding-ui.md).
+Legacy migration detail: step 8 in [`add-bonding-ui.md`](./add-bonding-ui.md).

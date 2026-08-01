@@ -1,5 +1,7 @@
 # Gộp `staking-ui` thành lazy route `/stake` trong main app
 
+Overview cho contributors (architecture + flow đã ship): [`staking-technical-overview.md`](./staking-technical-overview.md).
+
 ## Tóm tắt kiến trúc
 
 - Dùng chung một Vite app, `WagmiProvider`, React Query, locale, favicon và design system.
