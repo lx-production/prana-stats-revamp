@@ -2,18 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import { formatGraceRemainingLabel } from '../utils/formatGraceRemaining.ts';
-import {
-  calculateAccruedInterestRaw,
-  calculateTotalInterestRaw,
-  daysFromSeconds,
-  formatPranaAmount,
-  getEffectiveAccruedSeconds,
-  getGraceDeadline,
-  getStakeActionState,
-  getStakeDisplayStatus,
-  getStakeEndTime,
-  getStakeProgressPercent,
-} from '../utils/stakingMath.ts';
+import { calculateAccruedInterestRaw, calculateTotalInterestRaw, formatPranaAmount, getEffectiveAccruedSeconds, getGraceDeadline, getStakeActionState, getStakeDisplayStatus, getStakeEndTime, getStakeProgressPercent } from '../utils/stakingMath.ts';
 
 import type { SiteLocale } from '../../../types/locale.types.ts';
 import type { StakingCopy } from '../staking.copy.ts';
@@ -142,57 +131,62 @@ export default function StakeCard({
         </span>
       </div>
 
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-3">
+      {/* Amount left, APR badge right */}
+      <div className="mt-3 flex items-baseline justify-between gap-2">
         <div className="text-xl font-semibold text-white">
           {formatPranaAmount(amountRaw)}{' '}
           <span className="text-sm font-normal text-white/55">PRANA</span>
         </div>
-        <span className="w-fit rounded-md border border-white/10 px-2 py-0.5 text-xs text-cyan-300">
+        <span className="shrink-0 rounded-md border border-white/10 px-2 py-0.5 text-xs text-cyan-300">
           {copy.aprLabel(stake.apr)}
         </span>
       </div>
 
-      <p className="mt-2 text-sm text-white/60">
-        {copy.durationDays(daysFromSeconds(stake.durationSeconds))}
-      </p>
-
-      {/* Stack metadata on mobile; two columns from sm up */}
-      <div className="mt-3 flex flex-col gap-1 text-xs text-white/55 sm:grid sm:grid-cols-2">
-        <div>
-          {copy.started}: {formatStakeDate(stake.startTime, locale)}
+      {/* Label left, datetime right */}
+      <div className="mt-3 flex flex-col gap-1 text-xs text-white/55">
+        <div className="flex justify-between gap-2">
+          <span>{copy.started}</span>
+          <span>{formatStakeDate(stake.startTime, locale)}</span>
         </div>
-        <div>
-          {copy.ends}: {formatStakeDate(endTime, locale)}
+        <div className="flex justify-between gap-2">
+          <span>{copy.ends}</span>
+          <span>{formatStakeDate(endTime, locale)}</span>
         </div>
       </div>
 
-      <div className="mt-4">
+      {/* Interest rows sit above the progress bar */}
+      <div className="mt-4 space-y-1 text-xs text-white/60">
+        <div className="flex justify-between gap-2">
+          <span>{copy.accruedInterest}</span>
+          <span>
+            <strong className="text-white/85">
+              ≈ {formatPranaAmount(accruedRaw)}
+            </strong>{' '}
+            PRANA
+          </span>
+        </div>
+        <div className="flex justify-between gap-2">
+          <span>{copy.maturityInterest}</span>
+          <span>
+            <strong className="text-white/85">
+              ≈ {formatPranaAmount(maturityRaw)}
+            </strong>{' '}
+            PRANA
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3">
         <div className="h-2 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-amber-300"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="mt-2 space-y-1 text-xs text-white/60">
-          <div>
-            {graceRemainingLabel
-              ? copy.gracePeriodRemaining(graceRemainingLabel)
-              : copy.progressComplete(progress)}
-          </div>
-          <div>
-            {copy.accruedInterest}:{' '}
-            <strong className="text-white/85">
-              ≈ {formatPranaAmount(accruedRaw)}
-            </strong>{' '}
-            PRANA
-          </div>
-          <div>
-            {copy.maturityInterest}:{' '}
-            <strong className="text-white/85">
-              ≈ {formatPranaAmount(maturityRaw)}
-            </strong>{' '}
-            PRANA
-          </div>
+        <div className="mt-2 text-xs text-white/60">
+          {graceRemainingLabel
+            ? copy.gracePeriodRemaining(graceRemainingLabel)
+            : copy.progressComplete(progress)}
         </div>
       </div>
 
