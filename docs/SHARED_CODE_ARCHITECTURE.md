@@ -109,6 +109,7 @@ generic helper.
 | `features/web3/confirmReceiptWithAccountSync.ts` | No | No | Thin `confirmStakeReceipt` | Thin `confirmBondReceipt` | Confirm broadcast then account sync; `syncFailed` stays non-fatal |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | No | Server loaders | Server loaders | RPC transform, sleep, and rate-limit detection primitives; legacy filename, but consumers now span Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | No | No | Quote/confirmation server | Quote/confirmation server | Canonical `uint256` decimal parse and oversized-input rejection |
+| `server/utils/transactionConfirmationLookup.ts` | No | No | Thin stake loader | Thin bond loader | Shared sender/target/calldata RPC confirmation; feature `buildExpectedCall` + mismatch errors stay local; Swap keeps its own verify path |
 
 ### Explicit non-sharing decisions
 

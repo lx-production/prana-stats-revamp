@@ -434,16 +434,17 @@ Sau Điểm 1–4:
 - ✅ Quyết định “không refactor” đã ghi vào shared architecture docs.
 - ✅ Query keys, cache/refetch behavior, và named feature API exports không đổi.
 
-## 11. Điểm 6 — Dùng chung server transaction confirmation lookup
+## 11. Điểm 6 — Dùng chung server transaction confirmation lookup ✅
 
-### Hiện trạng
+### Hiện trạng (đã migrate)
 
-Hai loader có cùng RPC skeleton:
+Hai loader còn `buildExpectedCall` + mismatch messages; RPC skeleton dùng chung:
 
-- `server/loaders/stakingTransactionConfirmation.ts`
-- `server/loaders/bondingTransactionConfirmation.ts`
+- `server/utils/transactionConfirmationLookup.ts`
+- `server/types/transactionConfirmationTypes.ts`
+- Thin adapters: `stakingTransactionConfirmation.ts`, `bondingTransactionConfirmation.ts`
 
-Phần chung:
+Phần shared:
 
 1. Resolve provider.
 2. Đọc transaction và receipt song song.
@@ -451,21 +452,14 @@ Phần chung:
 4. So sender, target, và calldata.
 5. Map receipt status sang confirmed/reverted/unavailable.
 
-Phần khác:
+Phần feature-local:
 
 - Action snapshot.
 - ABI và contract mapping.
 - `buildExpectedCall`.
-- Loại mismatch error và message.
+- Loại mismatch error và message (`createMismatchError`).
 
-### Thiết kế
-
-Tạo:
-
-- `server/utils/transactionConfirmationLookup.ts`
-- `server/types/transactionConfirmationTypes.ts`
-
-API dự kiến:
+### API
 
 ```ts
 confirmTransactionOnChain({
@@ -477,33 +471,23 @@ confirmTransactionOnChain({
 })
 ```
 
-`expectedCall` chỉ có:
+`expectedCall` chỉ có `target` + `data`. Swap verification **không** dùng helper
+này (cần kiểm tra value / quote HMAC / metadata khác).
 
-- `target`
-- `data`
+### Migration đã làm
 
-Feature loader tiếp tục:
-
-1. Parse request feature-specific.
-2. Dùng `buildExpectedCall(action)`.
-3. Gọi shared lookup.
-
-### Migration
-
-1. Tạo unit tests shared bằng provider test double.
-2. Migrate Staking loader, giữ route tests.
-3. Migrate Bonding loader, giữ route tests.
-4. Giữ `buildExpectedCall` tests trong từng feature.
-5. Không đưa Swap verification vào helper nếu Swap cần kiểm tra value,
-   quote/HMAC, hoặc metadata ngoài sender/target/calldata.
+1. ✅ Unit tests shared với provider test double
+   (`server/tests/transactionConfirmationLookup.test.ts`).
+2. ✅ Migrate Staking loader; giữ route / `buildExpectedCall` tests.
+3. ✅ Migrate Bonding loader; giữ route / `buildExpectedCall` tests.
 
 ### Điều kiện hoàn thành
 
-- Provider init/read failure trả `confirmation_unavailable`.
-- Thiếu transaction hoặc receipt trả `not_mined`.
-- Sender, target, hoặc calldata mismatch vẫn throw validation error an toàn.
-- Receipt status `null` không bị coi là revert.
-- Response và HTTP status của routes không đổi.
+- ✅ Provider init/read failure trả `confirmation_unavailable`.
+- ✅ Thiếu transaction hoặc receipt trả `not_mined`.
+- ✅ Sender, target, hoặc calldata mismatch vẫn throw validation error an toàn.
+- ✅ Receipt status `null` không bị coi là revert.
+- ✅ Response và HTTP status của routes không đổi (feature tests giữ nguyên).
 
 ## 12. Điểm 7 — Dùng chung debounce, abort, race guard, và stale quote
 
@@ -609,7 +593,7 @@ Thực hiện theo các PR hoặc commit độc lập sau:
 5. Pending storage factory.
 6. Generic pending transaction hook.
 7. Generic debounced quote hook.
-8. Server confirmation lookup.
+8. Server confirmation lookup. — **đã xong**
 9. Decision gate cho API/query wrappers. — **đã xong: không refactor**
 10. Cleanup imports, dead files, tests trùng, và cập nhật docs.
 

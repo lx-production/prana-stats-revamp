@@ -306,16 +306,22 @@ server/loaders/
   bondingConfig.ts
   bondingAccount.ts
   bondingQuote.ts
-  bondingTransactionConfirmation.ts
+  bondingTransactionConfirmation.ts  # buildExpectedCall + shared lookup
   cached/bondingConfigCached.ts
 server/utils/
   bondingReadUtils.ts           # shared mapping / parse / normalize
   bondingQuoteMath.ts
   parseUnsignedDecimalRaw.ts
+  transactionConfirmationLookup.ts  # shared sender/target/calldata RPC
+server/types/
+  transactionConfirmationTypes.ts
 server/getApiRoutes.ts          # GET config + account (+ BondingApiLoaders)
 server/postApiRoutes.ts         # POST quote + confirm (+ BondingPostApiLoaders)
 server/rateLimit.ts             # buckets inside createSwapRateLimiters()
 ```
+
+Server confirm uses shared `confirmTransactionOnChain` after bonding-local
+`buildExpectedCall` (approve/create/claim → fixed target + calldata).
 
 ### Contracts (read-only reference in repo)
 

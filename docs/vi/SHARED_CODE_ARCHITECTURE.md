@@ -107,6 +107,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `features/web3/confirmReceiptWithAccountSync.ts` | Không | Không | Thin `confirmStakeReceipt` | Thin `confirmBondReceipt` | Confirm broadcast rồi sync account; `syncFailed` không đổi success |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
+| `server/utils/transactionConfirmationLookup.ts` | Không | Không | Thin stake loader | Thin bond loader | Confirmation RPC dùng chung (sender/target/calldata); `buildExpectedCall` + mismatch error vẫn thuộc feature; Swap giữ đường verify riêng |
 
 ### Quyết định cố ý không share
 

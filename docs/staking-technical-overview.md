@@ -312,12 +312,14 @@ server/utils/
   stakingQuoteUtils.ts
 server/getApiRoutes.ts          # GET config + account (+ stats)
 server/postApiRoutes.ts         # POST quote + confirm-transaction
-server/loaders/stakingTransactionConfirmation.ts
+server/loaders/stakingTransactionConfirmation.ts  # buildExpectedCall + shared lookup
 server/utils/stakingConfirmationUtils.ts
+server/utils/transactionConfirmationLookup.ts     # shared sender/target/calldata RPC
+server/types/transactionConfirmationTypes.ts
 server/rateLimit.ts
 ```
 
-Client confirmation helpers: thin `stakeTransactionConfirmation.ts` adapter over `features/web3/transactionConfirmation.ts`; pending storage/hook wrappers over shared `pendingTransactionStorage` + `usePendingTransaction`.
+Client confirmation helpers: thin `stakeTransactionConfirmation.ts` adapter over `features/web3/transactionConfirmation.ts`; pending storage/hook wrappers over shared `pendingTransactionStorage` + `usePendingTransaction`. Server confirm uses shared `confirmTransactionOnChain` after staking-local `buildExpectedCall`.
 
 ### Contracts (read-only reference in repo)
 
