@@ -1,9 +1,12 @@
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
-import { confirmBondTransaction } from './bondTransactionConfirmation.ts';
+import { confirmReceiptWithAccountSync } from '../../web3/confirmReceiptWithAccountSync.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
 import type { BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
 import type { BondingAccount, BondingTransactionConfirmation } from '../bonding.types.ts';
+import type {
+  ConfirmReceiptWithAccountSyncOutcome,
+} from '../../web3/confirmReceiptWithAccountSync.types.ts';
 
 /** What the primary CTA should do on the next click. */
 export type BondCtaAction =
@@ -37,63 +40,25 @@ export type ConfirmBondReceiptDeps = {
   requireServerValidation?: boolean;
 };
 
-export type ConfirmBondReceiptOutcome =
-  | { kind: 'confirmed'; syncFailed: boolean; source: 'browser' | 'server' }
-  | { kind: 'reverted'; source: 'browser' | 'server' }
-  | {
-      kind: 'confirmation_unavailable';
-      receiptError: unknown;
-      verificationError: unknown;
-    };
+export type ConfirmBondReceiptOutcome = ConfirmReceiptWithAccountSyncOutcome;
 
 /**
- * Wait for an already-broadcast hash (browser → server). Account sync failures
- * after a good receipt are non-fatal so callers keep transaction success.
+ * Bonding adapter over shared confirm + account sync.
+ * Account sync failures after a good receipt are non-fatal.
  */
 export async function confirmBondReceipt(
   hash: Hex,
   deps: ConfirmBondReceiptDeps,
 ): Promise<ConfirmBondReceiptOutcome> {
-  const confirmation = await confirmBondTransaction({
-    waitForReceipt: () => deps.waitForReceipt(hash),
-    confirmOnServer: () => deps.confirmOnServer(hash),
+  return confirmReceiptWithAccountSync({
+    hash,
+    waitForReceipt: deps.waitForReceipt,
+    confirmOnServer: deps.confirmOnServer,
+    refetchAccount: deps.refetchAccount,
     requireServerValidation: deps.requireServerValidation,
+    isSuccessfulRefetch: (refreshed) =>
+      accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
   });
-
-  if (confirmation.kind === 'reverted') {
-    return { kind: 'reverted', source: confirmation.source };
-  }
-
-  if (confirmation.kind === 'confirmation_unavailable') {
-    return {
-      kind: 'confirmation_unavailable',
-      receiptError: confirmation.receiptError,
-      verificationError: confirmation.verificationError,
-    };
-  }
-
-  // Receipt succeeded — sync account without turning success into error.
-  try {
-    const refreshed = await deps.refetchAccount();
-    if (!accountFromSuccessfulRefetch<BondingAccount>(refreshed)) {
-      return {
-        kind: 'confirmed',
-        syncFailed: true,
-        source: confirmation.source,
-      };
-    }
-    return {
-      kind: 'confirmed',
-      syncFailed: false,
-      source: confirmation.source,
-    };
-  } catch {
-    return {
-      kind: 'confirmed',
-      syncFailed: true,
-      source: confirmation.source,
-    };
-  }
 }
 
 export type SimulatedBondWrite = {

@@ -1,8 +1,9 @@
 import { accountFromSuccessfulRefetch } from '../web3/accountRefetch.ts';
-import { confirmStakeTransaction } from './stakeTransactionConfirmation.ts';
+import { confirmReceiptWithAccountSync } from '../web3/confirmReceiptWithAccountSync.ts';
 
 import type { Hex } from '../../types/blockchain.types.ts';
 import type { StakeWaitReceiptResult } from './stakeTransactionConfirmation.ts';
+import type { ConfirmReceiptWithAccountSyncOutcome } from '../web3/confirmReceiptWithAccountSync.types.ts';
 import type {
   StakingAccountSnapshot,
   StakingTransactionConfirmation,
@@ -41,63 +42,25 @@ export type ConfirmStakeDeps = {
   requireServerValidation?: boolean;
 };
 
-export type ConfirmStakeOutcome =
-  | { kind: 'confirmed'; syncFailed: boolean; source: 'browser' | 'server' }
-  | { kind: 'reverted'; source: 'browser' | 'server' }
-  | {
-      kind: 'confirmation_unavailable';
-      receiptError: unknown;
-      verificationError: unknown;
-    };
+export type ConfirmStakeOutcome = ConfirmReceiptWithAccountSyncOutcome;
 
 /**
- * Wait for an already-broadcast hash (browser → server). Account sync failures
- * after a good receipt are non-fatal so callers keep transaction success.
+ * Staking adapter over shared confirm + account sync.
+ * Account sync failures after a good receipt are non-fatal.
  */
 export async function confirmStakeReceipt(
   hash: Hex,
   deps: ConfirmStakeDeps,
 ): Promise<ConfirmStakeOutcome> {
-  const confirmation = await confirmStakeTransaction({
-    waitForReceipt: () => deps.waitForReceipt(hash),
-    confirmOnServer: () => deps.confirmOnServer(hash),
+  return confirmReceiptWithAccountSync({
+    hash,
+    waitForReceipt: deps.waitForReceipt,
+    confirmOnServer: deps.confirmOnServer,
+    refetchAccount: deps.refetchAccount,
     requireServerValidation: deps.requireServerValidation,
+    isSuccessfulRefetch: (refreshed) =>
+      accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed) != null,
   });
-
-  if (confirmation.kind === 'reverted') {
-    return { kind: 'reverted', source: confirmation.source };
-  }
-
-  if (confirmation.kind === 'confirmation_unavailable') {
-    return {
-      kind: 'confirmation_unavailable',
-      receiptError: confirmation.receiptError,
-      verificationError: confirmation.verificationError,
-    };
-  }
-
-  // Receipt succeeded — sync account without turning success into error.
-  try {
-    const refreshed = await deps.refetchAccount();
-    if (!accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed)) {
-      return {
-        kind: 'confirmed',
-        syncFailed: true,
-        source: confirmation.source,
-      };
-    }
-    return {
-      kind: 'confirmed',
-      syncFailed: false,
-      source: confirmation.source,
-    };
-  } catch {
-    return {
-      kind: 'confirmed',
-      syncFailed: true,
-      source: confirmation.source,
-    };
-  }
 }
 
 export type SubmitStakeDeps = {

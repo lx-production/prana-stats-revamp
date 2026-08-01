@@ -294,7 +294,7 @@ pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, foo
 
 Shared (Bonding must not import Staking in reverse):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `confirmReceiptWithAccountSync`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (do not duplicate ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

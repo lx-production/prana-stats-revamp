@@ -203,69 +203,6 @@ test('submitBondWriteFlow does not call write twice after hash is known', async 
   assert.equal(serverCalls, 1);
 });
 
-test('browser receipt success does not call server fallback', async () => {
-  let serverCalls = 0;
-  const outcome = await confirmBondReceipt(HASH, {
-    waitForReceipt: async () => ({ status: 'success' }),
-    confirmOnServer: async () => {
-      serverCalls += 1;
-      return { status: 'confirmed', source: 'server' };
-    },
-    refetchAccount: async () => successRefetch(),
-  });
-  assert.equal(outcome.kind, 'confirmed');
-  if (outcome.kind === 'confirmed') {
-    assert.equal(outcome.source, 'browser');
-    assert.equal(outcome.syncFailed, false);
-  }
-  assert.equal(serverCalls, 0);
-});
-
-test('resume path requires server validation even after browser receipt success', async () => {
-  let serverCalls = 0;
-  const outcome = await confirmBondReceipt(HASH, {
-    requireServerValidation: true,
-    waitForReceipt: async () => ({ status: 'success' }),
-    confirmOnServer: async () => {
-      serverCalls += 1;
-      return { status: 'confirmed', source: 'server' };
-    },
-    refetchAccount: async () => successRefetch(),
-  });
-  assert.equal(outcome.kind, 'confirmed');
-  if (outcome.kind === 'confirmed') {
-    assert.equal(outcome.source, 'server');
-    assert.equal(outcome.syncFailed, false);
-  }
-  assert.equal(serverCalls, 1);
-});
-
-test('receipt success with failed account sync stays confirmed with warning flag', async () => {
-  const outcome = await confirmBondReceipt(HASH, {
-    waitForReceipt: async () => ({ status: 'success' }),
-    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
-    refetchAccount: async () => errorRefetch(),
-  });
-  assert.equal(outcome.kind, 'confirmed');
-  if (outcome.kind === 'confirmed') {
-    assert.equal(outcome.syncFailed, true);
-  }
-});
-
-test('reverted receipt does not report success or sync account as success path', async () => {
-  let synced = false;
-  const outcome = await confirmBondReceipt(HASH, {
-    waitForReceipt: async () => ({ status: 'reverted' }),
-    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
-    refetchAccount: async () => {
-      synced = true;
-      return successRefetch();
-    },
-  });
-  assert.equal(outcome.kind, 'reverted');
-  assert.equal(synced, false);
-});
-
 test('claim write flow uses claimBond and resume never rewrites', async () => {
   let writeCount = 0;
   let simulatedFn = '';

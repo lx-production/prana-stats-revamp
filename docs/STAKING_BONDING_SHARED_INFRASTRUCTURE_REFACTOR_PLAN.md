@@ -315,7 +315,7 @@ Feature wrappers giữ type-safe kinds:
 - ✅ `clearPendingRecord` xóa đúng key của record đã submit.
 - ✅ Hook không tạo vòng effect do identity của `kinds` thay đổi.
 
-## 9. Điểm 4 — Dùng chung confirmation + account sync
+## 9. Điểm 4 — Dùng chung confirmation + account sync ✅
 
 ### Hiện trạng
 
@@ -356,18 +356,18 @@ từ Điểm 1.
 
 ### Migration
 
-1. Tạo shared tests cho confirmed/sync success, confirmed/sync failure,
+1. ✅ Tạo shared tests cho confirmed/sync success, confirmed/sync failure,
    reverted, và confirmation unavailable.
-2. `confirmStakeReceipt` trở thành thin feature adapter.
-3. `confirmBondReceipt` trở thành thin feature adapter.
-4. Giữ submit flows và CTA resolution trong feature.
+2. ✅ `confirmStakeReceipt` trở thành thin feature adapter.
+3. ✅ `confirmBondReceipt` trở thành thin feature adapter.
+4. ✅ Giữ submit flows và CTA resolution trong feature.
 
 ### Điều kiện hoàn thành
 
-- Không refetch account trước khi receipt được xác nhận.
-- Refetch throw hoặc trả result không hợp lệ đều tạo `syncFailed: true`.
-- Source `browser | server` không bị mất.
-- Không thay đổi outcome unions mà UI hooks đang xử lý.
+- ✅ Không refetch account trước khi receipt được xác nhận.
+- ✅ Refetch throw hoặc trả result không hợp lệ đều tạo `syncFailed: true`.
+- ✅ Source `browser | server` không bị mất.
+- ✅ Không thay đổi outcome unions mà UI hooks đang xử lý.
 
 ## 10. Điểm 5 — API adapters và React Query hooks
 
