@@ -52,17 +52,15 @@ When the browser reports a confirmed swap, the application server may retrieve t
 
 ## 5. Data processed by PRANA Staking
 
-After you connect a wallet, the Staking UI requests a wallet-specific account snapshot from the THĐP application server. The request contains your public wallet address. The server uses that address to read public Polygon data, including:
+After you connect a wallet, the Staking UI may request wallet-specific and quote-related data from the THĐP application server:
 
-- PRANA balance
-- PRANA Permit nonce
-- current stake records
-- stake identifier, amount, start time, duration, APR, and last claim time
-- relevant block number and block timestamp
+- **Account snapshot** (`GET /api/staking/account`) — your public wallet address is used to read public Polygon PRANA balance, Permit nonce, and active stake records, plus block metadata
+- **Quote** (`POST /api/staking/quote`) — raw amount and duration needed to check whether the Interest fund can cover a new stake
+- **Transaction confirmation fallback** (`POST /api/staking/confirm-transaction`) — a broadcast transaction hash plus a minimal action snapshot so the server can read the public receipt through its own Polygon RPC when the browser RPC cannot
 
-The wallet address can also appear in the request URL and may therefore appear in application, reverse-proxy, hosting, or access logs, depending on infrastructure configuration. Staking account requests are rate-limited using the client IP address.
+Account, quote, and confirmation requests are rate-limited using the client IP address. Account responses are not shared across users (`private, no-store`). The wallet address can appear in request URLs or bodies and therefore in application, reverse-proxy, hosting, or access logs, depending on infrastructure configuration.
 
-In the current version, the Staking UI does not send a separate staking lifecycle telemetry feed to the THĐP application server. The Permit signature is created in your wallet, and Stake, Claim, Unstake, and Early Unstake transactions are submitted from your browser or wallet to Polygon infrastructure.
+In the current version, the Staking UI does not send a separate staking lifecycle telemetry feed beyond these operational requests. The Permit signature is created in your wallet, and Stake, Claim, Unstake, and Early Unstake transactions are submitted from your browser or wallet to Polygon infrastructure.
 
 Those wallet and blockchain providers may independently receive or process your IP address, wallet address, signed request, transaction data, and other technical information under their own policies.
 

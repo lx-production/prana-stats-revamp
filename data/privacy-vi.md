@@ -52,17 +52,15 @@ Khi trình duyệt báo cáo một swap đã xác nhận, máy chủ ứng dụn
 
 ## 5. Dữ liệu được xử lý bởi PRANA Staking
 
-Sau khi bạn kết nối ví, giao diện Staking yêu cầu snapshot tài khoản theo từng ví từ máy chủ ứng dụng của THĐP. Request chứa địa chỉ ví công khai của bạn. Máy chủ dùng địa chỉ đó để đọc dữ liệu Polygon công khai, bao gồm:
+Sau khi bạn kết nối ví, giao diện Staking có thể yêu cầu dữ liệu theo ví và quote từ máy chủ ứng dụng của THĐP:
 
-- số dư PRANA
-- nonce Permit của PRANA
-- các bản ghi stake hiện tại
-- định danh stake, số lượng, thời điểm bắt đầu, thời hạn, APR, và thời điểm claim gần nhất
-- số khối và timestamp khối liên quan
+- **Snapshot tài khoản** (`GET /api/staking/account`) — địa chỉ ví công khai của bạn được dùng để đọc số dư PRANA, nonce Permit, và các bản ghi stake đang hiệu lực trên Polygon, kèm metadata khối
+- **Quote** (`POST /api/staking/quote`) — raw amount và duration cần để kiểm tra quỹ Interest có đủ cover stake mới hay không
+- **Fallback xác nhận giao dịch** (`POST /api/staking/confirm-transaction`) — mã băm giao dịch đã broadcast kèm snapshot action tối thiểu để máy chủ đọc receipt công khai qua RPC Polygon riêng khi browser RPC không đọc được
 
-Địa chỉ ví cũng có thể xuất hiện trong URL của request và do đó có thể xuất hiện trong log ứng dụng, reverse-proxy, hosting, hoặc access log, tùy cấu hình hạ tầng. Các request tài khoản Staking được rate-limit bằng địa chỉ IP của client.
+Các request account, quote, và confirmation được rate-limit bằng địa chỉ IP của client. Phản hồi account không chia sẻ giữa người dùng (`private, no-store`). Địa chỉ ví có thể xuất hiện trong URL hoặc body request và do đó trong log ứng dụng, reverse-proxy, hosting, hoặc access log, tùy cấu hình hạ tầng.
 
-Trong phiên bản hiện tại, giao diện Staking không gửi một luồng telemetry vòng đời staking riêng tới máy chủ ứng dụng của THĐP. Chữ ký Permit được tạo trong ví của bạn, và các giao dịch Stake, Claim, Unstake, và Early Unstake được gửi từ trình duyệt hoặc ví của bạn tới hạ tầng Polygon.
+Trong phiên bản hiện tại, giao diện Staking không gửi một luồng telemetry vòng đời staking riêng ngoài các request vận hành trên. Chữ ký Permit được tạo trong ví của bạn, và các giao dịch Stake, Claim, Unstake, và Early Unstake được gửi từ trình duyệt hoặc ví của bạn tới hạ tầng Polygon.
 
 Các nhà cung cấp ví và blockchain đó có thể độc lập nhận hoặc xử lý địa chỉ IP, địa chỉ ví, request đã ký, dữ liệu giao dịch, và thông tin kỹ thuật khác theo chính sách riêng của họ.
 

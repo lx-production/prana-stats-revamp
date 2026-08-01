@@ -58,6 +58,9 @@ All swap endpoints are POST-only, JSON body, same-origin checks, body size caps,
 | `POST /api/swap/log` | Untrusted lifecycle telemetry | 8 KB | 30 / IP / min |
 | `POST /api/swap/verify-transaction` | On-chain proof → verified `swap_confirmed` log | 32 KB | 10 / IP / min |
 | `POST /api/staking/quote` | Fully-funded Interest preflight (raw bigint, same block) | 2 KB | 10 / IP / min + 60 global / min |
+| `POST /api/staking/confirm-transaction` | Browser-RPC fallback + required validation on resume/reload for fixed stake/claim/unstake actions | 2 KB | separate confirmation bucket |
+
+Staking confirmation only accepts hashes already broadcast by the user and validates sender/target/full calldata against the hardcoded staking contract. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server. It is UX confirmation only — not Swap-style trusted analytics.
 
 Bonding reuses the same admission helpers for its POSTs, but does **not** reuse Swap HMAC / verified analytics:
 

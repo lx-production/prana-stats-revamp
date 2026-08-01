@@ -12,7 +12,7 @@ Related docs:
 - Guide người dùng: `/guide/bonding/` · Guide contract: `/guide/bonding-contracts/`
 - Bản tiếng Anh: [`bonding-technical-overview.md`](../bonding-technical-overview.md)
 
-Template song song: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) và Swap modal — Bonding mirror cấu trúc lazy entry, API, CTA phases và confirmation fallback.
+Template song song: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) và Swap modal — cùng lazy entry, API, CTA phases và confirmation fallback.
 
 ---
 

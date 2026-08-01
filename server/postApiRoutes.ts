@@ -6,6 +6,7 @@ import { readJsonBody, sendJson } from './helpers/requestHelpers.ts';
 import { parseChecksumAddress } from './helpers/addressHelpers.ts';
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
 import { confirmBondingTransaction } from './loaders/bondingTransactionConfirmation.ts';
+import { confirmStakingTransaction } from './loaders/stakingTransactionConfirmation.ts';
 import {
   rejectInvalidSwapApiRequest,
   sanitizeSwapErrorMessage,
@@ -15,6 +16,10 @@ import {
   parseStakingQuoteRequest,
   sanitizeStakingErrorMessage,
 } from './utils/stakingQuoteUtils.ts';
+import {
+  StakingConfirmationMismatchError,
+  parseStakingConfirmationRequest,
+} from './utils/stakingConfirmationUtils.ts';
 import {
   BondingApiValidationError,
   BondingConfirmationMismatchError,
@@ -33,6 +38,8 @@ import type { SwapRequestLogMetadata } from './loaders/swapLogs.ts';
 import type {
   StakingQuote,
   StakingQuoteRequest,
+  StakingTransactionConfirmation,
+  StakingTransactionConfirmationRequest,
 } from '../features/staking/staking.types.ts';
 import type {
   BondingQuote,
@@ -45,12 +52,15 @@ import type {
 const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
 const SWAP_LOG_BODY_MAX_BYTES = 8192;
 const SWAP_VERIFY_BODY_MAX_BYTES = 32768;
-const STAKING_QUOTE_BODY_MAX_BYTES = 2048;
+const STAKING_BODY_MAX_BYTES = 2048;
 const BONDING_BODY_MAX_BYTES = 2048;
 
 /** Optional staking POST loader overrides so route tests do not need live RPC. */
 export type StakingPostApiLoaders = {
   loadQuote: (request: StakingQuoteRequest) => Promise<StakingQuote>;
+  confirmTransaction: (
+    request: StakingTransactionConfirmationRequest,
+  ) => Promise<StakingTransactionConfirmation>;
 };
 
 /** Optional bonding POST loader overrides for route tests (no live RPC). */
@@ -63,12 +73,13 @@ export type BondingPostApiLoaders = {
 
 /** Named loader bags so staking + bonding overrides do not collide on arg 2. */
 export type PostApiLoaders = {
-  staking?: StakingPostApiLoaders;
-  bonding?: BondingPostApiLoaders;
+  staking?: Partial<StakingPostApiLoaders>;
+  bonding?: Partial<BondingPostApiLoaders>;
 };
 
 const DEFAULT_STAKING_POST_API_LOADERS: StakingPostApiLoaders = {
   loadQuote: loadStakingQuote,
+  confirmTransaction: confirmStakingTransaction,
 };
 
 const DEFAULT_BONDING_POST_API_LOADERS: BondingPostApiLoaders = {
@@ -76,9 +87,15 @@ const DEFAULT_BONDING_POST_API_LOADERS: BondingPostApiLoaders = {
   confirmTransaction: confirmBondingTransaction,
 };
 
-const STAKING_QUOTE_CACHE_CONTROL = 'private, no-store';
 // Quote + confirmation are live transaction state — never store in HTTP caches.
+const STAKING_POST_CACHE_CONTROL = 'private, no-store';
 const BONDING_POST_CACHE_CONTROL = 'private, no-store';
+
+/** Safe user-facing message for staking POST validation / body / mismatch errors. */
+function sanitizeStakingPostErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof StakingConfirmationMismatchError) return error.message;
+  return sanitizeStakingErrorMessage(error, fallback);
+}
 
 // Headers can be string | string[]; pick the first value when it's an array
 function singleHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -153,11 +170,11 @@ export function createPostApiRouteHandler(
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
-        const body = await readJsonBody<unknown>(req, STAKING_QUOTE_BODY_MAX_BYTES);
+        const body = await readJsonBody<unknown>(req, STAKING_BODY_MAX_BYTES);
         const request = parseStakingQuoteRequest(body);
         const result = await stakingLoaders.loadQuote(request);
         // Soft issues (e.g. insufficient_interest_fund) still return 200.
-        sendJson(res, 200, result, { cacheControl: STAKING_QUOTE_CACHE_CONTROL });
+        sendJson(res, 200, result, { cacheControl: STAKING_POST_CACHE_CONTROL });
         return true;
       } catch (err) {
         if (
@@ -178,6 +195,65 @@ export function createPostApiRouteHandler(
         sendJson(res, 502, {
           error: 'upstream_unavailable',
           message: 'Failed to load staking quote.',
+        });
+        return true;
+      }
+    }
+
+    if (url.pathname === '/api/staking/confirm-transaction') {
+      if (req.method !== 'POST') {
+        res.setHeader('Allow', 'POST');
+        sendJson(res, 405, {
+          error: 'method_not_allowed',
+          message: 'Use POST for staking transaction confirmation.',
+        });
+        return true;
+      }
+
+      // Same admission order as bonding confirm: validate before rate-limit budget.
+      if (rejectInvalidSwapApiRequest(req, res)) return true;
+
+      try {
+        const body = await readJsonBody<unknown>(req, STAKING_BODY_MAX_BYTES);
+        const request = parseStakingConfirmationRequest(body, parseChecksumAddress);
+
+        if (rateLimiters.isStakingConfirmRateLimited(req)) {
+          sendJson(res, 429, {
+            error: 'rate_limited',
+            message: 'Too many staking confirmation requests.',
+          });
+          return true;
+        }
+
+        const result = await stakingLoaders.confirmTransaction(request);
+        sendJson(res, 200, result, { cacheControl: STAKING_POST_CACHE_CONTROL });
+        return true;
+      } catch (err) {
+        if (
+          err instanceof StakingApiValidationError ||
+          err instanceof StakingConfirmationMismatchError ||
+          err instanceof SyntaxError ||
+          (err instanceof Error &&
+            (err.message === 'Request body is required.' ||
+              err.message === 'Request body is too large.'))
+        ) {
+          sendJson(res, 400, {
+            error:
+              err instanceof StakingConfirmationMismatchError
+                ? 'confirmation_mismatch'
+                : 'invalid_request',
+            message: sanitizeStakingPostErrorMessage(
+              err,
+              'Invalid staking confirmation request.',
+            ),
+          });
+          return true;
+        }
+
+        console.error('Failed to confirm staking transaction:', formatErrorForLog(err));
+        sendJson(res, 502, {
+          error: 'upstream_unavailable',
+          message: 'Failed to confirm staking transaction.',
         });
         return true;
       }

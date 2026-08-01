@@ -42,6 +42,11 @@ export type StakingCopy = {
   stakeConfirmed: string;
   /** Non-fatal: stake confirmed but account list/balance did not refresh. */
   accountSyncWarning: string;
+  /**
+   * Broadcast happened but neither browser nor server could confirm the
+   * receipt yet — keep hash and offer resume (not a failed write).
+   */
+  confirmationUnavailable: string;
   /** A transaction hash exists, but its receipt has not been confirmed yet. */
   transactionPending: string;
   activeStakesHeading: string;
@@ -120,6 +125,8 @@ const vi: StakingCopy = {
   stakeConfirmed: 'Stake đã được xác nhận trên Polygon.',
   accountSyncWarning:
     'Stake đã xác nhận on-chain, nhưng chưa đồng bộ lại số dư/danh sách. Tải lại trang nếu cần.',
+  confirmationUnavailable:
+    'Đã gửi giao dịch nhưng chưa xác nhận được receipt. Kiểm tra Polygonscan rồi bấm Tiếp tục xác nhận.',
   transactionPending:
     'Giao dịch Stake đã được gửi và đang chờ xác nhận.',
   activeStakesHeading: 'Stake đang hoạt động',
@@ -217,6 +224,8 @@ const en: StakingCopy = {
   stakeConfirmed: 'Stake confirmed on Polygon.',
   accountSyncWarning:
     'Stake confirmed on-chain, but the balance/list did not refresh. Reload if needed.',
+  confirmationUnavailable:
+    'Transaction submitted but the receipt could not be confirmed yet. Check Polygonscan, then tap Resume confirmation.',
   transactionPending:
     'The Stake transaction was submitted and is awaiting confirmation.',
   activeStakesHeading: 'My active stakes',

@@ -20,8 +20,8 @@ const SwapGuidePage: React.FC = () => {
       dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
-          ? "Covers the current PRANA Swap wallet flow: approve, exact allowance, slippage, minimum received, pending transactions, and revoke."
-          : "Mô tả luồng ví PRANA Swap hiện tại: approve, exact allowance, slippage, minimum received, giao dịch pending, và revoke."
+          ? "Covers the current PRANA Swap wallet flow: approve, exact allowance, slippage, Minimum received, pending transactions, and revoke."
+          : "Mô tả luồng ví PRANA Swap hiện tại: approve, exact allowance, slippage, Minimum received, giao dịch pending, và revoke."
       }
     />
   );

@@ -26,6 +26,10 @@ const STAKING_ACCOUNT_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequ
 const STAKING_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
 const STAKING_QUOTE_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 60 };
 
+// Staking confirmation has its own bucket so hash polling does not consume quote quota.
+const STAKING_CONFIRM_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
+const STAKING_CONFIRM_GLOBAL_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 120 };
+
 // Bonding APIs share the same in-memory store; confirmation has its own bucket so hash polling
 // does not consume quote quota.
 const BONDING_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 10 };
@@ -155,6 +159,7 @@ export function createSwapRateLimiters() {
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
   const stakingAccountRateLimits = new Map<string, RateLimitBucket>();
   const stakingQuoteRateLimits = new Map<string, RateLimitBucket>();
+  const stakingConfirmRateLimits = new Map<string, RateLimitBucket>();
   const bondingQuoteRateLimits = new Map<string, RateLimitBucket>();
   const bondingAccountRateLimits = new Map<string, RateLimitBucket>();
   const bondingConfirmRateLimits = new Map<string, RateLimitBucket>();
@@ -162,6 +167,7 @@ export function createSwapRateLimiters() {
   let globalSwapQuoteRateLimit: RateLimitBucket | null = null;
   let globalStakingAccountRateLimit: RateLimitBucket | null = null;
   let globalStakingQuoteRateLimit: RateLimitBucket | null = null;
+  let globalStakingConfirmRateLimit: RateLimitBucket | null = null;
   let globalBondingQuoteRateLimit: RateLimitBucket | null = null;
   let globalBondingAccountRateLimit: RateLimitBucket | null = null;
   let globalBondingConfirmRateLimit: RateLimitBucket | null = null;
@@ -226,6 +232,27 @@ export function createSwapRateLimiters() {
         STAKING_QUOTE_GLOBAL_RATE_LIMIT,
       );
       globalStakingQuoteRateLimit = globalResult.bucket;
+      return globalResult.limited;
+    },
+
+    // Confirmation polling: separate bucket so retries do not burn quote quota.
+    isStakingConfirmRateLimited(req: IncomingMessage): boolean {
+      if (
+        isRateLimited(
+          req,
+          stakingConfirmRateLimits,
+          STAKING_CONFIRM_RATE_LIMIT,
+          trustedProxyHopCount,
+        )
+      ) {
+        return true;
+      }
+
+      const globalResult = isGlobalRateLimited(
+        globalStakingConfirmRateLimit,
+        STAKING_CONFIRM_GLOBAL_RATE_LIMIT,
+      );
+      globalStakingConfirmRateLimit = globalResult.bucket;
       return globalResult.limited;
     },
 
@@ -312,6 +339,7 @@ export function createSwapRateLimiters() {
         sweepRateLimitBuckets(swapVerifyRateLimits, now, SWAP_VERIFY_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(stakingAccountRateLimits, now, STAKING_ACCOUNT_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(stakingQuoteRateLimits, now, STAKING_QUOTE_RATE_LIMIT.windowMs);
+        sweepRateLimitBuckets(stakingConfirmRateLimits, now, STAKING_CONFIRM_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(bondingQuoteRateLimits, now, BONDING_QUOTE_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(bondingAccountRateLimits, now, BONDING_ACCOUNT_RATE_LIMIT.windowMs);
         sweepRateLimitBuckets(bondingConfirmRateLimits, now, BONDING_CONFIRM_RATE_LIMIT.windowMs);
@@ -330,6 +358,14 @@ export function createSwapRateLimiters() {
             STAKING_QUOTE_GLOBAL_RATE_LIMIT.windowMs
         ) {
           globalStakingQuoteRateLimit = null;
+        }
+
+        if (
+          globalStakingConfirmRateLimit &&
+          now - globalStakingConfirmRateLimit.windowStartedAt >
+            STAKING_CONFIRM_GLOBAL_RATE_LIMIT.windowMs
+        ) {
+          globalStakingConfirmRateLimit = null;
         }
 
         if (

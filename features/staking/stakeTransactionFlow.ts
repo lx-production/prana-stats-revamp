@@ -1,7 +1,12 @@
 import { accountFromSuccessfulRefetch } from './accountRefetch.ts';
+import { confirmStakeTransaction } from './stakeTransactionConfirmation.ts';
 
 import type { Hex } from '../../types/blockchain.types.ts';
-import type { StakingAccountSnapshot } from './staking.types.ts';
+import type { StakeWaitReceiptResult } from './stakeTransactionConfirmation.ts';
+import type {
+  StakingAccountSnapshot,
+  StakingTransactionConfirmation,
+} from './staking.types.ts';
 
 /** What the combined CTA should do on the next click. */
 export type PermitAndStakeAction =
@@ -23,51 +28,85 @@ export function resolvePermitAndStakeAction(input: {
   return 'create_permit_and_stake';
 }
 
-export type WaitReceiptResult = { status: 'success' | 'reverted' };
-
 export type ConfirmStakeDeps = {
-  waitForReceipt: (hash: Hex) => Promise<WaitReceiptResult>;
+  waitForReceipt: (hash: Hex) => Promise<StakeWaitReceiptResult>;
+  confirmOnServer: (
+    hash: Hex,
+  ) => Promise<StakingTransactionConfirmation>;
   refetchAccount: () => Promise<unknown>;
+  /**
+   * Resume / reload path — browser receipt success still needs server
+   * sender/target/calldata validation before UI reports confirmed.
+   */
+  requireServerValidation?: boolean;
 };
 
 export type ConfirmStakeOutcome =
-  | { kind: 'confirmed'; syncFailed: boolean }
-  | { kind: 'reverted' }
-  | { kind: 'receipt_pending'; error: unknown };
+  | { kind: 'confirmed'; syncFailed: boolean; source: 'browser' | 'server' }
+  | { kind: 'reverted'; source: 'browser' | 'server' }
+  | {
+      kind: 'confirmation_unavailable';
+      receiptError: unknown;
+      verificationError: unknown;
+    };
 
 /**
- * Wait for an already-broadcast hash. Account sync failures after a good
- * receipt are non-fatal (syncFailed) so callers keep transaction success.
+ * Wait for an already-broadcast hash (browser → server). Account sync failures
+ * after a good receipt are non-fatal so callers keep transaction success.
  */
 export async function confirmStakeReceipt(
   hash: Hex,
   deps: ConfirmStakeDeps,
 ): Promise<ConfirmStakeOutcome> {
-  try {
-    const receipt = await deps.waitForReceipt(hash);
-    if (receipt.status === 'reverted') {
-      return { kind: 'reverted' };
-    }
-  } catch (error) {
-    return { kind: 'receipt_pending', error };
+  const confirmation = await confirmStakeTransaction({
+    waitForReceipt: () => deps.waitForReceipt(hash),
+    confirmOnServer: () => deps.confirmOnServer(hash),
+    requireServerValidation: deps.requireServerValidation,
+  });
+
+  if (confirmation.kind === 'reverted') {
+    return { kind: 'reverted', source: confirmation.source };
+  }
+
+  if (confirmation.kind === 'confirmation_unavailable') {
+    return {
+      kind: 'confirmation_unavailable',
+      receiptError: confirmation.receiptError,
+      verificationError: confirmation.verificationError,
+    };
   }
 
   // Receipt succeeded — sync account without turning success into error.
   try {
     const refreshed = await deps.refetchAccount();
     if (!accountFromSuccessfulRefetch(refreshed)) {
-      return { kind: 'confirmed', syncFailed: true };
+      return {
+        kind: 'confirmed',
+        syncFailed: true,
+        source: confirmation.source,
+      };
     }
-    return { kind: 'confirmed', syncFailed: false };
+    return {
+      kind: 'confirmed',
+      syncFailed: false,
+      source: confirmation.source,
+    };
   } catch {
-    return { kind: 'confirmed', syncFailed: true };
+    return {
+      kind: 'confirmed',
+      syncFailed: true,
+      source: confirmation.source,
+    };
   }
 }
 
 export type SubmitStakeDeps = {
   refetchAccount: () => Promise<unknown>;
   writeContract: () => Promise<Hex>;
-  waitForReceipt: (hash: Hex) => Promise<WaitReceiptResult>;
+  waitForReceipt: (hash: Hex) => Promise<StakeWaitReceiptResult>;
+  confirmOnServer: (
+    hash: Hex,
+  ) => Promise<StakingTransactionConfirmation>;
   /** Return false when permit no longer matches the fresh account/form. */
   isPermitStillValid: (account: StakingAccountSnapshot) => boolean;
   /** True when the permit deadline has passed (for error copy). */
@@ -78,14 +117,24 @@ export type SubmitStakeOutcome =
   | { kind: 'fresh_account_failed' }
   | { kind: 'invalid_permit'; expired: boolean }
   | { kind: 'rejected_before_broadcast'; error: unknown }
-  | { kind: 'broadcast_receipt_pending'; hash: Hex; error: unknown }
-  | { kind: 'reverted'; hash: Hex }
-  | { kind: 'confirmed'; hash: Hex; syncFailed: boolean };
+  | {
+      kind: 'confirmation_unavailable';
+      hash: Hex;
+      receiptError: unknown;
+      verificationError: unknown;
+    }
+  | { kind: 'reverted'; hash: Hex; source: 'browser' | 'server' }
+  | {
+      kind: 'confirmed';
+      hash: Hex;
+      syncFailed: boolean;
+      source: 'browser' | 'server';
+    };
 
 /**
  * Fresh-account gate → writeContract → confirm receipt.
  * Separates pre-broadcast failures (retry with same permit) from post-broadcast
- * receipt failures (retry wait only, never a second write).
+ * confirmation failures (retry wait only, never a second write).
  */
 export async function submitStakeWithPermitFlow(
   deps: SubmitStakeDeps,
@@ -112,6 +161,7 @@ export async function submitStakeWithPermitFlow(
 
   const confirm = await confirmStakeReceipt(hash, {
     waitForReceipt: deps.waitForReceipt,
+    confirmOnServer: deps.confirmOnServer,
     refetchAccount: deps.refetchAccount,
   });
 
@@ -120,15 +170,17 @@ export async function submitStakeWithPermitFlow(
       kind: 'confirmed',
       hash,
       syncFailed: confirm.syncFailed,
+      source: confirm.source,
     };
   }
   if (confirm.kind === 'reverted') {
-    return { kind: 'reverted', hash };
+    return { kind: 'reverted', hash, source: confirm.source };
   }
   return {
-    kind: 'broadcast_receipt_pending',
+    kind: 'confirmation_unavailable',
     hash,
-    error: confirm.error,
+    receiptError: confirm.receiptError,
+    verificationError: confirm.verificationError,
   };
 }
 

@@ -59,6 +59,9 @@ Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin,
 | `POST /api/swap/log` | Telemetry vòng đời (không tin cậy) | 8 KB | 30 / IP / phút |
 | `POST /api/swap/verify-transaction` | Chứng minh on-chain → log `swap_confirmed` đã verify | 32 KB | 10 / IP / phút |
 | `POST /api/staking/quote` | Preflight fully-funded Interest (raw bigint, cùng block) | 2 KB | 10 / IP / phút + 60 global / phút |
+| `POST /api/staking/confirm-transaction` | Fallback browser RPC + bắt buộc validate khi resume/reload cho stake/claim/unstake cố định | 2 KB | bucket confirmation riêng |
+
+Confirmation Staking chỉ chấp nhận hash user đã broadcast và đối chiếu sender/target/full calldata với staking contract hardcoded. Write mới trong cùng session có thể tin browser receipt; resume/reload luôn validate lại trên server. Đây chỉ là xác nhận UX — không phải analytics tin cậy kiểu Swap.
 
 Bonding tái dùng helper admission cho các POST, nhưng **không** tái dùng HMAC / analytics đã verify của Swap:
 

@@ -11,7 +11,7 @@ Related docs:
 - Guide người dùng: `/guide/staking/` · Guide contract: `/guide/staking-contracts/`
 - Bản tiếng Anh: [`staking-technical-overview.md`](../staking-technical-overview.md)
 
-Template song song: Bonding (`/bond/`) và Swap modal — Staking đi trước với lazy entry, backend reads, CTA phases và pattern receipt-before-success mà Bonding mirror (Bonding thêm server confirmation fallback mà Staking không dùng).
+Template song song: Bonding (`/bond/`) và Swap modal — cùng lazy entry, backend reads, CTA phases, receipt-before-success và server confirmation fallback (`POST /api/staking/confirm-transaction`).
 
 ---
 
@@ -32,7 +32,7 @@ Token amounts và permit nonce đi qua JSON dưới dạng **decimal string** (k
 ## Design goals / giả định đã khóa
 
 1. **Lazy route riêng** — `/stake/` không kéo `StatsPage`, GLB hay dữ liệu homepage.
-2. **Reads qua backend** — config, account và quote dùng RPC server; Alchemy chỉ ở server. Ví chỉ ký permit và gửi transaction.
+2. **Reads qua backend** — config, account, quote và fallback confirmation dùng RPC server; Alchemy chỉ ở server. Ví chỉ ký permit và gửi transaction.
 3. **Write target cố định trong code** — stake/claim/unstake gọi `STAKING_CONTRACT_ADDRESS` từ `constants/stakingContracts.ts`, không lấy địa chỉ write từ API.
 4. **Một CTA cho create** — Permit & Stake → Continue Stake (tái dùng permit) → Resume confirming; tối đa hai wallet prompts, không tự mở liên tiếp.
 5. **Success chỉ sau receipt** — đã có hash thì không `writeContract` lần hai; resume chỉ chờ receipt hiện có.
@@ -60,14 +60,17 @@ flowchart TD
   configHook --> configApi["GET /api/staking/config"]
   accountHook --> accountApi["GET /api/staking/account"]
   quoteHook --> quoteApi["POST /api/staking/quote"]
+  txHook --> confirmApi["POST /api/staking/confirm-transaction"]
+  actionHook --> confirmApi
 
   configApi --> serverRpc["Server Polygon RPC"]
   accountApi --> serverRpc
   quoteApi --> serverRpc
+  confirmApi --> serverRpc
 
   txHook --> injected["Injected wallet"]
   actionHook --> injected
-  txHook --> publicRpc["Browser publicClient dRPC"]
+  txHook --> walletRpc["Wallet RPC receipt wait"]
   injected --> chain["StakingContract + PRANA permit"]
 ```
 
@@ -79,8 +82,8 @@ Guides `/guide/staking/` và `/guide/staking-contracts/` nằm trong homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, EIP-712 sign, `writeContract`, chờ receipt trên browser publicClient |
-| **Node backend** | Config/account/quote reads (cùng `blockTag`), math fund-gate, rate limit, origin/body validation |
+| **Browser** | UI, connect ví, parse amount, phase CTA, EIP-712 sign, `writeContract`, chờ receipt (wallet RPC → server fallback) |
+| **Node backend** | Config/account/quote reads (cùng `blockTag`), math fund-gate, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên StakingContract + PRANA `permit` |
 
@@ -88,11 +91,11 @@ Browser **không** xây write calldata từ địa chỉ do API trả. Permit sp
 
 ### Các lớp RPC
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `waitForTransactionReceipt` sau broadcast.
-2. **RPC của ví** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake.
-3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote (và homepage `/api/staking-stats`, path riêng).
+1. **RPC của ví** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake; sau broadcast, UI chờ receipt trên cùng provider đã gửi tx (`waitForPolygonWalletReceipt`).
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / đọc chain từ browser khi cần HTTP transport của app.
+3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction` (và homepage `/api/staking-stats`, path riêng).
 
-Khác Bonding: Staking **không** có `POST /api/staking/confirm-transaction`. Chờ receipt chỉ ở browser. Nếu wait fail sau khi đã có hash, CTA hiện **Resume confirming** (hash in-memory; reload sẽ mất).
+Khi chờ receipt: thử wallet RPC trước; nếu đọc fail → `POST /api/staking/confirm-transaction`. Receipt explicit `reverted` mới là failed; lỗi RPC ≠ revert. Nếu cả hai chưa xác nhận được, giữ hash + action snapshot (localStorage, TTL 24h), CTA **Resume confirming**. Fresh in-session có thể tin browser receipt; resume/reload luôn validate lại trên server.
 
 ---
 
@@ -115,9 +118,10 @@ Constants: `STAKE_*`, `GUIDE_STAKING_*`, `GUIDE_STAKING_CONTRACTS_*`, `isStakePa
 | `GET /api/staking/config` | `private`, 30s | Paused, min, grace, penalty %, durations/APR, contracts, permit domain |
 | `GET /api/staking/account?address=` | `private, no-store` | Balance, permit nonce, active stakes (checksum trước rate-limit) |
 | `POST /api/staking/quote` | `private, no-store` | Fully-funded Interest preflight; soft `issues[]` vẫn HTTP 200 |
+| `POST /api/staking/confirm-transaction` | `private, no-store` | Fallback UX; validate sender/target/calldata; không ghi trusted analytics |
 | `GET /api/staking-stats` | `private`, 24h | Chỉ homepage card — **không** dùng cho fund gate CTA |
 
-Rate limit account: 10/IP/phút + 120 global/phút. Quote: 10/IP/phút + 60 global/phút; body ≤ 2 KB.
+Rate limit account: 10/IP/phút + 120 global/phút. Quote: 10/IP/phút + 60 global/phút; confirmation: bucket riêng 30/IP/phút + 120 global/phút; body ≤ 2 KB.
 
 Quote request: `{ amountRaw, durationSeconds }`. Soft issue gồm `paused`, `below_minimum`, `invalid_duration`, `zero_amount`, `insufficient_interest_fund`.
 
@@ -308,9 +312,13 @@ server/utils/
   stakingReadUtils.ts
   stakingQuoteUtils.ts
 server/getApiRoutes.ts          # GET config + account (+ stats)
-server/postApiRoutes.ts         # POST quote
+server/postApiRoutes.ts         # POST quote + confirm-transaction
+server/loaders/stakingTransactionConfirmation.ts
+server/utils/stakingConfirmationUtils.ts
 server/rateLimit.ts
 ```
+
+Client confirmation helpers: `stakeTransactionConfirmation.ts`, `stakePendingTransactionStorage.ts`, `hooks/usePendingStakeTransaction.ts`.
 
 ### Contracts (read-only reference trong repo)
 
@@ -321,11 +329,11 @@ server/rateLimit.ts
 
 ## Pending hash behavior
 
-Khác Bonding: Staking **không** persist pending hash vào `localStorage`.
+Giống Bonding: pending hash + action snapshot persist vào `localStorage` (`prana:staking:pending:v1:{chainId}:{account}`, TTL 24h).
 
-- Hash pending sống trong React state khi `status !== 'success'`.
-- Reload / disconnect xóa trạng thái resume; user cần tự kiểm tra Polygonscan nếu không chắc.
-- Resume chỉ gọi `waitForTransactionReceipt` — không bao giờ `writeContract` lần hai.
+- Form sở hữu kind `stake`; Active Stakes sở hữu `claim` / `unstake` / `unstakeEarly`.
+- Storage chỉ là gợi ý resume — không bao giờ là proof of success.
+- Resume gọi confirmation (wallet RPC → server, `requireServerValidation`) — không bao giờ `writeContract` lần hai.
 
 ---
 
@@ -333,11 +341,11 @@ Khác Bonding: Staking **không** persist pending hash vào `localStorage`.
 
 Contributors cần biết khi thay đổi flow:
 
-1. **Không có server confirmation fallback** — chờ receipt chỉ qua browser publicClient. Pattern `confirm-transaction` của Bonding thêm sau, chưa backport.
-2. **Permit deadline theo wall-clock (1 giờ)** — đồng hồ thiết bị có thể lệch nhẹ; hết hạn invalidate Continue Stake.
-3. **Fully-funded gate là soft UX** — on-chain vẫn có thể revert nếu Interest balance đổi giữa quote và execution; `freshQuote` giảm nhưng không triệt tiêu race.
-4. **Homepage `/api/staking-stats` là aggregate riêng** — thân thiện float, cache dài; không dùng để quyết định eligibility Permit & Stake.
-5. **Hết grace thì lãi chưa claim mất vĩnh viễn** — UI cảnh báo; semantics contract không đổi bởi app.
+1. **Permit deadline theo wall-clock (1 giờ)** — đồng hồ thiết bị có thể lệch nhẹ; hết hạn invalidate Continue Stake.
+2. **Fully-funded gate là soft UX** — on-chain vẫn có thể revert nếu Interest balance đổi giữa quote và execution; `freshQuote` giảm nhưng không triệt tiêu race.
+3. **Homepage `/api/staking-stats` là aggregate riêng** — thân thiện float, cache dài; không dùng để quyết định eligibility Permit & Stake.
+4. **Hết grace thì lãi chưa claim mất vĩnh viễn** — UI cảnh báo; semantics contract không đổi bởi app.
+5. **Confirmation body chứa permit signature components** (v/r/s) chỉ để rebuild calldata match — cùng threat model với việc broadcast chúng lên chain.
 
 ---
 
@@ -347,7 +355,7 @@ Contributors cần biết khi thay đổi flow:
 - Fresh account nonce trước khi ký; fresh quote trước ký và trước broadcast.
 - Soft fund-gate issues khóa CTA; success chỉ sau receipt.
 - Amounts/nonces = decimal string; bigint interest math mirror thứ tự Solidity.
-- POST quote: origin/JSON/2 KB, rate limit, `502` đã redact.
+- POST quote + confirm-transaction: origin/JSON/2 KB, rate limit (bucket riêng cho confirm), `502` đã redact; confirm validate sender/target/calldata.
 - Lỗi ví sanitize VI/EN (`stakingErrors.ts`).
 - Khóa form/actions lẫn nhau; claim-before-unstake trong grace.
 
@@ -363,7 +371,7 @@ Contributors cần biết khi thay đổi flow:
 | Guides | `server/tests/guideRoutes.test.ts` |
 | Typecheck / full | `npm run typecheck`, `npm test` |
 
-Khi đổi interest math, rule grace/claim, CTA phases, invalidate permit, fund gate hoặc API admission — cập nhật test tương ứng và, nếu đổi hành vi public, cập nhật guide + doc này.
+Khi đổi interest math, rule grace/claim, CTA phases, confirmation fallback, invalidate permit, fund gate hoặc API admission — cập nhật test tương ứng và, nếu đổi hành vi public, cập nhật guide + doc này.
 
 ---
 

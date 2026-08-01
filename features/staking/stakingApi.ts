@@ -6,6 +6,8 @@ import type {
   StakingConfig,
   StakingQuote,
   StakingQuoteRequest,
+  StakingTransactionConfirmation,
+  StakingTransactionConfirmationRequest,
 } from './staking.types.ts';
 
 /** Browser React Query key for GET /api/staking/config. */
@@ -42,6 +44,24 @@ export async function fetchStakingQuote(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal,
+    },
+    { dedupeKey: null },
+  );
+}
+
+/**
+ * POST /api/staking/confirm-transaction — server Polygon RPC fallback when the
+ * browser cannot read a receipt for an already-broadcast hash.
+ */
+export async function confirmStakingTransactionOnServer(
+  request: StakingTransactionConfirmationRequest,
+): Promise<StakingTransactionConfirmation> {
+  return await fetchJson<StakingTransactionConfirmation>(
+    '/api/staking/confirm-transaction',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
     },
     { dedupeKey: null },
   );

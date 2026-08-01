@@ -161,6 +161,20 @@ export function getStakingErrorMessage(
   return ERROR_COPY[locale][code];
 }
 
+/**
+ * Dev breadcrumb for staking write failures.
+ * UI still shows locale copy only — raw provider text stays in the console.
+ */
+export function logStakingFailure(context: string, detail?: unknown): void {
+  if (detail !== undefined) {
+    console.error(`[staking] ${context}`, detail);
+    return;
+  }
+  console.error(`[staking] ${context}`);
+}
+
 export function formatStakingError(error: unknown, locale: SiteLocale): string {
-  return getStakingErrorMessage(classifyStakingError(error), locale);
+  const code = classifyStakingError(error);
+  logStakingFailure(code, error);
+  return getStakingErrorMessage(code, locale);
 }

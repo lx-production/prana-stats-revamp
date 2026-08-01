@@ -99,7 +99,7 @@ PRANA Bonding tạo và quản lý bond Buy/Sell qua các Bond contract trên Po
 
 - Tạo bond có thể cần Approve ERC-20 rồi Create riêng; một lần bấm không mở liên tiếp cả hai trên ví. Payout vest theo thời gian và phải claim theo quy tắc contract.
 - Buy dùng nhập exact WBTC; Buy và Sell không có khóa slip on-chain (`minOut`). Quote là ước tính — số cuối có thể lệch nếu reserves, rate, treasury, hoặc state đổi giữa quote và thực thi. Fresh-quote trước write không đồng nghĩa khóa slip on-chain. Tuy nhiên với quy mô và traffic hiện tại của PRANA thì số quote và số thực thi khác nhau là hiếm khi xảy ra.
-- Claim có thể thất bại nếu deployment đang pause, treasury/reserves không đủ, mạng/RPC không sẵn có, hoặc lời gọi bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công vì những lý do không thể kiểm soát nằm ngoài dự định.
+- Claim có thể thất bại nếu deployment đang pause, treasury/reserves không đủ, mạng/RPC không sẵn có, hoặc lời gọi bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công vì những lý do bất khả kháng.
 - Admin/manager có thể pause, cập nhật rate/minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bond hiện hữu giữ điều khoản payout lúc tạo; pause, mức quỹ, và khóa role vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
 ## 8. Địa chỉ contract cần đối chiếu

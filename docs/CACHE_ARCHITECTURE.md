@@ -17,6 +17,7 @@ The goal is to keep caching:
 - Top holding addresses are loaded live via `/api/top-holding-addresses` (paginated) with per-page server memory cache (no JSON file handoff).
 - Wallet-specific staking account data is live via `/api/staking/account` (`private, no-store`, rate-limited; not a shared protocol snapshot).
 - Fully-funded stake preflight is live via `POST /api/staking/quote` (`private, no-store`, rate-limited; raw bigint at one `blockTag` — do **not** use `/api/staking-stats` for this gate).
+- Staking confirmation fallback uses `POST /api/staking/confirm-transaction` (`private, no-store`, separate rate-limit bucket from quote).
 - Wallet-specific bonding account/quote/confirmation traffic uses `/api/bonding/*` (`account`/`quote`/`confirm-transaction` are `private, no-store`; config is private 30s).
 
 ### 2. Short-lived data should have short-lived caches
@@ -286,7 +287,7 @@ Staking stats response cache:
 - `/api/staking-stats` (TTL = `SERVER_CACHE_TTL_MS.stakingStatsApiResponse`, 24h)
 
 `/api/staking/account` is **not** server-cached (always live; `Cache-Control: private, no-store`).
-`POST /api/staking/quote` is also **not** server-cached (always live; `Cache-Control: private, no-store`).
+`POST /api/staking/quote` and `POST /api/staking/confirm-transaction` are also **not** server-cached (always live; `Cache-Control: private, no-store`).
 
 Browser staking UI (React Query on `/stake/`):
 - `['staking-config']` — `staleTime` 30s (aligned with config HTTP/`Cache-Control` max-age)
@@ -297,6 +298,7 @@ Bonding transaction UI caches (`/bond/`):
 - `/api/bonding/config` — server private cache 30s (`SERVER_CACHE_TTL_MS.apiResponse`); React Query key `['bonding-config']` with matching staleTime
 - `/api/bonding/account` — **not** server-cached (`private, no-store`); React Query key `['bonding-account', address]` with `staleTime: 0` + refetch on mount; invalidate after successful approve/create/claim receipts
 - `/api/bonding/quote` — **not** cached (`private, no-store`); client debounces/aborts and treats quotes older than 60s as stale
+- `/api/staking/confirm-transaction` — **not** cached (`private, no-store`); confirmation polling only, separate rate-limit bucket from quote
 - `/api/bonding/confirm-transaction` — **not** cached (`private, no-store`); confirmation polling only, separate rate-limit bucket from quote
 
 Bond refresh request dedupe:
@@ -377,6 +379,7 @@ Routes (each uses one of the header shapes above, as wired in `server/getApiRout
 - `/api/staking/config` — `max-age=30`
 - `/api/staking/account` — `private, no-store` (wallet-specific; rate-limited 10/IP/min + 120/server/min)
 - `POST /api/staking/quote` — `private, no-store` (fully-funded Interest preflight; rate-limited 10/IP/min + 60/server/min)
+- `POST /api/staking/confirm-transaction` — `private, no-store` (POST; separate confirmation bucket 30/IP/min + 120/server/min)
 - `/api/bonding/config` — `private, max-age=30`
 - `/api/bonding/account` — `private, no-store` (wallet-specific; rate-limited 10/IP/min + 120/server/min)
 - `/api/bonding/quote` — `private, no-store` (POST; rate-limited 10/IP/min + 60/server/min)

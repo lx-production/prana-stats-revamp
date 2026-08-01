@@ -24,7 +24,10 @@ export function getStakeCtaPhase(
   if (status === 'submitting') return 'submitting';
   if (status === 'confirming') return 'confirming';
   if (status === 'success') return 'success';
-  if (hasPendingHash) return 'resume_confirming';
+  // Pending hash / confirmation unavailable always resume wait — never imply a rewrite.
+  if (status === 'confirmation_unavailable' || hasPendingHash) {
+    return 'resume_confirming';
+  }
   if (hasValidPermit) return 'continue_stake';
   return 'permit_and_stake';
 }

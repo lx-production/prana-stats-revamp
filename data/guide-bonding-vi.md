@@ -11,7 +11,7 @@ Tạo bond thường cần **Approve** ERC-20 trước:
 - **Buy Bond** chi **WBTC** — approve spender là Buy Bond V2
 - **Sell Bond** chi **PRANA** — approve spender là Sell Bond V2
 
-Nút chính đi theo các phase: **Approve** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần, UI bỏ qua Approve và vào thẳng Create Bond.
+Nút chính đi theo 3 bước: **Approve** → **Create Bond** → **Confirming**. Một lần bấm không tự mở liên tiếp cả Approve lẫn Create. Nếu allowance đã khớp số cần, UI bỏ qua Approve và vào thẳng Create Bond.
 
 Trên lời nhắc Approve, hãy kiểm tra:
 
@@ -42,7 +42,7 @@ Allowance phải ≥ đúng số PRANA nhập. MAX dùng cho Buy WBTC và Sell P
 
 Mỗi bond đang hiệu lực hiện principal (vốn gốc), tổng payout, đã claim, claimable (có thể claim), và tiến độ vesting.
 
-Công thức claimable (cùng ý với contract):
+Công thức claimable (cùng logic với contract):
 
 - Trước maturity: tổng đã vest tăng từ `creationTime` tới `maturityTime`, claimable = tổng đã vest trừ phần đã claim
 - Từ maturity: claim toàn bộ phần còn lại; contract đánh dấu bond đã claimed khi không còn gì

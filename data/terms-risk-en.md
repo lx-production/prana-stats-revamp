@@ -130,7 +130,7 @@ Before signing or submitting any action, you are responsible for:
 - confirming that you are on the official website domain
 - using Polygon mainnet and a compatible wallet
 - verifying the relevant contract, token, spender, function, amount, and recipient
-- reviewing gas, minimum received, price impact, duration, APR, bond term, maturity, grace period, and penalty information that applies to the action
+- reviewing gas, Minimum received, price impact, duration, APR, bond term, maturity, grace period, and penalty information that applies to the action
 - keeping enough POL for all required transactions, including later claims, unstaking, or bond claims
 - protecting your device, wallet, private keys, seed phrase, and recovery methods
 - independently checking on-chain status if the interface is delayed or unavailable

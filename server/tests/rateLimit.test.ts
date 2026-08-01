@@ -322,6 +322,26 @@ function spendBondingConfirmBudget(
   }
 }
 
+function spendStakingQuoteBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 10,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isStakingQuoteRateLimited(req), false);
+  }
+}
+
+function spendStakingConfirmBudget(
+  limiter: ReturnType<typeof createSwapRateLimiters>,
+  req: IncomingMessage,
+  count = 30,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(limiter.isStakingConfirmRateLimited(req), false);
+  }
+}
+
 test('bonding quote limiter enforces 10 requests per IP per minute', () => {
   const limiter = createSwapRateLimiters();
 
@@ -394,6 +414,38 @@ test('bonding confirmation limiter uses trusted proxy hop identity', () => {
   );
   assert.equal(
     limiter.isBondingConfirmRateLimited(mockRequest('127.0.0.1', '198.51.100.171, 127.0.0.1')),
+    false,
+  );
+});
+
+test('staking confirmation limiter is separate from quote quota', () => {
+  const limiter = createSwapRateLimiters();
+
+  spendStakingQuoteBudget(limiter, mockRequest('198.51.100.180'));
+  assert.equal(limiter.isStakingQuoteRateLimited(mockRequest('198.51.100.180')), true);
+  // Confirmation budget must still be available after quote exhaustion.
+  assert.equal(limiter.isStakingConfirmRateLimited(mockRequest('198.51.100.180')), false);
+
+  spendStakingConfirmBudget(limiter, mockRequest('198.51.100.181'));
+  assert.equal(limiter.isStakingConfirmRateLimited(mockRequest('198.51.100.181')), true);
+  assert.equal(limiter.isStakingQuoteRateLimited(mockRequest('198.51.100.181')), false);
+});
+
+test('staking confirmation limiter uses trusted proxy hop identity', () => {
+  process.env.TRUSTED_PROXY_HOP_COUNT = '2';
+  const limiter = createSwapRateLimiters();
+
+  spendStakingConfirmBudget(
+    limiter,
+    mockRequest('127.0.0.1', '198.51.100.190, 127.0.0.1'),
+  );
+
+  assert.equal(
+    limiter.isStakingConfirmRateLimited(mockRequest('127.0.0.1', '198.51.100.190, 127.0.0.1')),
+    true,
+  );
+  assert.equal(
+    limiter.isStakingConfirmRateLimited(mockRequest('127.0.0.1', '198.51.100.191, 127.0.0.1')),
     false,
   );
 });

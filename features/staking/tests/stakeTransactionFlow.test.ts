@@ -97,6 +97,7 @@ test('submitStakeWithPermitFlow does not write when fresh account refetch fails'
       return HASH;
     },
     waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
     isPermitStillValid: () => true,
     isPermitExpired: () => false,
   });
@@ -111,6 +112,7 @@ test('submitStakeWithPermitFlow keeps pre-broadcast rejection without a hash', a
       throw new Error('User rejected the request');
     },
     waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
     isPermitStillValid: () => true,
     isPermitExpired: () => false,
   });
@@ -123,6 +125,7 @@ test('submitStakeWithPermitFlow keeps pre-broadcast rejection without a hash', a
 test('submitStakeWithPermitFlow does not call write twice after hash is known', async () => {
   let writeCount = 0;
   let waitCount = 0;
+  let serverCalls = 0;
 
   const first = await submitStakeWithPermitFlow({
     refetchAccount: async () => successRefetch(),
@@ -134,18 +137,28 @@ test('submitStakeWithPermitFlow does not call write twice after hash is known', 
       waitCount += 1;
       throw new Error('RPC timeout');
     },
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmation_unavailable' };
+    },
     isPermitStillValid: () => true,
     isPermitExpired: () => false,
   });
 
-  assert.equal(first.kind, 'broadcast_receipt_pending');
+  assert.equal(first.kind, 'confirmation_unavailable');
   assert.equal(writeCount, 1);
+  assert.equal(serverCalls, 1);
 
   // Resume path: confirmStakeReceipt only — no second write.
   const resume = await confirmStakeReceipt(HASH, {
+    requireServerValidation: true,
     waitForReceipt: async () => {
       waitCount += 1;
       return { status: 'success' };
+    },
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmed', source: 'server' };
     },
     refetchAccount: async () => successRefetch(),
   });
@@ -153,20 +166,64 @@ test('submitStakeWithPermitFlow does not call write twice after hash is known', 
   assert.equal(resume.kind, 'confirmed');
   assert.equal(writeCount, 1);
   assert.equal(waitCount, 2);
+  assert.equal(serverCalls, 2);
+});
+
+test('fresh confirmStakeReceipt trusts browser receipt without server', async () => {
+  let serverCalls = 0;
+  const outcome = await confirmStakeReceipt(HASH, {
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+    refetchAccount: async () => successRefetch(),
+  });
+  assert.deepEqual(outcome, {
+    kind: 'confirmed',
+    syncFailed: false,
+    source: 'browser',
+  });
+  assert.equal(serverCalls, 0);
+});
+
+test('resume confirmStakeReceipt still requires server validation', async () => {
+  let serverCalls = 0;
+  const outcome = await confirmStakeReceipt(HASH, {
+    requireServerValidation: true,
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => {
+      serverCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+    refetchAccount: async () => successRefetch(),
+  });
+  assert.deepEqual(outcome, {
+    kind: 'confirmed',
+    syncFailed: false,
+    source: 'server',
+  });
+  assert.equal(serverCalls, 1);
 });
 
 test('confirmStakeReceipt keeps confirmed when post-receipt refetch fails', async () => {
   const outcome = await confirmStakeReceipt(HASH, {
     waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
     refetchAccount: async () => errorRefetch(),
   });
-  assert.deepEqual(outcome, { kind: 'confirmed', syncFailed: true });
+  assert.deepEqual(outcome, {
+    kind: 'confirmed',
+    syncFailed: true,
+    source: 'browser',
+  });
 });
 
 test('confirmStakeReceipt reports reverted without syncing account', async () => {
   let refetched = false;
   const outcome = await confirmStakeReceipt(HASH, {
     waitForReceipt: async () => ({ status: 'reverted' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
     refetchAccount: async () => {
       refetched = true;
       return successRefetch();
@@ -174,6 +231,21 @@ test('confirmStakeReceipt reports reverted without syncing account', async () =>
   });
   assert.equal(outcome.kind, 'reverted');
   assert.equal(refetched, false);
+});
+
+test('confirmStakeReceipt falls back to server when browser RPC fails', async () => {
+  const outcome = await confirmStakeReceipt(HASH, {
+    waitForReceipt: async () => {
+      throw new Error('browser RPC read failed');
+    },
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
+    refetchAccount: async () => successRefetch(),
+  });
+  assert.deepEqual(outcome, {
+    kind: 'confirmed',
+    syncFailed: false,
+    source: 'server',
+  });
 });
 
 test('runPermitThenStake stops without submit when createPermit is rejected', async () => {

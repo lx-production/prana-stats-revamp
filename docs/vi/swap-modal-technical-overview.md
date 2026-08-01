@@ -126,7 +126,7 @@ sequenceDiagram
 2. **Kết nối** — `useInjectedWallet.connectWallet()` chọn injected connector đầu tiên có sẵn.
 3. **Mạng** — nếu `chainId !== 137`, `ensurePolygon()` gọi wagmi `switchChain`.
 4. **Quote** — khi đã connect, đang trên Polygon, và amount > 0, `useUniswapQuote` xóa quote cũ ngay, chờ **1000ms**, rồi `POST /api/swap/quote`.
-5. **Xem lại** — modal hiện amount out, minimum received, các bước route, và ước lượng gas.
+5. **Xem lại** — modal hiện amount out, Minimum received, các bước route, và ước lượng gas.
 6. **Thực thi** — `useUniswapSwap.executeSwap()`:
   - Từ chối quote cũ (`isQuoteCurrent` + buffer deadline).
   - Approve đúng `amountInRaw` trên ERC-20 nếu allowance thấp (native POL bỏ qua approve).

@@ -11,6 +11,14 @@ import {
   StakingApiValidationError,
 } from '../utils/stakingQuoteUtils.ts';
 import {
+  StakingConfirmationMismatchError,
+  parseStakingConfirmationRequest,
+} from '../utils/stakingConfirmationUtils.ts';
+import {
+  buildExpectedCall,
+  confirmStakingTransaction,
+} from '../loaders/stakingTransactionConfirmation.ts';
+import {
   INTEREST_CONTRACT_ADDRESS,
   PRANA_PERMIT_DOMAIN_NAME,
   PRANA_PERMIT_DOMAIN_VERSION,
@@ -20,11 +28,12 @@ import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 import { POLYGON_CHAIN_ID, SECONDS_PER_DAY } from '../../constants/network.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Address } from '../../types/blockchain.types.ts';
+import type { Address, Hex } from '../../types/blockchain.types.ts';
 import type {
   StakingAccountSnapshot,
   StakingConfig,
   StakingQuote,
+  StakingTransactionConfirmation,
 } from '../../features/staking/staking.types.ts';
 
 type MockHeaderValue = number | string | string[];
@@ -36,6 +45,12 @@ type MockResponse = ServerResponse & {
 
 const SAMPLE_ADDRESS = '0x0000000000000000000000000000000000000001' as Address;
 const SAMPLE_ADDRESS_LOWER = '0x0000000000000000000000000000000000000001';
+const SAMPLE_TX_HASH =
+  '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as Hex;
+const SAMPLE_R =
+  '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as Hex;
+const SAMPLE_S =
+  '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' as Hex;
 
 function isStringArray(value: number | string | readonly string[]): value is readonly string[] {
   return Array.isArray(value);
@@ -156,6 +171,7 @@ function sampleQuote(overrides: Partial<StakingQuote> = {}): StakingQuote {
 
 function createQuoteHandlers(options?: {
   loadQuote?: () => Promise<StakingQuote>;
+  confirmTransaction?: () => Promise<StakingTransactionConfirmation>;
   quoteCalls?: { count: number };
 }) {
   const rateLimiters = createSwapRateLimiters();
@@ -167,6 +183,9 @@ function createQuoteHandlers(options?: {
         if (options?.loadQuote) return options.loadQuote();
         return sampleQuote();
       },
+      confirmTransaction:
+        options?.confirmTransaction ??
+        (async () => ({ status: 'confirmed', source: 'server' })),
     },
   });
   return { rateLimiters, handlePost, quoteCalls };
@@ -623,4 +642,349 @@ test('POST /api/staking/quote returns 429 when rate limited', async () => {
   );
   assert.equal(limited.statusCode, 429);
   assert.equal(parsedBody(limited).error, 'rate_limited');
+});
+
+// ---------------------------------------------------------------------------
+// Confirmation API
+// ---------------------------------------------------------------------------
+
+test('parseStakingConfirmationRequest accepts stake and claim actions', () => {
+  assert.deepEqual(
+    parseStakingConfirmationRequest(
+      {
+        transactionHash: SAMPLE_TX_HASH,
+        account: SAMPLE_ADDRESS,
+        action: {
+          kind: 'stake',
+          amountRaw: '1000',
+          durationSeconds: SECONDS_PER_DAY * 30,
+          deadline: 1_700_000_000,
+          v: 28,
+          r: SAMPLE_R,
+          s: SAMPLE_S,
+        },
+      },
+      parseChecksumAddress,
+    ).action,
+    {
+      kind: 'stake',
+      amountRaw: '1000',
+      durationSeconds: SECONDS_PER_DAY * 30,
+      deadline: 1_700_000_000,
+      v: 28,
+      r: SAMPLE_R,
+      s: SAMPLE_S,
+    },
+  );
+
+  assert.deepEqual(
+    parseStakingConfirmationRequest(
+      {
+        transactionHash: SAMPLE_TX_HASH,
+        account: SAMPLE_ADDRESS,
+        action: { kind: 'claim', stakeId: 0 },
+      },
+      parseChecksumAddress,
+    ).action,
+    { kind: 'claim', stakeId: 0 },
+  );
+});
+
+test('parseStakingConfirmationRequest rejects zero stake amount and bad hash', () => {
+  assert.throws(
+    () =>
+      parseStakingConfirmationRequest(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action: {
+            kind: 'stake',
+            amountRaw: '0',
+            durationSeconds: 1,
+            deadline: 1,
+            v: 28,
+            r: SAMPLE_R,
+            s: SAMPLE_S,
+          },
+        },
+        parseChecksumAddress,
+      ),
+    (err: unknown) =>
+      err instanceof StakingApiValidationError &&
+      err.message === 'Invalid staking stake amount.',
+  );
+
+  assert.throws(
+    () =>
+      parseStakingConfirmationRequest(
+        {
+          transactionHash: '0x1234',
+          account: SAMPLE_ADDRESS,
+          action: { kind: 'unstake', stakeId: 1 },
+        },
+        parseChecksumAddress,
+      ),
+    (err: unknown) =>
+      err instanceof StakingApiValidationError &&
+      err.message === 'Invalid staking transaction hash.',
+  );
+});
+
+test('POST /api/staking/confirm-transaction rejects bad body/hash/action before RPC', async () => {
+  let confirmCalls = 0;
+  const { handlePost } = createQuoteHandlers({
+    confirmTransaction: async () => {
+      confirmCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+  });
+
+  const badHash = mockResponse();
+  await handlePost(
+    mockBodyRequest([
+      Buffer.from(
+        JSON.stringify({
+          transactionHash: '0x1234',
+          account: SAMPLE_ADDRESS,
+          action: { kind: 'claim', stakeId: 1 },
+        }),
+      ),
+    ]),
+    badHash,
+    new URL('http://127.0.0.1/api/staking/confirm-transaction'),
+  );
+  assert.equal(badHash.statusCode, 400);
+  assert.equal(confirmCalls, 0);
+});
+
+test('POST /api/staking/confirm-transaction rejects junk before consuming global rate-limit quota', async () => {
+  let confirmCalls = 0;
+  const { handlePost, rateLimiters } = createQuoteHandlers({
+    confirmTransaction: async () => {
+      confirmCalls += 1;
+      return { status: 'confirmed', source: 'server' };
+    },
+  });
+
+  const validBody = JSON.stringify({
+    transactionHash: SAMPLE_TX_HASH,
+    account: SAMPLE_ADDRESS,
+    action: { kind: 'claim', stakeId: 1 },
+  });
+
+  // Fill would-be global confirmation budget (120) with junk.
+  for (let index = 0; index < 120; index += 1) {
+    const plain = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(validBody)],
+        { 'content-type': 'text/plain', host: '127.0.0.1' },
+        `203.0.113.${index % 200}`,
+      ),
+      plain,
+      new URL('http://127.0.0.1/api/staking/confirm-transaction'),
+    );
+    assert.equal(plain.statusCode, 415);
+
+    const badHash = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [
+          Buffer.from(
+            JSON.stringify({
+              transactionHash: '0x1234',
+              account: SAMPLE_ADDRESS,
+              action: { kind: 'claim', stakeId: 1 },
+            }),
+          ),
+        ],
+        { 'content-type': 'application/json', host: '127.0.0.1' },
+        `198.51.100.${index % 200}`,
+      ),
+      badHash,
+      new URL('http://127.0.0.1/api/staking/confirm-transaction'),
+    );
+    assert.equal(badHash.statusCode, 400);
+  }
+
+  assert.equal(confirmCalls, 0);
+
+  const ok = mockResponse();
+  await handlePost(
+    mockBodyRequest(
+      [Buffer.from(validBody)],
+      { 'content-type': 'application/json', host: '127.0.0.1' },
+      '198.51.100.77',
+    ),
+    ok,
+    new URL('http://127.0.0.1/api/staking/confirm-transaction'),
+  );
+  assert.equal(ok.statusCode, 200);
+  assert.equal(ok.headers.get('Cache-Control'), 'private, no-store');
+  assert.equal(confirmCalls, 1);
+  assert.equal(rateLimiters.isStakingConfirmRateLimited(mockRequest('198.51.100.78')), false);
+});
+
+test('confirmStakingTransaction distinguishes success / revert / not_mined / RPC error', async () => {
+  const action = { kind: 'claim' as const, stakeId: 7 };
+  const expected = buildExpectedCall(action);
+
+  const confirmed = await confirmStakingTransaction(
+    {
+      transactionHash: SAMPLE_TX_HASH,
+      account: SAMPLE_ADDRESS,
+      action,
+    },
+    {
+      getProvider: async () => ({
+        async getTransaction() {
+          return {
+            from: SAMPLE_ADDRESS,
+            to: expected.target,
+            data: expected.data,
+          };
+        },
+        async getTransactionReceipt() {
+          return { status: 1 };
+        },
+      }),
+    },
+  );
+  assert.deepEqual(confirmed, { status: 'confirmed', source: 'server' });
+
+  const reverted = await confirmStakingTransaction(
+    {
+      transactionHash: SAMPLE_TX_HASH,
+      account: SAMPLE_ADDRESS,
+      action,
+    },
+    {
+      getProvider: async () => ({
+        async getTransaction() {
+          return {
+            from: SAMPLE_ADDRESS,
+            to: expected.target,
+            data: expected.data,
+          };
+        },
+        async getTransactionReceipt() {
+          return { status: 0 };
+        },
+      }),
+    },
+  );
+  assert.deepEqual(reverted, { status: 'reverted', source: 'server' });
+
+  const notMined = await confirmStakingTransaction(
+    {
+      transactionHash: SAMPLE_TX_HASH,
+      account: SAMPLE_ADDRESS,
+      action,
+    },
+    {
+      getProvider: async () => ({
+        async getTransaction() {
+          return null;
+        },
+        async getTransactionReceipt() {
+          return null;
+        },
+      }),
+    },
+  );
+  assert.deepEqual(notMined, { status: 'not_mined' });
+
+  const unavailable = await confirmStakingTransaction(
+    {
+      transactionHash: SAMPLE_TX_HASH,
+      account: SAMPLE_ADDRESS,
+      action,
+    },
+    {
+      getProvider: async () => ({
+        async getTransaction() {
+          throw new Error('RPC down https://alchemy.com/v2/SECRET');
+        },
+        async getTransactionReceipt() {
+          throw new Error('RPC down');
+        },
+      }),
+    },
+  );
+  assert.deepEqual(unavailable, { status: 'confirmation_unavailable' });
+});
+
+test('confirmStakingTransaction rejects sender/target/calldata mismatch', async () => {
+  const action = { kind: 'unstake' as const, stakeId: 3 };
+  const expected = buildExpectedCall(action);
+
+  await assert.rejects(
+    () =>
+      confirmStakingTransaction(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action,
+        },
+        {
+          getProvider: async () => ({
+            async getTransaction() {
+              return {
+                from: '0x00000000000000000000000000000000000000aa',
+                to: expected.target,
+                data: expected.data,
+              };
+            },
+            async getTransactionReceipt() {
+              return { status: 1 };
+            },
+          }),
+        },
+      ),
+    (err: unknown) =>
+      err instanceof StakingConfirmationMismatchError && /sender/.test(err.message),
+  );
+
+  await assert.rejects(
+    () =>
+      confirmStakingTransaction(
+        {
+          transactionHash: SAMPLE_TX_HASH,
+          account: SAMPLE_ADDRESS,
+          action,
+        },
+        {
+          getProvider: async () => ({
+            async getTransaction() {
+              return {
+                from: SAMPLE_ADDRESS,
+                to: INTEREST_CONTRACT_ADDRESS,
+                data: expected.data,
+              };
+            },
+            async getTransactionReceipt() {
+              return { status: 1 };
+            },
+          }),
+        },
+      ),
+    /target/,
+  );
+});
+
+test('buildExpectedCall always targets the hardcoded staking contract', () => {
+  const stake = buildExpectedCall({
+    kind: 'stake',
+    amountRaw: '1',
+    durationSeconds: 86_400,
+    deadline: 1_700_000_000,
+    v: 27,
+    r: SAMPLE_R,
+    s: SAMPLE_S,
+  });
+  assert.equal(stake.target.toLowerCase(), STAKING_CONTRACT_ADDRESS.toLowerCase());
+
+  const claim = buildExpectedCall({ kind: 'claim', stakeId: 9 });
+  assert.equal(claim.target.toLowerCase(), STAKING_CONTRACT_ADDRESS.toLowerCase());
+  assert.notEqual(stake.data, claim.data);
 });

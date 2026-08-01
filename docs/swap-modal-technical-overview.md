@@ -122,7 +122,7 @@ sequenceDiagram
 2. **Connect** — `useInjectedWallet.connectWallet()` picks the first available injected connector.
 3. **Network** — if `chainId !== 137`, `ensurePolygon()` calls wagmi `switchChain`.
 4. **Quote** — when connected, on Polygon, and amount &gt; 0, `useUniswapQuote` clears any previous quote immediately, waits **1000ms**, then `POST /api/swap/quote`.
-5. **Review** — modal shows output amount, minimum received, route steps, and gas estimate.
+5. **Review** — modal shows output amount, Minimum received, route steps, and gas estimate.
 6. **Execute** — `useUniswapSwap.executeSwap()`:
    - Refuses stale quotes (`isQuoteCurrent` + deadline buffer).
    - Approves exact `amountInRaw` on the ERC-20 if allowance is low (native POL skips approve).

@@ -11,7 +11,7 @@ Related docs:
 - User guide: `/guide/staking/` · Contracts guide: `/guide/staking-contracts/`
 - Vietnamese: [`vi/staking-technical-overview.md`](./vi/staking-technical-overview.md)
 
-Parallel templates: Bonding (`/bond/`) and the Swap modal — Staking pioneered the lazy entry, backend reads, CTA phases, and receipt-before-success pattern that Bonding mirrors (Bonding adds a server confirmation fallback Staking does not use).
+Parallel templates: Bonding (`/bond/`) and the Swap modal — shared lazy entry, backend reads, CTA phases, receipt-before-success, and server confirmation fallback (`POST /api/staking/confirm-transaction`).
 
 ---
 
@@ -32,7 +32,7 @@ Token amounts and permit nonces travel through JSON as **decimal strings** (neve
 ## Design goals / locked assumptions
 
 1. **Dedicated lazy route** — `/stake/` does not pull in `StatsPage`, GLB, or homepage data.
-2. **Reads via backend** — config, account, and quote use server RPC; Alchemy stays server-side. The wallet only signs permit and sends transactions.
+2. **Reads via backend** — config, account, quote, and confirmation fallback use server RPC; Alchemy stays server-side. The wallet only signs permit and sends transactions.
 3. **Hardcoded write target** — stake/claim/unstake call `STAKING_CONTRACT_ADDRESS` from `constants/stakingContracts.ts`, not addresses from the API for the write.
 4. **One CTA for create** — Permit & Stake → Continue Stake (reuse permit) → Resume confirming; at most two wallet prompts, never auto-chained without user confirmation.
 5. **Success only after receipt** — once a hash exists, never `writeContract` a second time; resume waits for the existing receipt.
@@ -60,14 +60,17 @@ flowchart TD
   configHook --> configApi["GET /api/staking/config"]
   accountHook --> accountApi["GET /api/staking/account"]
   quoteHook --> quoteApi["POST /api/staking/quote"]
+  txHook --> confirmApi["POST /api/staking/confirm-transaction"]
+  actionHook --> confirmApi
 
   configApi --> serverRpc["Server Polygon RPC"]
   accountApi --> serverRpc
   quoteApi --> serverRpc
+  confirmApi --> serverRpc
 
   txHook --> injected["Injected wallet"]
   actionHook --> injected
-  txHook --> publicRpc["Browser publicClient dRPC"]
+  txHook --> walletRpc["Wallet RPC receipt wait"]
   injected --> chain["StakingContract + PRANA permit"]
 ```
 
@@ -79,8 +82,8 @@ Guides `/guide/staking/` and `/guide/staking-contracts/` live in the homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, wallet connect, amount parse, CTA phases, EIP-712 sign, `writeContract`, wait for receipt on browser publicClient |
-| **Node backend** | Config/account/quote reads (same `blockTag`), fund-gate math, rate limit, origin/body validation |
+| **Browser** | UI, wallet connect, amount parse, CTA phases, EIP-712 sign, `writeContract`, wait for receipt (wallet RPC → server fallback) |
+| **Node backend** | Config/account/quote reads (same `blockTag`), fund-gate math, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: only the wallet moves funds |
 | **Polygon** | Execution on StakingContract + PRANA `permit` |
 
@@ -88,11 +91,11 @@ The browser does **not** build write calldata from addresses returned by the API
 
 ### RPC layers
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `waitForTransactionReceipt` after broadcast.
-2. **Wallet RPC** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake.
-3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote (and homepage `/api/staking-stats`, separate path).
+1. **Wallet RPC** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake; after broadcast, UI waits for receipt on the same provider that sent the tx (`waitForPolygonWalletReceipt`).
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / chain reads from the browser when the app needs its own HTTP transport.
+3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback (and homepage `/api/staking-stats`, separate path).
 
-Unlike Bonding, Staking has **no** `POST /api/staking/confirm-transaction`. Receipt wait is browser-only. If the wait fails after a hash exists, the CTA shows **Resume confirming** (in-memory hash; reload clears it).
+Receipt wait: try wallet RPC first; on read failure → `POST /api/staking/confirm-transaction`. Only an explicit `reverted` receipt is a failed tx; RPC errors are not reverts. If neither path can decide, keep hash + action snapshot (localStorage, 24h TTL) and show **Resume confirming**. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server.
 
 ---
 
@@ -115,9 +118,10 @@ Constants: `STAKE_*`, `GUIDE_STAKING_*`, `GUIDE_STAKING_CONTRACTS_*`, `isStakePa
 | `GET /api/staking/config` | `private`, 30s | Paused, min, grace, penalty %, durations/APR, contracts, permit domain |
 | `GET /api/staking/account?address=` | `private, no-store` | Balance, permit nonce, active stakes (checksum before rate-limit) |
 | `POST /api/staking/quote` | `private, no-store` | Fully-funded Interest preflight; soft `issues[]` still HTTP 200 |
+| `POST /api/staking/confirm-transaction` | `private, no-store` | UX fallback; validates sender/target/calldata; not trusted analytics |
 | `GET /api/staking-stats` | `private`, 24h | Homepage card only — **not** the stake CTA fund gate |
 
-Account rate limit: 10/IP/min + 120 global/min. Quote: 10/IP/min + 60 global/min; body ≤ 2 KB.
+Account rate limit: 10/IP/min + 120 global/min. Quote: 10/IP/min + 60 global/min; confirmation: separate bucket 30/IP/min + 120 global/min; body ≤ 2 KB.
 
 Quote request: `{ amountRaw, durationSeconds }`. Soft issue codes include `paused`, `below_minimum`, `invalid_duration`, `zero_amount`, `insufficient_interest_fund`.
 
@@ -308,9 +312,13 @@ server/utils/
   stakingReadUtils.ts
   stakingQuoteUtils.ts
 server/getApiRoutes.ts          # GET config + account (+ stats)
-server/postApiRoutes.ts         # POST quote
+server/postApiRoutes.ts         # POST quote + confirm-transaction
+server/loaders/stakingTransactionConfirmation.ts
+server/utils/stakingConfirmationUtils.ts
 server/rateLimit.ts
 ```
+
+Client confirmation helpers: `stakeTransactionConfirmation.ts`, `stakePendingTransactionStorage.ts`, `hooks/usePendingStakeTransaction.ts`.
 
 ### Contracts (read-only reference in repo)
 
@@ -321,11 +329,11 @@ server/rateLimit.ts
 
 ## Pending hash behavior
 
-Unlike Bonding, Staking does **not** persist pending hashes to `localStorage`.
+Like Bonding: pending hash + action snapshot persist to `localStorage` (`prana:staking:pending:v1:{chainId}:{account}`, 24h TTL).
 
-- Pending hash lives in React state while `status !== 'success'`.
-- Reload / disconnect clears resume state; user must check Polygonscan if unsure.
-- Resume path only calls `waitForTransactionReceipt` — never a second `writeContract`.
+- Form owns kind `stake`; Active Stakes owns `claim` / `unstake` / `unstakeEarly`.
+- Storage is a resume hint only — never proof of success.
+- Resume runs confirmation (wallet RPC → server, `requireServerValidation`) — never a second `writeContract`.
 
 ---
 
@@ -333,11 +341,11 @@ Unlike Bonding, Staking does **not** persist pending hashes to `localStorage`.
 
 Contributors should know these when changing the flow:
 
-1. **No server confirmation fallback** — receipt wait is browser publicClient only. Bonding’s `confirm-transaction` pattern was added later and was not backported.
-2. **Permit deadline is wall-clock based (1 hour)** — signed off-device time can skew slightly; expiry invalidates Continue Stake.
-3. **Fully-funded gate is soft UX** — on-chain can still revert if Interest balance moves between quote and execution; `freshQuote` reduces but does not eliminate that race.
-4. **Homepage `/api/staking-stats` is a separate aggregate** — float-friendly, long cache; never drive Permit & Stake eligibility from it.
-5. **Grace expiry permanently drops unclaimed interest** — UI warns; contract semantics are unchanged by the app.
+1. **Permit deadline is wall-clock based (1 hour)** — signed off-device time can skew slightly; expiry invalidates Continue Stake.
+2. **Fully-funded gate is soft UX** — on-chain can still revert if Interest balance moves between quote and execution; `freshQuote` reduces but does not eliminate that race.
+3. **Homepage `/api/staking-stats` is a separate aggregate** — float-friendly, long cache; never drive Permit & Stake eligibility from it.
+4. **Grace expiry permanently drops unclaimed interest** — UI warns; contract semantics are unchanged by the app.
+5. **Confirmation body includes permit signature components** (v/r/s) only to rebuild calldata for matching — same threat model as broadcasting them on-chain.
 
 ---
 
@@ -347,7 +355,7 @@ Contributors should know these when changing the flow:
 - Fresh account nonce before sign; fresh quote before sign and before broadcast.
 - Soft fund-gate issues lock the CTA; success only after receipt.
 - Amounts/nonces as decimal strings; bigint interest math mirrors Solidity order.
-- POST quote: origin/JSON/2 KB, rate limits, redacted `502`.
+- POST quote + confirm-transaction: origin/JSON/2 KB, rate limits (separate confirm bucket), redacted `502`; confirm validates sender/target/calldata.
 - Wallet errors sanitized VI/EN (`stakingErrors.ts`).
 - Mutual form/actions busy locks; claim-before-unstake inside grace.
 
@@ -363,7 +371,7 @@ Contributors should know these when changing the flow:
 | Guides | `server/tests/guideRoutes.test.ts` |
 | Typecheck / full | `npm run typecheck`, `npm test` |
 
-When changing interest math, grace/claim rules, CTA phases, permit invalidation, fund gate, or API admission — update the matching tests and, if public behavior changes, update the guide + this doc.
+When changing interest math, grace/claim rules, CTA phases, confirmation fallback, permit invalidation, fund gate, or API admission — update the matching tests and, if public behavior changes, update the guide + this doc.
 
 ---
 

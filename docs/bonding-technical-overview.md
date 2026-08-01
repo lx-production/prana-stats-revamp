@@ -12,7 +12,7 @@ Related docs:
 - User guide: `/guide/bonding/` · Contracts guide: `/guide/bonding-contracts/`
 - Vietnamese: [`vi/bonding-technical-overview.md`](./vi/bonding-technical-overview.md)
 
-Parallel templates: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) and the Swap modal — Bonding mirrors their lazy entry, API, CTA phases, and confirmation fallback structure.
+Parallel templates: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) and the Swap modal — shared lazy entry, API, CTA phases, and confirmation fallback structure.
 
 ---
 

@@ -20,6 +20,10 @@ test('getStakeCtaPhase resumes confirming when a hash is pending', () => {
   assert.equal(getStakeCtaPhase('error', true, true), 'resume_confirming');
   assert.equal(getStakeCtaPhase('idle', false, true), 'resume_confirming');
   assert.equal(getStakeCtaPhase('error', false, true), 'resume_confirming');
+  assert.equal(
+    getStakeCtaPhase('confirmation_unavailable', false, true),
+    'resume_confirming',
+  );
 });
 
 test('getStakeCtaPhase defaults to permit_and_stake without a valid permit', () => {

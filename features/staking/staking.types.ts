@@ -78,7 +78,7 @@ export type PermitSnapshot = {
 
 /**
  * Stake / claim / unstake transaction lifecycle shown in the UI.
- * Success only after waitForTransactionReceipt confirms (not on submit).
+ * Success only after receipt confirms (browser and/or server fallback).
  */
 export type StakeTransactionStatus =
   | 'idle'
@@ -86,6 +86,7 @@ export type StakeTransactionStatus =
   | 'signed'
   | 'submitting'
   | 'confirming'
+  | 'confirmation_unavailable'
   | 'success'
   | 'error';
 
@@ -110,6 +111,58 @@ export type StakeDisplayStatus =
 
 /** Which stake-management write is in flight (locks other actions). */
 export type StakeActionKind = 'claim' | 'unstake' | 'unstakeEarly';
+
+/** Fixed write kinds the confirmation API may verify. */
+export type StakingTxActionKind = 'stake' | StakeActionKind;
+
+/**
+ * Minimal action snapshot for POST /api/staking/confirm-transaction.
+ * Server always targets STAKING_CONTRACT_ADDRESS; client must not supply it.
+ */
+export type StakingTransactionActionSnapshot =
+  | {
+      kind: 'stake';
+      amountRaw: string;
+      durationSeconds: number;
+      deadline: number;
+      v: number;
+      r: Hex;
+      s: Hex;
+    }
+  | {
+      kind: StakeActionKind;
+      /** On-chain stake id (uint32). */
+      stakeId: number;
+    };
+
+export type StakingTransactionConfirmationRequest = {
+  transactionHash: Hex;
+  account: Address;
+  action: StakingTransactionActionSnapshot;
+};
+
+/**
+ * Broadcast tx awaiting confirmation. Persisted + bound to the submitting
+ * account/chain so reload / wallet switch cannot orphan or mis-attribute it.
+ */
+export type PendingStakeTransaction = {
+  version: 1;
+  chainId: number;
+  account: Address;
+  hash: Hex;
+  action: StakingTransactionActionSnapshot;
+  createdAt: number;
+};
+
+/**
+ * Terminal confirmation, or non-terminal when neither browser nor server
+ * can decide — never treat RPC read failure as on-chain revert.
+ */
+export type StakingTransactionConfirmation =
+  | { status: 'confirmed'; source: 'browser' | 'server' }
+  | { status: 'reverted'; source: 'browser' | 'server' }
+  | { status: 'not_mined' }
+  | { status: 'confirmation_unavailable' };
 
 /** Body for POST /api/staking/quote (fully-funded preflight). */
 export type StakingQuoteRequest = {

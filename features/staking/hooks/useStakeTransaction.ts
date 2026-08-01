@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSignature } from 'viem';
 import { usePublicClient } from 'wagmi';
 import { polygon } from 'wagmi/chains';
@@ -14,11 +14,19 @@ import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getStakingCopy } from '../staking.copy.ts';
 import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { isPermitSnapshotValid } from '../permitUtils.ts';
 import { getConfiguredDuration } from '../stakingMath.ts';
+import { confirmStakingTransactionOnServer } from '../stakingApi.ts';
+import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
+import {
+  buildPendingStakeTransaction,
+  pendingStakeTransactionMatchesWallet,
+} from '../stakePendingTransactionStorage.ts';
 import {
   formatStakingError,
   getStakingErrorMessage,
+  logStakingFailure,
 } from '../stakingErrors.ts';
 import {
   confirmStakeReceipt,
@@ -29,12 +37,16 @@ import {
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type {
+  PendingStakeTransaction,
   PermitSnapshot,
   StakeTransactionStatus,
   StakingAccountSnapshot,
   StakingConfig,
   StakingQuote,
+  StakingTransactionActionSnapshot,
 } from '../staking.types.ts';
+
+const FORM_PENDING_KINDS = ['stake'] as const;
 
 type UseStakeTransactionInput = {
   config: StakingConfig | undefined;
@@ -70,6 +82,21 @@ function errorCodeFromQuoteIssues(
   return 'generic';
 }
 
+/** Build the confirm-transaction action snapshot from a signed permit. */
+function stakeActionFromPermit(
+  snapshot: PermitSnapshot,
+): StakingTransactionActionSnapshot {
+  return {
+    kind: 'stake',
+    amountRaw: snapshot.amountRaw,
+    durationSeconds: snapshot.durationSeconds,
+    deadline: snapshot.deadline,
+    v: snapshot.v,
+    r: snapshot.r,
+    s: snapshot.s,
+  };
+}
+
 /**
  * Combined Permit & Stake flow.
  * createPermitSnapshot returns the snapshot directly so submit can run in the
@@ -97,6 +124,34 @@ export function useStakeTransaction({
   const [nowSeconds, setNowSeconds] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
+
+  const {
+    pending,
+    pendingLoaded,
+    rememberPending,
+    clearPendingRecord,
+    discardLocalPending,
+  } = usePendingStakeTransaction({
+    account: wallet.address,
+    chainId: wallet.chainId,
+    kinds: FORM_PENDING_KINDS,
+  });
+
+  // Latest wallet identity for post-await guards (avoid stale closures).
+  const walletIdentityRef = useRef({
+    address: wallet.address,
+    chainId: wallet.chainId,
+  });
+  walletIdentityRef.current = {
+    address: wallet.address,
+    chainId: wallet.chainId,
+  };
+
+  // Restore Polygonscan hash after reload / reconnect.
+  useEffect(() => {
+    if (!pendingLoaded || !pending) return;
+    setTransactionHash(pending.hash);
+  }, [pending, pendingLoaded]);
 
   // Tick so expired permits invalidate without waiting for user action.
   useEffect(() => {
@@ -145,8 +200,9 @@ export function useStakeTransaction({
   const resetAfterSuccess = useCallback(() => {
     setPermit(null);
     setStatus('idle');
+    clearPendingRecord();
     setTransactionHash(null);
-  }, []);
+  }, [clearPendingRecord]);
 
   /** Switch to Polygon first, then resolve a fresh wallet client. */
   const ensurePolygonWalletClient = useCallback(async () => {
@@ -161,7 +217,12 @@ export function useStakeTransaction({
   }, [publicClient, wallet]);
 
   const applyConfirmed = useCallback(
-    (hash: Hex, syncFailed: boolean) => {
+    (
+      hash: Hex,
+      syncFailed: boolean,
+      pendingTx?: PendingStakeTransaction | null,
+    ) => {
+      clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setPermit(null);
       setStatus('success');
@@ -169,31 +230,62 @@ export function useStakeTransaction({
       setSuccess(copy.stakeConfirmed);
       setWarning(syncFailed ? copy.accountSyncWarning : null);
     },
-    [copy.accountSyncWarning, copy.stakeConfirmed],
+    [clearPendingRecord, copy.accountSyncWarning, copy.stakeConfirmed],
   );
 
   /**
-   * Resume waitForTransactionReceipt for an already-broadcast hash.
-   * Never calls writeContract again.
+   * Resume confirmation for an already-broadcast hash.
+   * Never calls writeContract again. Resume always re-validates on the server.
    */
   const resumeConfirmReceipt = useCallback(
-    async (hash: Hex) => {
+    async (pendingTx: PendingStakeTransaction) => {
+      if (
+        !pendingStakeTransactionMatchesWallet(
+          pendingTx,
+          wallet.address,
+          wallet.chainId,
+        )
+      ) {
+        return;
+      }
+
       setStatus('confirming');
       setError(null);
       setWarning(null);
 
-      const outcome = await confirmStakeReceipt(hash, {
-        waitForReceipt: (txHash) =>
-          publicClient!.waitForTransactionReceipt({ hash: txHash }),
+      const outcome = await confirmStakeReceipt(pendingTx.hash, {
+        requireServerValidation: true,
+        waitForReceipt: waitForPolygonWalletReceipt,
+        confirmOnServer: (txHash) =>
+          confirmStakingTransactionOnServer({
+            transactionHash: txHash,
+            account: pendingTx.account,
+            action: pendingTx.action,
+          }),
         refetchAccount,
       });
 
+      // Wallet switched mid-wait — keep storage for the original account.
+      if (
+        !pendingStakeTransactionMatchesWallet(
+          pendingTx,
+          walletIdentityRef.current.address,
+          walletIdentityRef.current.chainId,
+        )
+      ) {
+        discardLocalPending();
+        setStatus('idle');
+        return;
+      }
+
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(hash, outcome.syncFailed);
+        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
         return;
       }
 
       if (outcome.kind === 'reverted') {
+        logStakingFailure('resume: reverted', { hash: pendingTx.hash });
+        clearPendingRecord(pendingTx);
         setTransactionHash(null);
         setPermit(null);
         setStatus('error');
@@ -201,13 +293,29 @@ export function useStakeTransaction({
         return;
       }
 
-      // Keep hash so the next click resumes receipt wait only.
-      setTransactionHash(hash);
+      // Keep hash + snapshot; never treat as failed write.
+      logStakingFailure('resume: confirmation_unavailable', {
+        hash: pendingTx.hash,
+        receiptError: outcome.receiptError,
+        verificationError: outcome.verificationError,
+      });
+      rememberPending(pendingTx);
+      setTransactionHash(pendingTx.hash);
       setPermit(null);
-      setStatus('error');
-      setError(formatStakingError(outcome.error, locale));
+      setStatus('confirmation_unavailable');
+      setError(copy.confirmationUnavailable);
     },
-    [applyConfirmed, locale, publicClient, refetchAccount],
+    [
+      applyConfirmed,
+      clearPendingRecord,
+      copy.confirmationUnavailable,
+      discardLocalPending,
+      locale,
+      refetchAccount,
+      rememberPending,
+      wallet.address,
+      wallet.chainId,
+    ],
   );
 
   /**
@@ -389,6 +497,8 @@ export function useStakeTransaction({
         return;
       }
 
+      const action = stakeActionFromPermit(snapshot);
+
       try {
         // Re-check fund again before broadcast (covers Continue Stake + races).
         const fundQuote = await freshQuote();
@@ -432,12 +542,25 @@ export function useStakeTransaction({
               ],
             } as never),
           waitForReceipt: async (hash) => {
+            const broadcastPending = buildPendingStakeTransaction({
+              account: wallet.address!,
+              chainId: POLYGON_CHAIN_ID,
+              hash,
+              action,
+            });
+            rememberPending(broadcastPending);
             setTransactionHash(hash);
             setStatus('confirming');
             // Once broadcast, drop permit so CTA cannot imply a second write.
             setPermit(null);
-            return publicClient!.waitForTransactionReceipt({ hash });
+            return waitForPolygonWalletReceipt(hash);
           },
+          confirmOnServer: (hash) =>
+            confirmStakingTransactionOnServer({
+              transactionHash: hash,
+              account: wallet.address!,
+              action,
+            }),
           isPermitStillValid: (freshAccount) =>
             freshAccount.address.toLowerCase() ===
               snapshot.owner.toLowerCase() &&
@@ -479,15 +602,28 @@ export function useStakeTransaction({
           return;
         }
 
-        if (outcome.kind === 'broadcast_receipt_pending') {
+        if (outcome.kind === 'confirmation_unavailable') {
+          const pendingTx = buildPendingStakeTransaction({
+            account: wallet.address,
+            chainId: POLYGON_CHAIN_ID,
+            hash: outcome.hash,
+            action,
+          });
+          logStakingFailure('stake: confirmation_unavailable', {
+            hash: outcome.hash,
+            receiptError: outcome.receiptError,
+            verificationError: outcome.verificationError,
+          });
+          rememberPending(pendingTx);
           setTransactionHash(outcome.hash);
           setPermit(null);
-          setStatus('error');
-          setError(formatStakingError(outcome.error, locale));
+          setStatus('confirmation_unavailable');
+          setError(copy.confirmationUnavailable);
           return;
         }
 
         if (outcome.kind === 'reverted') {
+          clearPendingRecord();
           setTransactionHash(null);
           setPermit(null);
           setStatus('error');
@@ -504,13 +640,15 @@ export function useStakeTransaction({
     [
       amountRawString,
       applyConfirmed,
+      clearPendingRecord,
       config,
+      copy.confirmationUnavailable,
       durationSeconds,
       ensurePolygonWalletClient,
       freshQuote,
       locale,
-      publicClient,
       refetchAccount,
+      rememberPending,
       wallet.address,
       wallet.isConnected,
     ],
@@ -518,6 +656,8 @@ export function useStakeTransaction({
 
   /** Orchestrate resume receipt / reuse permit / create+stake. */
   const permitAndStake = useCallback(async () => {
+    if (!pendingLoaded) return;
+
     setError(null);
     setWarning(null);
 
@@ -530,12 +670,12 @@ export function useStakeTransaction({
       currentNonce: account?.permitNonce,
     });
 
-    // Success keeps hash for Polygonscan — that is NOT a pending broadcast.
-    const pendingHash =
-      transactionHash != null && status !== 'success' ? transactionHash : null;
+    // Persisted or in-session pending broadcast — resume confirmation only.
+    const pendingTx =
+      pending != null && status !== 'success' ? pending : null;
 
     const action = resolvePermitAndStakeAction({
-      hasPendingHash: pendingHash != null,
+      hasPendingHash: pendingTx != null,
       hasValidPermit: hasValidPermitNow,
     });
 
@@ -553,8 +693,8 @@ export function useStakeTransaction({
       createPermit: createPermitSnapshot,
       submit: submitStakeWithPermit,
       resumeReceipt: async () => {
-        if (!pendingHash) return;
-        await resumeConfirmReceipt(pendingHash);
+        if (!pendingTx) return;
+        await resumeConfirmReceipt(pendingTx);
       },
     });
   }, [
@@ -562,16 +702,18 @@ export function useStakeTransaction({
     amountRawString,
     createPermitSnapshot,
     durationSeconds,
+    pending,
+    pendingLoaded,
     permit,
     resumeConfirmReceipt,
     status,
     submitStakeWithPermit,
-    transactionHash,
     wallet.address,
     wallet.chainId,
   ]);
 
   const isBusy =
+    !pendingLoaded ||
     status === 'signing' ||
     status === 'submitting' ||
     status === 'confirming';
@@ -586,8 +728,7 @@ export function useStakeTransaction({
   });
 
   /** Broadcast happened; next click must wait on this hash, not write again. */
-  const hasPendingHash =
-    transactionHash != null && status !== 'success';
+  const hasPendingHash = pending != null && status !== 'success';
 
   return {
     permit,
