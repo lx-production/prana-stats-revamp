@@ -489,7 +489,7 @@ này (cần kiểm tra value / quote HMAC / metadata khác).
 - ✅ Receipt status `null` không bị coi là revert.
 - ✅ Response và HTTP status của routes không đổi (feature tests giữ nguyên).
 
-## 12. Điểm 7 — Dùng chung debounce, abort, race guard, và stale quote
+## 12. Điểm 7 — Dùng chung debounce, abort, race guard, và stale quote ✅
 
 ### Hiện trạng
 
@@ -556,31 +556,31 @@ vào shared hook.
 
 ### Tests bắt buộc
 
-- Disabled hoặc request `null` reset state và không fetch.
-- Input đổi trước debounce hủy timer/request cũ.
-- Loading chỉ bật khi request thật sự bắt đầu.
-- Response cũ đến sau không ghi đè response mới.
-- Abort không set error.
-- Network error set fallback đúng.
-- Quote chuyển stale đúng mốc.
-- `freshQuote()`:
+- ✅ Disabled hoặc request `null` reset state và không fetch.
+- ✅ Input đổi trước debounce hủy timer/request cũ.
+- ✅ Loading chỉ bật khi request thật sự bắt đầu.
+- ✅ Response cũ đến sau không ghi đè response mới.
+- ✅ Abort không set error.
+- ✅ Network error set fallback đúng.
+- ✅ Quote chuyển stale đúng mốc.
+- ✅ `freshQuote()`:
   - không chờ debounce
   - hủy auto-quote đang chạy
   - trả quote mới hoặc `null`
-- `invalidate()`:
+- ✅ `invalidate()`:
   - hủy request
   - tăng request id
   - reset toàn bộ state
-- Request key Bonding thay đổi khi side/mode/term đổi.
-- Request key Staking thay đổi khi amount/duration đổi.
+- ✅ Request key Bonding thay đổi khi side/mode/term đổi.
+- ✅ Request key Staking thay đổi khi amount/duration đổi.
 
 ### Điều kiện hoàn thành
 
-- Public return shape của hai feature hooks không đổi.
-- CTA preflight vẫn dùng `freshQuote()`.
-- Không tăng số request khi render lại với request object mới nhưng dữ liệu
+- ✅ Public return shape của hai feature hooks không đổi.
+- ✅ CTA preflight vẫn dùng `freshQuote()`.
+- ✅ Không tăng số request khi render lại với request object mới nhưng dữ liệu
   không đổi.
-- Không có stale closure khi account/form thay đổi trong lúc request đang chạy.
+- ✅ Không có stale closure khi account/form thay đổi trong lúc request đang chạy.
 
 ## 13. Thứ tự triển khai đề xuất
 
@@ -592,7 +592,7 @@ Thực hiện theo các PR hoặc commit độc lập sau:
 4. Confirmation + account sync.
 5. Pending storage factory.
 6. Generic pending transaction hook.
-7. Generic debounced quote hook.
+7. Generic debounced quote hook. — **đã xong**
 8. Server confirmation lookup. — **đã xong**
 9. Decision gate cho API/query wrappers. — **đã xong: không refactor**
 10. Cleanup imports, dead files, tests trùng, và cập nhật docs.

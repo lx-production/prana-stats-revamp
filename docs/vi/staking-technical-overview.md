@@ -219,12 +219,14 @@ Trước ký và trước broadcast:
 
 ### Client
 
-`useStakingQuote`:
+`useStakingQuote` (thin wrapper trên shared `hooks/useDebouncedAbortableQuote`):
 
 - Debounce **1000 ms** — trong cửa sổ không gọi API và không bật `isLoading`.
 - Abort request cũ; bỏ response stale theo monotonic request id.
 - Sau **60 s** đánh dấu quote stale; CTA tự `freshQuote()` trước write.
 - Đổi amount / duration / account / chain → invalidate.
+- Request key chỉ gồm amount + duration nên object request mới với cùng dữ liệu
+  không kích hoạt fetch lại.
 
 ### Server
 

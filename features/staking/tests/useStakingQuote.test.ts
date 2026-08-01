@@ -10,6 +10,7 @@ import {
   STAKING_QUOTE_DEBOUNCE_MS,
   STAKING_QUOTE_STALE_MS,
   buildStakingQuoteRequest,
+  stakingQuoteRequestKey,
 } from '../hooks/useStakingQuote.ts';
 
 import type { StakingQuote, StakingQuoteRequest } from '../staking.types.ts';
@@ -66,6 +67,23 @@ test('buildStakingQuoteRequest requires positive amount and duration', () => {
     buildStakingQuoteRequest({ amountRaw: 100n, durationSeconds: null }),
     null,
   );
+});
+
+test('stakingQuoteRequestKey changes when amount or duration changes', () => {
+  const base = baseRequest();
+  assert.deepEqual(stakingQuoteRequestKey(base), [
+    '100000000000',
+    2_592_000,
+  ]);
+  assert.notDeepEqual(
+    stakingQuoteRequestKey(base),
+    stakingQuoteRequestKey(baseRequest({ amountRaw: '200' })),
+  );
+  assert.notDeepEqual(
+    stakingQuoteRequestKey(base),
+    stakingQuoteRequestKey(baseRequest({ durationSeconds: 86_400 })),
+  );
+  assert.equal(stakingQuoteRequestKey(null), '');
 });
 
 test('useStakingQuote clears state when disabled or request is null', async () => {

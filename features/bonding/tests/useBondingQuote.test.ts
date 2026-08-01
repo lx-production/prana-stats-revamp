@@ -9,6 +9,7 @@ import { ensureDom, renderHook } from '../../../hooks/tests/renderHook.ts';
 import {
   BONDING_QUOTE_DEBOUNCE_MS,
   BONDING_QUOTE_STALE_MS,
+  bondingQuoteRequestKey,
   buildBondingQuoteRequest,
 } from '../hooks/useBondingQuote.ts';
 
@@ -70,6 +71,32 @@ test('buildBondingQuoteRequest maps side to discriminated union', () => {
     }),
     null,
   );
+});
+
+test('bondingQuoteRequestKey changes when side/mode, amount, or term changes', () => {
+  const buy = baseRequest();
+  const sell = buildBondingQuoteRequest({
+    side: 'sell',
+    amountRaw: 1_000_000n,
+    termId: 1,
+  });
+  assert.ok(sell);
+  assert.deepEqual(bondingQuoteRequestKey(buy), [
+    'buy_exact_wbtc',
+    '1000000',
+    1,
+  ]);
+  // Side maps to mode — buy vs sell must produce different keys.
+  assert.notDeepEqual(bondingQuoteRequestKey(buy), bondingQuoteRequestKey(sell));
+  assert.notDeepEqual(
+    bondingQuoteRequestKey(buy),
+    bondingQuoteRequestKey(baseRequest({ amountRaw: '2000000' })),
+  );
+  assert.notDeepEqual(
+    bondingQuoteRequestKey(buy),
+    bondingQuoteRequestKey(baseRequest({ termId: 0 })),
+  );
+  assert.equal(bondingQuoteRequestKey(null), '');
 });
 
 test('useBondingQuote clears state when disabled or request is null', async () => {

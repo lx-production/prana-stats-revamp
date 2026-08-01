@@ -105,6 +105,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `features/web3/transactionConfirmation.ts` | Không | Không | Thin stake adapter | Thin bond adapter | Confirmation browser-receipt → server-fallback; Swap tạm giữ helper riêng |
 | `features/web3/pendingTransactionStorage.ts` + `hooks/usePendingTransaction.ts` | Không | Không | Thin stake wrappers | Thin bond wrappers | Factory envelope + hook dùng chung; parser/prefix vẫn thuộc feature |
 | `features/web3/confirmReceiptWithAccountSync.ts` | Không | Không | Thin `confirmStakeReceipt` | Thin `confirmBondReceipt` | Confirm broadcast rồi sync account; `syncFailed` không đổi success |
+| `hooks/useDebouncedAbortableQuote.ts` | Không | Không | Thin `useStakingQuote` | Thin `useBondingQuote` | Debounce / AbortController / race guard / stale tick dùng chung; request key, fetcher, và error fallback vẫn thuộc feature |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
 | `server/utils/transactionConfirmationLookup.ts` | Không | Không | Thin stake loader | Thin bond loader | Confirmation RPC dùng chung (sender/target/calldata); `buildExpectedCall` + mismatch error vẫn thuộc feature; Swap giữ đường verify riêng |
@@ -180,6 +181,9 @@ Staking giữ domain behavior riêng:
   write.
 - `stakingApi.ts` là browser adapter cho endpoint config và account của Staking
   cộng quote/confirmation POST, và tái sử dụng `fetchJson`.
+- `useStakingQuote` là thin wrapper trên `hooks/useDebouncedAbortableQuote`, giữ
+  request key staking (`amount` + `duration`), constants, và fetcher/error
+  fallback của staking ở local.
 
 Bonding giữ semantic Buy/Sell, deployment version, và quote riêng:
 
@@ -194,6 +198,9 @@ Bonding giữ semantic Buy/Sell, deployment version, và quote riêng:
   `features/web3/transactionConfirmation.ts`.
 - `bondingApi.ts` là browser adapter cho config/account/quote/confirmation và
   tái sử dụng `fetchJson`.
+- `useBondingQuote` là thin wrapper trên `hooks/useDebouncedAbortableQuote`, giữ
+  request key bonding (`mode` + `amount` + `term`), constants, và fetcher/error
+  fallback của bonding ở local.
 - Quote math đọc contract/pool riêng của Bonding nằm dưới
   `server/utils/bondingQuoteMath.ts` và được `bondingReadUtils.ts` export lại cho
   loader; nó không phải math dùng chung với Staking.
@@ -338,6 +345,8 @@ Staking UI chủ yếu dùng:
 - `useInjectedWallet`, `wagmiConfig`, và format địa chỉ wallet
 - React Query hooks dựa trên `stakingApi.ts` feature-local và `fetchJson` dùng
   chung (config/account hooks cố ý ở lại feature staking)
+- Lifecycle quote debounce qua shared `useDebouncedAbortableQuote`, bọc bởi
+  `useStakingQuote` feature-local
 - `network.ts` cho Polygon, link explorer, và đơn vị thời gian
 - `sharedContracts.ts` cho consumers decimals/địa chỉ PRANA
 - `stakingContracts.ts` cho contract đã deploy, permit typed data, và ABIs
@@ -360,6 +369,8 @@ Bonding UI chủ yếu dùng:
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, và format địa chỉ ví
 - React Query hooks qua `features/bonding/utils/bondingApi.ts` feature-local và
   `fetchJson` dùng chung (config/account hooks cố ý ở lại feature bonding)
+- Lifecycle quote debounce qua shared `useDebouncedAbortableQuote`, bọc bởi
+  `useBondingQuote` feature-local
 - `network.ts` cho Polygon, explorer links, và đơn vị thời gian
 - `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI

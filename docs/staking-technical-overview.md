@@ -219,12 +219,14 @@ Before sign and before broadcast:
 
 ### Client
 
-`useStakingQuote`:
+`useStakingQuote` (thin wrapper over shared `hooks/useDebouncedAbortableQuote`):
 
 - Debounce **1000 ms** — within the window, no API call and no `isLoading` flash.
 - Abort older requests; drop stale responses via monotonic request id.
 - After **60 s**, mark quote stale; CTA runs `freshQuote()` before write.
 - Amount / duration / account / chain changes → invalidate.
+- Request key is amount + duration only so a new request object with the same
+  data does not re-fetch.
 
 ### Server
 

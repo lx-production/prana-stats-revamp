@@ -211,12 +211,14 @@ Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn
 
 ### Client
 
-`useBondingQuote`:
+`useBondingQuote` (thin wrapper trên shared `hooks/useDebouncedAbortableQuote`):
 
 - Debounce **1000 ms** — trong cửa sổ debounce không gọi API và không bật `isLoading` (tránh flash mỗi lần gõ).
 - Abort request cũ; bỏ response stale theo monotonic request id.
 - Sau **60 s** đánh dấu quote stale; CTA tự `freshQuote()` trước write.
 - Đổi side / term / amount / account / chain → invalidate.
+- Request key gồm mode + amount + term nên object request mới với cùng dữ liệu
+  không kích hoạt fetch lại.
 
 Parsers: WBTC tối đa **8** decimals, PRANA **9**. MAX dùng raw balance exact (`rawBalanceToAmountInput`), không qua `Number`/`parseFloat`.
 

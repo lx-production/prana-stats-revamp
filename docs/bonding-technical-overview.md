@@ -211,12 +211,14 @@ Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance 
 
 ### Client
 
-`useBondingQuote`:
+`useBondingQuote` (thin wrapper over shared `hooks/useDebouncedAbortableQuote`):
 
 - Debounce **1000 ms** — within the debounce window, do not call the API and do not flip `isLoading` (avoids flash on every keystroke).
 - Abort older requests; drop stale responses via a monotonic request id.
 - After **60 s**, mark the quote stale; the CTA runs `freshQuote()` itself before write.
 - Side / term / amount / account / chain changes → invalidate.
+- Request key is mode + amount + term so a new request object with the same
+  data does not re-fetch.
 
 Parsers: WBTC max **8** decimals, PRANA **9**. MAX uses the exact raw balance (`rawBalanceToAmountInput`), never `Number`/`parseFloat`.
 
