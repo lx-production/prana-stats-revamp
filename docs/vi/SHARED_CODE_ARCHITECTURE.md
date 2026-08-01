@@ -20,12 +20,14 @@ Tài liệu liên quan:
 
 ## 1. Thành phần runtime
 
-Ứng dụng có một root shell và ba entry ở cấp trang được lazy-load:
+Ứng dụng có một root shell, ba route entry được lazy-load (`StatsPage`,
+`StakingEntry`, `BondingEntry`), và một `SwapEntry` lazy lồng trong hero của
+trang Stats:
 
 ```mermaid
 flowchart TD
   root["main.tsx / app shell"]
-  stats["StatsPage"]
+  stats["Lazy StatsPage"]
   hero["Hero + eager Swap loading/error shell"]
   swap["Lazy SwapEntry"]
   staking["Lazy StakingEntry"]
@@ -70,11 +72,14 @@ Sự phân biệt này quan trọng khi nói về sharing:
 | `components/` | UI cấp app và component của trang Stats |
 | `components/ui/` | Presentation primitives generic; dùng bởi Staking và Bonding |
 | `hooks/` | Hook App/Stats và site-language context |
+| `pages/` | Route UI cho Stats, Staking, và Bonding; orchestration giữa hooks và feature components |
+| `types/` | Type dùng chung xuyên app/feature như blockchain, locale, Swap, và props của UI primitives; domain types của Staking/Bonding ở lại trong feature |
 | `features/web3/` | Khả năng wallet/provider dùng chung bởi Swap, Staking, và Bonding |
 | `features/swap/` | Swap UI, quote state, transaction state, và formatting/logging riêng của Swap |
 | `features/staking/` | Staking UI, API adapters, math, validation, và transaction flows |
 | `features/bonding/` | Bonding UI, API adapters, math, validation, và transaction flows |
 | `server/helpers/` | Helper chỉ dành cho server: HTTP, cache, logging, address, và static-file |
+| `server/loaders/` | Đọc provider/API và dựng response cho Stats, Swap, Staking, Bonding; `cached/` bọc các GET loader có cache |
 | `server/utils/` | Providers chỉ dành cho server cộng hỗ trợ loader cho Stats, Swap, Staking, và Bonding |
 
 Một file không cần ba consumer mới được đặt ở vị trí shared. Nó thuộc về đó khi
@@ -87,14 +92,17 @@ feature nên ở lại với feature dù trông giống helper generic.
 
 ### Helpers xuyên bề mặt hiện tại
 
-| Module | Trang Stats chính | Swap modal | Staking UI | Ghi chú |
-| --- | --- | --- | --- | --- |
-| `utils/focusTrap.ts` | Route dependency qua `SwapLazyShell` | `SwapModal`, `SwapLazyShell` | `EarlyUnstakeDialog` | Focus containment accessible, xử lý Escape, và khôi phục focus tùy chọn |
-| `utils/fetchJson.ts` | Stats hooks/components và API adapters | Không dùng theo nghĩa semantic | `stakingApi.ts` | Dedupe GET đồng thời; Swap dùng POST chuyên biệt với abort và lỗi có cấu trúc |
-| `utils/formatters.ts` | Dùng trực tiếp rộng rãi | Không | Không dùng trực tiếp trên client | Cũng dùng bởi Stats/Staking-related server loaders và scripts |
-| `utils/tokenAmounts.ts` | Gián tiếp qua `formatters.ts` | Không | Không dùng trực tiếp trên client | Chuyển đơn vị raw không phụ thuộc Web3, tránh thêm thư viện Web3 vào formatting cơ bản |
-| `utils/polygonscanUrls.ts` | Link Buy Dips và top-holder | Chưa có consumer | Chưa có consumer | Builder URL explorer token trung lập, dựa trên `constants/network.ts` |
-| `utils/swapTokens.ts` | Không có consumer thuộc Stats | Swap client và server | Không | Lookup trên Swap allowlist |
+| Module | Trang Stats chính | Swap modal | Staking UI | Bonding UI | Ghi chú |
+| --- | --- | --- | --- | --- | --- |
+| `utils/focusTrap.ts` | Route dependency qua `SwapLazyShell` | `SwapModal`, `SwapLazyShell` | `EarlyUnstakeDialog` | Không | Focus containment accessible, xử lý Escape, và khôi phục focus tùy chọn |
+| `utils/fetchJson.ts` | Stats hooks/components và API adapters | Không dùng theo nghĩa semantic | `stakingApi.ts` | `features/bonding/utils/bondingApi.ts` | Dedupe GET đồng thời; Staking/Bonding tắt dedupe cho POST quote/confirmation; Swap giữ request POST chuyên biệt |
+| `utils/formatters.ts` | Dùng trực tiếp rộng rãi | Không | Không dùng trực tiếp trên client | Không dùng trực tiếp trên client | Cũng dùng bởi server loaders và scripts |
+| `utils/tokenAmounts.ts` | Gián tiếp qua `formatters.ts` | Không | Không dùng trực tiếp trên client | Không dùng trực tiếp trên client | Chuyển đơn vị raw không phụ thuộc Web3, tránh thêm thư viện Web3 vào formatting cơ bản |
+| `utils/polygonscanUrls.ts` | Link Buy Dips và top-holder | Chưa có consumer | Chưa có consumer | Chưa có consumer | Builder URL explorer token trung lập, dựa trên `constants/network.ts` |
+| `utils/swapTokens.ts` | Không có consumer thuộc Stats | Swap client và server | Không | Không | Lookup trên Swap allowlist |
+| `features/web3/getPolygonWalletClient.ts` và `waitForPolygonWalletReceipt.ts` | Không | Không | Transaction hooks | Transaction hooks | Lấy wallet client Polygon mới nhất và chờ receipt qua cùng provider đã broadcast |
+| `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
+| `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
 
 Thư mục gốc `utils/` cũng chứa các module dữ liệu và tính toán hướng Stats.
 Các nhóm quan trọng gồm:
@@ -120,6 +128,9 @@ Swap giữ hành vi với Swap khi phụ thuộc vào semantic của Swap:
   ngưỡng hiển thị của Swap.
 - `sanitizeSwapWalletError.ts` đưa lỗi wallet an toàn ra modal.
 - `swapTransactionLogs.ts` gửi telemetry vòng đời Swap.
+- `swapTransactionConfirmation.ts` phân biệt receipt revert với lỗi đọc RPC và
+  fallback sang verify phía server; `useUniswapSwap.ts` orchestration write và
+  confirmation state của Swap.
 - `useUniswapQuote.ts` dùng POST abortable chuyên biệt thay vì
   `fetchJson` hướng GET dùng chung.
 
@@ -127,11 +138,33 @@ Staking giữ domain behavior riêng:
 
 - `stakingMath.ts` triển khai interest math tương thích Solidity, parse PRANA,
   xử lý duration, truncation, quy tắc grace-window, và kết quả early-unstake.
+- `formatGraceRemaining.ts` giữ formatting countdown grace-window riêng của
+  Staking.
+- `stakingFundCheck.ts` dựng kết quả quote thuần theo quy tắc quỹ Interest; server
+  loader gọi lại helper feature này thay vì lặp math.
 - `stakingErrors.ts`, `permitUtils.ts`, `accountRefetch.ts`,
-  `stakeCtaPhase.ts`, và `stakeTransactionFlow.ts` mô hình hóa validation và
-  transaction state riêng của Staking.
+  `stakeCtaPhase.ts`, `stakeTransactionFlow.ts`, và
+  `stakeTransactionConfirmation.ts` mô hình hóa validation và transaction
+  state riêng của Staking.
+- `stakePendingTransactionStorage.ts` và `usePendingStakeTransaction.ts` lưu
+  hash/action snapshot theo account + chain để chỉ resume confirmation sau
+  reload, không gửi lại write.
 - `stakingApi.ts` là browser adapter cho endpoint config và account của Staking
-  và tái sử dụng `fetchJson`.
+  cộng quote/confirmation POST, và tái sử dụng `fetchJson`.
+
+Bonding giữ semantic Buy/Sell, deployment version, và quote riêng:
+
+- `features/bonding/utils/bondingMath.ts`, `bondAllowance.ts`,
+  `bondClaimTarget.ts`, `bondQuoteEcho.ts`, và `bondingErrors.ts` xử lý amount,
+  allowance, target V1/V2, quote snapshot, và error mapping của Bonding.
+- `bondTransactionFlow.ts`, `bondTransactionConfirmation.ts`,
+  `bondPendingTransactionStorage.ts`, và `usePendingBondTransaction.ts` quản lý
+  approve/create/claim cùng resume confirmation theo account + chain.
+- `bondingApi.ts` là browser adapter cho config/account/quote/confirmation và
+  tái sử dụng `fetchJson`.
+- Quote math đọc contract/pool riêng của Bonding nằm dưới
+  `server/utils/bondingQuoteMath.ts` và được `bondingReadUtils.ts` export lại cho
+  loader; nó không phải math dùng chung với Staking.
 
 ---
 
@@ -141,18 +174,19 @@ Staking giữ domain behavior riêng:
 
 | Module | Mục đích | Consumer chính |
 | --- | --- | --- |
-| `constants/appRoutes.ts` | Path Terms, privacy, và Staking chuẩn cộng route matchers | Root shell, hero, footer, link terms của Swap, static routing và summary phía server |
-| `constants/network.ts` | Polygon chain ID, frontend RPC, base Polygonscan, và đơn vị thời gian | Explorer helpers, Swap, Staking, Web3, server security/loaders |
-| `constants/sharedContracts.ts` | Địa chỉ/decimals PRANA/WBTC, pool dùng chung, Multicall, và decimals token dùng chung | Stats UI/loaders, Swap token registry/quote server, Staking amount math/loaders |
+| `constants/appRoutes.ts` | Path chuẩn và matcher cho Terms, Privacy, Swap/Staking/Bonding guides, Staking, và Bonding | Root shell, feature pages, hero, footer, Swap terms, static routing và summary phía server |
+| `constants/network.ts` | Polygon chain ID, frontend RPC, base Polygonscan, và đơn vị thời gian | Explorer helpers, Swap, Staking, Bonding, Web3, server security/loaders |
+| `constants/sharedContracts.ts` | Địa chỉ/decimals PRANA/WBTC, pool và ABI pool dùng chung, Multicall, và decimals token dùng chung | Stats UI/loaders, Swap token registry/quote server, Staking amount math/loaders, Bonding client/server |
 | `constants/protocolAddresses.ts` | Ví vận hành và reserve chuẩn | Capital UI/loader, top-holder registry, Buy Dips, Arbitrum LP owner |
 | `constants/cachePolicy.ts` | Chính sách TTL browser/server | Browser caches, server API caches, static responses |
 
 `sharedContracts.ts` được share ở cấp file, nhưng mỗi export có phạm vi riêng:
 
-- `PRANA_ADDRESS` và `PRANA_DECIMALS` xuyên Stats, Swap, và Staking.
-- WBTC metadata và pool WBTC/PRANA chủ yếu dùng chung bởi Stats và Swap.
+- `PRANA_ADDRESS` và `PRANA_DECIMALS` xuyên Stats, Swap, Staking, và Bonding.
+- WBTC metadata và pool WBTC/PRANA dùng bởi Stats, Swap, và Bonding.
 - Địa chỉ/ABI Multicall dùng bởi Stats và hạ tầng server.
 - `USDT_DECIMALS` dùng chung bởi Swap registry và capital loader.
+- `UNISWAP_V3_POOL_ABI` phục vụ đọc pool cho quote math của Bonding phía server.
 
 `protocolAddresses.ts` đặt cho mỗi địa chỉ vận hành một tên chuẩn:
 
@@ -188,10 +222,11 @@ Không có ABI nào được cả ba bề mặt client tiêu thụ.
 | ABI | Vị trí | Consumers |
 | --- | --- | --- |
 | `MULTICALL3_ABI` | `constants/sharedContracts.ts` | Capital, LP capital, và các đường server/update top-holder |
-| `PRANA_TOKEN_ABI` | `constants/stakingContracts.ts` | Staking account server loader (`balanceOf`, `nonces`) |
+| `PRANA_TOKEN_ABI` | `constants/stakingContracts.ts` | Staking account và quote server loaders (`balanceOf`, `nonces`) |
 | `STAKING_CONTRACT_ABI` | `constants/stakingContracts.ts` | Staking client writes, Staking API reads, và homepage staking-stat loaders |
 | `SWAP_ROUTER_02_ABI` | `constants/swapContracts.ts` | Swap server calldata validation |
 | `QUOTER_V2_ABI` | `constants/swapContracts.ts` | Swap server fallback quoting |
+| `UNISWAP_V3_POOL_ABI` | `constants/sharedContracts.ts` | Bonding quote reads trên pool WBTC/PRANA dùng chung |
 | Bond và LP ABIs | File constants hướng feature | Stats/server loaders tương ứng |
 
 ABI nằm gần deployment/configuration mà chúng mô tả. Không nên tạo ABI shared
@@ -201,21 +236,26 @@ chỉ để ba feature trông đối xứng.
 
 ## 6. UI dùng chung và application hooks
 
-| Shared UI/hook | Trang Stats chính | Swap modal | Staking UI |
-| --- | --- | --- | --- |
-| `SiteLanguageProvider` / `useSiteLanguage` | Có | Có | Có |
-| `AppFooter` | Có | Không | Có |
-| `LanguageToggle` | Root/main shell | Chỉ dùng locale hiện tại | Có |
-| `InfoTooltip` | Nhiều Stats cards | Help cho quote/minimum-received | Không |
-| `FlutterShaderBackground` | Có | Kế thừa từ page phía sau modal | Có, độ sáng thấp hơn |
-| `GlassPanel` | Stats hiện chưa dùng | Không | Panel trang/form/active-stake |
-| `StatusBanner` | Stats hiện chưa dùng | Không | Status form, wallet, stake, và dialog |
-| `Web3Providers` | Không mount sẵn | Có | Có |
-| `useInjectedWallet` | Không có use thuộc Stats | Có | Có |
-| `formatCompactAddress` | Không | Có | Có |
+| Shared UI/hook | Trang Stats chính | Swap modal | Staking UI | Bonding UI |
+| --- | --- | --- | --- | --- |
+| `SiteLanguageProvider` / `useSiteLanguage` | Có | Có | Có | Có |
+| `AppFooter` | Có | Không | Có | Có |
+| `LanguageToggle` | Root/main shell | Không; modal chỉ dùng locale hiện tại | Có | Có |
+| `InfoTooltip` | Nhiều Stats cards | Help cho quote/minimum-received | Không | Không |
+| `FlutterShaderBackground` | Có | Kế thừa từ page phía sau modal | Có, độ sáng thấp hơn | Có, độ sáng thấp hơn |
+| `GlassPanel` | Stats hiện chưa dùng | Không | Panel trang/form/active-stake | Panel trang/form/active-bond |
+| `StatusBanner` | Stats hiện chưa dùng | Không | Form, wallet, stake, và dialog | Form, wallet, và bond |
+| `Web3Providers` | Không mount sẵn | Có | Có | Có |
+| `useInjectedWallet` | Không có use thuộc Stats | Có | Có | Có |
+| `formatCompactAddress` | Không | Có | Có, qua shared wallet control | Có, qua shared wallet control |
+| `features/web3/WalletControl` | Không | Không, Swap có UI riêng | Có, qua wrapper copy/error | Có |
+| `waitForPolygonWalletReceipt` | Không | Không | Có | Có |
+| `TxLink` | Không | Không | Có | Có |
+| `usePageMetadata` | Có | Kế thừa từ trang Stats | Có | Có |
 
-Vị trí generic không có nghĩa là đang được dùng rộng. Ví dụ `GlassPanel` và
-`StatusBanner` là UI primitives tái sử dụng được nhưng hiện chỉ Staking dùng.
+Vị trí generic không có nghĩa là mọi bề mặt đều phải dùng. Ví dụ `GlassPanel`,
+`StatusBanner`, và `TxLink` hiện được Staking/Bonding chia sẻ nhưng Swap vẫn có
+presentation và transaction link riêng phù hợp với modal.
 
 ---
 
@@ -250,6 +290,9 @@ Swap modal chủ yếu dùng:
   trong logic quote phía server
 - formatting số lượng, sanitize lỗi wallet, quote state, transaction state,
   và telemetry local theo feature
+- xác nhận receipt trên browser với fallback
+  `/api/swap/verify-transaction`; Swap không có pending-storage/resume flow như
+  Staking và Bonding
 - app language context, `InfoTooltip`, và shared terms route
 
 Swap không dùng `fetchJson` cho quotes. Request quote của nó là POST debounced,
@@ -267,6 +310,9 @@ Staking UI chủ yếu dùng:
 - `stakingContracts.ts` cho contract đã deploy, permit typed data, và ABIs
 - math, config/account adapters, error mapping, và transaction state machines
   local của Staking
+- shared `WalletControl`, `waitForPolygonWalletReceipt`, và `TxLink`
+- pending transaction storage theo account/chain; resume sau reload phải xác
+  thực sender/target/calldata qua server trước khi báo thành công
 - UI language/footer/shader dùng chung cộng `GlassPanel` và `StatusBanner`
 - `focusTrap` trong dialog xác nhận early-unstake
 
@@ -279,12 +325,16 @@ Bonding UI chủ yếu dùng:
 
 - `BondingEntry` và `Web3Providers` dùng chung
 - `useInjectedWallet`, `WalletControl`, `wagmiConfig`, và format địa chỉ ví
-- React Query hooks qua `utils/bondingApi.ts` và `fetchJson` dùng chung
+- React Query hooks qua `features/bonding/utils/bondingApi.ts` và `fetchJson` dùng chung
 - `network.ts` cho Polygon, explorer links, và đơn vị thời gian
 - `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI
 - Math, adapter config/account/quote, map lỗi, và state machine approve/create/claim riêng của Bonding
-- UI language/footer/shader dùng chung cộng `GlassPanel`, `StatusBanner`, và `TxLink`
+- shared `WalletControl`, `waitForPolygonWalletReceipt`, và `TxLink`
+- pending transaction storage theo account/chain; resume sau reload phải xác
+  thực sender/target/calldata qua server trước khi báo thành công
+- UI language/footer/shader dùng chung cộng `GlassPanel` và `StatusBanner`
+
 Các thẻ Bonding Stats trên homepage không phải Bonding transaction UI. Chúng dùng
 `/api/bond-metrics` và các đường dữ liệu Stats liên quan.
 
