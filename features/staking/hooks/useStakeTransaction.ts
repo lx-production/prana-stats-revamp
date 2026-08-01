@@ -12,7 +12,7 @@ import {
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getStakingCopy } from '../staking.copy.ts';
-import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { isPermitSnapshotValid } from '../permitUtils.ts';
@@ -384,7 +384,7 @@ export function useStakeTransaction({
         const walletClient = await ensurePolygonWalletClient();
 
         // Must be a successful refetch — never fall back to cached nonce/balance.
-        const accountSnapshot = accountFromSuccessfulRefetch(
+        const accountSnapshot = accountFromSuccessfulRefetch<StakingAccountSnapshot>(
           await refetchAccount(),
           wallet.address,
         );

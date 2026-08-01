@@ -281,7 +281,6 @@ features/staking/
   permitUtils.ts
   stakeCtaPhase.ts
   stakeTransactionFlow.ts
-  accountRefetch.ts
   formatGraceRemaining.ts
   stakingErrors.ts
   components/                   # Form, DurationSelector, ActiveStakes, StakeCard, EarlyUnstakeDialog, WalletControl
@@ -291,7 +290,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking must not import Bonding/Swap feature internals for ownership; Web3 is shared):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals

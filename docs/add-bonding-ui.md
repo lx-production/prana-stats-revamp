@@ -92,7 +92,7 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
     - Chuyển `getPolygonWalletClient.ts` từ `features/staking/` sang `features/web3/`; luôn lấy client mới sau `ensurePolygon()`, không dùng client capture trước chain switch.
     - Chuyển `TxLink.tsx` trung lập từ `features/staking/components/` sang `components/ui/` để Staking/Bonding cùng dùng Polygonscan hash link.
     - Tách phần UI connect / switch Polygon / disconnect của `features/staking/components/WalletControl.tsx` sang `features/web3/`; copy và error formatter được truyền từ từng feature.
-    - Mirror gate trong `features/staking/accountRefetch.ts` bằng helper Bonding typed riêng; không import `StakingAccountSnapshot` vào Bonding và không fallback sang cached account trước write.
+    - Gate account refetch dùng chung `features/web3/accountRefetch.ts` (generic); không import `StakingAccountSnapshot` vào Bonding và không fallback sang cached account trước write.
   - Buy chỉ nhập exact WBTC → quote PRANA nhận dự kiến.
   - Sell nhận exact PRANA và quote WBTC dự kiến.
   - Parse chính xác tối đa 8 decimals cho WBTC, 9 cho PRANA; MAX áp dụng cho Buy WBTC và Sell PRANA.

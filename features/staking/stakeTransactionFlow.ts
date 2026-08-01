@@ -1,4 +1,4 @@
-import { accountFromSuccessfulRefetch } from './accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../web3/accountRefetch.ts';
 import { confirmStakeTransaction } from './stakeTransactionConfirmation.ts';
 
 import type { Hex } from '../../types/blockchain.types.ts';
@@ -79,7 +79,7 @@ export async function confirmStakeReceipt(
   // Receipt succeeded — sync account without turning success into error.
   try {
     const refreshed = await deps.refetchAccount();
-    if (!accountFromSuccessfulRefetch(refreshed)) {
+    if (!accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed)) {
       return {
         kind: 'confirmed',
         syncFailed: true,
@@ -140,7 +140,9 @@ export async function submitStakeWithPermitFlow(
   deps: SubmitStakeDeps,
 ): Promise<SubmitStakeOutcome> {
   const refreshed = await deps.refetchAccount();
-  const account = accountFromSuccessfulRefetch(refreshed);
+  const account = accountFromSuccessfulRefetch<StakingAccountSnapshot>(
+    refreshed,
+  );
   if (!account) {
     return { kind: 'fresh_account_failed' };
   }

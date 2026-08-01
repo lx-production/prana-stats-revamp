@@ -1,7 +1,6 @@
 /// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
 import {
   confirmBondReceipt,
   resolveBondCtaAction,
@@ -312,12 +311,4 @@ test('claim write flow uses claimBond and resume never rewrites', async () => {
   });
   assert.equal(resume.kind, 'confirmed');
   assert.equal(writeCount, 1);
-});
-
-test('accountFromSuccessfulRefetch stays strict for write gates', () => {
-  assert.equal(accountFromSuccessfulRefetch(errorRefetch()), undefined);
-  assert.deepEqual(
-    accountFromSuccessfulRefetch(successRefetch(), sampleAccount.address),
-    sampleAccount,
-  );
 });

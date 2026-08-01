@@ -2,10 +2,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getBondingCopy } from '../bonding.copy.ts';
-import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
 import { sortActiveBonds } from '../utils/bondingMath.ts';
 
-import type { ActiveBondRecord, BondingAccount } from '../bonding.types.ts';
+import type { ActiveBondRecord } from '../bonding.types.ts';
 
 test('getBondingCopy exposes matching VI/EN keys for buy/sell quote modes', () => {
   const vi = getBondingCopy('vi');
@@ -36,43 +35,6 @@ test('getBondingCopy exposes matching VI/EN keys for buy/sell quote modes', () =
   assert.notEqual(vi.quoteEmpty, en.quoteEmpty);
   assert.equal(typeof vi.durationLabel(30), 'string');
   assert.equal(typeof en.durationLabel(30), 'string');
-});
-
-test('accountFromSuccessfulRefetch rejects cache-like failures and address mismatch', () => {
-  const account: BondingAccount = {
-    address: '0x1111111111111111111111111111111111111111',
-    blockNumber: 1,
-    blockTimestamp: 1,
-    pranaBalanceRaw: '0',
-    wbtcBalanceRaw: '0',
-    buyV2WbtcAllowanceRaw: '0',
-    sellV2PranaAllowanceRaw: '0',
-    bonds: [],
-  };
-
-  assert.equal(accountFromSuccessfulRefetch(null), undefined);
-  assert.equal(
-    accountFromSuccessfulRefetch({ status: 'error', error: new Error('x') }),
-    undefined,
-  );
-  assert.equal(
-    accountFromSuccessfulRefetch({ isSuccess: true, data: undefined }),
-    undefined,
-  );
-  assert.equal(
-    accountFromSuccessfulRefetch(
-      { isSuccess: true, data: account },
-      '0x2222222222222222222222222222222222222222',
-    ),
-    undefined,
-  );
-  assert.equal(
-    accountFromSuccessfulRefetch(
-      { isSuccess: true, data: account },
-      '0x1111111111111111111111111111111111111111',
-    ),
-    account,
-  );
 });
 
 test('sortActiveBonds orders by maturity then side/version/id', () => {

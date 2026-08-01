@@ -1,26 +1,21 @@
-import type { StakingAccountSnapshot } from './staking.types.ts';
 import type { Address } from '../../types/blockchain.types.ts';
-
-type RefetchLike = {
-  isSuccess?: boolean;
-  status?: string;
-  error?: unknown;
-  data?: StakingAccountSnapshot;
-};
+import type { RefetchLikeResult } from './accountRefetch.types.ts';
 
 /**
  * Require a successful React Query refetch() result with data for the expected
  * wallet when one is supplied.
- * Does NOT fall back to cached account — stale nonce/balance must not drive
- * permit signing or stake submit.
+ * Does NOT fall back to cached account — stale nonce/balance/allowance must not
+ * drive permit signing, approve, or create/stake writes.
  */
-export function accountFromSuccessfulRefetch(
+export function accountFromSuccessfulRefetch<
+  TAccount extends { address: string },
+>(
   refreshed: unknown,
   expectedAddress?: Address,
-): StakingAccountSnapshot | undefined {
+): TAccount | undefined {
   if (!refreshed || typeof refreshed !== 'object') return undefined;
 
-  const result = refreshed as RefetchLike;
+  const result = refreshed as RefetchLikeResult<TAccount>;
   const ok = result.isSuccess === true || result.status === 'success';
   if (!ok || result.error != null) return undefined;
   if (!result.data) return undefined;

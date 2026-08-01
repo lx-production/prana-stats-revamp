@@ -114,7 +114,7 @@ nếu abstraction làm feature wrappers khó đọc hơn code hiện tại.
 - Có baseline xanh hoặc danh sách lỗi có sẵn được ghi rõ.
 - Mỗi hành vi sẽ di chuyển đã có ít nhất một test bảo vệ.
 
-## 6. Điểm 1 — Dùng chung `accountFromSuccessfulRefetch`
+## 6. Điểm 1 — Dùng chung `accountFromSuccessfulRefetch` ✅
 
 ### Hiện trạng
 
@@ -144,18 +144,18 @@ accountFromSuccessfulRefetch<TAccount extends { address: string }>(
 
 ### Migration
 
-1. Chuyển test chung sang `features/web3/tests/accountRefetch.test.ts`.
-2. Cho `stakeTransactionFlow.ts` gọi generic helper với
+1. ✅ Chuyển test chung sang `features/web3/tests/accountRefetch.test.ts`.
+2. ✅ Cho `stakeTransactionFlow.ts` gọi generic helper với
    `StakingAccountSnapshot`.
-3. Cho `bondTransactionFlow.ts` gọi generic helper với `BondingAccount`.
-4. Xóa hai implementation cũ sau khi không còn consumer.
+3. ✅ Cho `bondTransactionFlow.ts` gọi generic helper với `BondingAccount`.
+4. ✅ Xóa hai implementation cũ sau khi không còn consumer.
 
 ### Điều kiện hoàn thành
 
-- Address comparison vẫn case-insensitive.
-- Không fallback sang cached account.
-- Kết quả lỗi hoặc thiếu data vẫn trả `undefined`.
-- Staking và Bonding tests giữ nguyên kết quả.
+- ✅ Address comparison vẫn case-insensitive.
+- ✅ Không fallback sang cached account.
+- ✅ Kết quả lỗi hoặc thiếu data vẫn trả `undefined`.
+- ✅ Staking và Bonding tests giữ nguyên kết quả.
 
 ## 7. Điểm 2 — Dùng chung transaction confirmation phía client
 

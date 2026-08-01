@@ -7,10 +7,10 @@ import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { accountFromSuccessfulRefetch } from '../utils/accountRefetch.ts';
-import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
-import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
+import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
@@ -612,7 +612,7 @@ export function useBondTransaction({
       // Calldata input from form snapshot — never the quote response leg.
       const createAmountRaw = resolveCreateAmountRaw(amountRaw);
 
-      const accountSnap = accountFromSuccessfulRefetch(
+      const accountSnap = accountFromSuccessfulRefetch<BondingAccount>(
         await refetchAccount(),
         submittingAccount,
       );

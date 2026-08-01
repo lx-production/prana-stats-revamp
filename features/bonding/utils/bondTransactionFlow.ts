@@ -1,4 +1,4 @@
-import { accountFromSuccessfulRefetch } from './accountRefetch.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { confirmBondTransaction } from './bondTransactionConfirmation.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
@@ -75,7 +75,7 @@ export async function confirmBondReceipt(
   // Receipt succeeded — sync account without turning success into error.
   try {
     const refreshed = await deps.refetchAccount();
-    if (!accountFromSuccessfulRefetch(refreshed)) {
+    if (!accountFromSuccessfulRefetch<BondingAccount>(refreshed)) {
       return {
         kind: 'confirmed',
         syncFailed: true,
@@ -147,7 +147,7 @@ export async function submitBondWriteFlow(
   deps: SubmitBondWriteDeps,
 ): Promise<SubmitBondWriteOutcome> {
   const refreshed = await deps.refetchAccount();
-  const account = accountFromSuccessfulRefetch(refreshed);
+  const account = accountFromSuccessfulRefetch<BondingAccount>(refreshed);
   if (!account) {
     return { kind: 'fresh_account_failed' };
   }

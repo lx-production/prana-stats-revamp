@@ -289,13 +289,12 @@ features/bonding/
     bondPendingTransactionStorage.ts
     bondingMath.ts
     bondingErrors.ts
-    accountRefetch.ts
 pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, footer
 ```
 
 Shared (không import ngược Bonding → Staking):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (không nhân đôi ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

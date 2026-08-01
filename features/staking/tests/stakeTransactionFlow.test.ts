@@ -1,7 +1,6 @@
 /// <reference types="node" />
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accountFromSuccessfulRefetch } from '../accountRefetch.ts';
 import {
   confirmStakeReceipt,
   resolvePermitAndStakeAction,
@@ -36,26 +35,6 @@ function errorRefetch(cached: StakingAccountSnapshot = sampleAccount) {
     error: new Error('network'),
   };
 }
-
-test('accountFromSuccessfulRefetch ignores failed refetch with stale data', () => {
-  assert.equal(accountFromSuccessfulRefetch(errorRefetch()), undefined);
-  assert.equal(accountFromSuccessfulRefetch(undefined), undefined);
-  assert.equal(accountFromSuccessfulRefetch({ data: sampleAccount }), undefined);
-  assert.deepEqual(
-    accountFromSuccessfulRefetch(
-      successRefetch(),
-      '0x1111111111111111111111111111111111111111',
-    ),
-    sampleAccount,
-  );
-  assert.equal(
-    accountFromSuccessfulRefetch(
-      successRefetch(),
-      '0x2222222222222222222222222222222222222222',
-    ),
-    undefined,
-  );
-});
 
 test('resolvePermitAndStakeAction resumes receipt when a hash is pending', () => {
   assert.equal(

@@ -101,6 +101,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `utils/polygonscanUrls.ts` | Link Buy Dips và top-holder | Chưa có consumer | Chưa có consumer | Chưa có consumer | Builder URL explorer token trung lập, dựa trên `constants/network.ts` |
 | `utils/swapTokens.ts` | Không có consumer thuộc Stats | Swap client và server | Không | Không | Lookup trên Swap allowlist |
 | `features/web3/getPolygonWalletClient.ts` và `waitForPolygonWalletReceipt.ts` | Không | Không | Transaction hooks | Transaction hooks | Lấy wallet client Polygon mới nhất và chờ receipt qua cùng provider đã broadcast |
+| `features/web3/accountRefetch.ts` | Không | Không | Transaction flows/hooks | Transaction flows/hooks | Gate refetch thành công dùng chung; từ chối cache cũ và address mismatch trước write |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
 
@@ -142,10 +143,10 @@ Staking giữ domain behavior riêng:
   Staking.
 - `stakingFundCheck.ts` dựng kết quả quote thuần theo quy tắc quỹ Interest; server
   loader gọi lại helper feature này thay vì lặp math.
-- `stakingErrors.ts`, `permitUtils.ts`, `accountRefetch.ts`,
-  `stakeCtaPhase.ts`, `stakeTransactionFlow.ts`, và
-  `stakeTransactionConfirmation.ts` mô hình hóa validation và transaction
-  state riêng của Staking.
+- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`,
+  `stakeTransactionFlow.ts`, và `stakeTransactionConfirmation.ts` mô hình hóa
+  validation và transaction state riêng của Staking. Gate account refetch dùng
+  chung `features/web3/accountRefetch.ts`.
 - `stakePendingTransactionStorage.ts` và `usePendingStakeTransaction.ts` lưu
   hash/action snapshot theo account + chain để chỉ resume confirmation sau
   reload, không gửi lại write.
