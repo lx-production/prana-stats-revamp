@@ -11,18 +11,18 @@ import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { getStakingCopy } from '../staking.copy.ts';
-import { confirmStakingTransactionOnServer } from '../stakingApi.ts';
-import { confirmStakeReceipt } from '../stakeTransactionFlow.ts';
+import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
+import { confirmStakeReceipt } from '../utils/stakeTransactionFlow.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import {
   buildPendingStakeTransaction,
   pendingStakeTransactionMatchesWallet,
-} from '../stakePendingTransactionStorage.ts';
+} from '../utils/stakePendingTransactionStorage.ts';
 import {
   formatStakingError,
   getStakingErrorMessage,
   logStakingFailure,
-} from '../stakingErrors.ts';
+} from '../utils/stakingErrors.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type {

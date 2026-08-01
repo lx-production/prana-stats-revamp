@@ -3,7 +3,7 @@ import { formatUnits } from 'viem';
 import { Coins, Loader2 } from 'lucide-react';
 import TxLink from '../../../components/ui/TxLink.tsx';
 import { getStakingCopy } from '../staking.copy.ts';
-import { getStakeCtaPhase } from '../stakeCtaPhase.ts';
+import { getStakeCtaPhase } from '../utils/stakeCtaPhase.ts';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import DurationSelector from './DurationSelector.tsx';
@@ -22,7 +22,7 @@ import {
   calculateTotalInterestRaw,
   getDefaultDurationSeconds,
   getConfiguredDuration,
-} from '../stakingMath.ts';
+} from '../utils/stakingMath.ts';
 
 import type { StakingConfig, StakingAccountSnapshot } from '../staking.types.ts';
 

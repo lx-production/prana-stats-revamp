@@ -1,6 +1,6 @@
 import { calculateTotalInterestRaw } from './stakingMath.ts';
 
-import type { StakingQuoteIssue } from './staking.types.ts';
+import type { StakingQuoteIssue } from '../staking.types.ts';
 
 /**
  * Interest still free for new stakes:

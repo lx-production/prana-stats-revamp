@@ -1,5 +1,5 @@
-import type { Address } from '../../types/blockchain.types.ts';
-import type { PermitSnapshot } from './staking.types.ts';
+import type { Address } from '../../../types/blockchain.types.ts';
+import type { PermitSnapshot } from '../staking.types.ts';
 
 type PermitMatchInput = {
   owner: Address | undefined;

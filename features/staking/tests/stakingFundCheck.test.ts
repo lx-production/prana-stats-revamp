@@ -5,12 +5,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SECONDS_PER_DAY } from '../../../constants/network.ts';
-import { calculateTotalInterestRaw } from '../stakingMath.ts';
+import { calculateTotalInterestRaw } from '../utils/stakingMath.ts';
 import {
   availableInterestFundRaw,
   computeStakingQuote,
   isNewStakeFullyFunded,
-} from '../stakingFundCheck.ts';
+} from '../utils/stakingFundCheck.ts';
 
 test('availableInterestFundRaw floors at zero when under-reserved', () => {
   assert.equal(availableInterestFundRaw(100n, 40n), 60n);

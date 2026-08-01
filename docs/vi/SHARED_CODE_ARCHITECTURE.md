@@ -95,7 +95,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | Module | Trang Stats chính | Swap modal | Staking UI | Bonding UI | Ghi chú |
 | --- | --- | --- | --- | --- | --- |
 | `utils/focusTrap.ts` | Route dependency qua `SwapLazyShell` | `SwapModal`, `SwapLazyShell` | `EarlyUnstakeDialog` | Không | Focus containment accessible, xử lý Escape, và khôi phục focus tùy chọn |
-| `utils/fetchJson.ts` | Stats hooks/components và API adapters | Không dùng theo nghĩa semantic | `stakingApi.ts` | `features/bonding/utils/bondingApi.ts` | Dedupe GET đồng thời; Staking/Bonding tắt dedupe cho POST quote/confirmation; Swap giữ request POST chuyên biệt |
+| `utils/fetchJson.ts` | Stats hooks/components và API adapters | Không dùng theo nghĩa semantic | `features/staking/utils/stakingApi.ts` | `features/bonding/utils/bondingApi.ts` | Dedupe GET đồng thời; Staking/Bonding tắt dedupe cho POST quote/confirmation; Swap giữ request POST chuyên biệt |
 | `utils/formatters.ts` | Dùng trực tiếp rộng rãi | Không | Không dùng trực tiếp trên client | Không dùng trực tiếp trên client | Cũng dùng bởi server loaders và scripts |
 | `utils/tokenAmounts.ts` | Gián tiếp qua `formatters.ts` | Không | Không dùng trực tiếp trên client | Không dùng trực tiếp trên client | Chuyển đơn vị raw không phụ thuộc Web3, tránh thêm thư viện Web3 vào formatting cơ bản |
 | `utils/polygonscanUrls.ts` | Link Buy Dips và top-holder | Chưa có consumer | Chưa có consumer | Chưa có consumer | Builder URL explorer token trung lập, dựa trên `constants/network.ts` |
@@ -118,7 +118,7 @@ chỉ vì wrapper trông giống nhau.
 
 Giữ feature-local:
 
-- `features/staking/stakingApi.ts` và `features/bonding/utils/bondingApi.ts`
+- `features/staking/utils/stakingApi.ts` và `features/bonding/utils/bondingApi.ts`
 - `useStakingConfig` / `useBondingConfig`
 - `useStakingAccount` / `useBondingAccount`
 

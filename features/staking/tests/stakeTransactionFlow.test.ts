@@ -6,7 +6,7 @@ import {
   resolvePermitAndStakeAction,
   runPermitThenStake,
   submitStakeWithPermitFlow,
-} from '../stakeTransactionFlow.ts';
+} from '../utils/stakeTransactionFlow.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type { StakingAccountSnapshot } from '../staking.types.ts';

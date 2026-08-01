@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import { formatGraceRemainingLabel } from '../formatGraceRemaining.ts';
+import { formatGraceRemainingLabel } from '../utils/formatGraceRemaining.ts';
 import {
   calculateAccruedInterestRaw,
   calculateTotalInterestRaw,
@@ -13,7 +13,7 @@ import {
   getStakeDisplayStatus,
   getStakeEndTime,
   getStakeProgressPercent,
-} from '../stakingMath.ts';
+} from '../utils/stakingMath.ts';
 
 import type { SiteLocale } from '../../../types/locale.types.ts';
 import type { StakingCopy } from '../staking.copy.ts';

@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { mapDurationOptions } from '../utils/stakingReadUtils.ts';
-import { computeStakingQuote } from '../../features/staking/stakingFundCheck.ts';
+import { computeStakingQuote } from '../../features/staking/utils/stakingFundCheck.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 import { parseUnsignedDecimalRaw } from '../utils/stakingQuoteUtils.ts';
 import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';

@@ -1,7 +1,7 @@
 import React from 'react';
 import SharedWalletControl from '../../web3/WalletControl';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage';
-import { formatStakingError } from '../stakingErrors';
+import { formatStakingError } from '../utils/stakingErrors';
 import { getStakingCopy } from '../staking.copy';
 
 /**

@@ -12,7 +12,7 @@ import {
   getEffectiveAccruedSeconds,
   getStakeActionState,
   parseStakeAmount,
-} from '../stakingMath.ts';
+} from '../utils/stakingMath.ts';
 
 import type { StakeRecord, StakingDurationOption } from '../staking.types.ts';
 

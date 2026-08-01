@@ -1,13 +1,8 @@
 import { formatUnits, parseUnits } from 'viem';
-import { PRANA_DECIMALS } from '../../constants/sharedContracts.ts';
-import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../constants/network.ts';
+import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
+import { SECONDS_PER_DAY, SECONDS_PER_YEAR } from '../../../constants/network.ts';
 
-import type {
-  StakeAmountParseResult,
-  StakeDisplayStatus,
-  StakeRecord,
-  StakingDurationOption,
-} from './staking.types.ts';
+import type { StakeAmountParseResult, StakeDisplayStatus, StakeRecord, StakingDurationOption } from '../staking.types.ts';
 
 const PERCENT_SCALE = 100n;
 

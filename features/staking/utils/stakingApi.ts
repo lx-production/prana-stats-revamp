@@ -1,14 +1,7 @@
-import { fetchJson } from '../../utils/fetchJson.ts';
+import { fetchJson } from '../../../utils/fetchJson.ts';
 
-import type { Address } from '../../types/blockchain.types.ts';
-import type {
-  StakingAccountSnapshot,
-  StakingConfig,
-  StakingQuote,
-  StakingQuoteRequest,
-  StakingTransactionConfirmation,
-  StakingTransactionConfirmationRequest,
-} from './staking.types.ts';
+import type { Address } from '../../../types/blockchain.types.ts';
+import type { StakingAccountSnapshot, StakingConfig, StakingQuote, StakingQuoteRequest, StakingTransactionConfirmation, StakingTransactionConfirmationRequest } from '../staking.types.ts';
 
 /** Browser React Query key for GET /api/staking/config. */
 export const STAKING_CONFIG_QUERY_KEY = ['staking-config'] as const;

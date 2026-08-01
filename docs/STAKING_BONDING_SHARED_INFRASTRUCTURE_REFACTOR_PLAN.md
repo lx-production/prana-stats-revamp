@@ -168,7 +168,7 @@ accountFromSuccessfulRefetch<TAccount extends { address: string }>(
 
 Hai file có cùng browser-receipt → server-fallback state machine:
 
-- `features/staking/stakeTransactionConfirmation.ts`
+- `features/staking/utils/stakeTransactionConfirmation.ts`
 - `features/bonding/utils/bondTransactionConfirmation.ts`
 
 Chúng chỉ khác tên type và callback server.
@@ -227,7 +227,7 @@ Shared outcome giữ:
 
 Storage scaffold và hooks đang lặp:
 
-- `features/staking/stakePendingTransactionStorage.ts`
+- `features/staking/utils/stakePendingTransactionStorage.ts`
 - `features/bonding/utils/bondPendingTransactionStorage.ts`
 - `features/staking/hooks/usePendingStakeTransaction.ts`
 - `features/bonding/hooks/usePendingBondTransaction.ts`
@@ -386,7 +386,7 @@ Lý do:
 
 - Sáu file API/account/config không đổi trong phạm vi Điểm 1–4; chưa có prototype generic nào chứng minh lợi ích.
 - Wrapper hiện tại ngắn, typed, và lộ endpoint + query key ngay tại feature:
-  - `features/staking/stakingApi.ts`
+  - `features/staking/utils/stakingApi.ts`
   - `features/bonding/utils/bondingApi.ts`
   - `useStakingConfig` / `useBondingConfig`
   - `useStakingAccount` / `useBondingAccount`

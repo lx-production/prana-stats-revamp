@@ -9,10 +9,10 @@ import {
   parsePendingStakeTransaction,
   pendingStakeTransactionMatchesWallet,
   savePendingStakeTransaction,
-} from '../stakePendingTransactionStorage.ts';
+} from '../utils/stakePendingTransactionStorage.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type { StakePendingStorage } from '../stakePendingTransactionStorage.ts';
+import type { StakePendingStorage } from '../utils/stakePendingTransactionStorage.ts';
 
 const ACCOUNT = '0x1111111111111111111111111111111111111111' as Address;
 const OTHER = '0x2222222222222222222222222222222222222222' as Address;

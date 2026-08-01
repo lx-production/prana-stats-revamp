@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import {
   getPermitInvalidReason,
   isPermitSnapshotValid,
-} from '../permitUtils.ts';
+} from '../utils/permitUtils.ts';
 
 import type { PermitSnapshot } from '../staking.types.ts';
 import type { Address, Hex } from '../../../types/blockchain.types.ts';

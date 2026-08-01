@@ -3,7 +3,7 @@ import {
   clearPendingStakeTransaction,
   loadPendingStakeTransaction,
   savePendingStakeTransaction,
-} from '../stakePendingTransactionStorage.ts';
+} from '../utils/stakePendingTransactionStorage.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
 import type { PendingTransactionStorageAdapter } from '../../web3/hooks/usePendingTransaction.types.ts';

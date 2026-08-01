@@ -204,7 +204,7 @@ permit_and_stake → signing → continue_stake → submitting → confirming �
 | `resume_confirming` | No new write | Wait for existing hash receipt |
 | `success` | No | Clear form amount; show hash |
 
-Helper: `features/staking/stakeCtaPhase.ts` → `getStakeCtaPhase(status, hasValidPermit, hasPendingHash)`.
+Helper: `features/staking/utils/stakeCtaPhase.ts` → `getStakeCtaPhase(status, hasValidPermit, hasPendingHash)`.
 
 Before sign and before broadcast:
 
@@ -264,7 +264,7 @@ Staking accrues **from `lastClaimTime`** (capped at maturity). Bonding claimable
 
 Early penalty: `(amount × penaltyPercent) / 100` integer division (`calculateEarlyUnstakeReturn`).
 
-Helpers: `calculateTotalInterestRaw`, `getEffectiveAccruedSeconds`, `getStakeActionState`, `getStakeProgressPercent` in `features/staking/stakingMath.ts`.
+Helpers: `calculateTotalInterestRaw`, `getEffectiveAccruedSeconds`, `getStakeActionState`, `getStakeProgressPercent` in `features/staking/utils/stakingMath.ts`.
 
 ---
 
@@ -277,14 +277,17 @@ features/staking/
   StakingEntry.tsx              # lazy root + Web3Providers
   staking.types.ts
   staking.copy.ts               # VI/EN
-  stakingApi.ts                 # fetchJson adapters + React Query keys
-  stakingMath.ts
-  stakingFundCheck.ts
-  permitUtils.ts
-  stakeCtaPhase.ts
-  stakeTransactionFlow.ts
-  formatGraceRemaining.ts
-  stakingErrors.ts
+  utils/
+    stakingApi.ts               # fetchJson adapters + React Query keys
+    stakingMath.ts
+    stakingFundCheck.ts
+    permitUtils.ts
+    stakeCtaPhase.ts
+    stakeTransactionFlow.ts
+    stakeTransactionConfirmation.ts
+    stakePendingTransactionStorage.ts
+    formatGraceRemaining.ts
+    stakingErrors.ts
   components/                   # Form, DurationSelector, ActiveStakes, StakeCard, EarlyUnstakeDialog, WalletControl
   hooks/                        # config, account, quote, useStakeTransaction, useStakeActions
 pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, footer

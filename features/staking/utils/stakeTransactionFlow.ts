@@ -1,13 +1,10 @@
-import { accountFromSuccessfulRefetch } from '../web3/accountRefetch.ts';
-import { confirmReceiptWithAccountSync } from '../web3/confirmReceiptWithAccountSync.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
+import { confirmReceiptWithAccountSync } from '../../web3/confirmReceiptWithAccountSync.ts';
 
-import type { Hex } from '../../types/blockchain.types.ts';
+import type { Hex } from '../../../types/blockchain.types.ts';
 import type { StakeWaitReceiptResult } from './stakeTransactionConfirmation.ts';
-import type { ConfirmReceiptWithAccountSyncOutcome } from '../web3/confirmReceiptWithAccountSync.types.ts';
-import type {
-  StakingAccountSnapshot,
-  StakingTransactionConfirmation,
-} from './staking.types.ts';
+import type { StakingAccountSnapshot, StakingTransactionConfirmation } from '../staking.types.ts';
+import type { ConfirmReceiptWithAccountSyncOutcome } from '../../web3/confirmReceiptWithAccountSync.types.ts';
 
 /** What the combined CTA should do on the next click. */
 export type PermitAndStakeAction =

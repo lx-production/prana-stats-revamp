@@ -1,9 +1,5 @@
 import type { SiteLocale } from '../../types/locale.types.ts';
-import type {
-  StakeActionKind,
-  StakeAmountParseReason,
-  StakeDisplayStatus,
-} from './staking.types.ts';
+import type { StakeActionKind, StakeAmountParseReason, StakeDisplayStatus } from './staking.types.ts';
 
 export type StakingCopy = {
   pageTitle: string;

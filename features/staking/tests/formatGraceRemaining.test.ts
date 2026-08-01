@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SECONDS_PER_DAY } from '../../../constants/network.ts';
-import { formatGraceRemainingLabel } from '../formatGraceRemaining.ts';
+import { formatGraceRemainingLabel } from '../utils/formatGraceRemaining.ts';
 
 const SECONDS_PER_HOUR = 3_600;
 const SECONDS_PER_MINUTE = 60;

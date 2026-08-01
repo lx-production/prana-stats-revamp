@@ -22,7 +22,7 @@ import {
 import {
   calculateAccruedInterestRaw,
   getEffectiveAccruedSeconds,
-} from '../../staking/stakingMath.ts';
+} from '../../staking/utils/stakingMath.ts';
 
 import type { ActiveBondRecord, BondingTermOption } from '../bonding.types.ts';
 

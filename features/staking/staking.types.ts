@@ -1,7 +1,4 @@
-import {
-  PRANA_PERMIT_DOMAIN_NAME,
-  PRANA_PERMIT_DOMAIN_VERSION,
-} from '../../constants/stakingContracts.ts';
+import { PRANA_PERMIT_DOMAIN_NAME, PRANA_PERMIT_DOMAIN_VERSION } from '../../constants/stakingContracts.ts';
 
 import type { Address, Hex } from '../../types/blockchain.types.ts';
 

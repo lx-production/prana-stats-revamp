@@ -5,7 +5,7 @@ import { trapFocus } from '../../../utils/focusTrap.ts';
 import {
   calculateEarlyUnstakeReturn,
   formatPranaAmount,
-} from '../stakingMath.ts';
+} from '../utils/stakingMath.ts';
 
 import type { StakingCopy } from '../staking.copy.ts';
 import type { StakeRecord } from '../staking.types.ts';

@@ -97,7 +97,7 @@ generic helper.
 | Module | Main Stats page | Swap modal | Staking UI | Bonding UI | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `utils/focusTrap.ts` | Route dependency through `SwapLazyShell` | `SwapModal`, `SwapLazyShell` | `EarlyUnstakeDialog` | No | Accessible focus containment, Escape handling, and optional focus restoration |
-| `utils/fetchJson.ts` | Stats hooks/components and API adapters | No semantic use | `stakingApi.ts` | `features/bonding/utils/bondingApi.ts` | Concurrent GET dedupe; Staking/Bonding disable dedupe for POST quote/confirmation; Swap keeps specialized POST requests |
+| `utils/fetchJson.ts` | Stats hooks/components and API adapters | No semantic use | `features/staking/utils/stakingApi.ts` | `features/bonding/utils/bondingApi.ts` | Concurrent GET dedupe; Staking/Bonding disable dedupe for POST quote/confirmation; Swap keeps specialized POST requests |
 | `utils/formatters.ts` | Broad direct use | No | No direct client use | No direct client use | Also used by server loaders and scripts |
 | `utils/tokenAmounts.ts` | Indirectly through `formatters.ts` | No | No direct client use | No direct client use | Dependency-free raw-unit conversion used to avoid adding Web3 libraries to basic formatting |
 | `utils/polygonscanUrls.ts` | Buy Dips and top-holder links | No current consumer | No current consumer | No current consumer | Neutral token explorer URL builder backed by `constants/network.ts` |
@@ -120,7 +120,7 @@ purpose. Do not introduce shared factories such as `useWalletAccountQuery` or
 
 Keep feature-local:
 
-- `features/staking/stakingApi.ts` and `features/bonding/utils/bondingApi.ts`
+- `features/staking/utils/stakingApi.ts` and `features/bonding/utils/bondingApi.ts`
 - `useStakingConfig` / `useBondingConfig`
 - `useStakingAccount` / `useBondingAccount`
 

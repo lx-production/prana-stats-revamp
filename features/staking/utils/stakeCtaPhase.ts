@@ -1,4 +1,4 @@
-import type { StakeTransactionStatus } from './staking.types.ts';
+import type { StakeTransactionStatus } from '../staking.types.ts';
 
 /** Which label the single Permit & Stake CTA should show. */
 export type StakeCtaPhase =

@@ -1,16 +1,8 @@
-import {
-  PENDING_TX_TTL_MS,
-  createPendingTransactionStorage,
-} from '../web3/pendingTransactionStorage.ts';
+import { PENDING_TX_TTL_MS, createPendingTransactionStorage } from '../../web3/pendingTransactionStorage.ts';
 
-import type { Hex } from '../../types/blockchain.types.ts';
-import type { PendingStorage } from '../web3/pendingTransactionStorage.types.ts';
-import type {
-  PendingStakeTransaction,
-  StakeActionKind,
-  StakingTransactionActionSnapshot,
-  StakingTxActionKind,
-} from './staking.types.ts';
+import type { Hex } from '../../../types/blockchain.types.ts';
+import type { PendingStorage } from '../../web3/pendingTransactionStorage.types.ts';
+import type { PendingStakeTransaction, StakeActionKind, StakingTransactionActionSnapshot, StakingTxActionKind } from '../staking.types.ts';
 
 /** Drop stale pending records after one day. */
 export const PENDING_STAKE_TX_TTL_MS = PENDING_TX_TTL_MS;

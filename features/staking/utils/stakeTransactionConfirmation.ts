@@ -1,10 +1,7 @@
-import { confirmBroadcastTransaction } from '../web3/transactionConfirmation.ts';
+import { confirmBroadcastTransaction } from '../../web3/transactionConfirmation.ts';
 
-import type { StakingTransactionConfirmation } from './staking.types.ts';
-import type {
-  BroadcastConfirmationOutcome,
-  WaitReceiptResult,
-} from '../web3/transactionConfirmation.types.ts';
+import type { StakingTransactionConfirmation } from '../staking.types.ts';
+import type { BroadcastConfirmationOutcome, WaitReceiptResult } from '../../web3/transactionConfirmation.types.ts';
 
 export type StakeWaitReceiptResult = WaitReceiptResult;
 

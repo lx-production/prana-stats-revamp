@@ -1,6 +1,6 @@
-import { SECONDS_PER_DAY } from '../../constants/network.ts';
+import { SECONDS_PER_DAY } from '../../../constants/network.ts';
 
-import type { SiteLocale } from '../../types/locale.types.ts';
+import type { SiteLocale } from '../../../types/locale.types.ts';
 
 const SECONDS_PER_HOUR = 3_600;
 const SECONDS_PER_MINUTE = 60;

@@ -47,11 +47,12 @@ features/staking/
 │   ├── useStakingQuote.ts
 │   ├── useStakeTransaction.ts
 │   └── useStakeActions.ts
-├── formatGraceRemaining.ts
 ├── staking.copy.ts
-├── stakingMath.ts
-├── stakingFundCheck.ts
-└── staking.types.ts
+├── staking.types.ts
+└── utils/
+    ├── formatGraceRemaining.ts
+    ├── stakingMath.ts
+    └── stakingFundCheck.ts
 
 components/ui/
 ├── PranaButton.tsx

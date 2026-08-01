@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   fetchStakingConfig,
   STAKING_CONFIG_QUERY_KEY,
-} from '../stakingApi.ts';
+} from '../utils/stakingApi.ts';
 
 /** Matches server Cache-Control max-age for /api/staking/config. */
 const STAKING_CONFIG_STALE_TIME_MS = 30_000;

@@ -1,4 +1,4 @@
-import { fetchStakingQuote } from '../stakingApi.ts';
+import { fetchStakingQuote } from '../utils/stakingApi.ts';
 import { useDebouncedAbortableQuote } from '../../../hooks/useDebouncedAbortableQuote.ts';
 
 import type { StakingQuote, StakingQuoteRequest } from '../staking.types.ts';

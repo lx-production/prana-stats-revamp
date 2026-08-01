@@ -1,6 +1,6 @@
 import { isAddress } from 'viem';
 import { useQuery } from '@tanstack/react-query';
-import { fetchStakingAccount, stakingAccountQueryKey } from '../stakingApi.ts';
+import { fetchStakingAccount, stakingAccountQueryKey } from '../utils/stakingApi.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
 

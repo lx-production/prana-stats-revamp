@@ -15,25 +15,25 @@ import { getStakingCopy } from '../staking.copy.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
-import { isPermitSnapshotValid } from '../permitUtils.ts';
-import { getConfiguredDuration } from '../stakingMath.ts';
-import { confirmStakingTransactionOnServer } from '../stakingApi.ts';
+import { isPermitSnapshotValid } from '../utils/permitUtils.ts';
+import { getConfiguredDuration } from '../utils/stakingMath.ts';
+import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import {
   buildPendingStakeTransaction,
   pendingStakeTransactionMatchesWallet,
-} from '../stakePendingTransactionStorage.ts';
+} from '../utils/stakePendingTransactionStorage.ts';
 import {
   formatStakingError,
   getStakingErrorMessage,
   logStakingFailure,
-} from '../stakingErrors.ts';
+} from '../utils/stakingErrors.ts';
 import {
   confirmStakeReceipt,
   runPermitThenStake,
   resolvePermitAndStakeAction,
   submitStakeWithPermitFlow,
-} from '../stakeTransactionFlow.ts';
+} from '../utils/stakeTransactionFlow.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type {
