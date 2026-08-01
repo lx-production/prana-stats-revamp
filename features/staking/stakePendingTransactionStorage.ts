@@ -1,4 +1,10 @@
-import type { Address, Hex } from '../../types/blockchain.types.ts';
+import {
+  PENDING_TX_TTL_MS,
+  createPendingTransactionStorage,
+} from '../web3/pendingTransactionStorage.ts';
+
+import type { Hex } from '../../types/blockchain.types.ts';
+import type { PendingStorage } from '../web3/pendingTransactionStorage.types.ts';
 import type {
   PendingStakeTransaction,
   StakeActionKind,
@@ -7,11 +13,11 @@ import type {
 } from './staking.types.ts';
 
 /** Drop stale pending records after one day. */
-export const PENDING_STAKE_TX_TTL_MS = 24 * 60 * 60 * 1000;
+export const PENDING_STAKE_TX_TTL_MS = PENDING_TX_TTL_MS;
 
-const STORAGE_PREFIX = 'prana:staking:pending:v1';
-const TX_HASH_RE = /^0x[0-9a-fA-F]{64}$/;
-const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+/** Alias of shared PendingStorage — kept for existing imports. */
+export type StakePendingStorage = PendingStorage;
+
 const BYTES32_RE = /^0x[0-9a-fA-F]{64}$/;
 const MAX_UINT32 = 0xffff_ffff;
 
@@ -21,184 +27,8 @@ const STAKE_ACTION_KINDS: readonly StakeActionKind[] = [
   'unstakeEarly',
 ];
 
-/** Minimal storage surface — browser localStorage or an in-memory test double. */
-export type StakePendingStorage = {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-};
-
-function getBrowserLocalStorage(): StakePendingStorage | null {
-  try {
-    if (typeof localStorage === 'undefined') return null;
-    return localStorage;
-  } catch {
-    // Private mode / blocked storage — treat as unavailable.
-    return null;
-  }
-}
-
-/** One pending record per account + chain. */
-export function pendingStakeTransactionStorageKey(
-  account: Address,
-  chainId: number,
-): string {
-  return `${STORAGE_PREFIX}:${chainId}:${account.toLowerCase()}`;
-}
-
-/** Build a fresh pending record at broadcast time. */
-export function buildPendingStakeTransaction(input: {
-  account: Address;
-  chainId: number;
-  hash: Hex;
-  action: StakingTransactionActionSnapshot;
-  nowMs?: number;
-}): PendingStakeTransaction {
-  return {
-    version: 1,
-    chainId: input.chainId,
-    account: input.account,
-    hash: input.hash,
-    action: input.action,
-    createdAt: input.nowMs ?? Date.now(),
-  };
-}
-
-/** True when wallet identity still matches the submitting account/chain. */
-export function pendingStakeTransactionMatchesWallet(
-  pending: PendingStakeTransaction,
-  account: Address | undefined,
-  chainId: number | undefined,
-): boolean {
-  if (!account || chainId == null) return false;
-  return (
-    pending.account.toLowerCase() === account.toLowerCase() &&
-    pending.chainId === chainId
-  );
-}
-
-export function savePendingStakeTransaction(
-  pending: PendingStakeTransaction,
-  storage: StakePendingStorage | null = getBrowserLocalStorage(),
-): void {
-  if (!storage) return;
-  try {
-    storage.setItem(
-      pendingStakeTransactionStorageKey(pending.account, pending.chainId),
-      JSON.stringify(pending),
-    );
-  } catch {
-    // Quota / security errors — in-memory pending still works for the session.
-  }
-}
-
-export function clearPendingStakeTransaction(
-  account: Address,
-  chainId: number,
-  storage: StakePendingStorage | null = getBrowserLocalStorage(),
-): void {
-  if (!storage) return;
-  try {
-    storage.removeItem(pendingStakeTransactionStorageKey(account, chainId));
-  } catch {
-    // Ignore storage failures on clear.
-  }
-}
-
-/**
- * Load a pending record for this account/chain.
- * Rejects expired, malformed, or identity-mismatched payloads.
- * Optional `kinds` filters which action owners may claim the record.
- */
-export function loadPendingStakeTransaction(
-  account: Address,
-  chainId: number,
-  kinds?: readonly StakingTxActionKind[],
-  storage: StakePendingStorage | null = getBrowserLocalStorage(),
-  nowMs: number = Date.now(),
-): PendingStakeTransaction | null {
-  if (!storage) return null;
-
-  let raw: string | null;
-  try {
-    raw = storage.getItem(pendingStakeTransactionStorageKey(account, chainId));
-  } catch {
-    return null;
-  }
-  if (!raw) return null;
-
-  const parsed = parsePendingStakeTransaction(raw, nowMs);
-  if (!parsed) {
-    clearPendingStakeTransaction(account, chainId, storage);
-    return null;
-  }
-
-  // Stored under the wrong identity — never surface it.
-  if (!pendingStakeTransactionMatchesWallet(parsed, account, chainId)) {
-    clearPendingStakeTransaction(account, chainId, storage);
-    return null;
-  }
-
-  if (kinds && !kinds.includes(parsed.action.kind)) {
-    return null;
-  }
-
-  return parsed;
-}
-
-/** Validate JSON from storage — untrusted input. */
-export function parsePendingStakeTransaction(
-  raw: string,
-  nowMs: number = Date.now(),
-): PendingStakeTransaction | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-
-  if (!value || typeof value !== 'object') return null;
-  const record = value as Record<string, unknown>;
-
-  if (record.version !== 1) return null;
-  if (typeof record.chainId !== 'number' || !Number.isInteger(record.chainId)) {
-    return null;
-  }
-  if (typeof record.account !== 'string' || !ADDRESS_RE.test(record.account)) {
-    return null;
-  }
-  if (typeof record.hash !== 'string' || !TX_HASH_RE.test(record.hash)) {
-    return null;
-  }
-  if (
-    typeof record.createdAt !== 'number' ||
-    !Number.isFinite(record.createdAt)
-  ) {
-    return null;
-  }
-  if (nowMs - record.createdAt > PENDING_STAKE_TX_TTL_MS) {
-    return null;
-  }
-  if (record.createdAt > nowMs + 60_000) {
-    // Far-future timestamps are treated as corrupt.
-    return null;
-  }
-
-  const action = parseStoredAction(record.action);
-  if (!action) return null;
-
-  return {
-    version: 1,
-    chainId: record.chainId,
-    account: record.account as Address,
-    hash: record.hash as Hex,
-    action,
-    createdAt: record.createdAt,
-  };
-}
-
-function parseStoredAction(
+/** Feature-local action parser — permit fields + stakeId actions. */
+function parseStoredStakeAction(
   value: unknown,
 ): StakingTransactionActionSnapshot | null {
   if (!value || typeof value !== 'object') return null;
@@ -270,4 +100,59 @@ function parseStoredAction(
 
 function isUnsignedDecimal(value: string): boolean {
   return /^[0-9]+$/.test(value);
+}
+
+const stakePendingStorage = createPendingTransactionStorage<StakingTransactionActionSnapshot>({
+  storagePrefix: 'prana:staking:pending:v1',
+  ttlMs: PENDING_STAKE_TX_TTL_MS,
+  parseAction: parseStoredStakeAction,
+});
+
+/** One pending record per account + chain. */
+export const pendingStakeTransactionStorageKey = stakePendingStorage.storageKey;
+
+/** Build a fresh pending record at broadcast time. */
+export function buildPendingStakeTransaction(
+  ...args: Parameters<typeof stakePendingStorage.buildPendingTransaction>
+): PendingStakeTransaction {
+  return stakePendingStorage.buildPendingTransaction(...args);
+}
+
+/** True when wallet identity still matches the submitting account/chain. */
+export const pendingStakeTransactionMatchesWallet =
+  stakePendingStorage.matchesWallet;
+
+export function savePendingStakeTransaction(
+  pending: PendingStakeTransaction,
+  storage?: PendingStorage | null,
+): void {
+  stakePendingStorage.save(pending, storage);
+}
+
+export function clearPendingStakeTransaction(
+  ...args: Parameters<typeof stakePendingStorage.clear>
+): void {
+  stakePendingStorage.clear(...args);
+}
+
+/**
+ * Load a pending record for this account/chain.
+ * Rejects expired, malformed, or identity-mismatched payloads.
+ * Optional `kinds` filters which action owners may claim the record.
+ */
+export function loadPendingStakeTransaction(
+  account: Parameters<typeof stakePendingStorage.load>[0],
+  chainId: Parameters<typeof stakePendingStorage.load>[1],
+  kinds?: readonly StakingTxActionKind[],
+  storage?: PendingStorage | null,
+  nowMs?: number,
+): PendingStakeTransaction | null {
+  return stakePendingStorage.load(account, chainId, kinds, storage, nowMs);
+}
+
+/** Validate JSON from storage — untrusted input. */
+export function parsePendingStakeTransaction(
+  ...args: Parameters<typeof stakePendingStorage.parse>
+): PendingStakeTransaction | null {
+  return stakePendingStorage.parse(...args);
 }

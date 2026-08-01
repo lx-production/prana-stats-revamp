@@ -216,7 +216,7 @@ Shared outcome giữ:
 - ✅ `not_mined` không bị map thành revert.
 - ✅ Lỗi browser và lỗi server được giữ để logging/debug.
 
-## 8. Điểm 3 — Dùng chung pending transaction storage và hook
+## 8. Điểm 3 — Dùng chung pending transaction storage và hook ✅
 
 ### Hiện trạng
 
@@ -300,19 +300,20 @@ Feature wrappers giữ type-safe kinds:
 
 ### Migration
 
-1. Tạo shared envelope tests bằng in-memory storage.
-2. Giữ feature parser tests trong từng feature.
-3. Migrate Bonding hoặc Staking trước, chạy test đầy đủ.
-4. Migrate feature còn lại.
-5. Chỉ xóa scaffold cũ sau khi localStorage compatibility test pass.
+1. ✅ Tạo shared envelope tests bằng in-memory storage.
+2. ✅ Giữ feature parser tests trong từng feature.
+3. ✅ Migrate Bonding hoặc Staking trước, chạy test đầy đủ.
+4. ✅ Migrate feature còn lại.
+5. ✅ Chỉ xóa scaffold cũ sau khi localStorage compatibility test pass.
+   (Feature files giữ public API + prefix; scaffold dùng chung factory.)
 
 ### Điều kiện hoàn thành
 
-- Record đang tồn tại trước deployment mới vẫn load được.
-- Record sai identity không bao giờ xuất hiện trong UI.
-- `discardLocalPending` không xóa record của account cũ.
-- `clearPendingRecord` xóa đúng key của record đã submit.
-- Hook không tạo vòng effect do identity của `kinds` thay đổi.
+- ✅ Record đang tồn tại trước deployment mới vẫn load được.
+- ✅ Record sai identity không bao giờ xuất hiện trong UI.
+- ✅ `discardLocalPending` không xóa record của account cũ.
+- ✅ `clearPendingRecord` xóa đúng key của record đã submit.
+- ✅ Hook không tạo vòng effect do identity của `kinds` thay đổi.
 
 ## 9. Điểm 4 — Dùng chung confirmation + account sync
 

@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
+import { usePendingTransaction } from '../../web3/hooks/usePendingTransaction.ts';
 import {
   clearPendingBondTransaction,
   loadPendingBondTransaction,
@@ -7,6 +6,7 @@ import {
 } from '../utils/bondPendingTransactionStorage.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
+import type { PendingTransactionStorageAdapter } from '../../web3/hooks/usePendingTransaction.types.ts';
 import type {
   BondingTxActionKind,
   PendingBondTransaction,
@@ -19,6 +19,17 @@ type UsePendingBondTransactionInput = {
   kinds: readonly BondingTxActionKind[];
 };
 
+/** Stable adapter — inline objects would re-trigger the load effect every render. */
+const bondPendingStorageAdapter: PendingTransactionStorageAdapter<
+  PendingBondTransaction,
+  BondingTxActionKind
+> = {
+  load: (account, chainId, kinds) =>
+    loadPendingBondTransaction(account, chainId, kinds),
+  save: savePendingBondTransaction,
+  clear: clearPendingBondTransaction,
+};
+
 /**
  * Persist + restore one pending bonding tx bound to account/chain.
  * Storage is untrusted — only used to resume confirmation, never as success proof.
@@ -28,61 +39,10 @@ export function usePendingBondTransaction({
   chainId,
   kinds,
 }: UsePendingBondTransactionInput) {
-  const [pending, setPendingState] = useState<PendingBondTransaction | null>(
-    null,
-  );
-  const [pendingLoaded, setPendingLoaded] = useState(false);
-  // Keep latest pending for clear helpers without widening callback deps.
-  const pendingRef = useRef<PendingBondTransaction | null>(null);
-  pendingRef.current = pending;
-
-  const kindsKey = kinds.join(',');
-
-  useEffect(() => {
-    setPendingLoaded(false);
-
-    if (!account || chainId == null) {
-      setPendingState(null);
-      setPendingLoaded(true);
-      return;
-    }
-
-    const kindList = kindsKey.split(',') as BondingTxActionKind[];
-    const loaded = loadPendingBondTransaction(account, chainId, kindList);
-    setPendingState(loaded);
-    setPendingLoaded(true);
-  }, [account, chainId, kindsKey]);
-
-  /** Persist at broadcast time (hash + action + submitting identity). */
-  const rememberPending = useCallback((record: PendingBondTransaction) => {
-    savePendingBondTransaction(record);
-    setPendingState(record);
-  }, []);
-
-  /** Terminal success/revert — drop storage for that record's identity. */
-  const clearPendingRecord = useCallback(
-    (record: PendingBondTransaction | null = pendingRef.current) => {
-      if (record) {
-        clearPendingBondTransaction(record.account, record.chainId);
-      }
-      setPendingState(null);
-    },
-    [],
-  );
-
-  /**
-   * Drop React state only (keep storage). Used when the connected wallet no
-   * longer matches the submitting account so we do not show foreign success.
-   */
-  const discardLocalPending = useCallback(() => {
-    setPendingState(null);
-  }, []);
-
-  return {
-    pending,
-    pendingLoaded,
-    rememberPending,
-    clearPendingRecord,
-    discardLocalPending,
-  };
+  return usePendingTransaction({
+    account,
+    chainId,
+    kinds,
+    storage: bondPendingStorageAdapter,
+  });
 }
