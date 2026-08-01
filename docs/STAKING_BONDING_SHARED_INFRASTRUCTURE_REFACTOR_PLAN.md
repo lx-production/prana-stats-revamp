@@ -93,7 +93,7 @@ API/query helpers **không** được thêm: decision gate mục 10 đã kết l
 wrapper feature-local. Không tạo `useWalletAccountQuery` /
 `useFeatureConfigQuery`.
 
-## 5. Bước 0 — Baseline và characterization tests
+## 5. Bước 0 — Baseline và characterization tests ✅
 
 ### Công việc
 
@@ -116,8 +116,8 @@ wrapper feature-local. Không tạo `useWalletAccountQuery` /
 
 ### Điều kiện hoàn thành
 
-- Có baseline xanh hoặc danh sách lỗi có sẵn được ghi rõ.
-- Mỗi hành vi sẽ di chuyển đã có ít nhất một test bảo vệ.
+- ✅ Có baseline xanh hoặc danh sách lỗi có sẵn được ghi rõ.
+- ✅ Mỗi hành vi sẽ di chuyển đã có ít nhất một test bảo vệ.
 
 ## 6. Điểm 1 — Dùng chung `accountFromSuccessfulRefetch` ✅
 
@@ -586,12 +586,12 @@ vào shared hook.
 
 Thực hiện theo các PR hoặc commit độc lập sau:
 
-1. Baseline và characterization tests.
-2. Generic account refetch.
-3. Client transaction confirmation.
-4. Confirmation + account sync.
-5. Pending storage factory.
-6. Generic pending transaction hook.
+1. Baseline và characterization tests. — **đã xong**
+2. Generic account refetch. — **đã xong**
+3. Client transaction confirmation. — **đã xong**
+4. Confirmation + account sync. — **đã xong**
+5. Pending storage factory. — **đã xong**
+6. Generic pending transaction hook. — **đã xong**
 7. Generic debounced quote hook. — **đã xong**
 8. Server confirmation lookup. — **đã xong**
 9. Decision gate cho API/query wrappers. — **đã xong: không refactor**
