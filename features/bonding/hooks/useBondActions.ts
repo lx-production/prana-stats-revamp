@@ -1,20 +1,16 @@
 import { polygon } from 'wagmi/chains';
-import { usePublicClient } from 'wagmi';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getBondingCopy } from '../bonding.copy.ts';
-import { bondClaimKey } from '../utils/bondClaimTarget.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { confirmBondReceipt } from '../utils/bondTransactionFlow.ts';
-import { isBondDeploymentPaused } from '../utils/bondClaimTarget.ts';
-import { resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
-import { submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
-import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
-import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { confirmBondReceipt, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
+import { bondClaimKey, isBondDeploymentPaused, resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
 
 import {
   formatBondingError,
@@ -60,7 +56,6 @@ export function useBondActions({
   const { locale } = useSiteLanguage();
   const copy = getBondingCopy(locale);
   const wallet = useInjectedWallet();
-  const publicClient = usePublicClient({ chainId: POLYGON_CHAIN_ID });
 
   const [status, setStatus] = useState<BondTransactionStatus>('idle');
   const [action, setAction] = useState<BondClaimActionTarget | null>(null);
@@ -245,13 +240,6 @@ export function useBondActions({
         return;
       }
 
-      if (!publicClient) {
-        logBondingFailure('claim: rpc_unavailable (no publicClient)');
-        setError(getBondingErrorMessage('rpc_unavailable', locale));
-        setStatus('error');
-        return;
-      }
-
       // Capture identity before wallet prompts — may change mid-flight.
       const submittingAccount = wallet.address as Address;
 
@@ -280,41 +268,19 @@ export function useBondActions({
 
         let broadcastPending: PendingBondTransaction | null = null;
 
+        // Claim skips simulateContract — same pattern as staking claim/unstake.
         const outcome = await submitBondWriteFlow({
           refetchAccount,
           validateFreshAccount: () => true,
-          simulate: async () => {
-            // viem returns { result, request } — only `request` is writeContract-ready.
-            const { request } = await publicClient.simulateContract({
+          write: async () =>
+            walletClient.writeContract({
+              chain: polygon,
               account: submittingAccount,
               address: claimTarget.address,
               abi: claimTarget.abi,
               functionName: 'claimBond',
               args: [bondId],
-              chain: polygon,
-            } as never);
-            return {
-              address: claimTarget.address,
-              functionName: 'claimBond',
-              args: [bondId] as const,
-              account: submittingAccount,
-              request,
-            };
-          },
-          write: async (simulated) => {
-            const request = (simulated as { request?: unknown }).request;
-            if (request) {
-              return walletClient.writeContract(request as never);
-            }
-            return walletClient.writeContract({
-              chain: polygon,
-              account: simulated.account,
-              address: simulated.address,
-              abi: claimTarget.abi,
-              functionName: 'claimBond',
-              args: simulated.args,
-            } as never);
-          },
+            } as never),
           waitForReceipt: async (hash) => {
             broadcastPending = buildPendingBondTransaction({
               account: submittingAccount,
@@ -362,14 +328,6 @@ export function useBondActions({
           setAction(null);
           setStatus('error');
           setError(getBondingErrorMessage('generic', locale));
-          return;
-        }
-        if (outcome.kind === 'simulate_failed') {
-          logBondingFailure('claim: simulate_failed', outcome.error);
-          setAction(null);
-          clearPendingRecord(broadcastPending);
-          setStatus('error');
-          setError(getBondingErrorMessage('simulate_failed', locale));
           return;
         }
         if (outcome.kind === 'rejected_before_broadcast') {
@@ -431,7 +389,6 @@ export function useBondActions({
       hasPendingHash,
       locale,
       pendingLoaded,
-      publicClient,
       refetchAccount,
       rememberPending,
       status,

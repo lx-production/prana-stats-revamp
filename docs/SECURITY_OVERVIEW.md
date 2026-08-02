@@ -66,7 +66,7 @@ Client IP for rate limiting (`server/helpers/rateLimitHelpers.ts`): `X-Forwarded
 
 ### 2.4 Shared POST request admission checks
 
-Swap, Staking, and Bonding POST routes reuse `rejectInvalidSwapApiRequest()`:
+Swap, Staking, and Bonding POST routes reuse `rejectInvalidWeb3PostRequest()`:
 
 1. Requires `Content-Type` matching JSON (`application/json` or `*+json`).
 2. If `Origin` is present, requires it to match the request `Host` / `X-Forwarded-Host` candidates (with a localhost-to-localhost exception for local dev). Missing `Origin` is allowed (non-browser clients). Mismatch → `403 forbidden_origin`.
@@ -253,7 +253,7 @@ Each quote reads pause state, term/rate, impacted reserves, committed payout, tr
 Before approval or create, the client successfully refetches config/account data and obtains a fresh quote with no blocking issues. It checks the response echo against the form's mode, term, and exact input. Create calldata uses the form snapshot's input, not an amount copied from the quote response.
 
 - Approval is for the exact input amount when current allowance is insufficient; a larger existing allowance is not lowered.
-- Approval, create, and claim calls are simulated before broadcast.
+- Only **create** calls are explicitly simulated (`simulateContract`) before broadcast. Approve and claim rely on wallet/client gas estimation and the contract revert, matching Staking claim/unstake.
 - Approve and create require separate user clicks and are never automatically chained.
 - Form writes and claim writes lock each other while a transaction is in flight.
 
@@ -272,7 +272,7 @@ Fresh in-session browser receipts may be trusted without server validation. The 
 The deployed Buy/Sell create functions accept exact input and term but no user-signed minimum payout or deadline. The contract recalculates payout at execution from current state. Therefore:
 
 - the user always spends the approved exact input, but can receive less PRANA/WBTC than the UI quote;
-- fresh quote, response-echo validation, and simulation reduce stale-state mistakes but do **not** provide an on-chain payout guarantee;
+- fresh quote, response-echo validation, and create-path simulation reduce stale-state mistakes but do **not** provide an on-chain payout guarantee;
 - the wallet prompt cannot display or enforce the expected payout because it is not part of calldata;
 - pricing uses current Uniswap V3 pool state rather than a TWAP, and manager-controlled or transaction-driven impacted-reserve changes can also move the result.
 

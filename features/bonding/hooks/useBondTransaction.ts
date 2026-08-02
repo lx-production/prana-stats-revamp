@@ -352,44 +352,22 @@ export function useBondTransaction({
       const walletClient = await ensurePolygonWalletClient();
       let broadcastPending: PendingBondTransaction | null = null;
 
+      // Approve skips simulateContract — wallet gas estimation is enough.
       const outcome = await submitBondWriteFlow({
         refetchAccount,
         validateFreshAccount: (freshAccount) => {
           const nextAllowance = currentAllowanceRaw(freshAccount, side);
           return needsExactInputApproval(nextAllowance, amountRaw);
         },
-        simulate: async () => {
-          // viem returns { result, request } — only `request` is writeContract-ready.
-          const { request } = await publicClient!.simulateContract({
+        write: async () =>
+          walletClient.writeContract({
+            chain: polygon,
             account: submittingAccount,
             address: tokenAddress,
             abi: erc20Abi,
             functionName: 'approve',
             args: [spender, approveAmount],
-            chain: polygon,
-          });
-          return {
-            address: tokenAddress,
-            functionName: 'approve',
-            args: [spender, approveAmount] as const,
-            account: submittingAccount,
-            request,
-          };
-        },
-        write: async (simulated) => {
-          const request = (simulated as { request?: unknown }).request;
-          if (request) {
-            return walletClient.writeContract(request as never);
-          }
-          return walletClient.writeContract({
-            chain: polygon,
-            account: simulated.account,
-            address: simulated.address,
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: simulated.args as [Address, bigint],
-          } as never);
-        },
+          } as never),
         waitForReceipt: async (hash) => {
           broadcastPending = buildPendingBondTransaction({
             account: submittingAccount,
@@ -435,13 +413,6 @@ export function useBondTransaction({
         console.info('[bonding] approve: validation_failed (allowance ok)');
         clearPendingRecord(broadcastPending);
         setStatus('idle');
-        return;
-      }
-      if (outcome.kind === 'simulate_failed') {
-        logBondingFailure('approve: simulate_failed', outcome.error);
-        clearPendingRecord(broadcastPending);
-        setStatus('error');
-        setError(getBondingErrorMessage('simulate_failed', locale));
         return;
       }
       if (outcome.kind === 'rejected_before_broadcast') {
@@ -686,18 +657,17 @@ export function useBondTransaction({
           };
         },
         write: async (simulated) => {
-          // Once we have a hash path, never broadcast twice — write runs once.
-          const request = (simulated as { request?: unknown }).request;
-          if (request) {
-            return walletClient.writeContract(request as never);
+          // Create always simulates first — prefer the writeContract-ready request.
+          if (simulated?.request) {
+            return walletClient.writeContract(simulated.request as never);
           }
           return walletClient.writeContract({
             chain: polygon,
-            account: simulated.account,
-            address: simulated.address,
+            account: submittingAccount,
+            address: bondAddress,
             abi: bondAbi,
-            functionName: simulated.functionName,
-            args: simulated.args,
+            functionName,
+            args,
           } as never);
         },
         waitForReceipt: async (hash) => {

@@ -82,7 +82,7 @@ Guides `/guide/bonding/` and `/guide/bonding-contracts/` live in the homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, wallet connect, amount parse, CTA phases, `simulateContract` + `writeContract`, wait for receipt on wallet RPC |
+| **Browser** | UI, wallet connect, amount parse, CTA phases, `writeContract` (create also `simulateContract`), wait for receipt on wallet RPC |
 | **Node backend** | Config/account/quote reads (same `blockTag`), quote math mirrored from Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: only the wallet moves funds |
 | **Polygon** | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve` |
@@ -93,7 +93,7 @@ The browser does **not** build create/claim calldata from addresses returned by 
 
 The Bonding write path goes through at least three independent layers:
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` and chain reads from the browser when the app's HTTP transport is needed.
+1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — create-path `simulateContract` and chain reads from the browser when the app's HTTP transport is needed.
 2. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`).
 3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern: switch Polygon → simulate → write → wallet receipt / server fallback → refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
+Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
 
 Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`).
 
@@ -200,7 +200,7 @@ Before approve and before create:
 2. Correct wallet, Polygon, balance, minimum, term, paused, treasury.
 3. Validate quote echo (`bondQuoteEcho.ts`): Buy matches `mode` + `termId` + `wbtcAmountRaw`; Sell matches `pranaAmountRaw`. Mismatch → stop with `quote_issues`.
 4. Calldata inputs come from the form snapshot — **not** the input leg from the quote response.
-5. `simulateContract`, then pass only `{ request }` into `writeContract`.
+5. **Create only:** `simulateContract`, then pass only `{ request }` into `writeContract`. Approve and claim skip explicit simulation and call `writeContract` directly.
 
 Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance when unnecessary.
 
@@ -345,7 +345,7 @@ Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ## Design constraints (not bugs to “fix” in current scope)
 
-1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + simulate are UX guards, not on-chain guarantees.
+1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + create-path simulate are UX guards, not on-chain guarantees.
 2. **Fresh quote before create has no separate in-app confirm** — the form already shows amount/term/quote; Create Bond fresh-quotes then opens the wallet. Echo check still requires `mode` / `termId` / exact input to match the form snapshot.
 3. **Account API scans `getUserActiveBonds` on all four deployments** — cost grows with total bond history; rate limits reduce load but are not a long-term indexer substitute.
 4. Bonding confirmation does **not** reuse HMAC / `/api/swap/verify-transaction` — contract/function mapping is fixed; the endpoint is UX backup only and does not write verified analytics.
@@ -357,7 +357,7 @@ Re-evaluate `minOut` / second consent only when volume, concurrency, MEV exposur
 ## Controls already in place (summary)
 
 - Write targets from internal mapping; confirmation checks sender, fixed target, full calldata.
-- Exact approval; simulate before broadcast; no write retry after a hash exists.
+- Exact approval; create simulates before broadcast (approve/claim do not); no write retry after a hash exists.
 - Quote/account share `blockTag`; bigint = decimal string; `uint256` bounds at parse.
 - POST: origin, JSON, 2 KB body, validate-before-rate-limit, redact RPC secrets, `private, no-store`.
 - CSP / frame denial / `nosniff`; wallet errors sanitized VI/EN (`bondingErrors.ts`).

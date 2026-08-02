@@ -67,7 +67,7 @@ IP client cho rate limiting (`server/helpers/rateLimitHelpers.ts`): chỉ tin `X
 
 ### 2.4 Kiểm tra admission chung cho POST
 
-Các route POST của Swap, Staking và Bonding tái dùng `rejectInvalidSwapApiRequest()`:
+Các route POST của Swap, Staking và Bonding tái dùng `rejectInvalidWeb3PostRequest()`:
 
 1. Yêu cầu `Content-Type` khớp JSON (`application/json` hoặc `*+json`).
 2. Nếu có header `Origin`, yêu cầu nó khớp với các ứng viên `Host` / `X-Forwarded-Host` của request (có ngoại lệ localhost-to-localhost cho local dev). Thiếu `Origin` thì được phép (client không phải browser). Không khớp → `403 forbidden_origin`.
@@ -254,7 +254,7 @@ Mỗi quote đọc pause, term/rate, impacted reserve, committed payout, số d�
 Trước approval hoặc create, client refetch thành công config/account và lấy quote mới không có issue chặn. Nó kiểm tra echo response với mode, term và exact input của form. Create calldata dùng input từ form snapshot, không copy amount từ quote response.
 
 - Approval đúng exact input khi allowance hiện tại chưa đủ; allowance lớn hơn sẵn có thì không bị hạ xuống.
-- Approval, create và claim được simulate trước khi broadcast.
+- Chỉ **create** được simulate tường minh (`simulateContract`) trước broadcast. Approve và claim dựa vào ước lượng gas của wallet/client và revert của contract, giống claim/unstake của Staking.
 - Approve và create cần click riêng của user, không bao giờ tự chain liên tiếp.
 - Write của form và write của claim khóa lẫn nhau khi đang có transaction in-flight.
 
@@ -273,7 +273,7 @@ Receipt browser mới trong session có thể tin mà không cần validate serv
 Hàm create Buy/Sell đã deploy nhận exact input và term nhưng không có minimum payout hay deadline do user ký. Contract tính lại payout lúc thực thi từ state hiện tại. Vì vậy:
 
 - user luôn chi exact input đã approve, nhưng có thể nhận ít PRANA/WBTC hơn quote UI;
-- quote mới, validate response-echo và simulation giảm lỗi state cũ nhưng **không** cung cấp bảo đảm payout on-chain;
+- quote mới, validate response-echo và simulation ở create path giảm lỗi state cũ nhưng **không** cung cấp bảo đảm payout on-chain;
 - wallet prompt không thể hiện hay enforce payout kỳ vọng vì nó không nằm trong calldata;
 - pricing dùng state pool Uniswap V3 hiện tại chứ không phải TWAP, và thay đổi impacted-reserve do manager hoặc transaction cũng có thể đẩy kết quả.
 

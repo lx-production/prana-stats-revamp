@@ -74,10 +74,16 @@ export type SubmitBondWriteDeps = {
   refetchAccount: () => Promise<unknown>;
   /** Return false when form/account no longer matches the intended write. */
   validateFreshAccount: (account: BondingAccount) => boolean;
-  /** Simulate first — must not call write when this throws. */
-  simulate: () => Promise<SimulatedBondWrite>;
-  /** Broadcast the simulated request. Returns the tx hash. */
-  write: (simulated: SimulatedBondWrite) => Promise<Hex>;
+  /**
+   * Optional create-path preflight (`simulateContract`).
+   * Approve/claim omit this and rely on wallet gas estimation + contract revert.
+   */
+  simulate?: () => Promise<SimulatedBondWrite>;
+  /**
+   * Broadcast. Receives the simulate result when simulate ran; otherwise
+   * undefined (caller builds writeContract args itself).
+   */
+  write: (simulated?: SimulatedBondWrite) => Promise<Hex>;
   waitForReceipt: (hash: Hex) => Promise<BondWaitReceiptResult>;
   confirmOnServer: (
     hash: Hex,
@@ -104,7 +110,7 @@ export type SubmitBondWriteOutcome =
     };
 
 /**
- * Fresh-account gate → simulate → write → confirm receipt.
+ * Fresh-account gate → optional simulate → write → confirm receipt.
  * Separates pre-broadcast failures (retry write) from post-broadcast
  * confirmation failures (retry wait only, never a second write).
  */
@@ -121,11 +127,14 @@ export async function submitBondWriteFlow(
     return { kind: 'validation_failed' };
   }
 
-  let simulated: SimulatedBondWrite;
-  try {
-    simulated = await deps.simulate();
-  } catch (error) {
-    return { kind: 'simulate_failed', error };
+  // Create path only — approve/claim skip explicit simulation.
+  let simulated: SimulatedBondWrite | undefined;
+  if (deps.simulate) {
+    try {
+      simulated = await deps.simulate();
+    } catch (error) {
+      return { kind: 'simulate_failed', error };
+    }
   }
 
   let hash: Hex;

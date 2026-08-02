@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { readJsonBody } from '../helpers/requestHelpers.ts';
 import {
-  rejectInvalidSwapApiRequest,
+  rejectInvalidWeb3PostRequest,
   sanitizeSwapErrorMessage,
 } from '../helpers/apiRoutesHelpers.ts';
 
@@ -57,10 +57,10 @@ function parsedBody(res: MockResponse): { error?: string; message?: string } {
   return JSON.parse(res.body) as { error?: string; message?: string };
 }
 
-test('rejectInvalidSwapApiRequest rejects non-JSON content types with 415', () => {
+test('rejectInvalidWeb3PostRequest rejects non-JSON content types with 415', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({ 'content-type': 'text/plain', host: 'localhost:4174' }),
     res,
   );
@@ -73,10 +73,10 @@ test('rejectInvalidSwapApiRequest rejects non-JSON content types with 415', () =
   });
 });
 
-test('rejectInvalidSwapApiRequest accepts application/json with charset', () => {
+test('rejectInvalidWeb3PostRequest accepts application/json with charset', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({
       host: 'localhost:4174',
       'content-type': 'application/json; charset=utf-8',
@@ -88,10 +88,10 @@ test('rejectInvalidSwapApiRequest accepts application/json with charset', () => 
   assert.equal(res.body, '');
 });
 
-test('rejectInvalidSwapApiRequest rejects cross-origin browser requests with 403', () => {
+test('rejectInvalidWeb3PostRequest rejects cross-origin browser requests with 403', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({
       host: 'example.test',
       origin: 'https://evil.test',
@@ -108,10 +108,10 @@ test('rejectInvalidSwapApiRequest rejects cross-origin browser requests with 403
   });
 });
 
-test('rejectInvalidSwapApiRequest allows same-origin browser requests', () => {
+test('rejectInvalidWeb3PostRequest allows same-origin browser requests', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({
       host: 'example.test',
       origin: 'https://example.test',
@@ -123,10 +123,10 @@ test('rejectInvalidSwapApiRequest allows same-origin browser requests', () => {
   assert.equal(rejected, false);
 });
 
-test('rejectInvalidSwapApiRequest allows non-browser requests with no Origin header', () => {
+test('rejectInvalidWeb3PostRequest allows non-browser requests with no Origin header', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({
       host: 'example.test',
       'content-type': 'application/json',
@@ -137,10 +137,10 @@ test('rejectInvalidSwapApiRequest allows non-browser requests with no Origin hea
   assert.equal(rejected, false);
 });
 
-test('rejectInvalidSwapApiRequest allows local Vite origin against local API host', () => {
+test('rejectInvalidWeb3PostRequest allows local Vite origin against local API host', () => {
   const res = mockResponse();
 
-  const rejected = rejectInvalidSwapApiRequest(
+  const rejected = rejectInvalidWeb3PostRequest(
     mockApiRequest({
       host: '127.0.0.1:4174',
       origin: 'http://localhost:5173',

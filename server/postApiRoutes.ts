@@ -9,7 +9,7 @@ import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerificati
 import { confirmBondingTransaction } from './loaders/bondingTransactionConfirmation.ts';
 import { confirmStakingTransaction } from './loaders/stakingTransactionConfirmation.ts';
 import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
-import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './helpers/apiRoutesHelpers.ts';
+import { rejectInvalidWeb3PostRequest, sanitizeSwapErrorMessage } from './helpers/apiRoutesHelpers.ts';
 import { StakingConfirmationMismatchError, parseStakingConfirmationRequest } from './utils/stakingConfirmationUtils.ts';
 import { StakingApiValidationError, parseStakingQuoteRequest, sanitizeStakingErrorMessage } from './utils/stakingQuoteUtils.ts';
 import { BondingApiValidationError, BondingConfirmationMismatchError, parseBondingConfirmationRequest, parseBondingQuoteRequest } from './utils/bondingReadUtils.ts';
@@ -91,7 +91,7 @@ export function createPostApiRouteHandler(
 
       // Shared admission → validate → parse → then scarce quote RPC budget.
       if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, STAKING_BODY_MAX_BYTES);
@@ -145,7 +145,7 @@ export function createPostApiRouteHandler(
 
       // Shared admission → validate → parse → then confirmation RPC budget.
       if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, STAKING_BODY_MAX_BYTES);
@@ -205,7 +205,7 @@ export function createPostApiRouteHandler(
 
       // Shared admission → validate → parse → then scarce quote RPC budget.
       if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, SWAP_QUOTE_BODY_MAX_BYTES);
@@ -251,7 +251,7 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, SWAP_LOG_BODY_MAX_BYTES);
@@ -288,7 +288,7 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, SWAP_VERIFY_BODY_MAX_BYTES);
@@ -318,7 +318,7 @@ export function createPostApiRouteHandler(
 
       // Shared admission → Content-Type / origin → body/shape → then RPC quote budget.
       if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, BONDING_BODY_MAX_BYTES);
@@ -373,7 +373,7 @@ export function createPostApiRouteHandler(
 
       // Shared admission → validate → parse → then confirmation RPC budget.
       if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
-      if (rejectInvalidSwapApiRequest(req, res)) return true;
+      if (rejectInvalidWeb3PostRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, BONDING_BODY_MAX_BYTES);

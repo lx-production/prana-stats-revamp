@@ -100,9 +100,6 @@ test('submitBondWriteFlow does not write when fresh account refetch fails', asyn
   const outcome = await submitBondWriteFlow({
     refetchAccount: async () => errorRefetch(),
     validateFreshAccount: () => true,
-    simulate: async () => {
-      throw new Error('should not simulate');
-    },
     write: async () => {
       wrote = true;
       return HASH;
@@ -133,16 +130,28 @@ test('submitBondWriteFlow does not write when simulate fails', async () => {
   assert.equal(wrote, false);
 });
 
+test('submitBondWriteFlow can skip simulate for approve/claim-style writes', async () => {
+  let wrote = false;
+  const outcome = await submitBondWriteFlow({
+    refetchAccount: async () => successRefetch(),
+    validateFreshAccount: () => true,
+    write: async (prepared) => {
+      // Approve/claim omit simulate — write receives no prepared request.
+      assert.equal(prepared, undefined);
+      wrote = true;
+      return HASH;
+    },
+    waitForReceipt: async () => ({ status: 'success' }),
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
+  });
+  assert.equal(wrote, true);
+  assert.equal(outcome.kind, 'confirmed');
+});
+
 test('submitBondWriteFlow keeps pre-broadcast rejection without a hash', async () => {
   const outcome = await submitBondWriteFlow({
     refetchAccount: async () => successRefetch(),
     validateFreshAccount: () => true,
-    simulate: async () => ({
-      address: sampleAccount.address,
-      functionName: 'approve',
-      args: [],
-      account: sampleAccount.address,
-    }),
     write: async () => {
       throw new Error('User rejected the request');
     },
@@ -203,28 +212,16 @@ test('submitBondWriteFlow does not call write twice after hash is known', async 
   assert.equal(serverCalls, 1);
 });
 
-test('claim write flow uses claimBond and resume never rewrites', async () => {
+test('claim write flow skips simulate and resume never rewrites', async () => {
   let writeCount = 0;
-  let simulatedFn = '';
-  let simulatedArgs: readonly unknown[] = [];
+  let claimArgs: readonly unknown[] = [];
 
   const claim = await submitBondWriteFlow({
     refetchAccount: async () => successRefetch(),
     validateFreshAccount: () => true,
-    simulate: async () => {
-      simulatedFn = 'claimBond';
-      simulatedArgs = [42n];
-      return {
-        address: sampleAccount.address,
-        functionName: 'claimBond',
-        args: [42n],
-        account: sampleAccount.address,
-      };
-    },
-    write: async (simulated) => {
+    write: async () => {
       writeCount += 1;
-      assert.equal(simulated.functionName, 'claimBond');
-      assert.deepEqual(simulated.args, [42n]);
+      claimArgs = [42n];
       return HASH;
     },
     waitForReceipt: async () => {
@@ -236,8 +233,7 @@ test('claim write flow uses claimBond and resume never rewrites', async () => {
   });
 
   assert.equal(claim.kind, 'confirmation_unavailable');
-  assert.equal(simulatedFn, 'claimBond');
-  assert.deepEqual(simulatedArgs, [42n]);
+  assert.deepEqual(claimArgs, [42n]);
   assert.equal(writeCount, 1);
 
   // Resume confirmation only — never a second claim write.

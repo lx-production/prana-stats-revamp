@@ -82,7 +82,7 @@ Guides `/guide/bonding/` và `/guide/bonding-contracts/` nằm trong homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, `simulateContract` + `writeContract`, chờ receipt trên wallet RPC |
+| **Browser** | UI, connect ví, parse amount, phase CTA, `writeContract` (create còn `simulateContract`), chờ receipt trên wallet RPC |
 | **Node backend** | Config/account/quote reads (cùng `blockTag`), quote math mirror Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên Buy/Sell Bond V1/V2 + ERC-20 `approve` |
@@ -93,7 +93,7 @@ Browser **không** xây create/claim calldata từ địa chỉ do API trả. In
 
 Bonding write-path đi qua tối thiểu ba lớp độc lập:
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` và đọc chain từ browser khi cần HTTP transport của app.
+1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` ở create path và đọc chain từ browser khi cần HTTP transport của app.
 2. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim; sau broadcast, chờ receipt trên **cùng** provider đã gửi tx (`waitForPolygonWalletReceipt`).
 3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern: switch Polygon → simulate → write → wallet receipt / server fallback → refetch. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
+Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → wallet receipt / server fallback → refetch. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
 
 Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`).
 
@@ -200,7 +200,7 @@ Trước approve và trước create:
 2. Đúng wallet, Polygon, balance, minimum, term, paused, treasury.
 3. Validate quote echo (`bondQuoteEcho.ts`): Buy khớp `mode` + `termId` + `wbtcAmountRaw`; Sell khớp `pranaAmountRaw`. Mismatch → dừng với `quote_issues`.
 4. Calldata input từ form snapshot — **không** lấy input leg từ quote response.
-5. `simulateContract` rồi chỉ truyền `{ request }` vào `writeContract`.
+5. **Chỉ create:** `simulateContract` rồi chỉ truyền `{ request }` vào `writeContract`. Approve và claim bỏ simulate tường minh và gọi `writeContract` trực tiếp.
 
 Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn khi không cần.
 
@@ -345,7 +345,7 @@ Deployments (Polygon): xem `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ## Design constraints (không phải bug cần “fix” trong scope hiện tại)
 
-1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate là guard UX, không phải bảo đảm on-chain.
+1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate ở create path là guard UX, không phải bảo đảm on-chain.
 2. **Fresh quote trước create không bắt confirm in-app riêng** — form đã hiện amount/term/quote; CTA Create Bond fresh-quote rồi mở ví. Echo check vẫn bắt `mode` / `termId` / exact input khớp form snapshot.
 3. **Account API scan `getUserActiveBonds` trên cả bốn deployment** — chi phí tăng theo tổng lịch sử bond; rate limit giảm tải nhưng không thay indexer dài hạn.
 4. Bonding confirmation **không** tái dùng HMAC / `/api/swap/verify-transaction` — mapping contract/function cố định; endpoint chỉ dự phòng UX, không ghi verified analytics.
@@ -357,7 +357,7 @@ Re-evaluate `minOut` / second consent chỉ khi volume, concurrency, MEV exposur
 ## Controls đã có (tóm tắt)
 
 - Write target từ mapping nội bộ; confirmation kiểm tra sender, fixed target, full calldata.
-- Exact approval; simulate trước broadcast; không retry write sau khi đã có hash.
+- Exact approval; create simulate trước broadcast (approve/claim thì không); không retry write sau khi đã có hash.
 - Quote/account cùng `blockTag`; bigint = decimal string; `uint256` bounds ở parse.
 - POST: origin, JSON, 2 KB body, validate-before-rate-limit, redact RPC secrets, `private, no-store`.
 - CSP / frame denial / `nosniff`; lỗi ví được sanitize VI/EN (`bondingErrors.ts`).
