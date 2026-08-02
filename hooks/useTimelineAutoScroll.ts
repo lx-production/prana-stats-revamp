@@ -10,10 +10,12 @@ export const useTimelineAutoScroll = <T extends HTMLElement>(
       return;
     }
 
+    // Jump instantly to the latest event. Smooth scroll across a long row
+    // made the section feel empty for a couple of seconds on first paint.
     const frame = requestAnimationFrame(() => {
       container.scrollTo({
         left: container.scrollWidth,
-        behavior: "smooth",
+        behavior: "auto",
       });
     });
 

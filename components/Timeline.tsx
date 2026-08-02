@@ -6,26 +6,19 @@ import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useTimelineEvents } from "../hooks/useTimelineEvents";
 import { useTimelineAutoScroll } from "../hooks/useTimelineAutoScroll";
 
+// Fade the whole row in once — no stagger. Stagger + opacity:0 made the
+// rightmost (latest) cards stay invisible for ~1–2s while auto-scroll moved there.
 const listVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
   hidden: {
     opacity: 0,
-    y: 24,
+    y: 12,
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.45,
+      duration: 0.35,
+      ease: "easeOut" as const,
     },
   },
 };
@@ -69,7 +62,8 @@ const Timeline: React.FC = () => {
             variants={listVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            // Expand the observe area so the fade starts just before the section hits the viewport
+            viewport={{ once: true, amount: 0.1, margin: "0px 0px 80px 0px" }}
           >
             {events.map((event, index) => {
               const isLatest = index === events.length - 1;
@@ -77,7 +71,6 @@ const Timeline: React.FC = () => {
                 <motion.div
                   key={event.id}
                   className="relative flex-shrink-0 w-[320px] sm:w-[360px]"
-                  variants={itemVariants}
                   whileHover={{ y: -4 }}
                 >
                   <div className="group relative rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300 h-full">
