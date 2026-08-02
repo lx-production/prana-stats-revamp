@@ -12,6 +12,10 @@ type RateLimit = {
   maxRequests: number;
 };
 
+// Cheap shared admission for all Web3 POSTs — before body parse / expensive RPC budgets.
+// Generous so real quote/confirm traffic is not starved; edge nginx still caps flood volume.
+const WEB3_POST_ADMISSION_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 300 };
+
 // Per-IP limits for swap API endpoints (all windows are 60 seconds).
 const SWAP_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 5 };
 const SWAP_GLOBAL_QUOTE_RATE_LIMIT: RateLimit = { windowMs: 60_000, maxRequests: 30 };
@@ -154,6 +158,7 @@ export function createSwapRateLimiters() {
   const trustedProxyHopCount = createTrustedProxyHopCount();
 
   // const means binding never changes (Maps are updated in place)
+  const web3PostAdmissionRateLimits = new Map<string, RateLimitBucket>();
   const swapQuoteRateLimits = new Map<string, RateLimitBucket>();
   const swapLogRateLimits = new Map<string, RateLimitBucket>();
   const swapVerifyRateLimits = new Map<string, RateLimitBucket>();
@@ -174,6 +179,16 @@ export function createSwapRateLimiters() {
   // let is used because global* buckets get reassigned, while the Maps only get mutated
 
   return {
+    // Shared cheap admission for Swap/Staking/Bonding POSTs (per-IP only, no global).
+    isWeb3PostAdmissionRateLimited(req: IncomingMessage): boolean {
+      return isRateLimited(
+        req,
+        web3PostAdmissionRateLimits,
+        WEB3_POST_ADMISSION_RATE_LIMIT,
+        trustedProxyHopCount,
+      );
+    },
+
     // Quote requests hit both a per-IP cap and a global cap across all clients.
     isSwapQuoteRateLimited(req: IncomingMessage): boolean {
       if (isRateLimited(req, swapQuoteRateLimits, SWAP_QUOTE_RATE_LIMIT, trustedProxyHopCount)) {
@@ -326,6 +341,11 @@ export function createSwapRateLimiters() {
     startCleanupTimer(): void {
       const rateLimitCleanupTimer = setInterval(() => {
         const now = Date.now();
+        sweepRateLimitBuckets(
+          web3PostAdmissionRateLimits,
+          now,
+          WEB3_POST_ADMISSION_RATE_LIMIT.windowMs,
+        );
         sweepRateLimitBuckets(swapQuoteRateLimits, now, SWAP_QUOTE_RATE_LIMIT.windowMs);
 
         if (

@@ -108,6 +108,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `hooks/useDebouncedAbortableQuote.ts` | Không | Không | Thin `useStakingQuote` | Thin `useBondingQuote` | Debounce / AbortController / race guard / stale tick dùng chung; request key, fetcher, và error fallback vẫn thuộc feature |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | Không | Server loaders | Server loaders | Primitive chuyển đổi RPC, sleep, và nhận diện rate limit; tên file cũ nhưng consumer hiện đã xuyên Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | Không | Không | Quote/confirmation server | Quote/confirmation server | Parse decimal `uint256` chuẩn và chặn input quá giới hạn |
+| `server/utils/swapQuoteRequest.ts` | Không | Route POST quote Swap | Không | Không | Parse shape/allowlist trước khi tiêu budget RPC quote Swap |
 | `server/utils/transactionConfirmationLookup.ts` | Không | Không | Thin stake loader | Thin bond loader | Confirmation RPC dùng chung (sender/target/calldata); `buildExpectedCall` + mismatch error vẫn thuộc feature; Swap giữ đường verify riêng |
 
 ### Quyết định cố ý không share
@@ -164,12 +165,12 @@ Staking giữ domain behavior riêng:
   Staking.
 - `stakingFundCheck.ts` dựng kết quả quote thuần theo quy tắc quỹ Interest; server
   loader gọi lại helper feature này thay vì lặp math.
-- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`, và
-  `stakeTransactionFlow.ts` mô hình hóa validation, submit/CTA orchestration,
-  và thin `confirmStakeReceipt` trên shared `confirmReceiptWithAccountSync`.
-  Gate account refetch dùng `features/web3/accountRefetch.ts`.
-  `stakeTransactionConfirmation.ts` là thin adapter trên
-  `features/web3/transactionConfirmation.ts`.
+- `stakingErrors.ts`, `permitUtils.ts`, `permitConfigGuard.ts`, `stakeCtaPhase.ts`, và
+  `stakeTransactionFlow.ts` mô hình hóa validation, pin/assert permit, submit/CTA
+  orchestration, và thin `confirmStakeReceipt` trên shared
+  `confirmReceiptWithAccountSync`. Gate account refetch dùng
+  `features/web3/accountRefetch.ts`. `stakeTransactionConfirmation.ts` là thin
+  adapter trên `features/web3/transactionConfirmation.ts`.
 - `stakePendingTransactionStorage.ts` và `usePendingStakeTransaction.ts` là
   thin wrapper trên pending storage/hook dùng chung; giữ prefix staking và
   parser permit/stakeId để chỉ resume confirmation sau reload, không gửi lại

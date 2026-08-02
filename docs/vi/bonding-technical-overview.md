@@ -122,7 +122,7 @@ Constants: `BOND_*`, `GUIDE_BONDING_*`, `GUIDE_BONDING_CONTRACTS_*`, `isBondPath
 | `POST /api/bonding/quote` | `private, no-store` | Union `buy_exact_wbtc` \| `sell_exact_prana` |
 | `POST /api/bonding/confirm-transaction` | `private, no-store` | Fallback UX; không ghi trusted analytics |
 
-Admission POST: Content-Type / origin → body ≤ 2 KB / shape parse → rồi mới rate-limit → RPC. Invalid request không tiêu global quote/confirmation budget.
+Admission POST: shared admission Web3 POST → Content-Type / origin → body ≤ 2 KB / shape parse → rồi mới rate-limit → RPC. Invalid request không tiêu global quote/confirmation budget.
 
 Raw amounts: canonical decimal (`0` hoặc `[1-9]\d*`), `≤ MAX_UINT256`. Quote/create/claim require `> 0`; approve `0` (revoke) được hỗ trợ.
 

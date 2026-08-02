@@ -110,6 +110,7 @@ generic helper.
 | `hooks/useDebouncedAbortableQuote.ts` | No | No | Thin `useStakingQuote` | Thin `useBondingQuote` | Shared debounce / AbortController / race guard / stale tick; feature request keys, fetchers, and error fallbacks stay local |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | No | Server loaders | Server loaders | RPC transform, sleep, and rate-limit detection primitives; legacy filename, but consumers now span Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | No | No | Quote/confirmation server | Quote/confirmation server | Canonical `uint256` decimal parse and oversized-input rejection |
+| `server/utils/swapQuoteRequest.ts` | No | Swap POST quote route | No | No | Shape/allowlist parse before scarce Swap quote RPC budget |
 | `server/utils/transactionConfirmationLookup.ts` | No | No | Thin stake loader | Thin bond loader | Shared sender/target/calldata RPC confirmation; feature `buildExpectedCall` + mismatch errors stay local; Swap keeps its own verify path |
 
 ### Explicit non-sharing decisions
@@ -166,9 +167,9 @@ Staking keeps its own domain behavior:
   formatting.
 - `stakingFundCheck.ts` builds pure quote results from Interest fund rules;
   the server loader reuses this feature helper instead of duplicating math.
-- `stakingErrors.ts`, `permitUtils.ts`, `stakeCtaPhase.ts`, and
-  `stakeTransactionFlow.ts` model Staking-specific validation, submit/CTA
-  orchestration, and thin `confirmStakeReceipt` over shared
+- `stakingErrors.ts`, `permitUtils.ts`, `permitConfigGuard.ts`, `stakeCtaPhase.ts`, and
+  `stakeTransactionFlow.ts` model Staking-specific validation, permit pin/assert,
+  submit/CTA orchestration, and thin `confirmStakeReceipt` over shared
   `confirmReceiptWithAccountSync`. Account refetch gating uses
   `features/web3/accountRefetch.ts`. `stakeTransactionConfirmation.ts` is a
   thin adapter over `features/web3/transactionConfirmation.ts`.

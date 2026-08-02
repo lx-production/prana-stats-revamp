@@ -87,7 +87,7 @@ Guides `/guide/staking/` and `/guide/staking-contracts/` live in the homepage/le
 | **User wallet** | Final authority: only the wallet moves funds |
 | **Polygon** | Execution on StakingContract + PRANA `permit` |
 
-The browser does **not** build write calldata from addresses returned by the API. Permit spender and write target are `STAKING_CONTRACT_ADDRESS`. Config still exposes contract addresses for display and permit domain checks.
+The browser does **not** build write calldata from addresses returned by the API. Before signing, it asserts config permit fields against local constants and builds EIP-712 typed data from those pins (`PRANA_ADDRESS` verifying contract, `STAKING_CONTRACT_ADDRESS` spender, permit domain name/version). Write target is also `STAKING_CONTRACT_ADDRESS`. Config still exposes contract addresses for display; a mismatch fails closed without opening the wallet.
 
 ### RPC layers
 
@@ -121,7 +121,7 @@ Constants: `STAKE_*`, `GUIDE_STAKING_*`, `GUIDE_STAKING_CONTRACTS_*`, `isStakePa
 | `POST /api/staking/confirm-transaction` | `private, no-store` | UX fallback; validates sender/target/calldata; not trusted analytics |
 | `GET /api/staking-stats` | `private`, 24h | Homepage card only — **not** the stake CTA fund gate |
 
-Account rate limit: 10/IP/min + 120 global/min. Quote: 10/IP/min + 60 global/min; confirmation: separate bucket 30/IP/min + 120 global/min; body ≤ 2 KB.
+Account rate limit: 10/IP/min + 120 global/min. Quote: 10/IP/min + 60 global/min after body/shape validation (shared Web3 POST admission 300/IP/min runs first); confirmation: separate bucket 30/IP/min + 120 global/min after parse; body ≤ 2 KB.
 
 Quote request: `{ amountRaw, durationSeconds }`. Soft issue codes include `paused`, `below_minimum`, `invalid_duration`, `zero_amount`, `insufficient_interest_fund`.
 
@@ -282,6 +282,7 @@ features/staking/
     stakingMath.ts
     stakingFundCheck.ts
     permitUtils.ts
+    permitConfigGuard.ts
     stakeCtaPhase.ts
     stakeTransactionFlow.ts
     stakeTransactionConfirmation.ts
@@ -357,11 +358,11 @@ Contributors should know these when changing the flow:
 
 ## Controls already in place (summary)
 
-- Write target hardcoded; permit spender = staking contract.
+- Write target hardcoded; permit verifying contract / spender / domain pinned locally and asserted against config before sign.
 - Fresh account nonce before sign; fresh quote before sign and before broadcast.
 - Soft fund-gate issues lock the CTA; success only after receipt.
 - Amounts/nonces as decimal strings; bigint interest math mirrors Solidity order.
-- POST quote + confirm-transaction: origin/JSON/2 KB, rate limits (separate confirm bucket), redacted `502`; confirm validates sender/target/calldata.
+- POST quote + confirm-transaction: origin/JSON/2 KB, validate-before-feature-rate-limit (shared admission first), redacted `502`; confirm validates sender/target/calldata.
 - Wallet errors sanitized VI/EN (`stakingErrors.ts`).
 - Mutual form/actions busy locks; claim-before-unstake inside grace.
 

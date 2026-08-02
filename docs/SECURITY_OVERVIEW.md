@@ -75,13 +75,19 @@ Swap, Staking, and Bonding POST routes reuse `rejectInvalidSwapApiRequest()`:
 
 Same-origin checking is browser request admission, not authentication or authorization. All wallet-specific data comes from public on-chain state, and the user's wallet signature remains the authorization for writes.
 
-Admission ordering currently differs by route:
+Admission order for Web3 POSTs:
 
-- Swap POSTs and `POST /api/staking/quote` consume their Node rate-limit budget before origin, content-type, body, or shape validation.
-- Staking confirmation and both Bonding POSTs validate origin/content type, parse the capped body, and validate its shape before consuming their expensive-RPC rate-limit budget.
-- Bonding and Staking account GETs validate the address before consuming their account-read budget.
+1. Shared cheap per-IP admission (`isWeb3PostAdmissionRateLimited`, 300 / IP / min) — protects Node from parse floods; no global bucket.
+2. Content-Type / origin checks.
+3. Capped JSON body read + feature-specific shape parse.
+4. Scarce per-feature RPC/log budget (quote/confirm/verify/log).
+5. Expensive work (RPC, HMAC verify, log write).
 
-Malformed traffic is also limited at the VPS nginx edge; Node's in-process expensive-RPC budgets are not a replacement for edge flood controls.
+Quote and confirmation routes for Swap, Staking, and Bonding consume their expensive RPC budgets only after a valid-shaped body. Bonding and Staking account GETs still validate the address before consuming their account-read budget.
+
+`POST /api/swap/log` and `POST /api/swap/verify-transaction` also take the shared admission check first; their feature buckets remain per-IP ingestion/verify limits (verify has no global RPC quota in this pass).
+
+Malformed traffic is also limited at the VPS nginx edge; Node's in-process budgets are not a replacement for edge flood controls.
 
 ### 2.5 Quote pipeline (`server/loaders/swapQuote.ts`)
 
@@ -166,10 +172,10 @@ Wallet connection uses the first available injected connector (`features/web3/us
 - **Chain:** Polygon mainnet only (`chainId` `137`).
 - **Wallet:** injected connectors; the user wallet signs EIP-712 permit data and broadcasts all writes.
 - **Write target:** `stakeWithPermit`, `claimInterest`, `unstake`, and `unstakeEarly` always target the browser's hardcoded `STAKING_CONTRACT_ADDRESS`.
-- **Permit scope:** the EIP-2612 token domain/name/version and spender are read from `/api/staking/config`; the permit has a one-hour deadline.
+- **Permit scope:** EIP-2612 token domain/name/version and spender are pinned in the browser to local constants (and asserted against `/api/staking/config` before signing); the permit has a one-hour deadline.
 - **Backend role:** config, account, quote, and fallback confirmation are read/verification services. The backend does not hold user keys, sign permits, or broadcast transactions.
 
-The server builds the permit config from its own hardcoded PRANA and Staking constants, but the browser does **not** currently compare those returned values with local constants before signing. The backend response is therefore part of the permit trust boundary even though it cannot change the later `stakeWithPermit` write target. A compromised response that keeps the real PRANA verifying contract but changes the spender could ask the wallet to sign an unintended PRANA allowance; pinning both values in the client would strengthen this boundary.
+The server builds the permit config from its own hardcoded PRANA and Staking constants. Before signing, the browser asserts those returned values against the same local constants (`PRANA_ADDRESS`, `STAKING_CONTRACT_ADDRESS`, permit domain name/version) and builds EIP-712 typed data from the local pins — not from the API response. A mismatched config fails closed without opening the wallet, so a compromised response cannot change the permit's verifying contract or spender.
 
 ### 4.2 Staking API surface
 
@@ -177,15 +183,15 @@ The server builds the permit config from its own hardcoded PRANA and Staking con
 | --- | --- |
 | `GET /api/staking/config` | `private, max-age=30`; no Node route rate limit; cached protocol pause/minimum/grace/penalty/APR and permit-domain data |
 | `GET /api/staking/account?address=` | Checksum address validation; `private, no-store`; 10 / IP / min + 120 global / min; one-block balance/nonce/stakes snapshot |
-| `POST /api/staking/quote` | JSON, 2 KB cap, `private, no-store`; 10 / IP / min + 60 global / min; fully-funded Interest preflight |
-| `POST /api/staking/confirm-transaction` | JSON, 2 KB cap, `private, no-store`; separate 30 / IP / min + 120 global / min confirmation bucket |
+| `POST /api/staking/quote` | JSON, 2 KB cap, `private, no-store`; 10 / IP / min + 60 global / min; validates body before spending RPC budget |
+| `POST /api/staking/confirm-transaction` | JSON, 2 KB cap, `private, no-store`; separate 30 / IP / min + 120 global / min confirmation bucket; validates body before spending RPC budget |
 | `GET /api/staking-stats` | 24-hour cached homepage aggregate only; never used to authorize or fund-gate a stake |
 
 Canonical raw amounts and permit nonces are decimal strings rather than JavaScript numbers. Server parsers bound raw integers to `uint256`; action stake IDs are bounded to the contract's `uint32`.
 
 ### 4.3 Permit-and-stake guards
 
-Before requesting the permit signature, the client refetches the current wallet account/nonce and requests a fresh quote. Before broadcasting `stakeWithPermit`, it requests another fresh quote. Wallet, chain, balance, minimum, duration, pause state, and quote issues must still be valid. The user should also verify the permit's token and spender in the wallet because those typed-data fields currently come from the backend config response.
+Before requesting the permit signature, the client asserts API permit fields match local pins, refetches the current wallet account/nonce, and requests a fresh quote. Before broadcasting `stakeWithPermit`, it requests another fresh quote. Wallet, chain, balance, minimum, duration, pause state, and quote issues must still be valid. The user should still verify the permit's token and spender in the wallet; the app already pins those typed-data fields to local constants.
 
 Staking uses an exact-amount EIP-2612 permit rather than an ERC-20 `approve` transaction. The permit is invalidated in client state when its nonce, amount, duration, account, chain, or deadline no longer matches.
 
@@ -315,7 +321,8 @@ Documented in [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md) §7.
 
 These security state stores live in a single Node process memory and are not shared across workers or restarts:
 
-- Swap, Staking, and Bonding per-IP/global rate-limit buckets
+- Shared Web3 POST admission bucket (per-IP)
+- Swap, Staking, and Bonding per-IP/global feature rate-limit buckets
 - Swap HMAC signing secret
 - Swap quote-token replay cache
 
@@ -344,9 +351,10 @@ Multi-instance deploys would need shared rate-limit storage plus a shared Swap s
 | Swap UI hooks | `features/swap/hooks/useUniswapQuote.ts`, `features/swap/hooks/useUniswapSwap.ts`, `features/swap/utils/swapTransactionLogs.ts` |
 | Shared receipt / pending safety | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonWalletReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
 | Staking constants / server | `constants/stakingContracts.ts`, `server/loaders/stakingAccount.ts`, `server/loaders/stakingQuote.ts`, `server/loaders/stakingTransactionConfirmation.ts` |
-| Staking client | `features/staking/hooks/useStakeTransaction.ts`, `features/staking/hooks/useStakeActions.ts`, `features/staking/utils/permitUtils.ts`, `features/staking/utils/stakePendingTransactionStorage.ts` |
+| Staking client | `features/staking/hooks/useStakeTransaction.ts`, `features/staking/hooks/useStakeActions.ts`, `features/staking/utils/permitUtils.ts`, `features/staking/utils/permitConfigGuard.ts`, `features/staking/utils/stakePendingTransactionStorage.ts` |
 | Bonding constants / server | `constants/bonds.ts`, `server/loaders/bondingAccount.ts`, `server/loaders/bondingQuote.ts`, `server/loaders/bondingTransactionConfirmation.ts` |
 | Bonding client | `features/bonding/hooks/useBondTransaction.ts`, `features/bonding/hooks/useBondActions.ts`, `features/bonding/utils/bondQuoteEcho.ts`, `features/bonding/utils/bondPendingTransactionStorage.ts` |
 | Raw integer validation | `server/utils/parseUnsignedDecimalRaw.ts`, `server/utils/stakingQuoteUtils.ts`, `server/utils/stakingConfirmationUtils.ts`, `server/utils/bondingReadUtils.ts` |
-| Related server tests | `server/tests/apiBoundary.test.ts`, `rateLimit.test.ts`, `securityHeaders.test.ts`, `swapQuote.test.ts`, `swapTransactionVerification.test.ts`, `stakingApi.test.ts`, `bondingApi.test.ts` |
+| Swap quote request parse | `server/utils/swapQuoteRequest.ts` |
+| Related server tests | `server/tests/apiBoundary.test.ts`, `rateLimit.test.ts`, `securityHeaders.test.ts`, `swapQuote.test.ts`, `swapQuoteRequest.test.ts`, `swapApiAdmission.test.ts`, `swapTransactionVerification.test.ts`, `stakingApi.test.ts`, `bondingApi.test.ts` |
 | Related client tests | `features/staking/tests/**`, `features/bonding/tests/**` |

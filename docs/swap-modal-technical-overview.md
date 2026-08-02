@@ -227,11 +227,11 @@ Balances and allowances use the **browser** RPC. Routing and verification use th
 
 ## API surface
 
-All swap endpoints are POST-only, same-origin, JSON `Content-Type`, with body size caps and per-IP rate limits (`server/postApiRoutes.ts`, `server/rateLimit.ts`).
+All swap endpoints are POST-only, same-origin, JSON `Content-Type`, with body size caps and rate limits (`server/postApiRoutes.ts`, `server/rateLimit.ts`). Every Web3 POST first hits a shared cheap admission bucket (300 / IP / min). Quote routes then validate Content-Type/origin, parse the capped body (`parseSwapQuoteRequest`), and only then consume the scarce quote budget (5 / IP / min + 30 global / min).
 
 | Endpoint | Purpose | Body cap | Rate limit (per IP / min) |
 | --- | --- | --- | --- |
-| `POST /api/swap/quote` | Route + unsigned tx + HMAC | 2 KB | 5 (+ 30 global) |
+| `POST /api/swap/quote` | Route + unsigned tx + HMAC | 2 KB | 5 (+ 30 global) after shape parse |
 | `POST /api/swap/log` | Untrusted lifecycle telemetry | 8 KB | 30 |
 | `POST /api/swap/verify-transaction` | Trusted `swap_confirmed` after on-chain proof | 32 KB | 10 |
 
@@ -340,7 +340,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 2. **Calldata validation** — every quote is decoded and audited before return.
 3. **Quote staleness guards** — request echo + deadline + clear-on-edit.
 4. **Origin + Content-Type checks** on swap POSTs.
-5. **Body size caps** and **per-IP / global rate limits**.
+5. **Body size caps**, shared POST admission, and **per-IP / global quote rate limits** (quote budget after shape parse).
 6. **Error sanitization** — RPC URLs, stacks, and Uniswap internals are not forwarded to the client.
 7. **Log sanitization** — truncates fields; redacts `http(s)://` and Alchemy key-like segments.
 8. **HMAC + on-chain verification** for trusted swap confirmations.
@@ -386,6 +386,7 @@ No temporary re-export shims remain at old paths (`utils/wagmiConfig`, `hooks/us
 | `server/postApiRoutes.ts` | Swap POST routes |
 | `server/loaders/swapQuote.ts` | Quote orchestration |
 | `server/utils/swapQuoteUtils.ts` | AlphaRouter + path helpers |
+| `server/utils/swapQuoteRequest.ts` | Quote body allowlist/shape parse before RPC budget |
 | `server/loaders/swapValidations.ts` | Calldata audit |
 | `server/loaders/swapQuoteVerification.ts` | HMAC sign / verify |
 | `server/loaders/swapTransactionVerification.ts` | On-chain confirmation |

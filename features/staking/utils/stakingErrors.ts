@@ -13,6 +13,7 @@ export type StakingErrorCode =
   | 'insufficient_gas'
   | 'expired_permit'
   | 'invalid_permit'
+  | 'config_mismatch'
   | 'user_rejected'
   | 'reverted'
   | 'rpc_unavailable'
@@ -123,6 +124,8 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     insufficient_gas: 'Số dư POL không đủ để trả phí gas.',
     expired_permit: 'Permit đã hết hạn. Hãy ký lại.',
     invalid_permit: 'Permit không còn hợp lệ. Hãy ký lại.',
+    config_mismatch:
+      'Cấu hình staking không khớp. Tải lại trang rồi thử lại.',
     user_rejected: 'Bạn đã từ chối yêu cầu trên ví.',
     reverted: 'Giao dịch bị revert trên chain.',
     rpc_unavailable: 'Không kết nối được RPC. Thử lại sau.',
@@ -144,6 +147,8 @@ const ERROR_COPY: Record<SiteLocale, Record<StakingErrorCode, string>> = {
     insufficient_gas: 'Insufficient POL balance for gas.',
     expired_permit: 'Permit expired. Sign again.',
     invalid_permit: 'Permit is no longer valid. Sign again.',
+    config_mismatch:
+      'Staking config does not match. Reload the page and try again.',
     user_rejected: 'You rejected the wallet request.',
     reverted: 'Transaction reverted on-chain.',
     rpc_unavailable: 'RPC unavailable. Try again later.',

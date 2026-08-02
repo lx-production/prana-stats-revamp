@@ -26,6 +26,7 @@ import {
   parseBondingConfirmationRequest,
   parseBondingQuoteRequest,
 } from './utils/bondingReadUtils.ts';
+import { parseSwapQuoteRequest } from './utils/swapQuoteRequest.ts';
 import {
   logSwapTransactionEvent,
   parseSwapTransactionLogRequest,
@@ -33,7 +34,6 @@ import {
 
 import type { SwapRateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
-import type { SwapQuoteRequest } from '../types/swap.types.ts';
 import type { SwapRequestLogMetadata } from './loaders/swapLogs.ts';
 import type {
   StakingQuote,
@@ -132,6 +132,25 @@ function sanitizeBondingErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Shared cheap admission for all Web3 POSTs — before body parse / expensive budgets.
+ * Returns true when the response was already sent.
+ */
+function rejectIfWeb3PostAdmissionLimited(
+  req: Parameters<RequestHandler>[0],
+  res: Parameters<RequestHandler>[1],
+  rateLimiters: SwapRateLimiters,
+): boolean {
+  if (rateLimiters.isWeb3PostAdmissionRateLimited(req)) {
+    sendJson(res, 429, {
+      error: 'rate_limited',
+      message: 'Too many API requests. Please wait a moment and try again.',
+    });
+    return true;
+  }
+  return false;
+}
+
 // Handles POST-only swap + staking quote + bonding API routes
 export function createPostApiRouteHandler(
   rateLimiters: SwapRateLimiters,
@@ -158,20 +177,22 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rateLimiters.isStakingQuoteRateLimited(req)) {
-        sendJson(res, 429, {
-          error: 'rate_limited',
-          message: 'Too many staking quote requests. Please wait a moment and try again.',
-        });
-        return true;
-      }
-
-      // Same origin + JSON body policy as swap/bonding POSTs.
+      // Shared admission → validate → parse → then scarce quote RPC budget.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
         const body = await readJsonBody<unknown>(req, STAKING_BODY_MAX_BYTES);
         const request = parseStakingQuoteRequest(body);
+
+        if (rateLimiters.isStakingQuoteRateLimited(req)) {
+          sendJson(res, 429, {
+            error: 'rate_limited',
+            message: 'Too many staking quote requests. Please wait a moment and try again.',
+          });
+          return true;
+        }
+
         const result = await stakingLoaders.loadQuote(request);
         // Soft issues (e.g. insufficient_interest_fund) still return 200.
         sendJson(res, 200, result, { cacheControl: STAKING_POST_CACHE_CONTROL });
@@ -210,7 +231,8 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      // Same admission order as bonding confirm: validate before rate-limit budget.
+      // Shared admission → validate → parse → then confirmation RPC budget.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
@@ -269,21 +291,23 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      if (rateLimiters.isSwapQuoteRateLimited(req)) {
-        sendJson(res, 429, {
-          error: 'rate_limited',
-          message: 'Too many swap quote requests. Please wait a moment and try again.',
-        });
-        return true;
-      }
-
-      // Origin / content-type checks for swap APIs
+      // Shared admission → validate → parse → then scarce quote RPC budget.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
-      // these lines run only when the inner if conditions were false
       try {
-        const body = await readJsonBody<SwapQuoteRequest>(req, SWAP_QUOTE_BODY_MAX_BYTES);
-        const result = await loadSwapQuote(body, createSwapRequestLogMetadata(req, rateLimiters));
+        const body = await readJsonBody<unknown>(req, SWAP_QUOTE_BODY_MAX_BYTES);
+        const request = parseSwapQuoteRequest(body);
+
+        if (rateLimiters.isSwapQuoteRateLimited(req)) {
+          sendJson(res, 429, {
+            error: 'rate_limited',
+            message: 'Too many swap quote requests. Please wait a moment and try again.',
+          });
+          return true;
+        }
+
+        const result = await loadSwapQuote(request, createSwapRequestLogMetadata(req, rateLimiters));
         sendJson(res, 200, result);
         return true;
       } catch (err) {
@@ -303,6 +327,9 @@ export function createPostApiRouteHandler(
         });
         return true;
       }
+
+      // Shared admission first; log budget still protects ingestion after that.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
 
       if (rateLimiters.isSwapLogRateLimited(req)) {
         sendJson(res, 429, {
@@ -337,6 +364,9 @@ export function createPostApiRouteHandler(
         });
         return true;
       }
+
+      // Shared admission first; verify budget stays per-IP (no global RPC quota yet).
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
 
       if (rateLimiters.isSwapVerifyRateLimited(req)) {
         sendJson(res, 429, {
@@ -374,8 +404,8 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      // Content-Type / origin first — junk must not burn RPC quota.
-      // Flood volume is handled by VPS nginx edge limits.
+      // Shared admission → Content-Type / origin → body/shape → then RPC quote budget.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {
@@ -429,7 +459,8 @@ export function createPostApiRouteHandler(
         return true;
       }
 
-      // Same admission order as quote: validate before consuming confirmation budget.
+      // Shared admission → validate → parse → then confirmation RPC budget.
+      if (rejectIfWeb3PostAdmissionLimited(req, res, rateLimiters)) return true;
       if (rejectInvalidSwapApiRequest(req, res)) return true;
 
       try {

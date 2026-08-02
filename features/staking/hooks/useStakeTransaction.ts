@@ -6,9 +6,11 @@ import { getConfiguredDuration } from '../utils/stakingMath.ts';
 import { isPermitSnapshotValid } from '../utils/permitUtils.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { PRANA_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
+import { isPermitConfigPinned } from '../utils/permitConfigGuard.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
@@ -16,7 +18,7 @@ import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletRece
 import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
 import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
 import { confirmStakeReceipt, runPermitThenStake, resolvePermitAndStakeAction, submitStakeWithPermitFlow } from '../utils/stakeTransactionFlow.ts';
-import { PERMIT_DEADLINE_SECONDS, PRANA_PERMIT_TYPES, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
+import { PERMIT_DEADLINE_SECONDS, PRANA_PERMIT_DOMAIN_NAME, PRANA_PERMIT_DOMAIN_VERSION, PRANA_PERMIT_TYPES, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
 import type { PendingStakeTransaction, PermitSnapshot, StakeTransactionStatus, StakingAccountSnapshot, StakingConfig, StakingQuote, StakingTransactionActionSnapshot } from '../staking.types.ts';
@@ -311,6 +313,13 @@ export function useStakeTransaction({
         return null;
       }
 
+      // Fail closed: refuse to open the wallet if API permit fields drift from local pins.
+      if (!isPermitConfigPinned(config)) {
+        setError(getStakingErrorMessage('config_mismatch', locale));
+        setStatus('error');
+        return null;
+      }
+
       if (config.paused) {
         setError(getStakingErrorMessage('paused', locale));
         setStatus('error');
@@ -379,16 +388,17 @@ export function useStakeTransaction({
         const deadline = Math.floor(Date.now() / 1000) + PERMIT_DEADLINE_SECONDS;
         const nonce = BigInt(accountSnapshot.permitNonce);
 
+        // Pin typed-data fields to local constants (not API config) before signing.
         const domain = {
-          name: config.permitDomain.name,
-          version: config.permitDomain.version,
+          name: PRANA_PERMIT_DOMAIN_NAME,
+          version: PRANA_PERMIT_DOMAIN_VERSION,
           chainId: POLYGON_CHAIN_ID,
-          verifyingContract: config.contracts.prana,
+          verifyingContract: PRANA_ADDRESS,
         };
 
         const message = {
           owner: wallet.address,
-          spender: config.contracts.staking,
+          spender: STAKING_CONTRACT_ADDRESS,
           value: amountRaw,
           nonce,
           deadline: BigInt(deadline),

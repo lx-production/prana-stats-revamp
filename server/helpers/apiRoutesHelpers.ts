@@ -7,6 +7,8 @@ export function sanitizeSwapErrorMessage(error: unknown, fallback: string): stri
   if (!(error instanceof Error)) return fallback;
 
   const allowedMessages = [
+    'Invalid swap quote request.',
+    'Unsupported swap token.',
     'Choose two different tokens.',
     'Connect a valid wallet address.',
     'Enter an amount greater than zero.',

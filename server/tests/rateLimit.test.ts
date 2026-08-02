@@ -449,3 +449,33 @@ test('staking confirmation limiter uses trusted proxy hop identity', () => {
     false,
   );
 });
+
+test('web3 POST admission limiter is per-IP only and does not block other clients', () => {
+  const limiter = createSwapRateLimiters();
+  const noisy = mockRequest('198.51.100.200');
+
+  for (let index = 0; index < 300; index += 1) {
+    assert.equal(limiter.isWeb3PostAdmissionRateLimited(noisy), false);
+  }
+
+  assert.equal(limiter.isWeb3PostAdmissionRateLimited(noisy), true);
+  // Exhausting one IP must not affect another IP or feature RPC budgets.
+  assert.equal(limiter.isWeb3PostAdmissionRateLimited(mockRequest('198.51.100.201')), false);
+  assert.equal(limiter.isSwapQuoteRateLimited(mockRequest('198.51.100.201')), false);
+  assert.equal(limiter.isStakingQuoteRateLimited(mockRequest('198.51.100.201')), false);
+});
+
+test('web3 POST admission exhaustion does not spend swap or staking quote budgets', () => {
+  const limiter = createSwapRateLimiters();
+  const req = mockRequest('198.51.100.210');
+
+  for (let index = 0; index < 300; index += 1) {
+    assert.equal(limiter.isWeb3PostAdmissionRateLimited(req), false);
+  }
+  assert.equal(limiter.isWeb3PostAdmissionRateLimited(req), true);
+
+  // Feature RPC budgets remain fully available after admission rejection.
+  assert.equal(limiter.isSwapQuoteRateLimited(req), false);
+  assert.equal(limiter.isStakingQuoteRateLimited(req), false);
+  assert.equal(limiter.isBondingQuoteRateLimited(req), false);
+});

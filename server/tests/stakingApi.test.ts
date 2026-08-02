@@ -644,6 +644,76 @@ test('POST /api/staking/quote returns 429 when rate limited', async () => {
   assert.equal(parsedBody(limited).error, 'rate_limited');
 });
 
+test('POST /api/staking/quote rejects junk before consuming global rate-limit quota', async () => {
+  const quoteCalls = { count: 0 };
+  const { handlePost, rateLimiters } = createQuoteHandlers({ quoteCalls });
+
+  const validBody = JSON.stringify({
+    amountRaw: '100000000000',
+    durationSeconds: SECONDS_PER_DAY,
+  });
+
+  // Fill would-be global quote budget (60) with malformed / forbidden / bad-shape requests.
+  for (let index = 0; index < 60; index += 1) {
+    const plain = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(validBody)],
+        { 'content-type': 'text/plain', host: '127.0.0.1' },
+        `203.0.113.${index % 200}`,
+      ),
+      plain,
+      new URL('http://127.0.0.1/api/staking/quote'),
+    );
+    assert.equal(plain.statusCode, 415);
+
+    const forbidden = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(validBody)],
+        {
+          'content-type': 'application/json',
+          host: 'prana.example',
+          origin: 'https://evil.test',
+        },
+        `198.51.100.${index % 200}`,
+      ),
+      forbidden,
+      new URL('http://127.0.0.1/api/staking/quote'),
+    );
+    assert.equal(forbidden.statusCode, 403);
+
+    const badShape = mockResponse();
+    await handlePost(
+      mockBodyRequest(
+        [Buffer.from(JSON.stringify({ amountRaw: 'abc', durationSeconds: 1 }))],
+        { 'content-type': 'application/json', host: '127.0.0.1' },
+        `192.0.2.${index % 200}`,
+      ),
+      badShape,
+      new URL('http://127.0.0.1/api/staking/quote'),
+    );
+    assert.equal(badShape.statusCode, 400);
+  }
+
+  assert.equal(quoteCalls.count, 0);
+
+  // Valid request must still succeed — junk did not burn the 60/min global budget.
+  const ok = mockResponse();
+  await handlePost(
+    mockBodyRequest(
+      [Buffer.from(validBody)],
+      { 'content-type': 'application/json', host: '127.0.0.1' },
+      '198.51.100.77',
+    ),
+    ok,
+    new URL('http://127.0.0.1/api/staking/quote'),
+  );
+  assert.equal(ok.statusCode, 200);
+  assert.equal(quoteCalls.count, 1);
+  assert.equal(rateLimiters.isStakingQuoteRateLimited(mockRequest('198.51.100.78')), false);
+});
+
 // ---------------------------------------------------------------------------
 // Confirmation API
 // ---------------------------------------------------------------------------

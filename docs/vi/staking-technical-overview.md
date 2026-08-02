@@ -87,7 +87,7 @@ Guides `/guide/staking/` và `/guide/staking-contracts/` nằm trong homepage/le
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên StakingContract + PRANA `permit` |
 
-Browser **không** xây write calldata từ địa chỉ do API trả. Permit spender và write target là `STAKING_CONTRACT_ADDRESS`. Config vẫn expose địa chỉ contract cho display và kiểm tra permit domain.
+Browser **không** xây write calldata từ địa chỉ do API trả. Trước khi ký, client assert các field permit trong config với constant local và dựng EIP-712 typed data từ các pin đó (`PRANA_ADDRESS` verifying contract, `STAKING_CONTRACT_ADDRESS` spender, permit domain name/version). Write target cũng là `STAKING_CONTRACT_ADDRESS`. Config vẫn expose địa chỉ contract cho display; mismatch thì fail closed, không mở ví.
 
 ### Các lớp RPC
 
@@ -121,7 +121,7 @@ Constants: `STAKE_*`, `GUIDE_STAKING_*`, `GUIDE_STAKING_CONTRACTS_*`, `isStakePa
 | `POST /api/staking/confirm-transaction` | `private, no-store` | Fallback UX; validate sender/target/calldata; không ghi trusted analytics |
 | `GET /api/staking-stats` | `private`, 24h | Chỉ homepage card — **không** dùng cho fund gate CTA |
 
-Rate limit account: 10/IP/phút + 120 global/phút. Quote: 10/IP/phút + 60 global/phút; confirmation: bucket riêng 30/IP/phút + 120 global/phút; body ≤ 2 KB.
+Rate limit account: 10/IP/phút + 120 global/phút. Quote: 10/IP/phút + 60 global/phút sau khi validate body/shape (shared Web3 POST admission 300/IP/phút chạy trước); confirmation: bucket riêng 30/IP/phút + 120 global/phút sau parse; body ≤ 2 KB.
 
 Quote request: `{ amountRaw, durationSeconds }`. Soft issue gồm `paused`, `below_minimum`, `invalid_duration`, `zero_amount`, `insufficient_interest_fund`.
 
@@ -282,6 +282,7 @@ features/staking/
     stakingMath.ts
     stakingFundCheck.ts
     permitUtils.ts
+    permitConfigGuard.ts
     stakeCtaPhase.ts
     stakeTransactionFlow.ts
     stakeTransactionConfirmation.ts
@@ -357,11 +358,11 @@ Contributors cần biết khi thay đổi flow:
 
 ## Controls đã có (tóm tắt)
 
-- Write target hardcoded; permit spender = staking contract.
+- Write target hardcoded; permit verifying contract / spender / domain được pin local và assert với config trước khi ký.
 - Fresh account nonce trước khi ký; fresh quote trước ký và trước broadcast.
 - Soft fund-gate issues khóa CTA; success chỉ sau receipt.
 - Amounts/nonces = decimal string; bigint interest math mirror thứ tự Solidity.
-- POST quote + confirm-transaction: origin/JSON/2 KB, rate limit (bucket riêng cho confirm), `502` đã redact; confirm validate sender/target/calldata.
+- POST quote + confirm-transaction: origin/JSON/2 KB, validate-before-feature-rate-limit (shared admission trước), `502` đã redact; confirm validate sender/target/calldata.
 - Lỗi ví sanitize VI/EN (`stakingErrors.ts`).
 - Khóa form/actions lẫn nhau; claim-before-unstake trong grace.
 
