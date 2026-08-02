@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createSwapRateLimiters } from '../rateLimit.ts';
+import { createWeb3RateLimiters } from '../rateLimit.ts';
 import { createGetApiRouteHandler } from '../getApiRoutes.ts';
 import { createPostApiRouteHandler } from '../postApiRoutes.ts';
 import { parseChecksumAddress } from '../helpers/addressHelpers.ts';
@@ -205,7 +205,7 @@ function createHandlers(options?: {
   confirmTransaction?: () => Promise<BondingTransactionConfirmation>;
   quoteCalls?: { count: number };
 }) {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const quoteCalls = options?.quoteCalls ?? { count: 0 };
 
   const handleGet = createGetApiRouteHandler(

@@ -1,27 +1,13 @@
 import { ethers } from 'ethers';
-
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { parseUnsignedDecimalRaw } from '../utils/parseUnsignedDecimalRaw.ts';
 import { confirmTransactionOnChain } from '../utils/transactionConfirmationLookup.ts';
-import {
-  StakingConfirmationMismatchError,
-} from '../utils/stakingConfirmationUtils.ts';
-import {
-  STAKING_CONTRACT_ABI,
-  STAKING_CONTRACT_ADDRESS,
-} from '../../constants/stakingContracts.ts';
+import { StakingConfirmationMismatchError } from '../utils/stakingConfirmationUtils.ts';
+import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 
 import type { Hex } from '../../types/blockchain.types.ts';
-import type {
-  ExpectedCall,
-  ConfirmationLookupProvider,
-  ConfirmationMismatchReason,
-} from '../types/transactionConfirmationTypes.ts';
-import type {
-  StakingTransactionActionSnapshot,
-  StakingTransactionConfirmation,
-  StakingTransactionConfirmationRequest,
-} from '../../features/staking/staking.types.ts';
+import type { ExpectedCall, ConfirmationLookupProvider, ConfirmationMismatchReason } from '../types/transactionConfirmationTypes.ts';
+import type { StakingTransactionActionSnapshot, StakingTransactionConfirmation, StakingTransactionConfirmationRequest } from '../../features/staking/staking.types.ts';
 
 const STAKING_IFACE = new ethers.Interface(STAKING_CONTRACT_ABI);
 

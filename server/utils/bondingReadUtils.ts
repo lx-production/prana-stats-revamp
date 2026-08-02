@@ -2,17 +2,7 @@ import { parseUnsignedDecimalRaw } from './parseUnsignedDecimalRaw.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
 
 import type { Address, Hex } from '../../types/blockchain.types.ts';
-import type {
-  ActiveBondRecord,
-  BondSide,
-  BondTermId,
-  BondVersion,
-  BondingQuoteMode,
-  BondingQuoteRequest,
-  BondingTermOption,
-  BondingTransactionActionSnapshot,
-  BondingTransactionConfirmationRequest,
-} from '../../features/bonding/bonding.types.ts';
+import type { ActiveBondRecord, BondSide, BondTermId, BondVersion, BondingQuoteMode, BondingQuoteRequest, BondingTermOption, BondingTransactionActionSnapshot, BondingTransactionConfirmationRequest } from '../../features/bonding/bonding.types.ts';
 
 export {
   mulDiv,

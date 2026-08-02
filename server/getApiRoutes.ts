@@ -19,7 +19,7 @@ import { BROWSER_CACHE_TTL_SECONDS, SERVER_CACHE_TTL_MS } from '../constants/cac
 
 import type { Address } from '../types/blockchain.types.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
-import type { SwapRateLimiters } from './rateLimit.ts';
+import type { Web3RateLimiters } from './rateLimit.ts';
 import type { StakingAccountSnapshot, StakingConfig } from '../features/staking/staking.types.ts';
 import type { BondingAccount, BondingConfig } from '../features/bonding/bonding.types.ts';
 
@@ -63,7 +63,7 @@ const DEFAULT_BONDING_API_LOADERS: BondingApiLoaders = {
 
 // Handles readonly GET API routes (stats, capital, summary, staking/bonding config/account, etc.)
 export function createGetApiRouteHandler(
-  rateLimiters: SwapRateLimiters,
+  rateLimiters: Web3RateLimiters,
   stakingLoaders: StakingApiLoaders = DEFAULT_STAKING_API_LOADERS,
   bondingLoaders: BondingApiLoaders = DEFAULT_BONDING_API_LOADERS,
 ): RequestHandler {

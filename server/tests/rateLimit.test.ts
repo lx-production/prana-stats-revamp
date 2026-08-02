@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { createSwapRateLimiters } from '../rateLimit.ts';
+import { createWeb3RateLimiters } from '../rateLimit.ts';
 
 const ORIGINAL_TRUSTED_PROXY_HOP_COUNT = process.env.TRUSTED_PROXY_HOP_COUNT;
 
@@ -30,7 +30,7 @@ function mockRequest(
 }
 
 function spendQuoteBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 5,
 ): void {
@@ -40,7 +40,7 @@ function spendQuoteBudget(
 }
 
 function spendLogBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 30,
 ): void {
@@ -50,7 +50,7 @@ function spendLogBudget(
 }
 
 function spendVerifyBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 10,
 ): void {
@@ -60,7 +60,7 @@ function spendVerifyBudget(
 }
 
 test('direct untrusted sockets ignore spoofed X-Forwarded-For values', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   for (let index = 0; index < 5; index += 1) {
     assert.equal(
@@ -77,7 +77,7 @@ test('direct untrusted sockets ignore spoofed X-Forwarded-For values', () => {
 
 test('default trusted proxy hop count keeps single-proxy last-entry behavior', () => {
   delete process.env.TRUSTED_PROXY_HOP_COUNT;
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(limiter, mockRequest('127.0.0.1', '198.51.100.10, 127.0.0.1'));
 
@@ -89,7 +89,7 @@ test('default trusted proxy hop count keeps single-proxy last-entry behavior', (
 
 test('two-hop trusted proxy count selects the real client before the Pi hop', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(limiter, mockRequest('127.0.0.1', '198.51.100.20, 127.0.0.1'));
 
@@ -105,7 +105,7 @@ test('two-hop trusted proxy count selects the real client before the Pi hop', ()
 
 test('two-hop trusted proxy count is stable when a client prepends spoofed XFF data', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(
     limiter,
@@ -128,7 +128,7 @@ test('two-hop trusted proxy count is stable when a client prepends spoofed XFF d
 
 test('different real clients behind the two-hop deployment do not share the quote bucket', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(limiter, mockRequest('127.0.0.1', '198.51.100.40, 127.0.0.1'));
 
@@ -139,7 +139,7 @@ test('different real clients behind the two-hop deployment do not share the quot
 });
 
 test('swap quote limiter has a global all-clients budget', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   for (let index = 0; index < 30; index += 1) {
     assert.equal(
@@ -155,7 +155,7 @@ test('swap quote limiter has a global all-clients budget', () => {
 });
 
 test('per-IP quote rejections do not spend the global quote budget', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(limiter, mockRequest('198.51.100.80'));
   assert.equal(limiter.isSwapQuoteRateLimited(mockRequest('198.51.100.80')), true);
@@ -175,7 +175,7 @@ test('per-IP quote rejections do not spend the global quote budget', () => {
 
 test('invalid trusted proxy hop counts fall back to single-proxy behavior', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = 'many';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendQuoteBudget(limiter, mockRequest('127.0.0.1', '198.51.100.50, 127.0.0.1'));
 
@@ -186,7 +186,7 @@ test('invalid trusted proxy hop counts fall back to single-proxy behavior', () =
 });
 
 test('swap verification has an independent 10 request per minute bucket', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
   const req = mockRequest('198.51.100.60');
 
   spendVerifyBudget(limiter, req);
@@ -196,7 +196,7 @@ test('swap verification has an independent 10 request per minute bucket', () => 
 });
 
 test('spending the swap log budget does not spend the verification budget', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
   const req = mockRequest('198.51.100.61');
 
   spendLogBudget(limiter, req);
@@ -207,7 +207,7 @@ test('spending the swap log budget does not spend the verification budget', () =
 
 test('verification limiter uses the same trusted proxy client identity logic', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendVerifyBudget(limiter, mockRequest('127.0.0.1', '198.51.100.70, 127.0.0.1'));
 
@@ -222,7 +222,7 @@ test('verification limiter uses the same trusted proxy client identity logic', (
 });
 
 test('getClientIp returns normalized direct socket addresses', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   assert.equal(limiter.getClientIp(mockRequest('::ffff:198.51.100.90')), '198.51.100.90');
   assert.equal(limiter.getClientIp(mockRequest('127.0.0.1')), '127.0.0.1');
@@ -230,7 +230,7 @@ test('getClientIp returns normalized direct socket addresses', () => {
 
 test('getClientIp uses the same trusted proxy hop logic as rate limits', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   assert.equal(
     limiter.getClientIp(mockRequest('127.0.0.1', '192.0.2.250, 198.51.100.91, 127.0.0.1')),
@@ -239,7 +239,7 @@ test('getClientIp uses the same trusted proxy hop logic as rate limits', () => {
 });
 
 function spendStakingAccountBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 10,
 ): void {
@@ -249,7 +249,7 @@ function spendStakingAccountBudget(
 }
 
 test('staking account limiter enforces 10 requests per IP per minute', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendStakingAccountBudget(limiter, mockRequest('198.51.100.120'));
   assert.equal(limiter.isStakingAccountRateLimited(mockRequest('198.51.100.120')), true);
@@ -257,7 +257,7 @@ test('staking account limiter enforces 10 requests per IP per minute', () => {
 });
 
 test('staking account limiter has a global all-clients budget of 120', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   for (let index = 0; index < 120; index += 1) {
     assert.equal(
@@ -273,7 +273,7 @@ test('staking account limiter has a global all-clients budget of 120', () => {
 });
 
 test('per-IP staking account rejections do not spend the global account budget', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendStakingAccountBudget(limiter, mockRequest('198.51.100.130'));
   assert.equal(limiter.isStakingAccountRateLimited(mockRequest('198.51.100.130')), true);
@@ -293,7 +293,7 @@ test('per-IP staking account rejections do not spend the global account budget',
 });
 
 function spendBondingQuoteBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 10,
 ): void {
@@ -303,7 +303,7 @@ function spendBondingQuoteBudget(
 }
 
 function spendBondingAccountBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 10,
 ): void {
@@ -313,7 +313,7 @@ function spendBondingAccountBudget(
 }
 
 function spendBondingConfirmBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 30,
 ): void {
@@ -323,7 +323,7 @@ function spendBondingConfirmBudget(
 }
 
 function spendStakingQuoteBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 10,
 ): void {
@@ -333,7 +333,7 @@ function spendStakingQuoteBudget(
 }
 
 function spendStakingConfirmBudget(
-  limiter: ReturnType<typeof createSwapRateLimiters>,
+  limiter: ReturnType<typeof createWeb3RateLimiters>,
   req: IncomingMessage,
   count = 30,
 ): void {
@@ -343,7 +343,7 @@ function spendStakingConfirmBudget(
 }
 
 test('bonding quote limiter enforces 10 requests per IP per minute', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendBondingQuoteBudget(limiter, mockRequest('198.51.100.140'));
   assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.140')), true);
@@ -351,7 +351,7 @@ test('bonding quote limiter enforces 10 requests per IP per minute', () => {
 });
 
 test('bonding quote limiter has a global all-clients budget of 60', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   for (let index = 0; index < 60; index += 1) {
     assert.equal(
@@ -367,13 +367,13 @@ test('bonding quote limiter has a global all-clients budget of 60', () => {
 });
 
 test('bonding account limiter enforces 10/IP and 120 global', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendBondingAccountBudget(limiter, mockRequest('198.51.100.150'));
   assert.equal(limiter.isBondingAccountRateLimited(mockRequest('198.51.100.150')), true);
   assert.equal(limiter.isBondingAccountRateLimited(mockRequest('198.51.100.151')), false);
 
-  const globalLimiter = createSwapRateLimiters();
+  const globalLimiter = createWeb3RateLimiters();
   for (let index = 0; index < 120; index += 1) {
     assert.equal(
       globalLimiter.isBondingAccountRateLimited(mockRequest(`203.0.114.${index % 200}`)),
@@ -387,7 +387,7 @@ test('bonding account limiter enforces 10/IP and 120 global', () => {
 });
 
 test('bonding confirmation limiter is separate from quote quota', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendBondingQuoteBudget(limiter, mockRequest('198.51.100.160'));
   assert.equal(limiter.isBondingQuoteRateLimited(mockRequest('198.51.100.160')), true);
@@ -401,7 +401,7 @@ test('bonding confirmation limiter is separate from quote quota', () => {
 
 test('bonding confirmation limiter uses trusted proxy hop identity', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendBondingConfirmBudget(
     limiter,
@@ -419,7 +419,7 @@ test('bonding confirmation limiter uses trusted proxy hop identity', () => {
 });
 
 test('staking confirmation limiter is separate from quote quota', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendStakingQuoteBudget(limiter, mockRequest('198.51.100.180'));
   assert.equal(limiter.isStakingQuoteRateLimited(mockRequest('198.51.100.180')), true);
@@ -433,7 +433,7 @@ test('staking confirmation limiter is separate from quote quota', () => {
 
 test('staking confirmation limiter uses trusted proxy hop identity', () => {
   process.env.TRUSTED_PROXY_HOP_COUNT = '2';
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
 
   spendStakingConfirmBudget(
     limiter,
@@ -451,7 +451,7 @@ test('staking confirmation limiter uses trusted proxy hop identity', () => {
 });
 
 test('web3 POST admission limiter is per-IP only and does not block other clients', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
   const noisy = mockRequest('198.51.100.200');
 
   for (let index = 0; index < 300; index += 1) {
@@ -466,7 +466,7 @@ test('web3 POST admission limiter is per-IP only and does not block other client
 });
 
 test('web3 POST admission exhaustion does not spend swap or staking quote budgets', () => {
-  const limiter = createSwapRateLimiters();
+  const limiter = createWeb3RateLimiters();
   const req = mockRequest('198.51.100.210');
 
   for (let index = 0; index < 300; index += 1) {

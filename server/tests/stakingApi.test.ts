@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createSwapRateLimiters } from '../rateLimit.ts';
+import { createWeb3RateLimiters } from '../rateLimit.ts';
 import { createGetApiRouteHandler } from '../getApiRoutes.ts';
 import { createPostApiRouteHandler } from '../postApiRoutes.ts';
 import { parseChecksumAddress } from '../helpers/addressHelpers.ts';
@@ -174,7 +174,7 @@ function createQuoteHandlers(options?: {
   confirmTransaction?: () => Promise<StakingTransactionConfirmation>;
   quoteCalls?: { count: number };
 }) {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const quoteCalls = options?.quoteCalls ?? { count: 0 };
   const handlePost = createPostApiRouteHandler(rateLimiters, {
     staking: {
@@ -234,7 +234,7 @@ test('mapStakeRecords serializes amounts as decimal strings not numbers', () => 
 });
 
 test('GET /api/staking/config returns config with 30s private cache', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async (address) => sampleAccount(address),
@@ -254,7 +254,7 @@ test('GET /api/staking/config returns config with 30s private cache', async () =
 });
 
 test('GET /api/staking/config returns generic 502 without upstream details', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => {
       throw new Error('Alchemy https://eth-mainnet.g.alchemy.com/v2/SECRET_KEY failed');
@@ -274,7 +274,7 @@ test('GET /api/staking/config returns generic 502 without upstream details', asy
 });
 
 test('GET /api/staking/account requires a valid address', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async (address) => sampleAccount(address),
@@ -296,7 +296,7 @@ test('GET /api/staking/account requires a valid address', async () => {
 });
 
 test('GET /api/staking/account checksums address and uses private no-store', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   let seenAddress: Address | null = null;
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
@@ -321,7 +321,7 @@ test('GET /api/staking/account checksums address and uses private no-store', asy
 });
 
 test('GET /api/staking/account returns generic 502 without upstream details', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async () => {
@@ -345,7 +345,7 @@ test('GET /api/staking/account returns generic 502 without upstream details', as
 });
 
 test('GET /api/staking/account returns 429 when rate limited', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async (address) => sampleAccount(address),
@@ -373,7 +373,7 @@ test('GET /api/staking/account returns 429 when rate limited', async () => {
 });
 
 test('invalid staking account addresses do not spend rate-limit quota', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async (address) => sampleAccount(address),
@@ -400,7 +400,7 @@ test('invalid staking account addresses do not spend rate-limit quota', async ()
 });
 
 test('staking config/account reject non-GET with 405 and Allow: GET', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => sampleConfig(),
     loadAccount: async (address) => sampleAccount(address),
@@ -428,7 +428,7 @@ test('staking config/account reject non-GET with 405 and Allow: GET', async () =
 });
 
 test('staking upstream failures log redacted errors without RPC secrets', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handleGet = createGetApiRouteHandler(rateLimiters, {
     loadConfig: async () => {
       throw new Error('Alchemy https://polygon-mainnet.g.alchemy.com/v2/SECRET_KEY_ABC failed');

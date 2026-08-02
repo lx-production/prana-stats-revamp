@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createSwapRateLimiters } from '../rateLimit.ts';
+import { createWeb3RateLimiters } from '../rateLimit.ts';
 import { createPostApiRouteHandler } from '../postApiRoutes.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -75,7 +75,7 @@ const VALID_QUOTE_BODY = JSON.stringify({
 });
 
 test('POST /api/swap/quote rejects junk before consuming global quote rate-limit quota', async () => {
-  const rateLimiters = createSwapRateLimiters();
+  const rateLimiters = createWeb3RateLimiters();
   const handlePost = createPostApiRouteHandler(rateLimiters);
 
   // Fill would-be global budget (30) with malformed / forbidden / bad-shape requests.

@@ -4,13 +4,13 @@ import { sendJson } from './helpers/requestHelpers.ts';
 import { warmApiCaches } from './serverStartup.ts';
 import { handleStaticRequest } from './staticRoutes.ts';
 import { createGetApiRouteHandler } from './getApiRoutes.ts';
-import { createSwapRateLimiters } from './rateLimit.ts';
+import { createWeb3RateLimiters } from './rateLimit.ts';
 import { createPostApiRouteHandler } from './postApiRoutes.ts';
 
 const PORT = Number(env.PORT ?? 4173);
 const HOST = env.HOST ?? '127.0.0.1';
 
-const rateLimiters = createSwapRateLimiters();
+const rateLimiters = createWeb3RateLimiters();
 
 // Split API handlers: readonly GET routes vs POST-only swap routes
 const handleGetApiRequest = createGetApiRouteHandler(rateLimiters);

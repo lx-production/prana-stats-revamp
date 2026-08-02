@@ -48,7 +48,7 @@ Overview cho contributors (architecture + flow đã ship): [`bonding-technical-o
   - Loaders: `server/loaders/bondingConfig.ts`, `bondingAccount.ts`, `bondingQuote.ts`, `bondingTransactionConfirmation.ts` (+ optional `server/loaders/cached/bondingConfigCached.ts`); đăng ký trong `getApiRoutes.ts` / `postApiRoutes.ts`.
   - Tạo `server/utils/bondingReadUtils.ts` cho term mapping, active-bond normalization và quote math dùng chung giữa loaders/tests; route files chỉ orchestration.
   - Trong `getApiRoutes.ts`, thêm injectable `BondingApiLoaders` + default loaders giống `StakingApiLoaders` để route tests không cần live RPC.
-  - Rate limit: mở rộng factory `createSwapRateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
+  - Rate limit: mở rộng factory `createWeb3RateLimiters()` hiện có trong `server/rateLimit.ts` (factory này đã chứa Staking limiter) bằng bonding quote/account/confirmation limiters; không tạo rate-limit store riêng.
   - `GET /api/bonding/config`: cache private 30 giây; trả chain/block, trạng thái paused của bốn deployment, min Buy/Sell, term/rate/duration V2 và địa chỉ contract/token.
   - `GET /api/bonding/account?address=…`: `private, no-store`; trả PRANA/WBTC balance, allowance cho hai V2 contract và active Buy/Sell bonds từ cả V1/V2.
   - `POST /api/bonding/quote`: `private, no-store`; request là union `buy_exact_wbtc` hoặc `sell_exact_prana`, gồm `amountRaw` (canonical decimal string, `1…MAX_UINT256`) và `termId`.

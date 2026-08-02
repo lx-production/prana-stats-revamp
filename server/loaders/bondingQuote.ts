@@ -1,30 +1,12 @@
-import { ethers } from 'ethers';
 import { erc20Abi } from 'viem';
+import { ethers } from 'ethers';
 import { getServerPolygonProvider } from '../utils/providers.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
-import {
-  BondingApiValidationError,
-  computeBondingQuote,
-  computePoolReserves,
-  parseUnsignedDecimalRaw,
-} from '../utils/bondingReadUtils.ts';
-import {
-  BUY_BOND_V2_ABI,
-  SELL_BOND_V2_ABI,
-  BUY_BOND_ADDRESS_V2,
-  SELL_BOND_ADDRESS_V2,
-} from '../../constants/bonds.ts';
-import {
-  PRANA_ADDRESS,
-  WBTC_ADDRESS,
-  UNISWAP_V3_POOL_ABI,
-  WBTC_PRANA_V3_POOL,
-} from '../../constants/sharedContracts.ts';
+import { BUY_BOND_V2_ABI, SELL_BOND_V2_ABI, BUY_BOND_ADDRESS_V2, SELL_BOND_ADDRESS_V2 } from '../../constants/bonds.ts';
+import { PRANA_ADDRESS, WBTC_ADDRESS, UNISWAP_V3_POOL_ABI, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
+import { BondingApiValidationError, computeBondingQuote, computePoolReserves, parseUnsignedDecimalRaw } from '../utils/bondingReadUtils.ts';
 
-import type {
-  BondingQuote,
-  BondingQuoteRequest,
-} from '../../features/bonding/bonding.types.ts';
+import type { BondingQuote, BondingQuoteRequest } from '../../features/bonding/bonding.types.ts';
 
 /**
  * Live quote at one blockTag. Non-executable states still return 200-shaped quotes

@@ -318,7 +318,7 @@ server/types/
   transactionConfirmationTypes.ts
 server/getApiRoutes.ts          # GET config + account (+ BondingApiLoaders)
 server/postApiRoutes.ts         # POST quote + confirm (+ BondingPostApiLoaders)
-server/rateLimit.ts             # buckets inside createSwapRateLimiters()
+server/rateLimit.ts             # buckets inside createWeb3RateLimiters()
 ```
 
 Server confirm uses shared `confirmTransactionOnChain` after bonding-local

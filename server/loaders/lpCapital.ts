@@ -1,20 +1,10 @@
-import {
-  ARBITRUM_USDT,
-  ARBITRUM_WBTC,
-  ERC721_ENUMERABLE_ABI,
-  LP_TOKEN_ID_CACHE_TTL_MS,
-  NONFUNGIBLE_POSITION_MANAGER,
-  POOL_ABI,
-  POOL_FEE,
-  POSITION_MANAGER_ABI,
-  WBTC_USDT_POOL,
-} from '../../constants/arbitrumWbtcUsdtLp.ts';
 import { ethers } from 'ethers';
 import { fetchJsonSafe } from '../../utils/fetchJson.ts';
+import { getServerArbitrumProvider } from '../utils/providers.ts';
 import { calculatePositionMath } from '../../utils/uniswapV3Helpers.ts';
 import { PROTOCOL_RESERVE_ADDRESS } from '../../constants/protocolAddresses.ts';
 import { MULTICALL3_ABI, MULTICALL3_ADDRESS } from '../../constants/sharedContracts.ts';
-import { getServerArbitrumProvider } from '../utils/providers.ts';
+import { ARBITRUM_USDT, ARBITRUM_WBTC, ERC721_ENUMERABLE_ABI, LP_TOKEN_ID_CACHE_TTL_MS, NONFUNGIBLE_POSITION_MANAGER, POOL_ABI, POOL_FEE, POSITION_MANAGER_ABI, WBTC_USDT_POOL } from '../../constants/arbitrumWbtcUsdtLp.ts';
 
 import type { LpCapitalApiResponse } from '../../types/api.types.ts';
 

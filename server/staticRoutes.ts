@@ -1,11 +1,8 @@
 import path from 'node:path';
 import { tryServeFile } from './helpers/tryServeFile.ts';
 import { DIST_DIR, PROJECT_ROOT, PUBLIC_DIR } from './projectRoot.ts';
-import {
-  sendJson,
-  sendRedirect,
-  rootDataJsonFilenameFromPathname,
-} from './helpers/requestHelpers.ts';
+import { sendJson, sendRedirect, rootDataJsonFilenameFromPathname } from './helpers/requestHelpers.ts';
+
 import {
   BOND_PATH,
   STAKE_PATH,

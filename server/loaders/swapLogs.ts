@@ -1,11 +1,4 @@
-import type {
-  HexAddress,
-  SwapQuoteRequest,
-  SwapRouteStep,
-  SwapToken,
-  SwapTransactionLogEvent,
-  SwapTransactionLogRequest,
-} from '../../types/swap.types.ts';
+import type { HexAddress, SwapQuoteRequest, SwapRouteStep, SwapToken, SwapTransactionLogEvent, SwapTransactionLogRequest } from '../../types/swap.types.ts';
 
 const VALID_SWAP_LOG_EVENTS = new Set<SwapTransactionLogEvent>([
   'approval_submitted',

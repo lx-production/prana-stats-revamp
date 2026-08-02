@@ -1,10 +1,10 @@
 import { summaryCache } from './getApiRoutes.ts';
 import { loadSummaryMarkdown } from './loaders/summary.ts';
+import { formatErrorForLog } from './helpers/logRedaction.ts';
 import { loadCachedLpCapital } from './loaders/cached/lpCapitalCached.ts';
 import { loadCachedBondMetrics } from './loaders/cached/bondMetricsCached.ts';
 import { loadCachedStakingStats } from './loaders/cached/stakingStatsCached.ts';
 import { loadCachedStakingConfig } from './loaders/cached/stakingConfigCached.ts';
-import { formatErrorForLog } from './helpers/logRedaction.ts';
 
 export async function warmApiCaches() {
   const warmups = [

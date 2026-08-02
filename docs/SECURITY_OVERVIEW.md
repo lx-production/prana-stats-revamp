@@ -52,7 +52,7 @@ Private Alchemy (or other) keys stay on the server process. CSP `connect-src` al
 
 ### 2.3 Swap API surface
 
-All swap endpoints are POST-only, JSON body, same-origin checks, body size caps, and per-IP rate limits (`server/postApiRoutes.ts`, `server/rateLimit.ts`, `server/helpers/apiRoutesHelpers.ts`).
+All swap endpoints are POST-only, JSON body, same-origin checks, body size caps, and per-IP rate limits (`server/postApiRoutes.ts`, `server/rateLimit.ts`, `server/helpers/apiRoutesHelpers.ts`, `server/helpers/postApiRoutesHelpers.ts`).
 
 | Endpoint | Purpose | Body cap | Rate limit |
 | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ All swap endpoints are POST-only, JSON body, same-origin checks, body size caps,
 
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 
-Client IP for rate limiting (`server/rateLimit.ts`): `X-Forwarded-For` is only trusted when the direct socket peer is a localhost proxy (`127.0.0.1` / `::1`). The client IP is then taken by counting hops from the right of the header (`TRUSTED_PROXY_HOP_COUNT`; production uses `2` because both VPS and Pi nginx append — see [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Otherwise the socket address is used.
+Client IP for rate limiting (`server/helpers/rateLimitHelpers.ts`): `X-Forwarded-For` is only trusted when the direct socket peer is a localhost proxy (`127.0.0.1` / `::1`). The client IP is then taken by counting hops from the right of the header (`TRUSTED_PROXY_HOP_COUNT`; production uses `2` because both VPS and Pi nginx append — see [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Otherwise the socket address is used.
 
 ### 2.4 Shared POST request admission checks
 
@@ -336,9 +336,10 @@ Multi-instance deploys would need shared rate-limit storage plus a shared Swap s
 | --- | --- |
 | Network ops docs | `docs/NETWORK_ARCHITECTURE.md` |
 | Security headers | `server/securityHeaders.ts` |
-| Rate limits / client IP | `server/rateLimit.ts` |
+| Rate limits / client IP | `server/rateLimit.ts`, `server/helpers/rateLimitHelpers.ts` |
 | Swap routes | `server/postApiRoutes.ts` |
 | Origin / Content-Type / error sanitize | `server/helpers/apiRoutesHelpers.ts` |
+| Web3 POST admission / bonding+staking sanitize / swap log metadata | `server/helpers/postApiRoutesHelpers.ts` |
 | Body size limits | `server/helpers/requestHelpers.ts` (`readJsonBody`) |
 | Quote orchestration | `server/loaders/swapQuote.ts` |
 | Calldata audit | `server/loaders/swapValidations.ts` |

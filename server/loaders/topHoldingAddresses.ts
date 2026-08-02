@@ -1,7 +1,8 @@
 import { createServerCache } from '../helpers/cacheHelpers.ts';
 import { SERVER_CACHE_TTL_MS } from '../../constants/cachePolicy.ts';
-import { loadTopHoldingAddresses } from '../../scripts/update-top-holding-addresses.ts';
 import { TOP_HOLDING_ADDRESSES } from '../../constants/topHoldingAddresses.ts';
+import { loadTopHoldingAddresses } from '../../scripts/update-top-holding-addresses.ts';
+
 import type { TopHoldingAddressesBuildOutput } from '../../types/types.ts';
 
 export const TOP_HOLDERS_PAGE_SIZE = 5;

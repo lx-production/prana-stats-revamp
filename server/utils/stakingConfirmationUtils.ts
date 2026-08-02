@@ -2,11 +2,7 @@ import { parseUnsignedDecimalRaw } from './parseUnsignedDecimalRaw.ts';
 import { StakingApiValidationError } from './stakingQuoteUtils.ts';
 
 import type { Address, Hex } from '../../types/blockchain.types.ts';
-import type {
-  StakeActionKind,
-  StakingTransactionActionSnapshot,
-  StakingTransactionConfirmationRequest,
-} from '../../features/staking/staking.types.ts';
+import type { StakeActionKind, StakingTransactionActionSnapshot, StakingTransactionConfirmationRequest } from '../../features/staking/staking.types.ts';
 
 /** Sender/target/calldata mismatch — never report as confirmed. */
 export class StakingConfirmationMismatchError extends Error {

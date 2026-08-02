@@ -1,52 +1,24 @@
 import { loadSwapQuote } from './loaders/swapQuote.ts';
 import { loadBondingQuote } from './loaders/bondingQuote.ts';
-import { formatErrorForLog } from './helpers/logRedaction.ts';
 import { loadStakingQuote } from './loaders/stakingQuote.ts';
-import { readJsonBody, sendJson } from './helpers/requestHelpers.ts';
+import { formatErrorForLog } from './helpers/logRedaction.ts';
 import { parseChecksumAddress } from './helpers/addressHelpers.ts';
+import { parseSwapQuoteRequest } from './utils/swapQuoteRequest.ts';
+import { readJsonBody, sendJson } from './helpers/requestHelpers.ts';
 import { verifyAndLogSwapTransaction } from './loaders/swapTransactionVerification.ts';
 import { confirmBondingTransaction } from './loaders/bondingTransactionConfirmation.ts';
 import { confirmStakingTransaction } from './loaders/stakingTransactionConfirmation.ts';
-import {
-  rejectInvalidSwapApiRequest,
-  sanitizeSwapErrorMessage,
-} from './helpers/apiRoutesHelpers.ts';
-import {
-  StakingApiValidationError,
-  parseStakingQuoteRequest,
-  sanitizeStakingErrorMessage,
-} from './utils/stakingQuoteUtils.ts';
-import {
-  StakingConfirmationMismatchError,
-  parseStakingConfirmationRequest,
-} from './utils/stakingConfirmationUtils.ts';
-import {
-  BondingApiValidationError,
-  BondingConfirmationMismatchError,
-  parseBondingConfirmationRequest,
-  parseBondingQuoteRequest,
-} from './utils/bondingReadUtils.ts';
-import { parseSwapQuoteRequest } from './utils/swapQuoteRequest.ts';
-import {
-  logSwapTransactionEvent,
-  parseSwapTransactionLogRequest,
-} from './loaders/swapLogs.ts';
+import { logSwapTransactionEvent, parseSwapTransactionLogRequest } from './loaders/swapLogs.ts';
+import { rejectInvalidSwapApiRequest, sanitizeSwapErrorMessage } from './helpers/apiRoutesHelpers.ts';
+import { StakingConfirmationMismatchError, parseStakingConfirmationRequest } from './utils/stakingConfirmationUtils.ts';
+import { StakingApiValidationError, parseStakingQuoteRequest, sanitizeStakingErrorMessage } from './utils/stakingQuoteUtils.ts';
+import { BondingApiValidationError, BondingConfirmationMismatchError, parseBondingConfirmationRequest, parseBondingQuoteRequest } from './utils/bondingReadUtils.ts';
+import { createSwapRequestLogMetadata, rejectIfWeb3PostAdmissionLimited, sanitizeBondingErrorMessage, sanitizeStakingPostErrorMessage } from './helpers/postApiRoutesHelpers.ts';
 
-import type { SwapRateLimiters } from './rateLimit.ts';
+import type { Web3RateLimiters } from './rateLimit.ts';
 import type { RequestHandler } from './types/httpTypes.ts';
-import type { SwapRequestLogMetadata } from './loaders/swapLogs.ts';
-import type {
-  StakingQuote,
-  StakingQuoteRequest,
-  StakingTransactionConfirmation,
-  StakingTransactionConfirmationRequest,
-} from '../features/staking/staking.types.ts';
-import type {
-  BondingQuote,
-  BondingQuoteRequest,
-  BondingTransactionConfirmation,
-  BondingTransactionConfirmationRequest,
-} from '../features/bonding/bonding.types.ts';
+import type { BondingQuote, BondingQuoteRequest, BondingTransactionConfirmation, BondingTransactionConfirmationRequest } from '../features/bonding/bonding.types.ts';
+import type { StakingQuote, StakingQuoteRequest, StakingTransactionConfirmation, StakingTransactionConfirmationRequest } from '../features/staking/staking.types.ts';
 
 // Max request body sizes for each POST endpoint
 const SWAP_QUOTE_BODY_MAX_BYTES = 2048;
@@ -91,69 +63,9 @@ const DEFAULT_BONDING_POST_API_LOADERS: BondingPostApiLoaders = {
 const STAKING_POST_CACHE_CONTROL = 'private, no-store';
 const BONDING_POST_CACHE_CONTROL = 'private, no-store';
 
-/** Safe user-facing message for staking POST validation / body / mismatch errors. */
-function sanitizeStakingPostErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof StakingConfirmationMismatchError) return error.message;
-  return sanitizeStakingErrorMessage(error, fallback);
-}
-
-// Headers can be string | string[]; pick the first value when it's an array
-function singleHeaderValue(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-// Builds metadata attached to swap logs (IP, host, origin, user-agent)
-function createSwapRequestLogMetadata(
-  req: Parameters<RequestHandler>[0],
-  rateLimiters: SwapRateLimiters,
-): SwapRequestLogMetadata {
-  return {
-    clientIp: rateLimiters.getClientIp(req),
-    requestHost: singleHeaderValue(req.headers.host),
-    requestOrigin: singleHeaderValue(req.headers.origin),
-    userAgent: singleHeaderValue(req.headers['user-agent']),
-  };
-}
-
-/** Safe user-facing message for bonding POST validation / body errors. */
-function sanitizeBondingErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof BondingApiValidationError) return error.message;
-  if (error instanceof BondingConfirmationMismatchError) return error.message;
-  if (error instanceof SyntaxError) return 'Invalid JSON request body.';
-  if (error instanceof Error) {
-    const allowed = [
-      'Request body is required.',
-      'Request body is too large.',
-      'Expected application/json request body.',
-      'Cross-origin swap API requests are not allowed.',
-    ];
-    if (allowed.includes(error.message)) return error.message;
-  }
-  return fallback;
-}
-
-/**
- * Shared cheap admission for all Web3 POSTs — before body parse / expensive budgets.
- * Returns true when the response was already sent.
- */
-function rejectIfWeb3PostAdmissionLimited(
-  req: Parameters<RequestHandler>[0],
-  res: Parameters<RequestHandler>[1],
-  rateLimiters: SwapRateLimiters,
-): boolean {
-  if (rateLimiters.isWeb3PostAdmissionRateLimited(req)) {
-    sendJson(res, 429, {
-      error: 'rate_limited',
-      message: 'Too many API requests. Please wait a moment and try again.',
-    });
-    return true;
-  }
-  return false;
-}
-
 // Handles POST-only swap + staking quote + bonding API routes
 export function createPostApiRouteHandler(
-  rateLimiters: SwapRateLimiters,
+  rateLimiters: Web3RateLimiters,
   loaders: PostApiLoaders = {},
 ): RequestHandler {
   const stakingLoaders: StakingPostApiLoaders = {

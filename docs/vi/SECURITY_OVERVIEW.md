@@ -53,7 +53,7 @@ Key Alchemy (hoặc RPC private khác) chỉ nằm trên process server. CSP `co
 
 ### 2.3 Bề mặt API Swap
 
-Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin, giới hạn kích thước body, và rate limit theo IP (`server/postApiRoutes.ts`, `server/rateLimit.ts`, `server/helpers/apiRoutesHelpers.ts`).
+Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin, giới hạn kích thước body, và rate limit theo IP (`server/postApiRoutes.ts`, `server/rateLimit.ts`, `server/helpers/apiRoutesHelpers.ts`, `server/helpers/postApiRoutesHelpers.ts`).
 
 | Endpoint | Mục đích | Giới hạn body | Rate limit |
 | --- | --- | --- | --- |
@@ -63,7 +63,7 @@ Mọi endpoint swap đều chỉ nhận POST, body JSON, kiểm tra same-origin,
 
 Rate limiter dùng cửa sổ thời gian cố định trong bộ nhớ process, kèm dọn bucket định kỳ.
 
-IP client cho rate limiting (`server/rateLimit.ts`): chỉ tin `X-Forwarded-For` khi peer socket trực tiếp là proxy localhost (`127.0.0.1` / `::1`). Khi đó IP client được lấy bằng cách đếm hop từ bên phải của header (`TRUSTED_PROXY_HOP_COUNT`; production dùng `2` vì cả VPS lẫn Pi nginx đều append — xem [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Nếu không, dùng địa chỉ socket.
+IP client cho rate limiting (`server/helpers/rateLimitHelpers.ts`): chỉ tin `X-Forwarded-For` khi peer socket trực tiếp là proxy localhost (`127.0.0.1` / `::1`). Khi đó IP client được lấy bằng cách đếm hop từ bên phải của header (`TRUSTED_PROXY_HOP_COUNT`; production dùng `2` vì cả VPS lẫn Pi nginx đều append — xem [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Nếu không, dùng địa chỉ socket.
 
 ### 2.4 Kiểm tra admission chung cho POST
 
@@ -337,9 +337,10 @@ Deploy nhiều instance sẽ cần storage rate-limit dùng chung cùng shared S
 | --- | --- |
 | Tài liệu network ops | `docs/NETWORK_ARCHITECTURE.md` |
 | Security headers | `server/securityHeaders.ts` |
-| Rate limit / IP client | `server/rateLimit.ts` |
+| Rate limit / IP client | `server/rateLimit.ts`, `server/helpers/rateLimitHelpers.ts` |
 | Swap routes | `server/postApiRoutes.ts` |
 | Origin / Content-Type / sanitize lỗi | `server/helpers/apiRoutesHelpers.ts` |
+| Admission Web3 POST / sanitize bonding+staking / metadata log swap | `server/helpers/postApiRoutesHelpers.ts` |
 | Giới hạn kích thước body | `server/helpers/requestHelpers.ts` (`readJsonBody`) |
 | Điều phối quote | `server/loaders/swapQuote.ts` |
 | Audit calldata | `server/loaders/swapValidations.ts` |

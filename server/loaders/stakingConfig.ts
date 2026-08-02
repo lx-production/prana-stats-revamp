@@ -4,13 +4,7 @@ import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
 import { PRANA_ADDRESS } from '../../constants/sharedContracts.ts';
 import { mapDurationOptions } from '../utils/stakingReadUtils.ts';
 import { toBigInt, toNumberSafe } from '../../utils/fetchActiveStakesUtils.ts';
-import {
-  INTEREST_CONTRACT_ADDRESS,
-  PRANA_PERMIT_DOMAIN_NAME,
-  PRANA_PERMIT_DOMAIN_VERSION,
-  STAKING_CONTRACT_ABI,
-  STAKING_CONTRACT_ADDRESS,
-} from '../../constants/stakingContracts.ts';
+import { INTEREST_CONTRACT_ADDRESS, PRANA_PERMIT_DOMAIN_NAME, PRANA_PERMIT_DOMAIN_VERSION, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../constants/stakingContracts.ts';
 
 import type { StakingConfig } from '../../features/staking/staking.types.ts';
 

@@ -7,19 +7,19 @@ import { loadCachedStakingStats } from './cached/stakingStatsCached.ts';
 import { loadCachedTopHoldingAddresses } from './topHoldingAddresses.ts';
 
 import { PROJECT_ROOT } from '../projectRoot.ts';
-import { STAKE_CANONICAL_PATH } from '../../constants/appRoutes.ts';
 import { readJsonIfExists } from '../../utils/jsonHelper.ts';
 import { parseFaqMarkdown } from '../../utils/faqParser.ts';
 import { TIMELINE_COPY_EN } from '../../data/timelineCopy.ts';
+import { STAKE_CANONICAL_PATH } from '../../constants/appRoutes.ts';
 import { TIMELINE_EVENTS_META } from '../../data/timelineEventsMeta.ts';
 import { computeProtocolCapitalUsd } from '../../utils/protocolCapital.ts';
 import { copyByLocale } from '../../components/doublePranaAbsorptionFlow.copy.ts';
 import { formatHeroMessage, heroHeadlinesByLocale } from '../../data/heroHeadlines.ts';
 import { computeSupplyMetrics, PRANA_TOTAL_SUPPLY } from '../../utils/supplyMetrics.ts';
 import { buildBtcPriceChange, buildFiatPriceChange } from '../../utils/pranaStatsPerformance.ts';
-import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
-import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
 import { mdList, mdQuestions, readMarkdownData, readPricePointSeries, toFiniteNumber } from '../utils/summaryUtils.ts';
+import { formatUnixDate, formatNumber, formatPercent, formatSats, formatUsd, formatVnd } from '../../utils/formatters.ts';
+import { computeLiquidityMetrics, getDexPoolPranaAmount, getDexPoolWbtcUsdValue, SATS_PER_BTC } from '../../utils/liquidityMetrics.ts';
 
 import type { BuyDipsJson } from '../../types/buyDips.types.ts';
 import type { PriceChangeSet } from '../../types/performance.ts';

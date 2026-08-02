@@ -1,13 +1,10 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
+import fs from 'node:fs/promises';
+
 import { cacheControlFor } from './cacheControl.ts';
-import { setSecurityHeaders } from './securityHeaders.ts';
 import { fileExists } from './helpers/requestHelpers.ts';
-import {
-  clientAcceptsGzip,
-  gzipSiblingPath,
-  isGzipEligiblePath,
-} from './helpers/staticGzip.ts';
+import { setSecurityHeaders } from './securityHeaders.ts';
+import { clientAcceptsGzip, gzipSiblingPath, isGzipEligiblePath } from './helpers/staticGzip.ts';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CachedStaticFile, StaticFileCache } from './types/serveFileTypes.ts';
