@@ -1,16 +1,9 @@
 import { usePendingTransaction } from '../../web3/hooks/usePendingTransaction.ts';
-import {
-  clearPendingStakeTransaction,
-  loadPendingStakeTransaction,
-  savePendingStakeTransaction,
-} from '../utils/stakePendingTransactionStorage.ts';
+import { clearPendingStakeTransaction, loadPendingStakeTransaction, savePendingStakeTransaction } from '../utils/stakePendingTransactionStorage.ts';
 
 import type { Address } from '../../../types/blockchain.types.ts';
+import type { PendingStakeTransaction, StakingTxActionKind } from '../staking.types.ts';
 import type { PendingTransactionStorageAdapter } from '../../web3/hooks/usePendingTransaction.types.ts';
-import type {
-  PendingStakeTransaction,
-  StakingTxActionKind,
-} from '../staking.types.ts';
 
 type UsePendingStakeTransactionInput = {
   account: Address | undefined;

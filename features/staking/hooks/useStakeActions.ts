@@ -1,36 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePublicClient } from 'wagmi';
 import { polygon } from 'wagmi/chains';
+import { usePublicClient } from 'wagmi';
+import { getStakingCopy } from '../staking.copy.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import {
-  STAKING_CONTRACT_ABI,
-  STAKING_CONTRACT_ADDRESS,
-} from '../../../constants/stakingContracts.ts';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { confirmStakeReceipt } from '../utils/stakeTransactionFlow.ts';
+import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
+import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
-import { getStakingCopy } from '../staking.copy.ts';
-import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
-import { confirmStakeReceipt } from '../utils/stakeTransactionFlow.ts';
-import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
-import {
-  buildPendingStakeTransaction,
-  pendingStakeTransactionMatchesWallet,
-} from '../utils/stakePendingTransactionStorage.ts';
-import {
-  formatStakingError,
-  getStakingErrorMessage,
-  logStakingFailure,
-} from '../utils/stakingErrors.ts';
+import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
+import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
+import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
-import type {
-  PendingStakeTransaction,
-  StakeActionKind,
-  StakeTransactionStatus,
-  StakingTransactionActionSnapshot,
-} from '../staking.types.ts';
+import type { PendingStakeTransaction, StakeActionKind, StakeTransactionStatus, StakingTransactionActionSnapshot } from '../staking.types.ts';
 
 const ACTION_PENDING_KINDS = ['claim', 'unstake', 'unstakeEarly'] as const;
 

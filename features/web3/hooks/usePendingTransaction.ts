@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Address } from '../../../types/blockchain.types.ts';
-import type {
-  UsePendingTransactionInput,
-  UsePendingTransactionResult,
-} from './usePendingTransaction.types.ts';
+import type { UsePendingTransactionInput, UsePendingTransactionResult } from './usePendingTransaction.types.ts';
+
 
 /**
  * Persist + restore one pending tx bound to account/chain.

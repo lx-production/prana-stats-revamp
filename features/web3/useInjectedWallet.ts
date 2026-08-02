@@ -1,13 +1,6 @@
 import { useCallback } from 'react';
 import { POLYGON_CHAIN_ID } from '../../constants/network.ts';
-import {
-  useConnect,
-  useConnection,
-  useConnectors,
-  useDisconnect,
-  useSwitchChain,
-  ProviderNotFoundError,
-} from 'wagmi';
+import { useConnect, useConnection, useConnectors, useDisconnect, useSwitchChain, ProviderNotFoundError } from 'wagmi';
 
 import type { Connector } from 'wagmi';
 import type { HexAddress } from '../../types/blockchain.types.ts';

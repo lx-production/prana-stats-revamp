@@ -4,8 +4,8 @@ import StatusBanner from '../../../components/ui/StatusBanner.tsx';
 import { formatGraceRemainingLabel } from '../utils/formatGraceRemaining.ts';
 import { calculateAccruedInterestRaw, calculateTotalInterestRaw, formatPranaAmount, getEffectiveAccruedSeconds, getGraceDeadline, getStakeActionState, getStakeDisplayStatus, getStakeEndTime, getStakeProgressPercent } from '../utils/stakingMath.ts';
 
-import type { SiteLocale } from '../../../types/locale.types.ts';
 import type { StakingCopy } from '../staking.copy.ts';
+import type { SiteLocale } from '../../../types/locale.types.ts';
 import type { StakeActionKind, StakeRecord } from '../staking.types.ts';
 
 type StakeCardProps = {

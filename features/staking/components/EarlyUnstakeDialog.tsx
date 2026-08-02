@@ -1,11 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
+
+import { Loader2 } from 'lucide-react';
 import { trapFocus } from '../../../utils/focusTrap.ts';
-import {
-  calculateEarlyUnstakeReturn,
-  formatPranaAmount,
-} from '../utils/stakingMath.ts';
+import { calculateEarlyUnstakeReturn, formatPranaAmount } from '../utils/stakingMath.ts';
 
 import type { StakingCopy } from '../staking.copy.ts';
 import type { StakeRecord } from '../staking.types.ts';

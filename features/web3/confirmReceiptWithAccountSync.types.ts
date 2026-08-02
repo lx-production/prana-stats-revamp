@@ -1,8 +1,5 @@
 import type { Hex } from '../../types/blockchain.types.ts';
-import type {
-  ServerConfirmationResult,
-  WaitReceiptResult,
-} from './transactionConfirmation.types.ts';
+import type { ServerConfirmationResult, WaitReceiptResult } from './transactionConfirmation.types.ts';
 
 export type ConfirmReceiptWithAccountSyncDependencies = {
   hash: Hex;

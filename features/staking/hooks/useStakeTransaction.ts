@@ -1,50 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSignature } from 'viem';
-import { usePublicClient } from 'wagmi';
 import { polygon } from 'wagmi/chains';
+import { usePublicClient } from 'wagmi';
+import { getStakingCopy } from '../staking.copy.ts';
+import { getConfiguredDuration } from '../utils/stakingMath.ts';
+import { isPermitSnapshotValid } from '../utils/permitUtils.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import {
-  PERMIT_DEADLINE_SECONDS,
-  PRANA_PERMIT_TYPES,
-  STAKING_CONTRACT_ABI,
-  STAKING_CONTRACT_ADDRESS,
-} from '../../../constants/stakingContracts.ts';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
-import { getStakingCopy } from '../staking.copy.ts';
+import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
+import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
-import { isPermitSnapshotValid } from '../utils/permitUtils.ts';
-import { getConfiguredDuration } from '../utils/stakingMath.ts';
-import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
-import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
-import {
-  buildPendingStakeTransaction,
-  pendingStakeTransactionMatchesWallet,
-} from '../utils/stakePendingTransactionStorage.ts';
-import {
-  formatStakingError,
-  getStakingErrorMessage,
-  logStakingFailure,
-} from '../utils/stakingErrors.ts';
-import {
-  confirmStakeReceipt,
-  runPermitThenStake,
-  resolvePermitAndStakeAction,
-  submitStakeWithPermitFlow,
-} from '../utils/stakeTransactionFlow.ts';
+import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
+import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
+import { confirmStakeReceipt, runPermitThenStake, resolvePermitAndStakeAction, submitStakeWithPermitFlow } from '../utils/stakeTransactionFlow.ts';
+import { PERMIT_DEADLINE_SECONDS, PRANA_PERMIT_TYPES, STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
-import type {
-  PendingStakeTransaction,
-  PermitSnapshot,
-  StakeTransactionStatus,
-  StakingAccountSnapshot,
-  StakingConfig,
-  StakingQuote,
-  StakingTransactionActionSnapshot,
-} from '../staking.types.ts';
+import type { PendingStakeTransaction, PermitSnapshot, StakeTransactionStatus, StakingAccountSnapshot, StakingConfig, StakingQuote, StakingTransactionActionSnapshot } from '../staking.types.ts';
 
 const FORM_PENDING_KINDS = ['stake'] as const;
 

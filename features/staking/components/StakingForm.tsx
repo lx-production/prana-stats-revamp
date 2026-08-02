@@ -1,28 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { formatUnits } from 'viem';
-import { Coins, Loader2 } from 'lucide-react';
+import DurationSelector from './DurationSelector.tsx';
 import TxLink from '../../../components/ui/TxLink.tsx';
-import { getStakingCopy } from '../staking.copy.ts';
-import { getStakeCtaPhase } from '../utils/stakeCtaPhase.ts';
+import React, { useEffect, useMemo, useState } from 'react';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import DurationSelector from './DurationSelector.tsx';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+
+import { formatUnits } from 'viem';
+import { Coins, Loader2 } from 'lucide-react';
+import { getStakingCopy } from '../staking.copy.ts';
+import { getStakeCtaPhase } from '../utils/stakeCtaPhase.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
-import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { useStakeTransaction } from '../hooks/useStakeTransaction.ts';
-import {
-  buildStakingQuoteRequest,
-  useStakingQuote,
-} from '../hooks/useStakingQuote.ts';
-import {
-  parseStakeAmount,
-  formatPranaAmount,
-  isStakeAmountInput,
-  calculateTotalInterestRaw,
-  getDefaultDurationSeconds,
-  getConfiguredDuration,
-} from '../utils/stakingMath.ts';
+import { PRANA_DECIMALS } from '../../../constants/sharedContracts.ts';
+import { buildStakingQuoteRequest, useStakingQuote } from '../hooks/useStakingQuote.ts';
+import { parseStakeAmount, formatPranaAmount, isStakeAmountInput, calculateTotalInterestRaw, getDefaultDurationSeconds, getConfiguredDuration } from '../utils/stakingMath.ts';
 
 import type { StakingConfig, StakingAccountSnapshot } from '../staking.types.ts';
 

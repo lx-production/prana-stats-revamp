@@ -1,13 +1,14 @@
+import StakeCard from './StakeCard.tsx';
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import TxLink from '../../../components/ui/TxLink.tsx';
+import EarlyUnstakeDialog from './EarlyUnstakeDialog.tsx';
 import GlassPanel from '../../../components/ui/GlassPanel.tsx';
 import StatusBanner from '../../../components/ui/StatusBanner.tsx';
-import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+
+import { Loader2 } from 'lucide-react';
 import { getStakingCopy } from '../staking.copy.ts';
 import { useStakeActions } from '../hooks/useStakeActions.ts';
-import EarlyUnstakeDialog from './EarlyUnstakeDialog.tsx';
-import StakeCard from './StakeCard.tsx';
-import TxLink from '../../../components/ui/TxLink.tsx';
+import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 
 import type { StakeRecord, StakingConfig } from '../staking.types.ts';
 
