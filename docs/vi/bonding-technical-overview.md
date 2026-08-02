@@ -5,7 +5,6 @@ Tài liệu này mô tả Bonding UI end-to-end: route `/bond/`, luồng Buy/Sel
 Related docs:
 
 - [`add-bonding-ui.md`](../add-bonding-ui.md) — kế hoạch triển khai từng bước + checklist test
-- [`BONDING-UI SECURITY REVIEW.md`](../BONDING-UI%20SECURITY%20REVIEW.md) — threat model, accepted design risks, hardening đã ship
 - [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI dùng chung với Swap và Staking
 - [`CACHE_ARCHITECTURE.md`](../CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
 - [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — inventory bảo mật toàn app
@@ -345,8 +344,6 @@ Deployments (Polygon): xem `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 ---
 
 ## Design constraints (không phải bug cần “fix” trong scope hiện tại)
-
-Chi tiết đầy đủ: [`BONDING-UI SECURITY REVIEW.md`](../BONDING-UI%20SECURITY%20REVIEW.md). Contributors cần biết khi thay đổi flow:
 
 1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate là guard UX, không phải bảo đảm on-chain.
 2. **Fresh quote trước create không bắt confirm in-app riêng** — form đã hiện amount/term/quote; CTA Create Bond fresh-quote rồi mở ví. Echo check vẫn bắt `mode` / `termId` / exact input khớp form snapshot.

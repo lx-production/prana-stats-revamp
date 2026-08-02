@@ -5,7 +5,6 @@ This document describes the Bonding UI end to end: the `/bond/` route, Buy/Sell/
 Related docs:
 
 - [`add-bonding-ui.md`](./add-bonding-ui.md) — step-by-step implementation plan + test checklist
-- [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md) — threat model, accepted design risks, hardening already shipped
 - [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI shared with Swap and Staking
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
 - [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — app-wide security inventory
@@ -345,8 +344,6 @@ Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 ---
 
 ## Design constraints (not bugs to “fix” in current scope)
-
-Full detail: [`BONDING-UI SECURITY REVIEW.md`](./BONDING-UI%20SECURITY%20REVIEW.md). Contributors should know these when changing the flow:
 
 1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + simulate are UX guards, not on-chain guarantees.
 2. **Fresh quote before create has no separate in-app confirm** — the form already shows amount/term/quote; Create Bond fresh-quotes then opens the wallet. Echo check still requires `mode` / `termId` / exact input to match the form snapshot.

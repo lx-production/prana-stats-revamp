@@ -128,11 +128,6 @@ Shared layer stops at `utils/fetchJson.ts` (GET dedupe; POST quote/confirmation
 sets `dedupeKey: null`). Named fetch helpers, query keys, and query options stay
 in each feature so endpoints and cache/refetch behavior remain easy to find.
 
-This was the decision-gate outcome for Điểm 5 in
-[`STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md`](./STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md):
-the wrappers are already short and typed, only two consumers exist per pattern,
-and a generic helper would add layers without a clear complexity win.
-
 The root `utils/` directory also contains Stats-oriented data and calculation
 modules. Important groups include:
 

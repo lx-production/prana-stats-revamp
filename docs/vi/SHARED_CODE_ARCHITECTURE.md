@@ -126,11 +126,6 @@ Lớp dùng chung dừng ở `utils/fetchJson.ts` (dedupe GET; POST quote/confir
 đặt `dedupeKey: null`). Named fetch helpers, query keys, và query options ở lại
 từng feature để endpoint cùng hành vi cache/refetch vẫn dễ tìm.
 
-Đây là kết quả decision gate của Điểm 5 trong
-[`STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md`](../STAKING_BONDING_SHARED_INFRASTRUCTURE_REFACTOR_PLAN.md):
-wrapper đã ngắn và typed, mỗi pattern chỉ có hai consumer, và helper generic sẽ
-thêm lớp mà không giảm độ phức tạp một cách rõ ràng.
-
 Thư mục gốc `utils/` cũng chứa các module dữ liệu và tính toán hướng Stats.
 Các nhóm quan trọng gồm:
 

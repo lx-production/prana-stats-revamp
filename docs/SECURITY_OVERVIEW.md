@@ -1,6 +1,8 @@
-# Security Overview — Node App & Swap Modal
+# Security Overview — Node App, Swap, Staking & Bonding
 
-This document describes the security-related mechanisms currently implemented in the Node app and the in-app Polygon swap modal. It is a factual inventory of how the system works today, based on the codebase.
+This document describes the security-related mechanisms currently implemented in the Node app and its Polygon Swap, Staking, and Bonding features. It is a factual inventory of how the system works today, based on the codebase.
+
+This is not a full smart-contract, dependency, wallet-extension, or production-infrastructure audit. Frontend checks and backend preflights improve safety and UX, but the deployed contracts and the transaction finally approved by the user's wallet remain authoritative.
 
 Production network path (VPS, reverse SSH tunnel, Pi nginx, edge TLS/rate limits) is documented in [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 
@@ -48,7 +50,7 @@ HSTS is **not** set by Node. The TLS edge (`docs/vps-prana.triethocduongpho.net`
 
 Private Alchemy (or other) keys stay on the server process. CSP `connect-src` allows the public frontend RPC host for browser fetches.
 
-### 2.3 API surface
+### 2.3 Swap API surface
 
 All swap endpoints are POST-only, JSON body, same-origin checks, body size caps, and per-IP rate limits (`server/postApiRoutes.ts`, `server/rateLimit.ts`, `server/helpers/apiRoutesHelpers.ts`).
 
@@ -57,36 +59,29 @@ All swap endpoints are POST-only, JSON body, same-origin checks, body size caps,
 | `POST /api/swap/quote` | Route + unsigned tx + HMAC | 2 KB | 5 / IP / min + 30 global / min |
 | `POST /api/swap/log` | Untrusted lifecycle telemetry | 8 KB | 30 / IP / min |
 | `POST /api/swap/verify-transaction` | On-chain proof → verified `swap_confirmed` log | 32 KB | 10 / IP / min |
-| `POST /api/staking/quote` | Fully-funded Interest preflight (raw bigint, same block) | 2 KB | 10 / IP / min + 60 global / min |
-| `POST /api/staking/confirm-transaction` | Browser-RPC fallback + required validation on resume/reload for fixed stake/claim/unstake actions | 2 KB | separate confirmation bucket |
-
-Staking confirmation only accepts hashes already broadcast by the user and validates sender/target/full calldata against the hardcoded staking contract. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server. It is UX confirmation only — not Swap-style trusted analytics.
-
-Bonding reuses the same admission helpers for its POSTs, but does **not** reuse Swap HMAC / verified analytics:
-
-| Endpoint | Purpose | Body cap | Rate limit |
-| --- | --- | --- | --- |
-| `GET /api/bonding/config` | Shared V1/V2 paused/terms/minimum snapshot | n/a | shared GET limiter family |
-| `GET /api/bonding/account` | Wallet balances/allowances/active bonds | n/a | 10 / IP / min + 120 global / min |
-| `POST /api/bonding/quote` | Exact WBTC / exact PRANA quote | 2 KB | 10 / IP / min + 60 global / min |
-| `POST /api/bonding/confirm-transaction` | Browser-RPC fallback + required validation on resume/reload for fixed approve/create/claim actions | 2 KB | separate confirmation bucket |
-
-Bonding confirmation only accepts hashes already broadcast by the user and validates sender/target/selector/args against an internal side/version mapping. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server. It is UX confirmation only — not Swap-style trusted analytics.
-
-Bonding POST quote/confirm (and GET account address checks) validate admission **before** consuming per-IP/global RPC rate-limit budget; flood volume is handled at the VPS nginx edge.
 
 Rate limiters use fixed windows in process memory, with periodic bucket cleanup.
 
 Client IP for rate limiting (`server/rateLimit.ts`): `X-Forwarded-For` is only trusted when the direct socket peer is a localhost proxy (`127.0.0.1` / `::1`). The client IP is then taken by counting hops from the right of the header (`TRUSTED_PROXY_HOP_COUNT`; production uses `2` because both VPS and Pi nginx append — see [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md)). Otherwise the socket address is used.
 
-### 2.4 Request admission checks
+### 2.4 Shared POST request admission checks
 
-Before handling a swap POST body, `rejectInvalidSwapApiRequest()`:
+Swap, Staking, and Bonding POST routes reuse `rejectInvalidSwapApiRequest()`:
 
 1. Requires `Content-Type` matching JSON (`application/json` or `*+json`).
 2. If `Origin` is present, requires it to match the request `Host` / `X-Forwarded-Host` candidates (with a localhost-to-localhost exception for local dev). Missing `Origin` is allowed (non-browser clients). Mismatch → `403 forbidden_origin`.
 
 `readJsonBody()` enforces the per-route byte cap and rejects empty bodies.
+
+Same-origin checking is browser request admission, not authentication or authorization. All wallet-specific data comes from public on-chain state, and the user's wallet signature remains the authorization for writes.
+
+Admission ordering currently differs by route:
+
+- Swap POSTs and `POST /api/staking/quote` consume their Node rate-limit budget before origin, content-type, body, or shape validation.
+- Staking confirmation and both Bonding POSTs validate origin/content type, parse the capped body, and validate its shape before consuming their expensive-RPC rate-limit budget.
+- Bonding and Staking account GETs validate the address before consuming their account-read budget.
+
+Malformed traffic is also limited at the VPS nginx edge; Node's in-process expensive-RPC budgets are not a replacement for edge flood controls.
 
 ### 2.5 Quote pipeline (`server/loaders/swapQuote.ts`)
 
@@ -164,7 +159,148 @@ Wallet connection uses the first available injected connector (`features/web3/us
 
 ---
 
-## 4. Build / deploy identity (ops visibility)
+## 4. Staking — security model
+
+### 4.1 Scope and trust boundaries
+
+- **Chain:** Polygon mainnet only (`chainId` `137`).
+- **Wallet:** injected connectors; the user wallet signs EIP-712 permit data and broadcasts all writes.
+- **Write target:** `stakeWithPermit`, `claimInterest`, `unstake`, and `unstakeEarly` always target the browser's hardcoded `STAKING_CONTRACT_ADDRESS`.
+- **Permit scope:** the EIP-2612 token domain/name/version and spender are read from `/api/staking/config`; the permit has a one-hour deadline.
+- **Backend role:** config, account, quote, and fallback confirmation are read/verification services. The backend does not hold user keys, sign permits, or broadcast transactions.
+
+The server builds the permit config from its own hardcoded PRANA and Staking constants, but the browser does **not** currently compare those returned values with local constants before signing. The backend response is therefore part of the permit trust boundary even though it cannot change the later `stakeWithPermit` write target. A compromised response that keeps the real PRANA verifying contract but changes the spender could ask the wallet to sign an unintended PRANA allowance; pinning both values in the client would strengthen this boundary.
+
+### 4.2 Staking API surface
+
+| Endpoint | Security-relevant behavior |
+| --- | --- |
+| `GET /api/staking/config` | `private, max-age=30`; no Node route rate limit; cached protocol pause/minimum/grace/penalty/APR and permit-domain data |
+| `GET /api/staking/account?address=` | Checksum address validation; `private, no-store`; 10 / IP / min + 120 global / min; one-block balance/nonce/stakes snapshot |
+| `POST /api/staking/quote` | JSON, 2 KB cap, `private, no-store`; 10 / IP / min + 60 global / min; fully-funded Interest preflight |
+| `POST /api/staking/confirm-transaction` | JSON, 2 KB cap, `private, no-store`; separate 30 / IP / min + 120 global / min confirmation bucket |
+| `GET /api/staking-stats` | 24-hour cached homepage aggregate only; never used to authorize or fund-gate a stake |
+
+Canonical raw amounts and permit nonces are decimal strings rather than JavaScript numbers. Server parsers bound raw integers to `uint256`; action stake IDs are bounded to the contract's `uint32`.
+
+### 4.3 Permit-and-stake guards
+
+Before requesting the permit signature, the client refetches the current wallet account/nonce and requests a fresh quote. Before broadcasting `stakeWithPermit`, it requests another fresh quote. Wallet, chain, balance, minimum, duration, pause state, and quote issues must still be valid. The user should also verify the permit's token and spender in the wallet because those typed-data fields currently come from the backend config response.
+
+Staking uses an exact-amount EIP-2612 permit rather than an ERC-20 `approve` transaction. The permit is invalidated in client state when its nonce, amount, duration, account, chain, or deadline no longer matches.
+
+The quote reads pause state, minimum, APRs, Interest-contract PRANA balance, and `totalInterestNeeded` at one `blockTag`. It computes:
+
+```text
+availableInterest = max(interestBalance - totalInterestNeeded, 0)
+```
+
+The CTA is blocked when the calculated interest for the new stake does not fit. This is a **soft preflight**, not an on-chain reservation: another transaction or state change can invalidate it before execution, and the contract may still revert.
+
+If permit signing succeeds but broadcast does not produce a transaction hash, the client may keep that permit in memory for **Continue Stake** until its amount, duration, wallet, chain, nonce context, or deadline becomes invalid. Permit signature components sent to the confirmation endpoint are used only to reconstruct and compare the already-broadcast calldata; they are not treated as credentials.
+
+### 4.4 Staking actions and confirmation
+
+- Claim/unstake/early-unstake targets are fixed in code. The UI derives available actions from on-chain timestamps and config, including claim-before-unstake during the grace window and an explicit early-unstake penalty warning.
+- These action rules are UX guards; contract execution is authoritative. Unclaimed interest after the grace period can be lost under current contract semantics.
+- Once a hash exists, the app persists `{chainId, account, hash, action, createdAt}` in `localStorage` for up to 24 hours and never rebroadcasts that action during resume.
+- A fresh in-session transaction may be accepted from the browser/wallet RPC receipt. A resume/reload requires server validation of receipt status, sender, hardcoded target, and full reconstructed calldata.
+- RPC lookup failure is `confirmation_unavailable`, not a revert. Only an explicit reverted receipt is reported as reverted.
+- The confirmation endpoint is a UX recovery path. It does not use Swap quote HMAC/replay protection and does not create trusted analytics.
+
+### 4.5 Staking limitations and error handling
+
+- The Staking frontend does **not** explicitly call `simulateContract` before stake/claim/unstake writes. Wallet/client gas estimation and the contract revert remain the pre-execution safeguards.
+- The 30-second config cache can briefly lag changed pause, term, or penalty state. Fresh quotes reduce this for stake eligibility, but the contract remains authoritative.
+- If post-receipt account synchronization fails for a stake action, the UI can lock further action writes until reload rather than risk acting on stale account state.
+- Server validation errors use an allowlist; unexpected RPC/internal failures return a generic `502`. Client wallet/provider errors are mapped to stable localized messages, with raw details kept out of user-facing copy.
+
+---
+
+## 5. Bonding — security model
+
+### 5.1 Scope and trust boundaries
+
+- **Chain:** Polygon mainnet only (`chainId` `137`).
+- **Create modes:** exact WBTC → PRANA Buy Bond, or exact PRANA → WBTC Sell Bond.
+- **Deployments:** new bonds are created only on V2. Claims support Buy/Sell × V1/V2 through an internal side/version mapping.
+- **Wallet:** injected connectors broadcast ERC-20 approval, create, and claim transactions.
+- **Write targets:** token, spender, create-contract, and claim-contract addresses come from hardcoded constants, never API response addresses.
+
+The backend supplies read snapshots and expected outputs. It cannot move funds, and it does not build an arbitrary target/calldata payload for the browser to execute.
+
+### 5.2 Bonding API surface
+
+| Endpoint | Security-relevant behavior |
+| --- | --- |
+| `GET /api/bonding/config` | `private, max-age=30`; no Node route rate limit; cached V1/V2 pause state plus V2 terms/minimum/address snapshot |
+| `GET /api/bonding/account?address=` | Checksum address validation; `private, no-store`; 10 / IP / min + 120 global / min; balances, V2 allowances, and V1/V2 active bonds |
+| `POST /api/bonding/quote` | JSON, 2 KB cap, `private, no-store`; 10 / IP / min + 60 global / min; validates body before spending RPC budget |
+| `POST /api/bonding/confirm-transaction` | JSON, 2 KB cap, `private, no-store`; separate 30 / IP / min + 120 global / min bucket; validates body before spending RPC budget |
+
+Quote/create/claim raw values must be canonical positive decimal `uint256` strings. Approval also accepts zero so an allowance can be revoked.
+
+### 5.3 Quote and write guards
+
+Each quote reads pause state, term/rate, impacted reserves, committed payout, treasury balance, and Uniswap V3 pool state at one `blockTag`. Bigint math mirrors Solidity's operation/rounding order and 1% fee. The quoted payout uses the contract's less favorable branch between impacted reserves and market reserves, and verifies that uncommitted treasury funds can cover the payout.
+
+Before approval or create, the client successfully refetches config/account data and obtains a fresh quote with no blocking issues. It checks the response echo against the form's mode, term, and exact input. Create calldata uses the form snapshot's input, not an amount copied from the quote response.
+
+- Approval is for the exact input amount when current allowance is insufficient; a larger existing allowance is not lowered.
+- Approval, create, and claim calls are simulated before broadcast.
+- Approve and create require separate user clicks and are never automatically chained.
+- Form writes and claim writes lock each other while a transaction is in flight.
+
+### 5.4 Confirmation and pending transactions
+
+Pending Bonding hashes use the same 24-hour account/chain-bound storage and no-rebroadcast policy as Staking. Resume/reload requires server validation of sender, fixed target, and full calldata reconstructed from the action snapshot:
+
+- approval → fixed WBTC/PRANA token + fixed V2 spender + exact amount;
+- create → fixed V2 Buy/Sell function + exact input + term;
+- claim → fixed Buy/Sell V1/V2 contract + bond ID.
+
+Fresh in-session browser receipts may be trusted without server validation. The confirmation endpoint is a UX fallback only; it does not reuse Swap HMAC/replay protection or write trusted analytics.
+
+### 5.5 Accepted payout risk: no `minOut` or deadline
+
+The deployed Buy/Sell create functions accept exact input and term but no user-signed minimum payout or deadline. The contract recalculates payout at execution from current state. Therefore:
+
+- the user always spends the approved exact input, but can receive less PRANA/WBTC than the UI quote;
+- fresh quote, response-echo validation, and simulation reduce stale-state mistakes but do **not** provide an on-chain payout guarantee;
+- the wallet prompt cannot display or enforce the expected payout because it is not part of calldata;
+- pricing uses current Uniswap V3 pool state rather than a TWAP, and manager-controlled or transaction-driven impacted-reserve changes can also move the result.
+
+This is an explicit current design trade-off, not protection supplied by the UI. Re-evaluate a new contract with `minOut`/deadline if volume, concurrency, MEV exposure, average bond value, or observed quote-to-execution differences rise materially.
+
+After the user clicks **Create Bond**, the client fresh-quotes and proceeds to the wallet without a second in-app confirmation of a changed expected payout. Because payout is absent from calldata, the wallet still cannot enforce that displayed value.
+
+### 5.6 Bonding account-read availability limit
+
+`GET /api/bonding/account` calls `getUserActiveBonds(address)` on all four Buy/Sell V1/V2 deployments. Each contract implementation scans its complete bond array twice, so request cost grows with total protocol bond history even when the requested address has no bonds.
+
+Any one of those reads failing causes the entire account snapshot—balances, allowances, and bonds—to return `502`, and the loader has no request-specific RPC timeout/abort. The per-IP/global limits reduce load but do not remove this RPC amplification risk. A long-term design should index bond events and query per-user records instead of relying on four unbounded full-history scans.
+
+### 5.7 Bonding error handling
+
+Known body/shape and confirmation-mismatch errors are returned as sanitized `400` responses. Unexpected RPC/internal failures become generic `502` responses. Client wallet/provider failures are mapped to stable localized messages; raw RPC text is not shown to users.
+
+---
+
+## 6. Shared Staking/Bonding confirmation guarantees
+
+The server confirmation helper (`server/utils/transactionConfirmationLookup.ts`) only handles already-broadcast hashes. It fetches both transaction and receipt, then:
+
+1. returns `not_mined` if either is absent;
+2. compares transaction sender, expected fixed target, and exact calldata;
+3. returns `confirmed` only for receipt status `1`;
+4. returns `reverted` only for receipt status `0`;
+5. returns `confirmation_unavailable` on provider/read failure or unknown status.
+
+This is deliberately narrower than Swap verification: it does not bind a server-issued quote, enforce payout, prevent quote replay, or establish trusted analytics. Local pending-transaction storage is only a resume hint and is never proof of success.
+
+---
+
+## 7. Build / deploy identity (ops visibility)
 
 Not an access-control control, but relevant to knowing what binary is live:
 
@@ -175,19 +311,19 @@ Documented in [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md) §7.
 
 ---
 
-## 5. Process-local state (operational note)
+## 8. Process-local state (operational note)
 
-These swap security state stores live in a single Node process memory and are not shared across workers or restarts:
+These security state stores live in a single Node process memory and are not shared across workers or restarts:
 
-- Per-IP / global rate-limit buckets
-- HMAC signing secret
-- Quote-token replay cache
+- Swap, Staking, and Bonding per-IP/global rate-limit buckets
+- Swap HMAC signing secret
+- Swap quote-token replay cache
 
-Multi-instance deploys would need a shared secret and shared replay store for HMAC/replay behavior to be consistent across instances. Current production shape is a single Node process on the Pi.
+Multi-instance deploys would need shared rate-limit storage plus a shared Swap secret and replay store for behavior to be consistent across instances. Current production shape is a single Node process on the Pi.
 
 ---
 
-## 6. Key source map
+## 9. Key source map
 
 | Area | Paths |
 | --- | --- |
@@ -206,4 +342,11 @@ Multi-instance deploys would need a shared secret and shared replay store for HM
 | Token / router constants | `constants/swapContracts.ts`, `utils/swapTokens.ts` |
 | Frontend RPC | `constants/network.ts` |
 | Swap UI hooks | `features/swap/hooks/useUniswapQuote.ts`, `features/swap/hooks/useUniswapSwap.ts`, `features/swap/utils/swapTransactionLogs.ts` |
-| Related tests | `server/tests/apiBoundary.test.ts`, `rateLimit.test.ts`, `securityHeaders.test.ts`, `swapQuote.test.ts`, `swapTransactionVerification.test.ts`, `swapLogs.test.ts` |
+| Shared receipt / pending safety | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonWalletReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
+| Staking constants / server | `constants/stakingContracts.ts`, `server/loaders/stakingAccount.ts`, `server/loaders/stakingQuote.ts`, `server/loaders/stakingTransactionConfirmation.ts` |
+| Staking client | `features/staking/hooks/useStakeTransaction.ts`, `features/staking/hooks/useStakeActions.ts`, `features/staking/utils/permitUtils.ts`, `features/staking/utils/stakePendingTransactionStorage.ts` |
+| Bonding constants / server | `constants/bonds.ts`, `server/loaders/bondingAccount.ts`, `server/loaders/bondingQuote.ts`, `server/loaders/bondingTransactionConfirmation.ts` |
+| Bonding client | `features/bonding/hooks/useBondTransaction.ts`, `features/bonding/hooks/useBondActions.ts`, `features/bonding/utils/bondQuoteEcho.ts`, `features/bonding/utils/bondPendingTransactionStorage.ts` |
+| Raw integer validation | `server/utils/parseUnsignedDecimalRaw.ts`, `server/utils/stakingQuoteUtils.ts`, `server/utils/stakingConfirmationUtils.ts`, `server/utils/bondingReadUtils.ts` |
+| Related server tests | `server/tests/apiBoundary.test.ts`, `rateLimit.test.ts`, `securityHeaders.test.ts`, `swapQuote.test.ts`, `swapTransactionVerification.test.ts`, `stakingApi.test.ts`, `bondingApi.test.ts` |
+| Related client tests | `features/staking/tests/**`, `features/bonding/tests/**` |
