@@ -91,6 +91,8 @@ PRANA Staking tạo và quản lý vị thế stake PRANA qua Staking Contract t
 - Sau đáo hạn, lãi chỉ claim được trong thời gian ân hạn. Unstake trước khi claim có thể mất lãi chưa claim, mặc dù UI đã có cơ chế ngăn chặn chuyện này. Hết ân hạn thì lãi chưa claim không còn claim được; bạn có trách nhiệm theo dõi và claim đúng hạn.
 - Owner có thể pause và đổi cấu hình toàn cục (APR sẵn có, minimum, ân hạn, phạt). APR của vị thế hiện hữu được cố định lúc tạo; pause, khóa quản trị, và quỹ Interest Contract vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
+
+
 ## 7. Tóm tắt PRANA Bonding và rủi ro riêng
 
 PRANA Bonding tạo và quản lý bond Buy/Sell qua các Bond contract trên Polygon. **Bond mới chỉ tạo trên V2**; V1 chỉ để xem và claim lịch sử. Chi tiết thao tác ví và luồng UI: xem [Hướng dẫn Bonding](/guide/bonding/) và [Giải thích Hợp đồng Bonding](/guide/bonding-contracts/).
@@ -98,9 +100,11 @@ PRANA Bonding tạo và quản lý bond Buy/Sell qua các Bond contract trên Po
 **Rủi ro chính**
 
 - Tạo bond có thể cần Approve ERC-20 rồi Create riêng; một lần bấm không mở liên tiếp cả hai trên ví. Payout vest theo thời gian và phải claim theo quy tắc contract.
-- Buy dùng nhập exact WBTC; Buy và Sell không có khóa slip on-chain (`minOut`). Quote là ước tính — số cuối có thể lệch nếu reserves, rate, treasury, hoặc state đổi giữa quote và thực thi. Fresh-quote trước write không đồng nghĩa khóa slip on-chain. Tuy nhiên với quy mô và traffic hiện tại của PRANA thì số quote và số thực thi khác nhau là hiếm khi xảy ra.
+- Buy dùng nhập exact WBTC; Buy và Sell không có khóa slip on-chain (`minOut`). Quote là ước tính — số cuối có thể lệch nếu reserves, rate, treasury, hoặc state đổi giữa quote và thực thi. Fresh-quote trước write không đồng nghĩa khóa slip on-chain. Tuy nhiên với quy mô và traffic hiện tại của PRANA thì số quote và số thực thi khác nhau hầu như không bao giờ xảy ra.
 - Claim có thể thất bại nếu deployment đang pause, treasury/reserves không đủ, mạng/RPC không sẵn có, hoặc lời gọi bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công vì những lý do bất khả kháng.
 - Admin/manager có thể pause, cập nhật rate/minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bond hiện hữu giữ điều khoản payout lúc tạo; pause, mức quỹ, và khóa role vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
+
+
 
 ## 8. Địa chỉ contract cần đối chiếu
 

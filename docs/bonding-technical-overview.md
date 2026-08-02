@@ -4,20 +4,22 @@ This document describes the Bonding UI end to end: the `/bond/` route, Buy/Sell/
 
 Related docs:
 
-- [`add-bonding-ui.md`](./add-bonding-ui.md) — step-by-step implementation plan + test checklist
-- [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI shared with Swap and Staking
-- [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
-- [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — app-wide security inventory
+- `[add-bonding-ui.md](./add-bonding-ui.md)` — step-by-step implementation plan + test checklist
+- `[SHARED_CODE_ARCHITECTURE.md](./SHARED_CODE_ARCHITECTURE.md)` — Web3/UI shared with Swap and Staking
+- `[CACHE_ARCHITECTURE.md](./CACHE_ARCHITECTURE.md)` — config cache vs account/quote `no-store`
+- `[SECURITY_OVERVIEW.md](./SECURITY_OVERVIEW.md)` — app-wide security inventory
 - User guide: `/guide/bonding/` · Contracts guide: `/guide/bonding-contracts/`
-- Vietnamese: [`vi/bonding-technical-overview.md`](./vi/bonding-technical-overview.md)
+- Vietnamese: `[vi/bonding-technical-overview.md](./vi/bonding-technical-overview.md)`
 
-Parallel templates: Staking (`/stake/` — [`staking-technical-overview.md`](./staking-technical-overview.md)) and the Swap modal — shared lazy entry, API, CTA phases, and confirmation fallback structure.
+Parallel templates: Staking (`/stake/` — `[staking-technical-overview.md](./staking-technical-overview.md)`) and the Swap modal — shared lazy entry, API, CTA phases, and confirmation fallback structure.
 
 ---
 
+
+
 ## What it is
 
-The **`/bond/`** page lets users create and claim PRANA bonds on **Polygon mainnet**:
+The `/bond/` page lets users create and claim PRANA bonds on **Polygon mainnet**:
 
 - **Buy Bond (V2):** send exact WBTC → receive vesting PRANA for a chosen term.
 - **Sell Bond (V2):** send exact PRANA → receive vesting WBTC for a chosen term.
@@ -29,6 +31,8 @@ Token amounts, allowance, and bond IDs travel through JSON as **decimal strings*
 
 ---
 
+
+
 ## Design goals / locked assumptions
 
 1. **Dedicated lazy route** — `/bond/` does not pull in `StatsPage`, GLB, or homepage data.
@@ -39,6 +43,8 @@ Token amounts, allowance, and bond IDs travel through JSON as **decimal strings*
 6. **Confirmation without inference** — an RPC read error ≠ an on-chain revert; once a hash exists, never broadcast a second time.
 
 ---
+
+
 
 ## High-level architecture
 
@@ -73,18 +79,22 @@ flowchart TD
   injected --> chain["Buy/Sell Bond V2 + ERC-20"]
 ```
 
+
+
 `main.tsx` lazy-loads `BondingEntry` on the `isBondPath` branch (outside the homepage shader shell), same pattern as `isStakePath`. `BondingEntry` wraps `BondingPage` with shared `Web3Providers`.
 
 Guides `/guide/bonding/` and `/guide/bonding-contracts/` live in the homepage/legal shell — they do **not** pull the Bonding/Web3 chunk.
 
 ### Trust split
 
-| Layer | Responsibility |
-| --- | --- |
-| **Browser** | UI, wallet connect, amount parse, CTA phases, `writeContract`, wait for receipt on wallet RPC |
+
+| Layer            | Responsibility                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Browser**      | UI, wallet connect, amount parse, CTA phases, `writeContract`, wait for receipt on wallet RPC                                                                       |
 | **Node backend** | Config/account/quote reads (same `blockTag`), quote math mirrored from Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
-| **User wallet** | Final authority: only the wallet moves funds |
-| **Polygon** | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve` |
+| **User wallet**  | Final authority: only the wallet moves funds                                                                                                                        |
+| **Polygon**      | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve`                                                                                                                 |
+
 
 The browser does **not** build create/claim calldata from addresses returned by the API. Create inputs come from the form snapshot; targets come from `constants/bonds.ts` + `bondClaimTarget.ts`.
 
@@ -93,7 +103,7 @@ The browser does **not** build create/claim calldata from addresses returned by 
 Bonding writes go through:
 
 1. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`). No explicit browser `simulateContract`; wallet gas estimation and contract revert are the pre-execution safeguards.
-2. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
+2. **Server RPC** (`ALCHEMY` / `POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
 
 Wagmi still configures a browser HTTP transport (`FRONTEND_POLYGON_RPC_URL` / dRPC) for shared Web3 providers, but Bonding write hooks do not call `simulateContract` on it.
 
@@ -101,26 +111,34 @@ A failed receipt read on the wallet provider does **not** mean the transaction f
 
 ---
 
+
+
 ## Public surfaces
+
+
 
 ### Routes
 
-| Path | Role |
-| --- | --- |
-| `/bond` → `/bond/` | Canonical SPA; bare path `308` (preserve query) |
-| `/guide/bonding/` | User guide (approve, Buy/Sell, vesting, claim) |
+
+| Path                        | Role                                                   |
+| --------------------------- | ------------------------------------------------------ |
+| `/bond` → `/bond/`          | Canonical SPA; bare path `308` (preserve query)        |
+| `/guide/bonding/`           | User guide (approve, Buy/Sell, vesting, claim)         |
 | `/guide/bonding-contracts/` | Contracts guide (educational; cross-check Polygonscan) |
+
 
 Constants: `BOND_*`, `GUIDE_BONDING_*`, `GUIDE_BONDING_CONTRACTS_*`, `isBondPath`, `isGuideBondingPath`, `isGuideBondingContractsPath` in `constants/appRoutes.ts`.
 
 ### APIs
 
-| Endpoint | Cache | Notes |
-| --- | --- | --- |
-| `GET /api/bonding/config` | `private`, 30s | Paused × 4, min, V2 terms, addresses |
-| `GET /api/bonding/account?address=` | `private, no-store` | Balances, V2 allowances, active bonds V1+V2 |
-| `POST /api/bonding/quote` | `private, no-store` | Union `buy_exact_wbtc` \| `sell_exact_prana` |
+
+| Endpoint                                | Cache               | Notes                                         |
+| --------------------------------------- | ------------------- | --------------------------------------------- |
+| `GET /api/bonding/config`               | `private`, 30s      | Paused × 4, min, V2 terms, addresses          |
+| `GET /api/bonding/account?address=`     | `private, no-store` | Balances, V2 allowances, active bonds V1+V2   |
+| `POST /api/bonding/quote`               | `private, no-store` | Union `buy_exact_wbtc` | `sell_exact_prana`   |
 | `POST /api/bonding/confirm-transaction` | `private, no-store` | UX fallback; does not write trusted analytics |
+
 
 POST admission: shared Web3 POST admission → Content-Type / origin → body ≤ 2 KB / shape parse → then rate-limit → RPC. Invalid requests do not consume the global quote/confirmation budget.
 
@@ -128,7 +146,11 @@ Raw amounts: canonical decimal (`0` or `[1-9]\d*`), `≤ MAX_UINT256`. Quote/cre
 
 ---
 
+
+
 ## End-to-end user flows
+
+
 
 ### Create bond (Buy or Sell)
 
@@ -166,6 +188,10 @@ sequenceDiagram
   Tx->>API: Refetch account
 ```
 
+
+
+
+
 ### Claim bond
 
 Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
@@ -173,6 +199,8 @@ Claim picks the target via `resolveBondClaimTarget(side, version)` — it does n
 Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`).
 
 ---
+
+
 
 ## CTA phase machine
 
@@ -184,13 +212,15 @@ approve → create → confirming → success
                 error ↗ (retry the correct phase)
 ```
 
-| Phase | Wallet? | What happens |
-| --- | --- | --- |
-| `approve` | Yes (1 tx) | `approve` exact input if allowance is short |
-| `create` | Yes (1 tx) | Fresh-quote → write create |
-| `confirming` | No | Wait for receipt |
-| `confirmation_unavailable` | No | Keep hash + snapshot; CTA “Continue confirmation” |
-| `success` / `error` | No | Reset form or allow retry |
+
+| Phase                      | Wallet?    | What happens                                      |
+| -------------------------- | ---------- | ------------------------------------------------- |
+| `approve`                  | Yes (1 tx) | `approve` exact input if allowance is short       |
+| `create`                   | Yes (1 tx) | Fresh-quote → write create                        |
+| `confirming`               | No         | Wait for receipt                                  |
+| `confirmation_unavailable` | No         | Keep hash + snapshot; CTA “Continue confirmation” |
+| `success` / `error`        | No         | Reset form or allow retry                         |
+
 
 Helper: `features/bonding/utils/bondCtaPhase.ts` → `getBondCtaPhase(status, needsApproval, hasPendingHash)`.
 
@@ -206,7 +236,11 @@ Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance 
 
 ---
 
+
+
 ## Quote pipeline
+
+
 
 ### Client
 
@@ -217,7 +251,7 @@ Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance 
 - After **60 s**, mark the quote stale; the CTA runs `freshQuote()` itself before write.
 - Side / term / amount / account / chain changes → invalidate.
 - Request key is mode + amount + term so a new request object with the same
-  data does not re-fetch.
+data does not re-fetch.
 
 Parsers: WBTC max **8** decimals, PRANA **9**. MAX uses the exact raw balance (`rawBalanceToAmountInput`), never `Number`/`parseFloat`.
 
@@ -234,14 +268,18 @@ A quote is stable for the reserves/rates/treasury at the read block — elapsed 
 
 ### Modes
 
-| Mode | Exact input | Expected output | On-chain create |
-| --- | --- | --- | --- |
-| `buy_exact_wbtc` | WBTC | PRANA payout | `buyBondForWbtcAmount(wbtcAmount, period)` |
-| `sell_exact_prana` | PRANA | WBTC payout | `sellBond(pranaAmount, period)` |
+
+| Mode               | Exact input | Expected output | On-chain create                            |
+| ------------------ | ----------- | --------------- | ------------------------------------------ |
+| `buy_exact_wbtc`   | WBTC        | PRANA payout    | `buyBondForWbtcAmount(wbtcAmount, period)` |
+| `sell_exact_prana` | PRANA       | WBTC payout     | `sellBond(pranaAmount, period)`            |
+
 
 The contract still has `buyBondForPranaAmount`, but the app does **not** quote / create through that path.
 
 ---
+
+
 
 ## Vesting and claimable
 
@@ -268,7 +306,11 @@ Active bonds sort: nearest maturity → side → version → id. React key / cla
 
 ---
 
+
+
 ## File map
+
+
 
 ### Client
 
@@ -299,6 +341,8 @@ Shared (Bonding must not import Staking in reverse):
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (do not duplicate ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals
+
+
 
 ### Server
 
@@ -333,6 +377,8 @@ Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ---
 
+
+
 ## Pending transaction persistence
 
 `bondPendingTransactionStorage` stores `{version, chainId, account, hash, action, createdAt}` in `localStorage` (24h TTL), keyed by account/chain.
@@ -343,16 +389,20 @@ Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ---
 
+
+
 ## Design constraints (not bugs to “fix” in current scope)
 
-1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + echo checks are UX guards, not on-chain guarantees.
+1. **No** `minOut` **/ deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + echo checks are UX guards, not on-chain guarantees.
 2. **Fresh quote before create has no separate in-app confirm** — the form already shows amount/term/quote; Create Bond fresh-quotes then opens the wallet. Echo check still requires `mode` / `termId` / exact input to match the form snapshot.
-3. **Account API scans `getUserActiveBonds` on all four deployments** — cost grows with total bond history; rate limits reduce load but are not a long-term indexer substitute.
+3. **Account API scans** `getUserActiveBonds` **on all four deployments** — cost grows with total bond history; rate limits reduce load but are not a long-term indexer substitute.
 4. Bonding confirmation does **not** reuse HMAC / `/api/swap/verify-transaction` — contract/function mapping is fixed; the endpoint is UX backup only and does not write verified analytics.
 
 Re-evaluate `minOut` / second consent only when volume, concurrency, MEV exposure, or average bond value rises materially — and that would need a **new contract** to enforce.
 
 ---
+
+
 
 ## Controls already in place (summary)
 
@@ -364,19 +414,25 @@ Re-evaluate `minOut` / second consent only when volume, concurrency, MEV exposur
 
 ---
 
+
+
 ## Tests and useful commands
 
-| Suite | Command / location |
-| --- | --- |
-| Client Bonding | `npm run test:bonding` → `features/bonding/tests/**` |
-| API / admission | `server/tests/bondingApi.test.ts` |
-| Static `/bond` | `server/tests/bondRoutes.test.ts` |
-| Guides | `server/tests/guideRoutes.test.ts` |
-| Typecheck / full | `npm run typecheck`, `npm test` |
+
+| Suite            | Command / location                                   |
+| ---------------- | ---------------------------------------------------- |
+| Client Bonding   | `npm run test:bonding` → `features/bonding/tests/**` |
+| API / admission  | `server/tests/bondingApi.test.ts`                    |
+| Static `/bond`   | `server/tests/bondRoutes.test.ts`                    |
+| Guides           | `server/tests/guideRoutes.test.ts`                   |
+| Typecheck / full | `npm run typecheck`, `npm test`                      |
+
 
 When changing bonding math, claimable, CTA phases, echo, pending storage, or API admission — update the matching tests and, if public behavior changes, update the guide + this doc.
 
 ---
+
+
 
 ## Deployment notes (summary)
 
@@ -384,4 +440,4 @@ When changing bonding math, claimable, CTA phases, echo, pending storage, or API
 - Nginx cutover: drop the legacy `/bond/assets/` alias; bare `/bond` uses `308` like `/stake`.
 - Production smoke: connect, quote, switch chain — do **not** send real approve/create/claim in automated smoke.
 
-Legacy migration detail: step 8 in [`add-bonding-ui.md`](./add-bonding-ui.md).
+Legacy migration detail: step 8 in `[add-bonding-ui.md](./add-bonding-ui.md)`.
