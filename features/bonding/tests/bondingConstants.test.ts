@@ -139,7 +139,7 @@ test('ABI tuples: getUserActiveBonds component field order matches V1/V2 structs
     'claimed',
   ]);
 
-  // Create + claim arg shapes used by simulateContract / writeContract.
+  // Create + claim arg shapes used by writeContract.
   const buyExact = BUY_BOND_V2_ABI.find((f) => f.name === 'buyBondForWbtcAmount');
   const buyTarget = BUY_BOND_V2_ABI.find((f) => f.name === 'buyBondForPranaAmount');
   const sellCreate = SELL_BOND_V2_ABI.find((f) => f.name === 'sellBond');

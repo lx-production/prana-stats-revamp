@@ -17,7 +17,6 @@ export type BondingErrorCode =
   | 'reverted'
   | 'rpc_unavailable'
   | 'account_refetch_failed'
-  | 'simulate_failed'
   | 'quote_issues'
   | 'generic';
 
@@ -160,7 +159,6 @@ const ERROR_COPY: Record<SiteLocale, Record<BondingErrorCode, string>> = {
     rpc_unavailable: 'Không kết nối được RPC. Thử lại sau.',
     account_refetch_failed:
       'Không tải được số dư/allowance mới nhất. Thử lại trước khi ký.',
-    simulate_failed: 'Mô phỏng giao dịch thất bại. Không gửi lên chain.',
     quote_issues: 'Quote hiện không thể thực thi. Kiểm tra lại số lượng.',
     generic: 'Không thể hoàn tất giao dịch. Thử lại.',
   },
@@ -181,7 +179,6 @@ const ERROR_COPY: Record<SiteLocale, Record<BondingErrorCode, string>> = {
     rpc_unavailable: 'RPC unavailable. Try again later.',
     account_refetch_failed:
       'Could not refresh balance/allowance. Try again before signing.',
-    simulate_failed: 'Transaction simulation failed. Nothing was broadcast.',
     quote_issues: 'Quote is not executable. Check the amount and try again.',
     generic: 'Could not complete the transaction. Try again.',
   },

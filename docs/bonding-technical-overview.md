@@ -70,7 +70,6 @@ flowchart TD
 
   txHook --> injected["Injected wallet"]
   claimHook --> injected
-  txHook --> publicRpc["Browser publicClient dRPC"]
   injected --> chain["Buy/Sell Bond V2 + ERC-20"]
 ```
 
@@ -82,22 +81,23 @@ Guides `/guide/bonding/` and `/guide/bonding-contracts/` live in the homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, wallet connect, amount parse, CTA phases, `writeContract` (create also `simulateContract`), wait for receipt on wallet RPC |
+| **Browser** | UI, wallet connect, amount parse, CTA phases, `writeContract`, wait for receipt on wallet RPC |
 | **Node backend** | Config/account/quote reads (same `blockTag`), quote math mirrored from Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: only the wallet moves funds |
 | **Polygon** | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve` |
 
 The browser does **not** build create/claim calldata from addresses returned by the API. Create inputs come from the form snapshot; targets come from `constants/bonds.ts` + `bondClaimTarget.ts`.
 
-### Three RPC layers
+### Two RPC layers for writes
 
-The Bonding write path goes through at least three independent layers:
+Bonding writes go through:
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — create-path `simulateContract` and chain reads from the browser when the app's HTTP transport is needed.
-2. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`).
-3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
+1. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`). No explicit browser `simulateContract`; wallet gas estimation and contract revert are the pre-execution safeguards.
+2. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
 
-A failed receipt read on dRPC does **not** mean the transaction failed. Correct flow: catch → server fallback → only treat as failed when the receipt is explicitly `reverted`.
+Wagmi still configures a browser HTTP transport (`FRONTEND_POLYGON_RPC_URL` / dRPC) for shared Web3 providers, but Bonding write hooks do not call `simulateContract` on it.
+
+A failed receipt read on the wallet provider does **not** mean the transaction failed. Correct flow: catch → server fallback → only treat as failed when the receipt is explicitly `reverted`.
 
 ---
 
@@ -157,7 +157,7 @@ sequenceDiagram
 
   User->>Tx: CTA Create Bond
   Tx->>API: Fresh quote + echo check
-  Tx->>Wallet: simulate then write create
+  Tx->>Wallet: write create
   Wallet->>Chain: Create bond tx
   Chain-->>Tx: Receipt (wallet RPC)
   opt Wallet RPC read fails
@@ -187,7 +187,7 @@ approve → create → confirming → success
 | Phase | Wallet? | What happens |
 | --- | --- | --- |
 | `approve` | Yes (1 tx) | `approve` exact input if allowance is short |
-| `create` | Yes (1 tx) | Fresh-quote → simulate → write create |
+| `create` | Yes (1 tx) | Fresh-quote → write create |
 | `confirming` | No | Wait for receipt |
 | `confirmation_unavailable` | No | Keep hash + snapshot; CTA “Continue confirmation” |
 | `success` / `error` | No | Reset form or allow retry |
@@ -200,7 +200,7 @@ Before approve and before create:
 2. Correct wallet, Polygon, balance, minimum, term, paused, treasury.
 3. Validate quote echo (`bondQuoteEcho.ts`): Buy matches `mode` + `termId` + `wbtcAmountRaw`; Sell matches `pranaAmountRaw`. Mismatch → stop with `quote_issues`.
 4. Calldata inputs come from the form snapshot — **not** the input leg from the quote response.
-5. **Create only:** `simulateContract`, then pass only `{ request }` into `writeContract`. Approve and claim skip explicit simulation and call `writeContract` directly.
+5. `writeContract` directly — no explicit `simulateContract`; wallet gas estimation handles preflight.
 
 Exact Buy/Sell: allowance `>=` input is enough; do not lower a larger allowance when unnecessary.
 
@@ -345,7 +345,7 @@ Deployments (Polygon): see `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ## Design constraints (not bugs to “fix” in current scope)
 
-1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + create-path simulate are UX guards, not on-chain guarantees.
+1. **No `minOut` / deadline** — the user always spends exact input; payout can diverge from the quote if state changes between quote and execution. Fresh-quote + echo checks are UX guards, not on-chain guarantees.
 2. **Fresh quote before create has no separate in-app confirm** — the form already shows amount/term/quote; Create Bond fresh-quotes then opens the wallet. Echo check still requires `mode` / `termId` / exact input to match the form snapshot.
 3. **Account API scans `getUserActiveBonds` on all four deployments** — cost grows with total bond history; rate limits reduce load but are not a long-term indexer substitute.
 4. Bonding confirmation does **not** reuse HMAC / `/api/swap/verify-transaction` — contract/function mapping is fixed; the endpoint is UX backup only and does not write verified analytics.
@@ -357,7 +357,7 @@ Re-evaluate `minOut` / second consent only when volume, concurrency, MEV exposur
 ## Controls already in place (summary)
 
 - Write targets from internal mapping; confirmation checks sender, fixed target, full calldata.
-- Exact approval; create simulates before broadcast (approve/claim do not); no write retry after a hash exists.
+- Exact approval; no explicit simulate before broadcast; no write retry after a hash exists.
 - Quote/account share `blockTag`; bigint = decimal string; `uint256` bounds at parse.
 - POST: origin, JSON, 2 KB body, validate-before-rate-limit, redact RPC secrets, `private, no-store`.
 - CSP / frame denial / `nosniff`; wallet errors sanitized VI/EN (`bondingErrors.ts`).

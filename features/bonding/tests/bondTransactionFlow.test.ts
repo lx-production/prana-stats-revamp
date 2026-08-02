@@ -111,33 +111,12 @@ test('submitBondWriteFlow does not write when fresh account refetch fails', asyn
   assert.equal(wrote, false);
 });
 
-test('submitBondWriteFlow does not write when simulate fails', async () => {
+test('submitBondWriteFlow writes without explicit simulate', async () => {
   let wrote = false;
   const outcome = await submitBondWriteFlow({
     refetchAccount: async () => successRefetch(),
     validateFreshAccount: () => true,
-    simulate: async () => {
-      throw new Error('simulation reverted');
-    },
     write: async () => {
-      wrote = true;
-      return HASH;
-    },
-    waitForReceipt: async () => ({ status: 'success' }),
-    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
-  });
-  assert.equal(outcome.kind, 'simulate_failed');
-  assert.equal(wrote, false);
-});
-
-test('submitBondWriteFlow can skip simulate for approve/claim-style writes', async () => {
-  let wrote = false;
-  const outcome = await submitBondWriteFlow({
-    refetchAccount: async () => successRefetch(),
-    validateFreshAccount: () => true,
-    write: async (prepared) => {
-      // Approve/claim omit simulate — write receives no prepared request.
-      assert.equal(prepared, undefined);
       wrote = true;
       return HASH;
     },
@@ -169,12 +148,6 @@ test('submitBondWriteFlow does not call write twice after hash is known', async 
   const first = await submitBondWriteFlow({
     refetchAccount: async () => successRefetch(),
     validateFreshAccount: () => true,
-    simulate: async () => ({
-      address: sampleAccount.address,
-      functionName: 'sellBond',
-      args: [1n, 1],
-      account: sampleAccount.address,
-    }),
     write: async () => {
       writeCount += 1;
       return HASH;
@@ -212,7 +185,7 @@ test('submitBondWriteFlow does not call write twice after hash is known', async 
   assert.equal(serverCalls, 1);
 });
 
-test('claim write flow skips simulate and resume never rewrites', async () => {
+test('claim write flow and resume never rewrites', async () => {
   let writeCount = 0;
   let claimArgs: readonly unknown[] = [];
 

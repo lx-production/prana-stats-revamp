@@ -268,7 +268,7 @@ export function useBondActions({
 
         let broadcastPending: PendingBondTransaction | null = null;
 
-        // Claim skips simulateContract — same pattern as staking claim/unstake.
+        // No explicit simulateContract — same pattern as staking claim/unstake.
         const outcome = await submitBondWriteFlow({
           refetchAccount,
           validateFreshAccount: () => true,

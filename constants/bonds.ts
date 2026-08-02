@@ -163,7 +163,7 @@ export const SELL_BOND_ACCOUNT_ABI: BondAbiFunctionFragment[] = [
 
 /**
  * Buy V2: account + config (min/terms) + impacted reserves + create writes.
- * Used with BUY_BOND_ADDRESS_V2 for readContract / simulateContract / writeContract.
+ * Used with BUY_BOND_ADDRESS_V2 for readContract / writeContract.
  */
 const IMPACTED_WBTC_RESERVE_FRAGMENT: BondAbiFunctionFragment = {
   inputs: [],
@@ -243,7 +243,7 @@ export const BUY_BOND_V2_ABI: BondAbiFunctionFragment[] = [
 
 /**
  * Sell V2: account + config (min/terms) + create write.
- * Used with SELL_BOND_ADDRESS_V2 for readContract / simulateContract / writeContract.
+ * Used with SELL_BOND_ADDRESS_V2 for readContract / writeContract.
  */
 export const SELL_BOND_V2_ABI: BondAbiFunctionFragment[] = [
   PAUSED_FRAGMENT,

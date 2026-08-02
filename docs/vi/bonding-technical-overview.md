@@ -70,7 +70,6 @@ flowchart TD
 
   txHook --> injected["Injected wallet"]
   claimHook --> injected
-  txHook --> publicRpc["Browser publicClient dRPC"]
   injected --> chain["Buy/Sell Bond V2 + ERC-20"]
 ```
 
@@ -82,22 +81,23 @@ Guides `/guide/bonding/` và `/guide/bonding-contracts/` nằm trong homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, `writeContract` (create còn `simulateContract`), chờ receipt trên wallet RPC |
+| **Browser** | UI, connect ví, parse amount, phase CTA, `writeContract`, chờ receipt trên wallet RPC |
 | **Node backend** | Config/account/quote reads (cùng `blockTag`), quote math mirror Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên Buy/Sell Bond V1/V2 + ERC-20 `approve` |
 
 Browser **không** xây create/claim calldata từ địa chỉ do API trả. Input create lấy từ form snapshot; target lấy từ `constants/bonds.ts` + `bondClaimTarget.ts`.
 
-### Ba lớp RPC
+### Hai lớp RPC cho write
 
-Bonding write-path đi qua tối thiểu ba lớp độc lập:
+Bonding write đi qua:
 
-1. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — `simulateContract` ở create path và đọc chain từ browser khi cần HTTP transport của app.
-2. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim; sau broadcast, chờ receipt trên **cùng** provider đã gửi tx (`waitForPolygonWalletReceipt`).
-3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
+1. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim; sau broadcast, chờ receipt trên **cùng** provider đã gửi tx (`waitForPolygonWalletReceipt`). Không gọi `simulateContract` tường minh trên browser; ước lượng gas của ví và revert của contract là safeguard trước khi thực thi.
+2. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
 
-Lỗi đọc receipt trên dRPC **không** đồng nghĩa transaction failed. Flow đúng: catch → server fallback → chỉ coi failed khi receipt explicit `reverted`.
+Wagmi vẫn cấu hình HTTP transport browser (`FRONTEND_POLYGON_RPC_URL` / dRPC) cho shared Web3 providers, nhưng Bonding write hooks không gọi `simulateContract` trên đó.
+
+Lỗi đọc receipt trên wallet provider **không** đồng nghĩa transaction failed. Flow đúng: catch → server fallback → chỉ coi failed khi receipt explicit `reverted`.
 
 ---
 
@@ -157,7 +157,7 @@ sequenceDiagram
 
   User->>Tx: CTA Create Bond
   Tx->>API: Fresh quote + echo check
-  Tx->>Wallet: simulate then write create
+  Tx->>Wallet: write create
   Wallet->>Chain: Create bond tx
   Chain-->>Tx: Receipt (wallet RPC)
   opt Wallet RPC read fails
@@ -187,7 +187,7 @@ approve → create → confirming → success
 | Phase | Wallet? | Việc xảy ra |
 | --- | --- | --- |
 | `approve` | Có (1 tx) | `approve` exact input nếu allowance thiếu |
-| `create` | Có (1 tx) | Fresh-quote → simulate → write create |
+| `create` | Có (1 tx) | Fresh-quote → write create |
 | `confirming` | Không | Chờ receipt |
 | `confirmation_unavailable` | Không | Giữ hash + snapshot; CTA “Tiếp tục xác nhận” |
 | `success` / `error` | Không | Reset form hoặc cho retry |
@@ -200,7 +200,7 @@ Trước approve và trước create:
 2. Đúng wallet, Polygon, balance, minimum, term, paused, treasury.
 3. Validate quote echo (`bondQuoteEcho.ts`): Buy khớp `mode` + `termId` + `wbtcAmountRaw`; Sell khớp `pranaAmountRaw`. Mismatch → dừng với `quote_issues`.
 4. Calldata input từ form snapshot — **không** lấy input leg từ quote response.
-5. **Chỉ create:** `simulateContract` rồi chỉ truyền `{ request }` vào `writeContract`. Approve và claim bỏ simulate tường minh và gọi `writeContract` trực tiếp.
+5. `writeContract` trực tiếp — không `simulateContract` tường minh; ví estimate gas làm preflight.
 
 Exact Buy/Sell: allowance `>=` input là đủ; không hạ allowance lớn hơn khi không cần.
 
@@ -345,7 +345,7 @@ Deployments (Polygon): xem `constants/bonds.ts` (`BUY_BOND_ADDRESS_V1/V2`, `SELL
 
 ## Design constraints (không phải bug cần “fix” trong scope hiện tại)
 
-1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + simulate ở create path là guard UX, không phải bảo đảm on-chain.
+1. **Không có `minOut` / deadline** — user luôn chi đúng exact input; payout có thể lệch so với quote nếu state đổi giữa quote và execution. Fresh-quote + echo check là guard UX, không phải bảo đảm on-chain.
 2. **Fresh quote trước create không bắt confirm in-app riêng** — form đã hiện amount/term/quote; CTA Create Bond fresh-quote rồi mở ví. Echo check vẫn bắt `mode` / `termId` / exact input khớp form snapshot.
 3. **Account API scan `getUserActiveBonds` trên cả bốn deployment** — chi phí tăng theo tổng lịch sử bond; rate limit giảm tải nhưng không thay indexer dài hạn.
 4. Bonding confirmation **không** tái dùng HMAC / `/api/swap/verify-transaction` — mapping contract/function cố định; endpoint chỉ dự phòng UX, không ghi verified analytics.
@@ -357,7 +357,7 @@ Re-evaluate `minOut` / second consent chỉ khi volume, concurrency, MEV exposur
 ## Controls đã có (tóm tắt)
 
 - Write target từ mapping nội bộ; confirmation kiểm tra sender, fixed target, full calldata.
-- Exact approval; create simulate trước broadcast (approve/claim thì không); không retry write sau khi đã có hash.
+- Exact approval; không simulate tường minh trước broadcast; không retry write sau khi đã có hash.
 - Quote/account cùng `blockTag`; bigint = decimal string; `uint256` bounds ở parse.
 - POST: origin, JSON, 2 KB body, validate-before-rate-limit, redact RPC secrets, `private, no-store`.
 - CSP / frame denial / `nosniff`; lỗi ví được sanitize VI/EN (`bondingErrors.ts`).

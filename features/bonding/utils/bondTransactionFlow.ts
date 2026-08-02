@@ -1,7 +1,7 @@
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { confirmReceiptWithAccountSync } from '../../web3/confirmReceiptWithAccountSync.ts';
 
-import type { Address, Hex } from '../../../types/blockchain.types.ts';
+import type { Hex } from '../../../types/blockchain.types.ts';
 import type { BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
 import type { BondingAccount, BondingTransactionConfirmation } from '../bonding.types.ts';
 import type {
@@ -61,29 +61,15 @@ export async function confirmBondReceipt(
   });
 }
 
-export type SimulatedBondWrite = {
-  address: Address;
-  functionName: string;
-  args: readonly unknown[];
-  account: Address;
-  /** Optional viem simulate request to pass straight into writeContract. */
-  request?: unknown;
-};
-
 export type SubmitBondWriteDeps = {
   refetchAccount: () => Promise<unknown>;
   /** Return false when form/account no longer matches the intended write. */
   validateFreshAccount: (account: BondingAccount) => boolean;
   /**
-   * Optional create-path preflight (`simulateContract`).
-   * Approve/claim omit this and rely on wallet gas estimation + contract revert.
+   * Broadcast writeContract / send. No explicit simulateContract —
+   * wallet gas estimation + contract revert are the pre-execution safeguards.
    */
-  simulate?: () => Promise<SimulatedBondWrite>;
-  /**
-   * Broadcast. Receives the simulate result when simulate ran; otherwise
-   * undefined (caller builds writeContract args itself).
-   */
-  write: (simulated?: SimulatedBondWrite) => Promise<Hex>;
+  write: () => Promise<Hex>;
   waitForReceipt: (hash: Hex) => Promise<BondWaitReceiptResult>;
   confirmOnServer: (
     hash: Hex,
@@ -93,7 +79,6 @@ export type SubmitBondWriteDeps = {
 export type SubmitBondWriteOutcome =
   | { kind: 'fresh_account_failed' }
   | { kind: 'validation_failed' }
-  | { kind: 'simulate_failed'; error: unknown }
   | { kind: 'rejected_before_broadcast'; error: unknown }
   | {
       kind: 'confirmation_unavailable';
@@ -110,7 +95,7 @@ export type SubmitBondWriteOutcome =
     };
 
 /**
- * Fresh-account gate → optional simulate → write → confirm receipt.
+ * Fresh-account gate → write → confirm receipt.
  * Separates pre-broadcast failures (retry write) from post-broadcast
  * confirmation failures (retry wait only, never a second write).
  */
@@ -127,19 +112,9 @@ export async function submitBondWriteFlow(
     return { kind: 'validation_failed' };
   }
 
-  // Create path only — approve/claim skip explicit simulation.
-  let simulated: SimulatedBondWrite | undefined;
-  if (deps.simulate) {
-    try {
-      simulated = await deps.simulate();
-    } catch (error) {
-      return { kind: 'simulate_failed', error };
-    }
-  }
-
   let hash: Hex;
   try {
-    hash = await deps.write(simulated);
+    hash = await deps.write();
   } catch (error) {
     return { kind: 'rejected_before_broadcast', error };
   }

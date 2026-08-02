@@ -1,6 +1,5 @@
 import { erc20Abi } from 'viem';
 import { polygon } from 'wagmi/chains';
-import { usePublicClient } from 'wagmi';
 import { getBondingCopy } from '../bonding.copy.ts';
 import { getConfiguredTerm } from '../utils/bondingMath.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
@@ -83,7 +82,6 @@ export function useBondTransaction({
   const { locale } = useSiteLanguage();
   const copy = getBondingCopy(locale);
   const wallet = useInjectedWallet();
-  const publicClient = usePublicClient({ chainId: POLYGON_CHAIN_ID });
 
   const [status, setStatus] = useState<BondTransactionStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -142,16 +140,17 @@ export function useBondTransaction({
     setTransactionHash(null);
   }, [clearPendingRecord]);
 
+  /** Switch to Polygon first, then resolve a fresh wallet client. */
   const ensurePolygonWalletClient = useCallback(async () => {
     if (!wallet.isPolygon) {
       await wallet.ensurePolygon();
     }
     const client = await getPolygonWalletClient();
-    if (!client || !publicClient) {
+    if (!client) {
       throw new Error('RPC unavailable');
     }
     return client;
-  }, [publicClient, wallet]);
+  }, [wallet]);
 
   const applyConfirmed = useCallback(
     (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
@@ -352,7 +351,7 @@ export function useBondTransaction({
       const walletClient = await ensurePolygonWalletClient();
       let broadcastPending: PendingBondTransaction | null = null;
 
-      // Approve skips simulateContract — wallet gas estimation is enough.
+      // No explicit simulateContract — wallet gas estimation is enough.
       const outcome = await submitBondWriteFlow({
         refetchAccount,
         validateFreshAccount: (freshAccount) => {
@@ -483,7 +482,6 @@ export function useBondTransaction({
     mode,
     pending,
     pendingLoaded,
-    publicClient,
     refetchAccount,
     refetchConfig,
     rememberPending,
@@ -638,38 +636,15 @@ export function useBondTransaction({
           const allow = currentAllowanceRaw(freshAccount, side);
           return isAllowanceSufficientForCreate(allow, amountRaw);
         },
-        simulate: async () => {
-          // viem returns { result, request } — only `request` is writeContract-ready.
-          const { request } = await publicClient!.simulateContract({
-            account: submittingAccount,
-            address: bondAddress,
-            abi: bondAbi,
-            functionName,
-            args,
-            chain: polygon,
-          } as never);
-          return {
-            address: bondAddress,
-            functionName,
-            args,
-            account: submittingAccount,
-            request,
-          };
-        },
-        write: async (simulated) => {
-          // Create always simulates first — prefer the writeContract-ready request.
-          if (simulated?.request) {
-            return walletClient.writeContract(simulated.request as never);
-          }
-          return walletClient.writeContract({
+        write: async () =>
+          walletClient.writeContract({
             chain: polygon,
             account: submittingAccount,
             address: bondAddress,
             abi: bondAbi,
             functionName,
             args,
-          } as never);
-        },
+          } as never),
         waitForReceipt: async (hash) => {
           broadcastPending = buildPendingBondTransaction({
             account: submittingAccount,
@@ -714,12 +689,6 @@ export function useBondTransaction({
         logBondingFailure('create: validation_failed (allowance)');
         setStatus('idle');
         setError(getBondingErrorMessage('insufficient_allowance', locale));
-        return;
-      }
-      if (outcome.kind === 'simulate_failed') {
-        logBondingFailure('create: simulate_failed', outcome.error);
-        setStatus('error');
-        setError(getBondingErrorMessage('simulate_failed', locale));
         return;
       }
       if (outcome.kind === 'rejected_before_broadcast') {
@@ -777,7 +746,6 @@ export function useBondTransaction({
     mode,
     pending,
     pendingLoaded,
-    publicClient,
     refetchAccount,
     refetchConfig,
     rememberPending,

@@ -254,7 +254,7 @@ Mỗi quote đọc pause, term/rate, impacted reserve, committed payout, số d�
 Trước approval hoặc create, client refetch thành công config/account và lấy quote mới không có issue chặn. Nó kiểm tra echo response với mode, term và exact input của form. Create calldata dùng input từ form snapshot, không copy amount từ quote response.
 
 - Approval đúng exact input khi allowance hiện tại chưa đủ; allowance lớn hơn sẵn có thì không bị hạ xuống.
-- Chỉ **create** được simulate tường minh (`simulateContract`) trước broadcast. Approve và claim dựa vào ước lượng gas của wallet/client và revert của contract, giống claim/unstake của Staking.
+- Approve, create và claim **không** gọi tường minh `simulateContract`. Ước lượng gas của wallet/client và revert của contract vẫn là safeguard trước khi thực thi, giống Staking.
 - Approve và create cần click riêng của user, không bao giờ tự chain liên tiếp.
 - Write của form và write của claim khóa lẫn nhau khi đang có transaction in-flight.
 
@@ -273,7 +273,7 @@ Receipt browser mới trong session có thể tin mà không cần validate serv
 Hàm create Buy/Sell đã deploy nhận exact input và term nhưng không có minimum payout hay deadline do user ký. Contract tính lại payout lúc thực thi từ state hiện tại. Vì vậy:
 
 - user luôn chi exact input đã approve, nhưng có thể nhận ít PRANA/WBTC hơn quote UI;
-- quote mới, validate response-echo và simulation ở create path giảm lỗi state cũ nhưng **không** cung cấp bảo đảm payout on-chain;
+- quote mới và validate response-echo giảm lỗi state cũ nhưng **không** cung cấp bảo đảm payout on-chain;
 - wallet prompt không thể hiện hay enforce payout kỳ vọng vì nó không nằm trong calldata;
 - pricing dùng state pool Uniswap V3 hiện tại chứ không phải TWAP, và thay đổi impacted-reserve do manager hoặc transaction cũng có thể đẩy kết quả.
 
