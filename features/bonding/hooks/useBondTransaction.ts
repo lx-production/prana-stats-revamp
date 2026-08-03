@@ -3,38 +3,25 @@ import { polygon } from 'wagmi/chains';
 import { getBondingCopy } from '../bonding.copy.ts';
 import { getConfiguredTerm } from '../utils/bondingMath.ts';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
-import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
+import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
 import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
 import { BUY_BOND_ADDRESS_V2, BUY_BOND_V2_ABI, SELL_BOND_ADDRESS_V2, SELL_BOND_V2_ABI } from '../../../constants/bonds.ts';
-import {
-  buildPendingBondTransaction,
-  pendingBondTransactionMatchesWallet,
-} from '../utils/bondPendingTransactionStorage.ts';
+import { buildPendingBondTransaction, pendingBondTransactionMatchesWallet } from '../utils/bondPendingTransactionStorage.ts';
 import { isAllowanceSufficientForCreate, needsExactInputApproval, resolveApproveAmountRaw } from '../utils/bondAllowance.ts';
 import { confirmBondReceipt, resolveBondCtaAction, runBondCtaBranch, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type {
-  BondingAccount,
-  BondingConfig,
-  BondingQuote,
-  BondingQuoteMode,
-  BondingTransactionActionSnapshot,
-  BondSide,
-  BondTermId,
-  BondTransactionStatus,
-  PendingBondTransaction,
-} from '../bonding.types.ts';
+import type { BondingAccount, BondingConfig, BondingQuote, BondingQuoteMode, BondingTransactionActionSnapshot, BondSide, BondTermId, BondTransactionStatus, PendingBondTransaction } from '../bonding.types.ts';
 
 const FORM_PENDING_KINDS = ['approve', 'create'] as const;
 

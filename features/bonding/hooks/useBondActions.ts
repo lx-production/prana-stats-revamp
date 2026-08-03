@@ -1,38 +1,22 @@
 import { polygon } from 'wagmi/chains';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
 import { getBondingCopy } from '../bonding.copy.ts';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { POLYGON_CHAIN_ID } from '../../../constants/network.ts';
 import { useInjectedWallet } from '../../web3/useInjectedWallet.ts';
 import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
-import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
-import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
+import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { confirmBondReceipt, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
+import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
 import { bondClaimKey, isBondDeploymentPaused, resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
-
-import {
-  formatBondingError,
-  getBondingErrorMessage,
-  logBondingFailure,
-} from '../utils/bondingErrors.ts';
-import {
-  buildPendingBondTransaction,
-  pendingBondTransactionMatchesWallet,
-} from '../utils/bondPendingTransactionStorage.ts';
+import { buildPendingBondTransaction, pendingBondTransactionMatchesWallet } from '../utils/bondPendingTransactionStorage.ts';
 
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
-import type {
-  BondClaimActionTarget,
-  BondingAccount,
-  BondingConfig,
-  BondingTransactionActionSnapshot,
-  BondTransactionStatus,
-  PendingBondTransaction,
-} from '../bonding.types.ts';
+import type { BondClaimActionTarget, BondingAccount, BondingConfig, BondingTransactionActionSnapshot, BondTransactionStatus, PendingBondTransaction } from '../bonding.types.ts';
 
 const CLAIM_PENDING_KINDS = ['claim'] as const;
 
