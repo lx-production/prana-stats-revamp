@@ -24,7 +24,6 @@ const owner = '0x1234567890abcdef1234567890abcdef12345678' as const;
 let publicClientStub: {
   getBalance?: (args: unknown) => Promise<bigint>;
   readContract?: (args: unknown) => Promise<bigint>;
-  waitForTransactionReceipt?: (args: unknown) => Promise<{ status: string }>;
 } | null = null;
 
 let walletClientStub: {
@@ -33,6 +32,9 @@ let walletClientStub: {
 } | null = null;
 
 let verifySwapTransactionStub = async (): Promise<void> => {};
+let waitForPolygonPublicReceiptStub = async (
+  _hash: `0x${string}`,
+): Promise<{ status: 'success' | 'reverted' }> => ({ status: 'success' });
 
 mock.module('wagmi', {
   namedExports: {
@@ -46,6 +48,13 @@ mock.module('../utils/swapTransactionLogs.ts', {
   namedExports: {
     logSwapTransactionEvent: () => {},
     verifySwapTransaction: () => verifySwapTransactionStub(),
+  },
+});
+
+// Shared dRPC receipt wait (same helper Stake/Bond use).
+mock.module('../../web3/waitForPolygonPublicReceipt.ts', {
+  namedExports: {
+    waitForPolygonPublicReceipt: (hash: `0x${string}`) => waitForPolygonPublicReceiptStub(hash),
   },
 });
 
@@ -213,12 +222,12 @@ test('useUniswapSwap confirms through the server when browser receipt RPC fails'
 
   publicClientStub = {
     readContract: async () => 1_000_000_000n,
-    waitForTransactionReceipt: async () => {
-      throw new Error('Unknown block');
-    },
   };
   walletClientStub = {
     sendTransaction: async () => '0xswap',
+  };
+  waitForPolygonPublicReceiptStub = async () => {
+    throw new Error('Unknown block');
   };
   verifySwapTransactionStub = async () => {
     serverVerificationCalls += 1;

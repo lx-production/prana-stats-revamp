@@ -11,7 +11,7 @@ import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
-import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
 import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
 import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
@@ -179,7 +179,7 @@ export function useStakeActions({
 
       const outcome = await confirmStakeReceipt(pendingTx.hash, {
         requireServerValidation,
-        waitForReceipt: waitForPolygonWalletReceipt,
+        waitForReceipt: waitForPolygonPublicReceipt,
         confirmOnServer: (txHash) =>
           confirmStakingTransactionOnServer({
             transactionHash: txHash,

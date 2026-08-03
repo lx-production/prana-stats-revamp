@@ -210,7 +210,7 @@ If permit signing succeeds but broadcast does not produce a transaction hash, th
 - Claim/unstake/early-unstake targets are fixed in code. The UI derives available actions from on-chain timestamps and config, including claim-before-unstake during the grace window and an explicit early-unstake penalty warning.
 - These action rules are UX guards; contract execution is authoritative. Unclaimed interest after the grace period can be lost under current contract semantics.
 - Once a hash exists, the app persists `{chainId, account, hash, action, createdAt}` in `localStorage` for up to 24 hours and never rebroadcasts that action during resume.
-- A fresh in-session transaction may be accepted from the browser/wallet RPC receipt. A resume/reload requires server validation of receipt status, sender, hardcoded target, and full reconstructed calldata.
+- A fresh in-session transaction may be accepted from the browser dRPC/`publicClient` receipt. A resume/reload requires server validation of receipt status, sender, hardcoded target, and full reconstructed calldata.
 - RPC lookup failure is `confirmation_unavailable`, not a revert. Only an explicit reverted receipt is reported as reverted.
 - The confirmation endpoint is a UX recovery path. It does not use Swap quote HMAC/replay protection and does not create trusted analytics.
 
@@ -350,7 +350,7 @@ Multi-instance deploys would need shared rate-limit storage plus a shared Swap s
 | Token / router constants | `constants/swapContracts.ts`, `utils/swapTokens.ts` |
 | Frontend RPC | `constants/network.ts` |
 | Swap UI hooks | `features/swap/hooks/useUniswapQuote.ts`, `features/swap/hooks/useUniswapSwap.ts`, `features/swap/utils/swapTransactionLogs.ts` |
-| Shared receipt / pending safety | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonWalletReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
+| Shared receipt / pending safety | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonPublicReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
 | Staking constants / server | `constants/stakingContracts.ts`, `server/loaders/stakingAccount.ts`, `server/loaders/stakingQuote.ts`, `server/loaders/stakingTransactionConfirmation.ts` |
 | Staking client | `features/staking/hooks/useStakeTransaction.ts`, `features/staking/hooks/useStakeActions.ts`, `features/staking/utils/permitUtils.ts`, `features/staking/utils/permitConfigGuard.ts`, `features/staking/utils/stakePendingTransactionStorage.ts` |
 | Bonding constants / server | `constants/bonds.ts`, `server/loaders/bondingAccount.ts`, `server/loaders/bondingQuote.ts`, `server/loaders/bondingTransactionConfirmation.ts` |

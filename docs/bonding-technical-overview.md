@@ -90,7 +90,7 @@ Guides `/guide/bonding/` and `/guide/bonding-contracts/` live in the homepage/le
 
 | Layer            | Responsibility                                                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Browser**      | UI, wallet connect, amount parse, CTA phases, `writeContract`, wait for receipt on wallet RPC                                                                       |
+| **Browser**      | UI, wallet connect, amount parse, CTA phases, `writeContract`, wait for receipt on dRPC (`publicClient`) → server fallback |
 | **Node backend** | Config/account/quote reads (same `blockTag`), quote math mirrored from Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet**  | Final authority: only the wallet moves funds                                                                                                                        |
 | **Polygon**      | Execution on Buy/Sell Bond V1/V2 + ERC-20 `approve`                                                                                                                 |
@@ -102,12 +102,11 @@ The browser does **not** build create/claim calldata from addresses returned by 
 
 Bonding writes go through:
 
-1. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim; after broadcast, wait for the receipt on the **same** provider that sent the tx (`waitForPolygonWalletReceipt`). No explicit browser `simulateContract`; wallet gas estimation and contract revert are the pre-execution safeguards.
-2. **Server RPC** (`ALCHEMY` / `POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
+1. **Wallet RPC** (EIP-1193) — broadcast `approve` / create / claim. No explicit browser `simulateContract`; wallet gas estimation and contract revert are the pre-execution safeguards.
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — post-broadcast receipt wait (`waitForPolygonPublicReceipt`), same as Swap.
+3. **Server RPC** (`ALCHEMY` / `POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback.
 
-Wagmi still configures a browser HTTP transport (`FRONTEND_POLYGON_RPC_URL` / dRPC) for shared Web3 providers, but Bonding write hooks do not call `simulateContract` on it.
-
-A failed receipt read on the wallet provider does **not** mean the transaction failed. Correct flow: catch → server fallback → only treat as failed when the receipt is explicitly `reverted`.
+A failed receipt read on dRPC does **not** mean the transaction failed. Correct flow: catch → server fallback → only treat as failed when the receipt is explicitly `reverted`.
 
 ---
 
@@ -181,8 +180,8 @@ sequenceDiagram
   Tx->>API: Fresh quote + echo check
   Tx->>Wallet: write create
   Wallet->>Chain: Create bond tx
-  Chain-->>Tx: Receipt (wallet RPC)
-  opt Wallet RPC read fails
+  Chain-->>Tx: Receipt (dRPC publicClient)
+  opt dRPC receipt read fails
     Tx->>API: POST confirm-transaction
   end
   Tx-->>User: Success UI
@@ -195,7 +194,7 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → success UI → background account refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
+Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → dRPC receipt / server fallback → success UI → background account refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
 
 Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`). After approve confirms, the UI shows **Approval confirmed** and opens Create immediately (optimistic). Create still refetches account before write but skips the allowance re-check for that in-session approve.
 
@@ -338,7 +337,7 @@ pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, foo
 
 Shared (Bonding must not import Staking in reverse):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonPublicReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (do not duplicate ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

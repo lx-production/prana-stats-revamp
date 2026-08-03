@@ -211,7 +211,7 @@ Nếu ký permit thành công nhưng broadcast không ra được transaction ha
 - Target claim/unstake/early-unstake cố định trong code. UI suy ra action khả dụng từ timestamp on-chain và config, gồm claim-before-unstake trong cửa sổ grace và cảnh báo penalty early-unstake tường minh.
 - Các rule action này là guard UX; execution của contract là nguồn quyền lực. Interest chưa claim sau grace có thể mất theo semantics contract hiện tại.
 - Khi đã có hash, app lưu `{chainId, account, hash, action, createdAt}` trong `localStorage` tối đa 24 giờ và không bao giờ rebroadcast action đó khi resume.
-- Transaction mới trong session có thể được chấp nhận từ receipt của browser/wallet RPC. Resume/reload đòi hỏi server validate trạng thái receipt, sender, target hardcoded, và full calldata đã dựng lại.
+- Transaction mới trong session có thể được chấp nhận từ receipt của browser dRPC/`publicClient`. Resume/reload đòi hỏi server validate trạng thái receipt, sender, target hardcoded, và full calldata đã dựng lại.
 - RPC lookup thất bại là `confirmation_unavailable`, không phải revert. Chỉ receipt reverted tường minh mới báo là reverted.
 - Confirmation endpoint là đường recovery UX. Nó không dùng HMAC/replay của Swap quote và không tạo analytics tin cậy.
 
@@ -351,7 +351,7 @@ Deploy nhiều instance sẽ cần storage rate-limit dùng chung cùng shared S
 | Hằng số token / router | `constants/swapContracts.ts`, `utils/swapTokens.ts` |
 | Frontend RPC | `constants/network.ts` |
 | Hook UI swap | `features/swap/hooks/useUniswapQuote.ts`, `features/swap/hooks/useUniswapSwap.ts`, `features/swap/utils/swapTransactionLogs.ts` |
-| An toàn receipt / pending dùng chung | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonWalletReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
+| An toàn receipt / pending dùng chung | `features/web3/transactionConfirmation.ts`, `features/web3/waitForPolygonPublicReceipt.ts`, `features/web3/pendingTransactionStorage.ts`, `server/utils/transactionConfirmationLookup.ts` |
 | Constant / server Staking | `constants/stakingContracts.ts`, `server/loaders/stakingAccount.ts`, `server/loaders/stakingQuote.ts`, `server/loaders/stakingTransactionConfirmation.ts` |
 | Client Staking | `features/staking/hooks/useStakeTransaction.ts`, `features/staking/hooks/useStakeActions.ts`, `features/staking/utils/permitUtils.ts`, `features/staking/utils/permitConfigGuard.ts`, `features/staking/utils/stakePendingTransactionStorage.ts` |
 | Constant / server Bonding | `constants/bonds.ts`, `server/loaders/bondingAccount.ts`, `server/loaders/bondingQuote.ts`, `server/loaders/bondingTransactionConfirmation.ts` |

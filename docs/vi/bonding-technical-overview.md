@@ -81,7 +81,7 @@ Guides `/guide/bonding/` và `/guide/bonding-contracts/` nằm trong homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, `writeContract`, chờ receipt trên wallet RPC |
+| **Browser** | UI, connect ví, parse amount, phase CTA, `writeContract`, chờ receipt trên dRPC (`publicClient`) → server fallback |
 | **Node backend** | Config/account/quote reads (cùng `blockTag`), quote math mirror Solidity, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên Buy/Sell Bond V1/V2 + ERC-20 `approve` |
@@ -92,12 +92,11 @@ Browser **không** xây create/claim calldata từ địa chỉ do API trả. In
 
 Bonding write đi qua:
 
-1. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim; sau broadcast, chờ receipt trên **cùng** provider đã gửi tx (`waitForPolygonWalletReceipt`). Không gọi `simulateContract` tường minh trên browser; ước lượng gas của ví và revert của contract là safeguard trước khi thực thi.
-2. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
+1. **RPC của ví** (EIP-1193) — broadcast `approve` / create / claim. Không gọi `simulateContract` tường minh trên browser; ước lượng gas của ví và revert của contract là safeguard trước khi thực thi.
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — chờ receipt sau broadcast (`waitForPolygonPublicReceipt`), giống Swap.
+3. **RPC server** (`ALCHEMY` / `POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction`.
 
-Wagmi vẫn cấu hình HTTP transport browser (`FRONTEND_POLYGON_RPC_URL` / dRPC) cho shared Web3 providers, nhưng Bonding write hooks không gọi `simulateContract` trên đó.
-
-Lỗi đọc receipt trên wallet provider **không** đồng nghĩa transaction failed. Flow đúng: catch → server fallback → chỉ coi failed khi receipt explicit `reverted`.
+Lỗi đọc receipt trên dRPC **không** đồng nghĩa transaction failed. Flow đúng: catch → server fallback → chỉ coi failed khi receipt explicit `reverted`.
 
 ---
 
@@ -159,8 +158,8 @@ sequenceDiagram
   Tx->>API: Fresh quote + echo check
   Tx->>Wallet: write create
   Wallet->>Chain: Create bond tx
-  Chain-->>Tx: Receipt (wallet RPC)
-  opt Wallet RPC read fails
+  Chain-->>Tx: Receipt (dRPC publicClient)
+  opt dRPC receipt read fails
     Tx->>API: POST confirm-transaction
   end
   Tx-->>User: Success UI
@@ -169,7 +168,7 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → wallet receipt / server fallback → success UI → refetch account nền. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
+Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → dRPC receipt / server fallback → success UI → refetch account nền. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
 
 Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`). Sau approve confirm, UI hiện **Approval confirmed** và mở Create ngay (optimistic). Create vẫn refetch account trước write nhưng bỏ check allowance lại cho approve vừa confirm trong session.
 
@@ -296,7 +295,7 @@ pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, foo
 
 Shared (không import ngược Bonding → Staking):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonPublicReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (không nhân đôi ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

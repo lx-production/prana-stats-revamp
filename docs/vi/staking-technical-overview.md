@@ -70,7 +70,8 @@ flowchart TD
 
   txHook --> injected["Injected wallet"]
   actionHook --> injected
-  txHook --> walletRpc["Wallet RPC receipt wait"]
+  txHook --> publicRpc["dRPC publicClient receipt wait"]
+  actionHook --> publicRpc
   injected --> chain["StakingContract + PRANA permit"]
 ```
 
@@ -82,7 +83,7 @@ Guides `/guide/staking/` và `/guide/staking-contracts/` nằm trong homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, connect ví, parse amount, phase CTA, EIP-712 sign, `writeContract`, chờ receipt (wallet RPC → server fallback) |
+| **Browser** | UI, connect ví, parse amount, phase CTA, EIP-712 sign, `writeContract`, chờ receipt (dRPC publicClient → server fallback) |
 | **Node backend** | Config/account/quote reads (cùng `blockTag`), math fund-gate, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: chỉ ví mới move funds |
 | **Polygon** | Execution trên StakingContract + PRANA `permit` |
@@ -91,11 +92,11 @@ Browser **không** xây write calldata từ địa chỉ do API trả. Trước 
 
 ### Các lớp RPC
 
-1. **RPC của ví** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake; sau broadcast, UI chờ receipt trên cùng provider đã gửi tx (`waitForPolygonWalletReceipt`).
-2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / đọc chain từ browser khi cần HTTP transport của app.
+1. **RPC của ví** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake.
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / đọc chain, và chờ receipt sau broadcast (`waitForPolygonPublicReceipt`), giống Swap.
 3. **RPC server** (`POLYGON_RPC_URL`) — config/account/quote và fallback `confirm-transaction` (và homepage `/api/staking-stats`, path riêng).
 
-Khi chờ receipt: thử wallet RPC trước; nếu đọc fail → `POST /api/staking/confirm-transaction`. Receipt explicit `reverted` mới là failed; lỗi RPC ≠ revert. Nếu cả hai chưa xác nhận được, giữ hash + action snapshot (localStorage, TTL 24h), CTA **Resume confirming**. Fresh in-session có thể tin browser receipt; resume/reload luôn validate lại trên server.
+Khi chờ receipt: thử dRPC/`publicClient` trước; nếu đọc fail → `POST /api/staking/confirm-transaction`. Receipt explicit `reverted` mới là failed; lỗi RPC ≠ revert. Nếu cả hai chưa xác nhận được, giữ hash + action snapshot (localStorage, TTL 24h), CTA **Resume confirming**. Fresh in-session có thể tin browser receipt; resume/reload luôn validate lại trên server.
 
 ---
 
@@ -160,7 +161,7 @@ sequenceDiagram
   Tx->>API: freshQuote again
   Tx->>Wallet: writeContract stakeWithPermit
   Wallet->>Chain: Stake tx
-  Chain-->>Tx: Receipt (wallet RPC)
+  Chain-->>Tx: Receipt (dRPC publicClient)
   Tx-->>User: Success UI
   Tx->>API: Refetch account (background)
 ```
@@ -298,7 +299,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking không import nội bộ Bonding/Swap để giữ ownership; Web3 dùng chung):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonPublicReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals
@@ -342,7 +343,7 @@ Giống Bonding: pending hash + action snapshot persist vào `localStorage` (`pr
 
 - Form sở hữu kind `stake`; Active Stakes sở hữu `claim` / `unstake` / `unstakeEarly`.
 - Storage chỉ là gợi ý resume — không bao giờ là proof of success.
-- Resume gọi confirmation (wallet RPC → server, `requireServerValidation`) — không bao giờ `writeContract` lần hai.
+- Resume gọi confirmation (dRPC → server, `requireServerValidation`) — không bao giờ `writeContract` lần hai.
 
 ---
 

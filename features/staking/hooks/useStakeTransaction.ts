@@ -15,7 +15,7 @@ import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
-import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
 import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
 import { confirmStakeReceipt, runPermitThenStake, resolvePermitAndStakeAction, submitStakeWithPermitFlow } from '../utils/stakeTransactionFlow.ts';
@@ -248,7 +248,7 @@ export function useStakeTransaction({
 
       const outcome = await confirmStakeReceipt(pendingTx.hash, {
         requireServerValidation: true,
-        waitForReceipt: waitForPolygonWalletReceipt,
+        waitForReceipt: waitForPolygonPublicReceipt,
         confirmOnServer: (txHash) =>
           confirmStakingTransactionOnServer({
             transactionHash: txHash,
@@ -552,7 +552,7 @@ export function useStakeTransaction({
             setStatus('confirming');
             // Once broadcast, drop permit so CTA cannot imply a second write.
             setPermit(null);
-            return waitForPolygonWalletReceipt(hash);
+            return waitForPolygonPublicReceipt(hash);
           },
           confirmOnServer: (hash) =>
             confirmStakingTransactionOnServer({

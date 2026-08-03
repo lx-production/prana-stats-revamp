@@ -8,7 +8,7 @@ import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
-import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
 import { confirmBondReceipt, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
@@ -155,7 +155,7 @@ export function useBondActions({
 
       const outcome = await confirmBondReceipt(pendingTx.hash, {
         requireServerValidation: true,
-        waitForReceipt: waitForPolygonWalletReceipt,
+        waitForReceipt: waitForPolygonPublicReceipt,
         confirmOnServer: (txHash) =>
           confirmBondingTransactionOnServer({
             transactionHash: txHash,
@@ -307,7 +307,7 @@ export function useBondActions({
             rememberPending(broadcastPending);
             setTransactionHash(hash);
             setStatus('confirming');
-            return waitForPolygonWalletReceipt(hash);
+            return waitForPolygonPublicReceipt(hash);
           },
           confirmOnServer: (hash) =>
             confirmBondingTransactionOnServer({

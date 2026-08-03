@@ -12,7 +12,7 @@ import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
 import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
-import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt.ts';
 import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
 import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
 import { BUY_BOND_ADDRESS_V2, BUY_BOND_V2_ABI, SELL_BOND_ADDRESS_V2, SELL_BOND_V2_ABI } from '../../../constants/bonds.ts';
@@ -208,7 +208,7 @@ export function useBondTransaction({
 
       const outcome = await confirmBondReceipt(pendingTx.hash, {
         requireServerValidation: true,
-        waitForReceipt: waitForPolygonWalletReceipt,
+        waitForReceipt: waitForPolygonPublicReceipt,
         confirmOnServer: (txHash) =>
           confirmBondingTransactionOnServer({
             transactionHash: txHash,
@@ -402,7 +402,7 @@ export function useBondTransaction({
           rememberPending(broadcastPending);
           setTransactionHash(hash);
           setStatus('confirming');
-          return waitForPolygonWalletReceipt(hash);
+          return waitForPolygonPublicReceipt(hash);
         },
         confirmOnServer: (hash) =>
           confirmBondingTransactionOnServer({
@@ -692,7 +692,7 @@ export function useBondTransaction({
           rememberPending(broadcastPending);
           setTransactionHash(hash);
           setStatus('confirming');
-          return waitForPolygonWalletReceipt(hash);
+          return waitForPolygonPublicReceipt(hash);
         },
         confirmOnServer: (hash) =>
           confirmBondingTransactionOnServer({

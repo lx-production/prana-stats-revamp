@@ -212,9 +212,9 @@ Implemented in `features/swap/hooks/useUniswapSwap.ts`.
 
 1. Read `balanceOf` + `allowance(owner, SwapRouter02)` on the public frontend RPC
 2. If allowance &lt; quoted amount, send `approve(SwapRouter02, amountInRaw)` for the **exact** quote amount (not unlimited)
-3. Wait for approval receipt
+3. Wait for approval receipt via shared `waitForPolygonPublicReceipt` (dRPC)
 4. `walletClient.sendTransaction` to SwapRouter02 with server calldata
-5. Wait for the swap receipt; only an explicit `reverted` receipt is treated as a failed swap
+5. Wait for the swap receipt with the same helper; only an explicit `reverted` receipt is treated as a failed swap
 6. If the browser RPC cannot read the receipt (for example, a transient `Unknown block` response), fall back to `/api/swap/verify-transaction`, which checks the same hash through the server RPC
 
 Wallet / viem failures are sanitized before they reach the modal (`features/swap/utils/sanitizeSwapWalletError.ts`). User cancellations show **Transaction canceled.**; unknown internals collapse to a short approval/swap fallback so long calldata never overflows the UI. Full error details still go to lifecycle logs.
@@ -362,6 +362,7 @@ Full tunnel/nginx ops: [`NETWORK_ARCHITECTURE.md`](./NETWORK_ARCHITECTURE.md).
 | `features/web3/useInjectedWallet.ts` | Connect / disconnect / switch to Polygon |
 | `features/swap/hooks/useUniswapQuote.ts` | Debounced quote fetch |
 | `features/swap/hooks/useUniswapSwap.ts` | Balances, approve, swap, status machine |
+| `features/web3/waitForPolygonPublicReceipt.ts` | Shared dRPC receipt wait (Swap + staking + bonding) |
 | `features/web3/walletFormatting.ts` | Pure compact address helper (Swap + staking + bonding) |
 | `features/web3/web3.types.ts` | Shared wallet hook result type |
 | `features/web3/Web3Providers.tsx` | Wagmi + React Query boundary (Swap + staking + bonding) |

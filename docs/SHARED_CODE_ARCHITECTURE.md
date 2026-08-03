@@ -102,7 +102,7 @@ generic helper.
 | `utils/tokenAmounts.ts` | Indirectly through `formatters.ts` | No | No direct client use | No direct client use | Dependency-free raw-unit conversion used to avoid adding Web3 libraries to basic formatting |
 | `utils/polygonscanUrls.ts` | Buy Dips and top-holder links | No current consumer | No current consumer | No current consumer | Neutral token explorer URL builder backed by `constants/network.ts` |
 | `utils/swapTokens.ts` | No Stats-owned consumer | Swap client and server | No | No | Lookup over the Swap allowlist |
-| `features/web3/getPolygonWalletClient.ts` and `waitForPolygonWalletReceipt.ts` | No | No | Transaction hooks | Transaction hooks | Fetch the latest Polygon wallet client and wait for receipt via the same provider that broadcast |
+| `features/web3/getPolygonWalletClient.ts` and `waitForPolygonPublicReceipt.ts` | No | Transaction hooks | Transaction hooks | Transaction hooks | Fetch the latest Polygon wallet client; wait for receipts on the app public RPC (dRPC) shared by Swap/Staking/Bonding |
 | `features/web3/accountRefetch.ts` | No | No | Transaction flows/hooks | Transaction flows/hooks | Generic successful-refetch gate; rejects stale cache and address mismatch before writes |
 | `features/web3/transactionConfirmation.ts` | No | No | Thin stake adapter | Thin bond adapter | Browser-receipt → server-fallback confirmation; Swap keeps its own helper for now |
 | `features/web3/pendingTransactionStorage.ts` + `hooks/usePendingTransaction.ts` | No | No | Thin stake wrappers | Thin bond wrappers | Shared envelope factory + hook; feature parsers/prefixes stay local |
@@ -290,7 +290,7 @@ not be created merely to make the three features look symmetrical.
 | `useInjectedWallet` | No Stats-owned use | Yes | Yes | Yes |
 | `formatCompactAddress` | No | Yes | Yes, via shared wallet control | Yes, via shared wallet control |
 | `features/web3/WalletControl` | No | No, Swap has its own UI | Yes, via copy/error wrapper | Yes |
-| `waitForPolygonWalletReceipt` | No | No | Yes | Yes |
+| `waitForPolygonPublicReceipt` | No | Yes | Yes | Yes |
 | `TxLink` | No | No | Yes | Yes |
 | `usePageMetadata` | Yes | Inherited from the Stats page | Yes | Yes |
 
@@ -354,7 +354,7 @@ The Staking UI primarily uses:
 - `stakingContracts.ts` for deployed contracts, permit typed data, and ABIs
 - Staking-local math, config/account adapters, error mapping, and transaction
   state machines
-- shared `WalletControl`, `waitForPolygonWalletReceipt`, and `TxLink`
+- shared `WalletControl`, `waitForPolygonPublicReceipt`, and `TxLink`
 - pending transaction storage by account/chain; post-reload resume must verify
   sender/target/calldata via the server before reporting success
 - shared language/footer/shader UI plus `GlassPanel` and `StatusBanner`
@@ -378,7 +378,7 @@ The Bonding UI primarily uses:
 - `bonds.ts` for Buy/Sell V1/V2 contracts and ABIs
 - Bonding-local math, config/account/quote adapters, error mapping, and
   approve/create/claim state machines
-- shared `WalletControl`, `waitForPolygonWalletReceipt`, and `TxLink`
+- shared `WalletControl`, `waitForPolygonPublicReceipt`, and `TxLink`
 - pending transaction storage by account/chain; post-reload resume must verify
   sender/target/calldata via the server before reporting success
 - shared language/footer/shader UI plus `GlassPanel` and `StatusBanner`

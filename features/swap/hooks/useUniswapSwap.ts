@@ -6,6 +6,7 @@ import { parseSwapTokenAmount } from '../utils/swapTokenFormatting';
 import { sanitizeSwapWalletError } from '../utils/sanitizeSwapWalletError';
 import { confirmSwapTransaction } from '../utils/swapTransactionConfirmation';
 import { UNISWAP_SWAP_ROUTER_02_ADDRESS } from '../../../constants/swapContracts';
+import { waitForPolygonPublicReceipt } from '../../web3/waitForPolygonPublicReceipt';
 import { logSwapTransactionEvent, verifySwapTransaction } from '../utils/swapTransactionLogs';
 
 import type {
@@ -195,9 +196,10 @@ export function useUniswapSwap({
 
       setTransactionHash(approvalHash);
       setStatus('approval-confirming');
-      const receipt = await publicClient?.waitForTransactionReceipt({ hash: approvalHash });
+      // Same dRPC receipt helper as Stake/Bond (FRONTEND_POLYGON_RPC_URL).
+      const receipt = await waitForPolygonPublicReceipt(approvalHash);
 
-      if (receipt?.status === 'reverted') {
+      if (receipt.status === 'reverted') {
         throw new Error('Approval transaction reverted.');
       }
 
@@ -206,7 +208,7 @@ export function useUniswapSwap({
         quote,
         ownerAddress,
         transactionHash: approvalHash,
-        receiptStatus: receipt?.status,
+        receiptStatus: receipt.status,
       });
 
       setStatus('approved');
@@ -223,7 +225,7 @@ export function useUniswapSwap({
       });
       throw err;
     }
-  }, [needsApproval, ownerAddress, publicClient, quote, quoteAmountInRaw, refreshBalances, tokenIn.address, walletClient]);
+  }, [needsApproval, ownerAddress, quote, quoteAmountInRaw, refreshBalances, tokenIn.address, walletClient]);
 
   // Full swap path: validate quote → approve if needed → send swap tx → wait → refresh balances.
   const executeSwap = useCallback(async () => {
@@ -278,13 +280,7 @@ export function useUniswapSwap({
       setTransactionHash(swapHash);
       setStatus('swap-confirming');
       const confirmation = await confirmSwapTransaction({
-        waitForReceipt: async () => {
-          if (!publicClient) {
-            throw new Error('Polygon receipt RPC is unavailable.');
-          }
-
-          return publicClient.waitForTransactionReceipt({ hash: swapHash });
-        },
+        waitForReceipt: () => waitForPolygonPublicReceipt(swapHash),
         verifyOnServer: () =>
           verifySwapTransaction({
             ownerAddress,
@@ -346,7 +342,6 @@ export function useUniswapSwap({
     isQuoteCurrent,
     isQuoteExpired,
     ownerAddress,
-    publicClient,
     quote,
     refreshBalances,
     tokenIn.symbol,

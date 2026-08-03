@@ -70,7 +70,8 @@ flowchart TD
 
   txHook --> injected["Injected wallet"]
   actionHook --> injected
-  txHook --> walletRpc["Wallet RPC receipt wait"]
+  txHook --> publicRpc["dRPC publicClient receipt wait"]
+  actionHook --> publicRpc
   injected --> chain["StakingContract + PRANA permit"]
 ```
 
@@ -82,7 +83,7 @@ Guides `/guide/staking/` and `/guide/staking-contracts/` live in the homepage/le
 
 | Layer | Responsibility |
 | --- | --- |
-| **Browser** | UI, wallet connect, amount parse, CTA phases, EIP-712 sign, `writeContract`, wait for receipt (wallet RPC → server fallback) |
+| **Browser** | UI, wallet connect, amount parse, CTA phases, EIP-712 sign, `writeContract`, wait for receipt (dRPC publicClient → server fallback) |
 | **Node backend** | Config/account/quote reads (same `blockTag`), fund-gate math, rate limit, origin/body validation, confirmation fallback (sender/target/calldata) |
 | **User wallet** | Final authority: only the wallet moves funds |
 | **Polygon** | Execution on StakingContract + PRANA `permit` |
@@ -91,11 +92,11 @@ The browser does **not** build write calldata from addresses returned by the API
 
 ### RPC layers
 
-1. **Wallet RPC** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake; after broadcast, UI waits for receipt on the same provider that sent the tx (`waitForPolygonWalletReceipt`).
-2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / chain reads from the browser when the app needs its own HTTP transport.
+1. **Wallet RPC** (EIP-1193) — `signTypedData` + broadcast stake/claim/unstake.
+2. **dRPC / publicClient** (`FRONTEND_POLYGON_RPC_URL`) — simulate / chain reads, and post-broadcast receipt wait (`waitForPolygonPublicReceipt`), same as Swap.
 3. **Server RPC** (`POLYGON_RPC_URL`) — config/account/quote and `confirm-transaction` fallback (and homepage `/api/staking-stats`, separate path).
 
-Receipt wait: try wallet RPC first; on read failure → `POST /api/staking/confirm-transaction`. Only an explicit `reverted` receipt is a failed tx; RPC errors are not reverts. If neither path can decide, keep hash + action snapshot (localStorage, 24h TTL) and show **Resume confirming**. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server.
+Receipt wait: try dRPC/`publicClient` first; on read failure → `POST /api/staking/confirm-transaction`. Only an explicit `reverted` receipt is a failed tx; RPC errors are not reverts. If neither path can decide, keep hash + action snapshot (localStorage, 24h TTL) and show **Resume confirming**. Fresh in-session writes may trust the browser receipt; resume/reload always re-validates on the server.
 
 ---
 
@@ -160,7 +161,7 @@ sequenceDiagram
   Tx->>API: freshQuote again
   Tx->>Wallet: writeContract stakeWithPermit
   Wallet->>Chain: Stake tx
-  Chain-->>Tx: Receipt (wallet RPC)
+  Chain-->>Tx: Receipt (dRPC publicClient)
   Tx-->>User: Success UI
   Tx->>API: Refetch account (background)
 ```
@@ -298,7 +299,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking must not import Bonding/Swap feature internals for ownership; Web3 is shared):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonPublicReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals
@@ -342,7 +343,7 @@ Like Bonding: pending hash + action snapshot persist to `localStorage` (`prana:s
 
 - Form owns kind `stake`; Active Stakes owns `claim` / `unstake` / `unstakeEarly`.
 - Storage is a resume hint only — never proof of success.
-- Resume runs confirmation (wallet RPC → server, `requireServerValidation`) — never a second `writeContract`.
+- Resume runs confirmation (dRPC → server, `requireServerValidation`) — never a second `writeContract`.
 
 ---
 

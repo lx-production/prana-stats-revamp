@@ -100,7 +100,7 @@ feature nên ở lại với feature dù trông giống helper generic.
 | `utils/tokenAmounts.ts` | Gián tiếp qua `formatters.ts` | Không | Không dùng trực tiếp trên client | Không dùng trực tiếp trên client | Chuyển đơn vị raw không phụ thuộc Web3, tránh thêm thư viện Web3 vào formatting cơ bản |
 | `utils/polygonscanUrls.ts` | Link Buy Dips và top-holder | Chưa có consumer | Chưa có consumer | Chưa có consumer | Builder URL explorer token trung lập, dựa trên `constants/network.ts` |
 | `utils/swapTokens.ts` | Không có consumer thuộc Stats | Swap client và server | Không | Không | Lookup trên Swap allowlist |
-| `features/web3/getPolygonWalletClient.ts` và `waitForPolygonWalletReceipt.ts` | Không | Không | Transaction hooks | Transaction hooks | Lấy wallet client Polygon mới nhất và chờ receipt qua cùng provider đã broadcast |
+| `features/web3/getPolygonWalletClient.ts` và `waitForPolygonPublicReceipt.ts` | Không | Transaction hooks | Transaction hooks | Transaction hooks | Lấy wallet client Polygon mới nhất; chờ receipt trên public RPC của app (dRPC) dùng chung bởi Swap/Staking/Bonding |
 | `features/web3/accountRefetch.ts` | Không | Không | Transaction flows/hooks | Transaction flows/hooks | Gate refetch thành công dùng chung; từ chối cache cũ và address mismatch trước write |
 | `features/web3/transactionConfirmation.ts` | Không | Không | Thin stake adapter | Thin bond adapter | Confirmation browser-receipt → server-fallback; Swap tạm giữ helper riêng |
 | `features/web3/pendingTransactionStorage.ts` + `hooks/usePendingTransaction.ts` | Không | Không | Thin stake wrappers | Thin bond wrappers | Factory envelope + hook dùng chung; parser/prefix vẫn thuộc feature |
@@ -287,7 +287,7 @@ chỉ để ba feature trông đối xứng.
 | `useInjectedWallet` | Không có use thuộc Stats | Có | Có | Có |
 | `formatCompactAddress` | Không | Có | Có, qua shared wallet control | Có, qua shared wallet control |
 | `features/web3/WalletControl` | Không | Không, Swap có UI riêng | Có, qua wrapper copy/error | Có |
-| `waitForPolygonWalletReceipt` | Không | Không | Có | Có |
+| `waitForPolygonPublicReceipt` | Không | Có | Có | Có |
 | `TxLink` | Không | Không | Có | Có |
 | `usePageMetadata` | Có | Kế thừa từ trang Stats | Có | Có |
 
@@ -351,7 +351,7 @@ Staking UI chủ yếu dùng:
 - `stakingContracts.ts` cho contract đã deploy, permit typed data, và ABIs
 - math, config/account adapters, error mapping, và transaction state machines
   local của Staking
-- shared `WalletControl`, `waitForPolygonWalletReceipt`, và `TxLink`
+- shared `WalletControl`, `waitForPolygonPublicReceipt`, và `TxLink`
 - pending transaction storage theo account/chain; resume sau reload phải xác
   thực sender/target/calldata qua server trước khi báo thành công
 - UI language/footer/shader dùng chung cộng `GlassPanel` và `StatusBanner`
@@ -374,7 +374,7 @@ Bonding UI chủ yếu dùng:
 - `sharedContracts.ts` cho decimals/địa chỉ PRANA/WBTC
 - `bonds.ts` cho contract Buy/Sell V1/V2 và ABI
 - Math, adapter config/account/quote, map lỗi, và state machine approve/create/claim riêng của Bonding
-- shared `WalletControl`, `waitForPolygonWalletReceipt`, và `TxLink`
+- shared `WalletControl`, `waitForPolygonPublicReceipt`, và `TxLink`
 - pending transaction storage theo account/chain; resume sau reload phải xác
   thực sender/target/calldata qua server trước khi báo thành công
 - UI language/footer/shader dùng chung cộng `GlassPanel` và `StatusBanner`
