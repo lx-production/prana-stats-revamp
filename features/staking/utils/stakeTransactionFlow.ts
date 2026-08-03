@@ -1,10 +1,9 @@
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
-import { confirmReceiptWithAccountSync } from '../../web3/confirmReceiptWithAccountSync.ts';
+import { confirmStakeTransaction } from './stakeTransactionConfirmation.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
-import type { StakeWaitReceiptResult } from './stakeTransactionConfirmation.ts';
+import type { StakeConfirmationOutcome, StakeWaitReceiptResult } from './stakeTransactionConfirmation.ts';
 import type { StakingAccountSnapshot, StakingTransactionConfirmation } from '../staking.types.ts';
-import type { ConfirmReceiptWithAccountSyncOutcome } from '../../web3/confirmReceiptWithAccountSync.types.ts';
 
 /** What the combined CTA should do on the next click. */
 export type PermitAndStakeAction =
@@ -31,7 +30,6 @@ export type ConfirmStakeDeps = {
   confirmOnServer: (
     hash: Hex,
   ) => Promise<StakingTransactionConfirmation>;
-  refetchAccount: () => Promise<unknown>;
   /**
    * Resume / reload path — browser receipt success still needs server
    * sender/target/calldata validation before UI reports confirmed.
@@ -39,24 +37,20 @@ export type ConfirmStakeDeps = {
   requireServerValidation?: boolean;
 };
 
-export type ConfirmStakeOutcome = ConfirmReceiptWithAccountSyncOutcome;
+export type ConfirmStakeOutcome = StakeConfirmationOutcome;
 
 /**
- * Staking adapter over shared confirm + account sync.
- * Account sync failures after a good receipt are non-fatal.
+ * Wait for an already-broadcast stake hash (browser → server).
+ * Account sync is intentionally separate so UI can show success immediately.
  */
 export async function confirmStakeReceipt(
   hash: Hex,
   deps: ConfirmStakeDeps,
 ): Promise<ConfirmStakeOutcome> {
-  return confirmReceiptWithAccountSync({
-    hash,
-    waitForReceipt: deps.waitForReceipt,
-    confirmOnServer: deps.confirmOnServer,
-    refetchAccount: deps.refetchAccount,
+  return confirmStakeTransaction({
+    waitForReceipt: () => deps.waitForReceipt(hash),
+    confirmOnServer: () => deps.confirmOnServer(hash),
     requireServerValidation: deps.requireServerValidation,
-    isSuccessfulRefetch: (refreshed) =>
-      accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed) != null,
   });
 }
 
@@ -87,7 +81,6 @@ export type SubmitStakeOutcome =
   | {
       kind: 'confirmed';
       hash: Hex;
-      syncFailed: boolean;
       source: 'browser' | 'server';
     };
 
@@ -95,6 +88,7 @@ export type SubmitStakeOutcome =
  * Fresh-account gate → writeContract → confirm receipt.
  * Separates pre-broadcast failures (retry with same permit) from post-broadcast
  * confirmation failures (retry wait only, never a second write).
+ * Does not refetch account after receipt — callers sync in the background.
  */
 export async function submitStakeWithPermitFlow(
   deps: SubmitStakeDeps,
@@ -121,17 +115,16 @@ export async function submitStakeWithPermitFlow(
     return { kind: 'rejected_before_broadcast', error };
   }
 
+  // Receipt only — account sync happens after the UI shows success.
   const confirm = await confirmStakeReceipt(hash, {
     waitForReceipt: deps.waitForReceipt,
     confirmOnServer: deps.confirmOnServer,
-    refetchAccount: deps.refetchAccount,
   });
 
   if (confirm.kind === 'confirmed') {
     return {
       kind: 'confirmed',
       hash,
-      syncFailed: confirm.syncFailed,
       source: confirm.source,
     };
   }

@@ -218,7 +218,7 @@ If permit signing succeeds but broadcast does not produce a transaction hash, th
 
 - The Staking frontend does **not** explicitly call `simulateContract` before stake/claim/unstake writes. Wallet/client gas estimation and the contract revert remain the pre-execution safeguards.
 - The 30-second config cache can briefly lag changed pause, term, or penalty state. Fresh quotes reduce this for stake eligibility, but the contract remains authoritative.
-- If post-receipt account synchronization fails for a stake action, the UI can lock further action writes until reload rather than risk acting on stale account state.
+- If post-receipt account synchronization fails for a stake action, the UI can lock further action writes until reload rather than risk acting on stale account state. Account sync runs after the success UI is shown and never blocks transaction confirmation.
 - Server validation errors use an allowlist; unexpected RPC/internal failures return a generic `502`. Client wallet/provider errors are mapped to stable localized messages, with raw details kept out of user-facing copy.
 
 ---

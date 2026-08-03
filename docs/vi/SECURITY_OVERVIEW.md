@@ -219,7 +219,7 @@ Nếu ký permit thành công nhưng broadcast không ra được transaction ha
 
 - Frontend Staking **không** gọi tường minh `simulateContract` trước các write stake/claim/unstake. Ước lượng gas của wallet/client và revert của contract vẫn là safeguard trước khi thực thi.
 - Cache config 30 giây có thể lệch tạm thời khi pause, term hoặc penalty đổi. Quote mới giảm rủi ro này cho eligibility stake, nhưng contract vẫn là nguồn quyền lực.
-- Nếu đồng bộ account sau receipt thất bại cho một stake action, UI có thể khóa write action tiếp theo đến khi reload thay vì rủi ro hành động trên account state cũ.
+- Nếu đồng bộ account sau receipt thất bại cho một stake action, UI có thể khóa write action tiếp theo đến khi reload thay vì rủi ro hành động trên account state cũ. Sync account chạy sau khi đã hiện success UI và không chặn confirmation.
 - Lỗi validation server dùng allowlist; RPC/internal bất ngờ trả `502` chung. Lỗi wallet/provider phía client được map sang thông báo localized ổn định; chi tiết thô không đưa vào copy cho user.
 
 ---

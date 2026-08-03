@@ -160,8 +160,9 @@ sequenceDiagram
   Tx->>API: freshQuote again
   Tx->>Wallet: writeContract stakeWithPermit
   Wallet->>Chain: Stake tx
-  Chain-->>Tx: Receipt (publicClient)
-  Tx->>API: Refetch account
+  Chain-->>Tx: Receipt (wallet RPC)
+  Tx-->>User: Success UI
+  Tx->>API: Refetch account (background)
 ```
 
 Orchestration: `permitAndStake` → `createPermitSnapshot` / reuse / `submitStakeWithPermit` / `confirmStakeReceipt` in `useStakeTransaction` + `stakeTransactionFlow.ts`.
@@ -170,6 +171,7 @@ Orchestration: `permitAndStake` → `createPermitSnapshot` / reuse / `submitStak
 - Reject stake **before** broadcast → keep permit → CTA **Continue Stake**.
 - Receipt error **after** hash → drop permit, keep hash → CTA **Resume confirming** (wait only; no second write).
 - Changing amount / duration / account / chain or deadline expiry invalidates the permit.
+- Success UI appears as soon as the receipt confirms; account refetch runs in the background (swap-like). Sync failure keeps success and shows a warning.
 
 ### Claim / unstake / early unstake
 
@@ -182,7 +184,7 @@ Rules (`getStakeActionState`):
 - After grace → claim off; unstake principal OK; warn if interest was never claimed through maturity.
 - Before maturity → early unstake via `EarlyUnstakeDialog` (penalty %, expected principal return, accrued interest forfeited).
 
-Form approve/create and stake actions **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `StakingPage`). Post-receipt account sync failure on actions can lock further writes until reload (`syncRequired`).
+Form approve/create and stake actions **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `StakingPage`). Post-receipt account sync failure on actions can lock further writes until reload (`syncRequired`). Account sync never blocks the success UI.
 
 ---
 
@@ -296,7 +298,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking must not import Bonding/Swap feature internals for ownership; Web3 is shared):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `confirmReceiptWithAccountSync`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals

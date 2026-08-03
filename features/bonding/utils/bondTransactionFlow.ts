@@ -1,12 +1,9 @@
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
-import { confirmReceiptWithAccountSync } from '../../web3/confirmReceiptWithAccountSync.ts';
+import { confirmBondTransaction } from './bondTransactionConfirmation.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
-import type { BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
+import type { BondConfirmationOutcome, BondWaitReceiptResult } from './bondTransactionConfirmation.ts';
 import type { BondingAccount, BondingTransactionConfirmation } from '../bonding.types.ts';
-import type {
-  ConfirmReceiptWithAccountSyncOutcome,
-} from '../../web3/confirmReceiptWithAccountSync.types.ts';
 
 /** What the primary CTA should do on the next click. */
 export type BondCtaAction =
@@ -32,7 +29,6 @@ export type ConfirmBondReceiptDeps = {
   confirmOnServer: (
     hash: Hex,
   ) => Promise<BondingTransactionConfirmation>;
-  refetchAccount: () => Promise<unknown>;
   /**
    * Resume / reload path — browser receipt success still needs server
    * sender/target/calldata validation before UI reports confirmed.
@@ -40,24 +36,20 @@ export type ConfirmBondReceiptDeps = {
   requireServerValidation?: boolean;
 };
 
-export type ConfirmBondReceiptOutcome = ConfirmReceiptWithAccountSyncOutcome;
+export type ConfirmBondReceiptOutcome = BondConfirmationOutcome;
 
 /**
- * Bonding adapter over shared confirm + account sync.
- * Account sync failures after a good receipt are non-fatal.
+ * Wait for an already-broadcast bond hash (browser → server).
+ * Account sync is intentionally separate so UI can show success immediately.
  */
 export async function confirmBondReceipt(
   hash: Hex,
   deps: ConfirmBondReceiptDeps,
 ): Promise<ConfirmBondReceiptOutcome> {
-  return confirmReceiptWithAccountSync({
-    hash,
-    waitForReceipt: deps.waitForReceipt,
-    confirmOnServer: deps.confirmOnServer,
-    refetchAccount: deps.refetchAccount,
+  return confirmBondTransaction({
+    waitForReceipt: () => deps.waitForReceipt(hash),
+    confirmOnServer: () => deps.confirmOnServer(hash),
     requireServerValidation: deps.requireServerValidation,
-    isSuccessfulRefetch: (refreshed) =>
-      accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
   });
 }
 
@@ -90,7 +82,6 @@ export type SubmitBondWriteOutcome =
   | {
       kind: 'confirmed';
       hash: Hex;
-      syncFailed: boolean;
       source: 'browser' | 'server';
     };
 
@@ -98,6 +89,7 @@ export type SubmitBondWriteOutcome =
  * Fresh-account gate → write → confirm receipt.
  * Separates pre-broadcast failures (retry write) from post-broadcast
  * confirmation failures (retry wait only, never a second write).
+ * Does not refetch account after receipt — callers sync in the background.
  */
 export async function submitBondWriteFlow(
   deps: SubmitBondWriteDeps,
@@ -119,17 +111,16 @@ export async function submitBondWriteFlow(
     return { kind: 'rejected_before_broadcast', error };
   }
 
+  // Receipt only — account sync happens after the UI shows success.
   const confirm = await confirmBondReceipt(hash, {
     waitForReceipt: deps.waitForReceipt,
     confirmOnServer: deps.confirmOnServer,
-    refetchAccount: deps.refetchAccount,
   });
 
   if (confirm.kind === 'confirmed') {
     return {
       kind: 'confirmed',
       hash,
-      syncFailed: confirm.syncFailed,
       source: confirm.source,
     };
   }

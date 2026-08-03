@@ -9,6 +9,8 @@ import { usePendingBondTransaction } from './usePendingBondTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
+import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
 import { confirmBondReceipt, submitBondWriteFlow } from '../utils/bondTransactionFlow.ts';
 import { bondClaimKey, isBondDeploymentPaused, resolveBondClaimTarget } from '../utils/bondClaimTarget.ts';
 
@@ -25,6 +27,7 @@ import {
 import type { Address, Hex } from '../../../types/blockchain.types.ts';
 import type {
   BondClaimActionTarget,
+  BondingAccount,
   BondingConfig,
   BondingTransactionActionSnapshot,
   BondTransactionStatus,
@@ -107,16 +110,31 @@ export function useBondActions({
     hasPendingHash;
 
   const applyConfirmed = useCallback(
-    (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
+    (hash: Hex, pendingTx?: PendingBondTransaction | null) => {
       clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setAction(null);
       setStatus('success');
       setError(null);
       setSuccess(copy.claimConfirmed);
-      setWarning(syncFailed ? copy.accountSyncWarning : null);
+      setWarning(null);
+      // Refresh active bonds after receipt — never blocks the success UI.
+      void syncAccountAfterConfirm({
+        refetchAccount,
+        isSuccessfulRefetch: (refreshed) =>
+          accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
+      }).then(({ syncFailed }) => {
+        if (syncFailed) {
+          setWarning(copy.accountSyncWarning);
+        }
+      });
     },
-    [clearPendingRecord, copy.accountSyncWarning, copy.claimConfirmed],
+    [
+      clearPendingRecord,
+      copy.accountSyncWarning,
+      copy.claimConfirmed,
+      refetchAccount,
+    ],
   );
 
   const resumeConfirmReceipt = useCallback(
@@ -144,7 +162,6 @@ export function useBondActions({
             account: pendingTx.account,
             action: pendingTx.action,
           }),
-        refetchAccount,
       });
 
       // Wallet switched mid-wait — keep storage for the original account.
@@ -161,7 +178,7 @@ export function useBondActions({
       }
 
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
+        applyConfirmed(pendingTx.hash, pendingTx);
         return;
       }
 
@@ -192,7 +209,6 @@ export function useBondActions({
       copy.confirmationUnavailable,
       discardLocalPending,
       locale,
-      refetchAccount,
       rememberPending,
       wallet.address,
       wallet.chainId,
@@ -370,7 +386,7 @@ export function useBondActions({
           return;
         }
 
-        applyConfirmed(outcome.hash, outcome.syncFailed, broadcastPending);
+        applyConfirmed(outcome.hash, broadcastPending);
       } catch (err) {
         setAction(null);
         clearPendingRecord();

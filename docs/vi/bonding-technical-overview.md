@@ -163,14 +163,15 @@ sequenceDiagram
   opt Wallet RPC read fails
     Tx->>API: POST confirm-transaction
   end
-  Tx->>API: Refetch account
+  Tx-->>User: Success UI
+  Tx->>API: Refetch account (background)
 ```
 
 ### Claim bond
 
-Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → wallet receipt / server fallback → refetch. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
+Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → wallet receipt / server fallback → success UI → refetch account nền. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
 
-Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`).
+Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`). Sau approve confirm, CTA vẫn khóa đến khi sync allowance xong để Create không chạy trên snapshot cũ.
 
 ---
 
@@ -295,7 +296,7 @@ pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, foo
 
 Shared (không import ngược Bonding → Staking):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `confirmReceiptWithAccountSync`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (không nhân đôi ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

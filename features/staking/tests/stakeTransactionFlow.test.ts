@@ -101,6 +101,36 @@ test('submitStakeWithPermitFlow keeps pre-broadcast rejection without a hash', a
   }
 });
 
+test('submitStakeWithPermitFlow confirms without waiting on account sync', async () => {
+  let syncStarted = false;
+  let resolveSync: ((value: unknown) => void) | null = null;
+
+  const outcome = await submitStakeWithPermitFlow({
+    refetchAccount: async () => {
+      // First call is the pre-write fresh-account gate.
+      if (!syncStarted) {
+        return successRefetch();
+      }
+      // Would hang if post-receipt sync were still awaited in the submit flow.
+      return await new Promise((resolve) => {
+        resolveSync = resolve;
+      });
+    },
+    writeContract: async () => HASH,
+    waitForReceipt: async () => {
+      syncStarted = true;
+      return { status: 'success' };
+    },
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
+    isPermitStillValid: () => true,
+    isPermitExpired: () => false,
+  });
+
+  assert.equal(outcome.kind, 'confirmed');
+  // Hang resolver must still be unset — submit must not start post-receipt sync.
+  assert.equal(resolveSync, null);
+});
+
 test('submitStakeWithPermitFlow does not call write twice after hash is known', async () => {
   let writeCount = 0;
   let waitCount = 0;
@@ -139,7 +169,6 @@ test('submitStakeWithPermitFlow does not call write twice after hash is known', 
       serverCalls += 1;
       return { status: 'confirmed', source: 'server' };
     },
-    refetchAccount: async () => successRefetch(),
   });
 
   assert.equal(resume.kind, 'confirmed');

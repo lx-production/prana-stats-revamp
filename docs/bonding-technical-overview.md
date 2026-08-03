@@ -185,7 +185,8 @@ sequenceDiagram
   opt Wallet RPC read fails
     Tx->>API: POST confirm-transaction
   end
-  Tx->>API: Refetch account
+  Tx-->>User: Success UI
+  Tx->>API: Refetch account (background)
 ```
 
 
@@ -194,9 +195,9 @@ sequenceDiagram
 
 ### Claim bond
 
-Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
+Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → success UI → background account refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
 
-Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`).
+Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`). After approve confirms, the CTA stays locked until the allowance account sync finishes so Create does not run on a stale snapshot.
 
 ---
 
@@ -337,7 +338,7 @@ pages/BondingPage.tsx           # shell: shader, wallet, form, active bonds, foo
 
 Shared (Bonding must not import Staking in reverse):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `confirmReceiptWithAccountSync`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `waitForPolygonWalletReceipt`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/bonds.ts` + `bonds.types.ts` — addresses + ABI (do not duplicate ABI)
 - `constants/sharedContracts.ts` — PRANA/WBTC/pool/decimals

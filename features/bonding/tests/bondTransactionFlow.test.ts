@@ -140,6 +140,32 @@ test('submitBondWriteFlow keeps pre-broadcast rejection without a hash', async (
   assert.equal(outcome.kind, 'rejected_before_broadcast');
 });
 
+test('submitBondWriteFlow confirms without waiting on account sync', async () => {
+  let postReceipt = false;
+  let resolveSync: ((value: unknown) => void) | null = null;
+
+  const outcome = await submitBondWriteFlow({
+    refetchAccount: async () => {
+      if (!postReceipt) {
+        return successRefetch();
+      }
+      return await new Promise((resolve) => {
+        resolveSync = resolve;
+      });
+    },
+    validateFreshAccount: () => true,
+    write: async () => HASH,
+    waitForReceipt: async () => {
+      postReceipt = true;
+      return { status: 'success' };
+    },
+    confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
+  });
+
+  assert.equal(outcome.kind, 'confirmed');
+  assert.equal(resolveSync, null);
+});
+
 test('submitBondWriteFlow does not call write twice after hash is known', async () => {
   let writeCount = 0;
   let waitCount = 0;
@@ -176,7 +202,6 @@ test('submitBondWriteFlow does not call write twice after hash is known', async 
       serverCalls += 1;
       return { status: 'confirmed', source: 'server' };
     },
-    refetchAccount: async () => successRefetch(),
   });
 
   assert.equal(resume.kind, 'confirmed');
@@ -213,7 +238,6 @@ test('claim write flow and resume never rewrites', async () => {
   const resume = await confirmBondReceipt(HASH, {
     waitForReceipt: async () => ({ status: 'success' }),
     confirmOnServer: async () => ({ status: 'confirmed', source: 'server' }),
-    refetchAccount: async () => successRefetch(),
   });
   assert.equal(resume.kind, 'confirmed');
   assert.equal(writeCount, 1);

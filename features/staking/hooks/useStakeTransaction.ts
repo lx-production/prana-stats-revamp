@@ -14,6 +14,7 @@ import { isPermitConfigPinned } from '../utils/permitConfigGuard.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
 import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
@@ -193,21 +194,36 @@ export function useStakeTransaction({
     return client;
   }, [publicClient, wallet]);
 
+  // Refresh stakes/balance after receipt — never blocks the success UI.
+  const runPostConfirmAccountSync = useCallback(() => {
+    void syncAccountAfterConfirm({
+      refetchAccount,
+      isSuccessfulRefetch: (refreshed) =>
+        accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed) !=
+        null,
+    }).then(({ syncFailed }) => {
+      if (syncFailed) {
+        setWarning(copy.accountSyncWarning);
+      }
+    });
+  }, [copy.accountSyncWarning, refetchAccount]);
+
   const applyConfirmed = useCallback(
-    (
-      hash: Hex,
-      syncFailed: boolean,
-      pendingTx?: PendingStakeTransaction | null,
-    ) => {
+    (hash: Hex, pendingTx?: PendingStakeTransaction | null) => {
       clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setPermit(null);
       setStatus('success');
       setError(null);
       setSuccess(copy.stakeConfirmed);
-      setWarning(syncFailed ? copy.accountSyncWarning : null);
+      setWarning(null);
+      runPostConfirmAccountSync();
     },
-    [clearPendingRecord, copy.accountSyncWarning, copy.stakeConfirmed],
+    [
+      clearPendingRecord,
+      copy.stakeConfirmed,
+      runPostConfirmAccountSync,
+    ],
   );
 
   /**
@@ -239,7 +255,6 @@ export function useStakeTransaction({
             account: pendingTx.account,
             action: pendingTx.action,
           }),
-        refetchAccount,
       });
 
       // Wallet switched mid-wait — keep storage for the original account.
@@ -256,7 +271,7 @@ export function useStakeTransaction({
       }
 
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
+        applyConfirmed(pendingTx.hash, pendingTx);
         return;
       }
 
@@ -288,7 +303,6 @@ export function useStakeTransaction({
       copy.confirmationUnavailable,
       discardLocalPending,
       locale,
-      refetchAccount,
       rememberPending,
       wallet.address,
       wallet.chainId,
@@ -616,7 +630,7 @@ export function useStakeTransaction({
           return;
         }
 
-        applyConfirmed(outcome.hash, outcome.syncFailed);
+        applyConfirmed(outcome.hash);
       } catch (err) {
         setStatus('error');
         setError(formatStakingError(err, locale));

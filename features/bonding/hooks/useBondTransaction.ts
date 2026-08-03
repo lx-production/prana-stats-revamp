@@ -11,6 +11,7 @@ import { confirmBondingTransactionOnServer } from '../utils/bondingApi.ts';
 import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
 import { PRANA_ADDRESS, WBTC_ADDRESS } from '../../../constants/sharedContracts.ts';
+import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { isBondingQuoteEchoValid, resolveCreateAmountRaw } from '../utils/bondQuoteEcho.ts';
 import { formatBondingError, getBondingErrorMessage, logBondingFailure } from '../utils/bondingErrors.ts';
@@ -89,6 +90,11 @@ export function useBondTransaction({
   const [success, setSuccess] = useState<string | null>(null);
   /** Last hash to show on Polygonscan (success or pending). */
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
+  /**
+   * True while post-receipt account refetch is in flight.
+   * Locks the CTA after approve so Create does not run on a stale allowance.
+   */
+  const [accountSyncing, setAccountSyncing] = useState(false);
 
   const {
     pending,
@@ -152,16 +158,37 @@ export function useBondTransaction({
     return client;
   }, [wallet]);
 
+  // Refresh bonds/allowance after receipt — never blocks the success UI.
+  const runPostConfirmAccountSync = useCallback(
+    (options?: { lockCta?: boolean }) => {
+      const lockCta = options?.lockCta === true;
+      if (lockCta) setAccountSyncing(true);
+
+      void syncAccountAfterConfirm({
+        refetchAccount,
+        isSuccessfulRefetch: (refreshed) =>
+          accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
+      }).then(({ syncFailed }) => {
+        if (lockCta) setAccountSyncing(false);
+        if (syncFailed) {
+          setWarning(copy.accountSyncWarning);
+        }
+      });
+    },
+    [copy.accountSyncWarning, refetchAccount],
+  );
+
   const applyConfirmed = useCallback(
-    (hash: Hex, syncFailed: boolean, pendingTx?: PendingBondTransaction | null) => {
+    (hash: Hex, pendingTx?: PendingBondTransaction | null) => {
       clearPendingRecord(pendingTx ?? null);
       setTransactionHash(hash);
       setStatus('success');
       setError(null);
       setSuccess(copy.bondConfirmed);
-      setWarning(syncFailed ? copy.accountSyncWarning : null);
+      setWarning(null);
+      runPostConfirmAccountSync();
     },
-    [clearPendingRecord, copy.accountSyncWarning, copy.bondConfirmed],
+    [clearPendingRecord, copy.bondConfirmed, runPostConfirmAccountSync],
   );
 
   const resumeConfirmReceipt = useCallback(
@@ -189,7 +216,6 @@ export function useBondTransaction({
             account: pendingTx.account,
             action: pendingTx.action,
           }),
-        refetchAccount,
       });
 
       // Wallet switched mid-wait — keep storage for the original account.
@@ -206,7 +232,7 @@ export function useBondTransaction({
       }
 
       if (outcome.kind === 'confirmed') {
-        applyConfirmed(pendingTx.hash, outcome.syncFailed, pendingTx);
+        applyConfirmed(pendingTx.hash, pendingTx);
         return;
       }
 
@@ -236,7 +262,6 @@ export function useBondTransaction({
       copy.confirmationUnavailable,
       discardLocalPending,
       locale,
-      refetchAccount,
       rememberPending,
       wallet.address,
       wallet.chainId,
@@ -453,17 +478,18 @@ export function useBondTransaction({
         return;
       }
 
-      // Approve confirmed — ready for Create (separate click).
+      // Approve confirmed — ready for Create after account sync (separate click).
       console.info('[bonding] approve:confirmed', {
         hash: outcome.hash,
-        syncFailed: outcome.syncFailed,
       });
       clearPendingRecord(broadcastPending);
       setTransactionHash(outcome.hash);
       setStatus('idle');
       setError(null);
       setSuccess(null);
-      setWarning(outcome.syncFailed ? copy.accountSyncWarning : null);
+      setWarning(null);
+      // Lock CTA until allowance snapshot refreshes — avoids stale Approve/Create.
+      runPostConfirmAccountSync({ lockCta: true });
     } catch (err) {
       clearPendingRecord();
       setStatus('error');
@@ -473,7 +499,6 @@ export function useBondTransaction({
     amountRaw,
     clearPendingRecord,
     config,
-    copy.accountSyncWarning,
     copy.confirmationUnavailable,
     discardLocalPending,
     ensurePolygonWalletClient,
@@ -485,6 +510,7 @@ export function useBondTransaction({
     refetchAccount,
     refetchConfig,
     rememberPending,
+    runPostConfirmAccountSync,
     side,
     termId,
     wallet.address,
@@ -728,7 +754,7 @@ export function useBondTransaction({
         return;
       }
 
-      applyConfirmed(outcome.hash, outcome.syncFailed, broadcastPending);
+      applyConfirmed(outcome.hash, broadcastPending);
     } catch (err) {
       setStatus('error');
       setError(formatBondingError(err, locale));
@@ -798,7 +824,8 @@ export function useBondTransaction({
     status === 'approving' ||
     status === 'submitting' ||
     status === 'confirming' ||
-    hasPendingHash;
+    hasPendingHash ||
+    accountSyncing;
 
   return {
     status,

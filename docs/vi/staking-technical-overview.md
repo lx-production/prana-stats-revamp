@@ -160,8 +160,9 @@ sequenceDiagram
   Tx->>API: freshQuote again
   Tx->>Wallet: writeContract stakeWithPermit
   Wallet->>Chain: Stake tx
-  Chain-->>Tx: Receipt (publicClient)
-  Tx->>API: Refetch account
+  Chain-->>Tx: Receipt (wallet RPC)
+  Tx-->>User: Success UI
+  Tx->>API: Refetch account (background)
 ```
 
 Orchestration: `permitAndStake` → `createPermitSnapshot` / reuse / `submitStakeWithPermit` / `confirmStakeReceipt` trong `useStakeTransaction` + `stakeTransactionFlow.ts`.
@@ -170,6 +171,7 @@ Orchestration: `permitAndStake` → `createPermitSnapshot` / reuse / `submitStak
 - Từ chối stake **trước** broadcast → giữ permit → CTA **Continue Stake**.
 - Lỗi receipt **sau** hash → bỏ permit, giữ hash → CTA **Resume confirming** (chỉ chờ; không write lần hai).
 - Đổi amount / duration / account / chain hoặc hết deadline → invalidate permit.
+- Success UI hiện ngay khi receipt confirm; refetch account chạy nền (giống swap). Sync fail vẫn giữ success + warning.
 
 ### Claim / unstake / early unstake
 
@@ -182,7 +184,7 @@ Rules (`getStakeActionState`):
 - Sau grace → tắt claim; unstake principal OK; cảnh báo nếu lãi chưa claim tới maturity.
 - Trước maturity → early unstake qua `EarlyUnstakeDialog` (penalty %, principal dự kiến nhận, lãi accrued bị mất).
 
-Form create và stake actions **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `StakingPage`). Account sync fail sau receipt trên actions có thể khóa write tiếp đến khi reload (`syncRequired`).
+Form create và stake actions **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `StakingPage`). Account sync fail sau receipt trên actions có thể khóa write tiếp đến khi reload (`syncRequired`). Account sync không chặn success UI.
 
 ---
 
@@ -296,7 +298,7 @@ pages/StakingPage.tsx           # shell: shader, wallet, form, active stakes, fo
 
 Shared (Staking không import nội bộ Bonding/Swap để giữ ownership; Web3 dùng chung):
 
-- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `confirmReceiptWithAccountSync`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
+- `features/web3/` — `Web3Providers`, `useInjectedWallet`, `WalletControl`, `getPolygonWalletClient`, `accountRefetch`, `transactionConfirmation`, `syncAccountAfterConfirm`, `pendingTransactionStorage`, `hooks/usePendingTransaction`
 - `components/ui/TxLink.tsx` — Polygonscan hash link
 - `constants/stakingContracts.ts` — addresses, ABIs, permit domain / deadline
 - `constants/sharedContracts.ts` — PRANA address/decimals

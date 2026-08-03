@@ -8,14 +8,16 @@ import { useSiteLanguage } from '../../../hooks/useSiteLanguage.ts';
 import { confirmStakeReceipt } from '../utils/stakeTransactionFlow.ts';
 import { confirmStakingTransactionOnServer } from '../utils/stakingApi.ts';
 import { usePendingStakeTransaction } from './usePendingStakeTransaction.ts';
+import { accountFromSuccessfulRefetch } from '../../web3/accountRefetch.ts';
 import { getPolygonWalletClient } from '../../web3/getPolygonWalletClient.ts';
+import { syncAccountAfterConfirm } from '../../web3/syncAccountAfterConfirm.ts';
 import { waitForPolygonWalletReceipt } from '../../web3/waitForPolygonWalletReceipt.ts';
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
 import { formatStakingError, getStakingErrorMessage, logStakingFailure } from '../utils/stakingErrors.ts';
 import { buildPendingStakeTransaction, pendingStakeTransactionMatchesWallet } from '../utils/stakePendingTransactionStorage.ts';
 
 import type { Hex } from '../../../types/blockchain.types.ts';
-import type { PendingStakeTransaction, StakeActionKind, StakeTransactionStatus, StakingTransactionActionSnapshot } from '../staking.types.ts';
+import type { PendingStakeTransaction, StakeActionKind, StakeTransactionStatus, StakingAccountSnapshot, StakingTransactionActionSnapshot } from '../staking.types.ts';
 
 const ACTION_PENDING_KINDS = ['claim', 'unstake', 'unstakeEarly'] as const;
 
@@ -38,7 +40,8 @@ function actionSnapshot(
 
 /**
  * Claim / unstake / early-unstake writes.
- * Each action waits for receipt before refetch; only one action at a time.
+ * Receipt confirms success first; account sync runs in the background.
+ * Only one action at a time.
  */
 export function useStakeActions({
   refetchAccount,
@@ -106,10 +109,24 @@ export function useStakeActions({
     hasPendingHash ||
     syncRequired;
 
+  // Refresh stakes after receipt — never blocks the success UI.
+  const runPostConfirmAccountSync = useCallback(() => {
+    void syncAccountAfterConfirm({
+      refetchAccount,
+      isSuccessfulRefetch: (refreshed) =>
+        accountFromSuccessfulRefetch<StakingAccountSnapshot>(refreshed) !=
+        null,
+    }).then(({ syncFailed }) => {
+      if (!syncFailed) return;
+      setWarning(copy.actionAccountSyncWarning);
+      // Stale account after action writes is unsafe — lock until reload.
+      setSyncRequired(true);
+    });
+  }, [copy.actionAccountSyncWarning, refetchAccount]);
+
   const applyConfirmed = useCallback(
     (
       hash: Hex,
-      syncFailed: boolean,
       pendingAction: { stakeId: number; kind: StakeActionKind },
       pendingTx?: PendingStakeTransaction | null,
     ) => {
@@ -119,10 +136,15 @@ export function useStakeActions({
       setStatus('success');
       setError(null);
       setSuccess(copy.actionSuccess[pendingAction.kind]);
-      setWarning(syncFailed ? copy.actionAccountSyncWarning : null);
-      setSyncRequired(syncFailed);
+      setWarning(null);
+      setSyncRequired(false);
+      runPostConfirmAccountSync();
     },
-    [clearPendingRecord, copy.actionAccountSyncWarning, copy.actionSuccess],
+    [
+      clearPendingRecord,
+      copy.actionSuccess,
+      runPostConfirmAccountSync,
+    ],
   );
 
   /**
@@ -164,7 +186,6 @@ export function useStakeActions({
             account: pendingTx.account,
             action: pendingTx.action,
           }),
-        refetchAccount,
       });
 
       // Wallet switched mid-wait — keep storage for the original account.
@@ -204,12 +225,7 @@ export function useStakeActions({
         return;
       }
 
-      applyConfirmed(
-        pendingTx.hash,
-        outcome.syncFailed,
-        pendingAction,
-        pendingTx,
-      );
+      applyConfirmed(pendingTx.hash, pendingAction, pendingTx);
     },
     [
       applyConfirmed,
@@ -217,7 +233,6 @@ export function useStakeActions({
       copy.confirmationUnavailable,
       discardLocalPending,
       locale,
-      refetchAccount,
       rememberPending,
       wallet.address,
       wallet.chainId,

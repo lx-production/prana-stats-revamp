@@ -106,7 +106,7 @@ generic helper.
 | `features/web3/accountRefetch.ts` | No | No | Transaction flows/hooks | Transaction flows/hooks | Generic successful-refetch gate; rejects stale cache and address mismatch before writes |
 | `features/web3/transactionConfirmation.ts` | No | No | Thin stake adapter | Thin bond adapter | Browser-receipt → server-fallback confirmation; Swap keeps its own helper for now |
 | `features/web3/pendingTransactionStorage.ts` + `hooks/usePendingTransaction.ts` | No | No | Thin stake wrappers | Thin bond wrappers | Shared envelope factory + hook; feature parsers/prefixes stay local |
-| `features/web3/confirmReceiptWithAccountSync.ts` | No | No | Thin `confirmStakeReceipt` | Thin `confirmBondReceipt` | Confirm broadcast then account sync; `syncFailed` stays non-fatal |
+| `features/web3/syncAccountAfterConfirm.ts` | No | No | Post-success hooks | Post-success hooks | Background account refetch after receipt; `syncFailed` stays non-fatal and never blocks success UI |
 | `hooks/useDebouncedAbortableQuote.ts` | No | No | Thin `useStakingQuote` | Thin `useBondingQuote` | Shared debounce / AbortController / race guard / stale tick; feature request keys, fetchers, and error fallbacks stay local |
 | `utils/fetchActiveStakesUtils.ts` | Stats/server scripts | No | Server loaders | Server loaders | RPC transform, sleep, and rate-limit detection primitives; legacy filename, but consumers now span Staking/Bonding |
 | `server/utils/parseUnsignedDecimalRaw.ts` | No | No | Quote/confirmation server | Quote/confirmation server | Canonical `uint256` decimal parse and oversized-input rejection |
@@ -170,9 +170,11 @@ Staking keeps its own domain behavior:
 - `stakingErrors.ts`, `permitUtils.ts`, `permitConfigGuard.ts`, `stakeCtaPhase.ts`, and
   `stakeTransactionFlow.ts` model Staking-specific validation, permit pin/assert,
   submit/CTA orchestration, and thin `confirmStakeReceipt` over shared
-  `confirmReceiptWithAccountSync`. Account refetch gating uses
-  `features/web3/accountRefetch.ts`. `stakeTransactionConfirmation.ts` is a
-  thin adapter over `features/web3/transactionConfirmation.ts`.
+  `transactionConfirmation`. Account refetch gating uses
+  `features/web3/accountRefetch.ts`; post-success sync uses
+  `features/web3/syncAccountAfterConfirm.ts` so the UI is not blocked on account
+  refresh. `stakeTransactionConfirmation.ts` is a thin adapter over
+  `features/web3/transactionConfirmation.ts`.
 - `stakePendingTransactionStorage.ts` and `usePendingStakeTransaction.ts` are
   thin wrappers over shared pending storage/hook; they keep the staking prefix
   and permit/stakeId action parser so reload only resumes confirmation, never
@@ -189,7 +191,8 @@ Bonding keeps its own Buy/Sell, deployment-version, and quote semantics:
   `bondClaimTarget.ts`, `bondQuoteEcho.ts`, and `bondingErrors.ts` handle
   Bonding amounts, allowance, V1/V2 targets, quote snapshots, and error mapping.
 - `bondTransactionFlow.ts` manages approve/create/claim orchestration and thin
-  `confirmBondReceipt` over shared `confirmReceiptWithAccountSync`.
+  `confirmBondReceipt` over shared `transactionConfirmation`.
+  Post-success account sync uses `syncAccountAfterConfirm` (background; non-blocking).
   `bondPendingTransactionStorage.ts` and `usePendingBondTransaction.ts` are
   thin wrappers over shared pending storage/hook (bonding prefix + action
   parser). `bondTransactionConfirmation.ts` is a thin adapter over shared
