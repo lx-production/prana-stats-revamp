@@ -1,7 +1,6 @@
 import React from "react";
 import { FileText } from "lucide-react";
 import MarkdownDocumentPage from "./MarkdownDocumentPage";
-import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useContractsGuideDocument } from "../hooks/useContractsGuideDocument";
 
@@ -16,8 +15,6 @@ const ContractsGuidePage: React.FC = () => {
     <MarkdownDocumentPage
       icon={FileText}
       document={guideDoc}
-      effectiveDateIso={GUIDE_UPDATED_DATE}
-      dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
           ? "Explains the Staking and Interest contracts: how principal and interest are separated, what stakers should know, and what the PRANA Protocol owner can and cannot do on-chain."

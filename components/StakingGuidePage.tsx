@@ -1,7 +1,6 @@
 import React from "react";
 import { LockKeyhole } from "lucide-react";
 import MarkdownDocumentPage from "./MarkdownDocumentPage";
-import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useStakingGuideDocument } from "../hooks/useStakingGuideDocument";
 
@@ -16,8 +15,6 @@ const StakingGuidePage: React.FC = () => {
     <MarkdownDocumentPage
       icon={LockKeyhole}
       document={guideDoc}
-      effectiveDateIso={GUIDE_UPDATED_DATE}
-      dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
           ? "Covers the current PRANA Staking flow: Permit & Stake prompts, claim, maturity/grace period, unstake, and early unstake."

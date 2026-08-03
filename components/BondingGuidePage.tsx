@@ -1,7 +1,6 @@
 import React from "react";
 import { Link2 } from "lucide-react";
 import MarkdownDocumentPage from "./MarkdownDocumentPage";
-import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useBondingGuideDocument } from "../hooks/useBondingGuideDocument";
 
@@ -16,8 +15,6 @@ const BondingGuidePage: React.FC = () => {
     <MarkdownDocumentPage
       icon={Link2}
       document={guideDoc}
-      effectiveDateIso={GUIDE_UPDATED_DATE}
-      dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
           ? "Covers the current PRANA Bonding flow: Approve, Buy (exact WBTC), Sell, vesting, claim, treasury, and quote limits."

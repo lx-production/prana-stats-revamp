@@ -12,9 +12,10 @@ import type { TermsRiskDocument } from "../types/termsRisk.types";
 type MarkdownDocumentPageProps = {
   icon: LucideIcon;
   document: TermsRiskDocument;
-  effectiveDateIso: string;
   metaNote: string;
-  /** Defaults to “Effective date:” / “Ngày có hiệu lực:”. Guides may pass “Updated:”. */
+  /** When set (terms/privacy), shows the effective/updated date line. Guides omit this. */
+  effectiveDateIso?: string;
+  /** Defaults to “Effective date:” / “Ngày có hiệu lực:”. */
   dateLabel?: string;
 };
 
@@ -32,7 +33,10 @@ const MarkdownDocumentPage: React.FC<MarkdownDocumentPageProps> = ({
   const buildInfo = getAppBuildInfo();
   const buildLabel = formatBuildLabel(buildInfo);
   const buildHref = buildIdentityUrl(buildInfo);
-  const effectiveDate = formatTermsEffectiveDate(effectiveDateIso, locale);
+  // Only format when terms/privacy pass a date; guides skip the date line.
+  const effectiveDate = effectiveDateIso
+    ? formatTermsEffectiveDate(effectiveDateIso, locale)
+    : null;
   const resolvedDateLabel =
     dateLabel ??
     (locale === "en" ? "Effective date: " : "Ngày có hiệu lực: ");
@@ -61,10 +65,12 @@ const MarkdownDocumentPage: React.FC<MarkdownDocumentPageProps> = ({
           </div>
 
           <aside className="mt-5 space-y-1.5 text-xs leading-relaxed text-white/45 sm:text-sm">
-            <p>
-              {resolvedDateLabel}
-              <span className="text-white/65">{effectiveDate}</span>
-            </p>
+            {effectiveDate ? (
+              <p>
+                {resolvedDateLabel}
+                <span className="text-white/65">{effectiveDate}</span>
+              </p>
+            ) : null}
             <p>
               {locale === "en" ? "Version: " : "Phiên bản: "}
               {buildHref ? (

@@ -1,7 +1,6 @@
 import React from "react";
 import { ArrowLeftRight } from "lucide-react";
 import MarkdownDocumentPage from "./MarkdownDocumentPage";
-import { GUIDE_UPDATED_DATE } from "../constants/guides";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useSwapGuideDocument } from "../hooks/useSwapGuideDocument";
 
@@ -16,8 +15,6 @@ const SwapGuidePage: React.FC = () => {
     <MarkdownDocumentPage
       icon={ArrowLeftRight}
       document={guideDoc}
-      effectiveDateIso={GUIDE_UPDATED_DATE}
-      dateLabel={locale === "en" ? "Updated: " : "Cập nhật: "}
       metaNote={
         locale === "en"
           ? "Covers the current PRANA Swap wallet flow: approve, exact allowance, slippage, Minimum received, pending transactions, and revoke."

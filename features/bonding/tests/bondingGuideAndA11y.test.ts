@@ -4,7 +4,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { GUIDE_UPDATED_DATE } from '../../../constants/guides.ts';
 import {
   GUIDE_BONDING_CANONICAL_PATH,
   GUIDE_BONDING_CONTRACTS_CANONICAL_PATH,
@@ -19,11 +18,6 @@ const rootDir = path.resolve(
 function readRepoFile(...parts: string[]): string {
   return fs.readFileSync(path.join(rootDir, ...parts), 'utf8');
 }
-
-test('GUIDE_UPDATED_DATE is ISO date used by bonding guides', () => {
-  assert.match(GUIDE_UPDATED_DATE, /^\d{4}-\d{2}-\d{2}$/);
-  assert.equal(GUIDE_UPDATED_DATE, '2026-07-28');
-});
 
 test('bonding guide markdown parses VI/EN with cross-links', () => {
   const en = parseSectionedMarkdown(readRepoFile('data', 'guide-bonding-en.md'));

@@ -70,7 +70,12 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
   event_15: {
     title: "Tích hợp Staking UI vào main app",
     description:
-      "Migrate staking app/UI cũ sang giao diện mới, Stake ngay trên app hiện tại.",
+      "Migrate staking app/UI cũ sang giao diện mới. Stake ngay trên app hiện tại.",
+  },
+  event_16: {
+    title: "Tích hợp Bonding UI vào main app",
+    description:
+      "Migrate bonding app/UI cũ sang giao diện mới, Bond ngay trên app hiện tại.",
   },
 };
 
@@ -144,5 +149,9 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
     title: "Staking UI Integration",
     description:
       "Migrated the legacy staking app/UI into the new interface. Stake directly on the current app.",
+  },
+  event_16: {
+    title: "Bonding UI Integration",
+    description: "Migrated the legacy bonding app/UI into the new interface. Bond directly on the current app.",
   },
 };
