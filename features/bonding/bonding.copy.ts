@@ -44,6 +44,8 @@ export type BondingCopy = {
   bondSuccessCta: string;
   quoteReady: string;
   bondConfirmed: string;
+  /** Shown after approve receipt confirms — Create stays locked until allowance sync. */
+  approvalConfirmed: string;
   accountSyncWarning: string;
   confirmationUnavailable: string;
   processing: string;
@@ -121,6 +123,7 @@ const vi: BondingCopy = {
   bondSuccessCta: 'Đã tạo bond',
   quoteReady: 'Quote sẵn sàng',
   bondConfirmed: 'Giao dịch bonding đã xác nhận trên Polygon.',
+  approvalConfirmed: 'Approve đã xác nhận trên Polygon.',
   accountSyncWarning:
     'Giao dịch thành công nhưng chưa tải lại số dư. Làm mới trang nếu cần.',
   confirmationUnavailable:
@@ -212,6 +215,7 @@ const en: BondingCopy = {
   bondSuccessCta: 'Bond created',
   quoteReady: 'Quote ready',
   bondConfirmed: 'Bonding transaction confirmed on Polygon.',
+  approvalConfirmed: 'Approval confirmed on Polygon.',
   accountSyncWarning:
     'Transaction succeeded but the balance refresh failed. Reload if needed.',
   confirmationUnavailable:

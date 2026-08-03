@@ -197,7 +197,7 @@ sequenceDiagram
 
 Claim picks the target via `resolveBondClaimTarget(side, version)` — it does not trust addresses from the API. Same pattern as Staking actions: switch Polygon → write (no explicit simulate) → wallet receipt / server fallback → success UI → background account refetch. Pending hashes persist keyed by `{account, chainId}` (24h TTL); reload only resumes confirmation, never rebroadcasts. Resume requires server validation of sender/target/calldata.
 
-Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`). After approve confirms, the CTA stays locked until the allowance account sync finishes so Create does not run on a stale snapshot.
+Form approve/create and claim **lock each other** while a write is in flight (`formBusy` / `actionsBusy` on `BondingPage`). After approve confirms, the UI shows **Approval confirmed** and opens Create immediately (optimistic). Create still refetches account before write but skips the allowance re-check for that in-session approve.
 
 ---
 

@@ -171,7 +171,7 @@ sequenceDiagram
 
 Claim chọn target từ `resolveBondClaimTarget(side, version)` — không tin địa chỉ từ API. Cùng pattern với action Staking: switch Polygon → write (không simulate tường minh) → wallet receipt / server fallback → success UI → refetch account nền. Pending hash persist theo `{account, chainId}` (TTL 24h); reload chỉ resume confirmation, không broadcast lại. Resume bắt buộc server validate sender/target/calldata.
 
-Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`). Sau approve confirm, CTA vẫn khóa đến khi sync allowance xong để Create không chạy trên snapshot cũ.
+Form approve/create và claim **khóa lẫn nhau** khi một write đang chạy (`formBusy` / `actionsBusy` trên `BondingPage`). Sau approve confirm, UI hiện **Approval confirmed** và mở Create ngay (optimistic). Create vẫn refetch account trước write nhưng bỏ check allowance lại cho approve vừa confirm trong session.
 
 ---
 

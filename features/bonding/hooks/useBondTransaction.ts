@@ -91,10 +91,11 @@ export function useBondTransaction({
   /** Last hash to show on Polygonscan (success or pending). */
   const [transactionHash, setTransactionHash] = useState<Hex | null>(null);
   /**
-   * True while post-receipt account refetch is in flight.
-   * Locks the CTA after approve so Create does not run on a stale allowance.
+   * True after an in-session approve receipt confirms.
+   * CTA shows Create immediately (stale account allowance ignored);
+   * Create skips the allowance re-check for this session until amount/side reset.
    */
-  const [accountSyncing, setAccountSyncing] = useState(false);
+  const [approvalJustConfirmed, setApprovalJustConfirmed] = useState(false);
 
   const {
     pending,
@@ -128,16 +129,20 @@ export function useBondTransaction({
 
   const allowance = currentAllowanceRaw(account, side);
 
+  // After approve confirms, open Create even if account snapshot is still stale.
   const needsApproval = useMemo(() => {
+    if (approvalJustConfirmed) return false;
     if (amountRaw == null || amountRaw <= 0n) return false;
     if (!quote || quote.issues.length > 0) return false;
     return needsExactInputApproval(allowance, amountRaw);
-  }, [amountRaw, allowance, quote]);
+  }, [approvalJustConfirmed, amountRaw, allowance, quote]);
 
   const clearMessages = useCallback(() => {
     setError(null);
     setWarning(null);
     setSuccess(null);
+    // Amount / side changes clear optimistic approve — may need a new allowance.
+    setApprovalJustConfirmed(false);
   }, []);
 
   const resetAfterSuccess = useCallback(() => {
@@ -158,25 +163,18 @@ export function useBondTransaction({
     return client;
   }, [wallet]);
 
-  // Refresh bonds/allowance after receipt — never blocks the success UI.
-  const runPostConfirmAccountSync = useCallback(
-    (options?: { lockCta?: boolean }) => {
-      const lockCta = options?.lockCta === true;
-      if (lockCta) setAccountSyncing(true);
-
-      void syncAccountAfterConfirm({
-        refetchAccount,
-        isSuccessfulRefetch: (refreshed) =>
-          accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
-      }).then(({ syncFailed }) => {
-        if (lockCta) setAccountSyncing(false);
-        if (syncFailed) {
-          setWarning(copy.accountSyncWarning);
-        }
-      });
-    },
-    [copy.accountSyncWarning, refetchAccount],
-  );
+  // Refresh account after receipt — never blocks the success UI.
+  const runPostConfirmAccountSync = useCallback(() => {
+    void syncAccountAfterConfirm({
+      refetchAccount,
+      isSuccessfulRefetch: (refreshed) =>
+        accountFromSuccessfulRefetch<BondingAccount>(refreshed) != null,
+    }).then(({ syncFailed }) => {
+      if (syncFailed) {
+        setWarning(copy.accountSyncWarning);
+      }
+    });
+  }, [copy.accountSyncWarning, refetchAccount]);
 
   const applyConfirmed = useCallback(
     (hash: Hex, pendingTx?: PendingBondTransaction | null) => {
@@ -186,6 +184,7 @@ export function useBondTransaction({
       setError(null);
       setSuccess(copy.bondConfirmed);
       setWarning(null);
+      setApprovalJustConfirmed(false);
       runPostConfirmAccountSync();
     },
     [clearPendingRecord, copy.bondConfirmed, runPostConfirmAccountSync],
@@ -310,6 +309,7 @@ export function useBondTransaction({
     setError(null);
     setWarning(null);
     setSuccess(null);
+    setApprovalJustConfirmed(false);
 
     // Breadcrumb: how far approve got before failing.
     console.info('[bonding] approve:start', {
@@ -478,7 +478,7 @@ export function useBondTransaction({
         return;
       }
 
-      // Approve confirmed — ready for Create after account sync (separate click).
+      // Approve confirmed — open Create immediately; skip allowance re-check.
       console.info('[bonding] approve:confirmed', {
         hash: outcome.hash,
       });
@@ -486,10 +486,11 @@ export function useBondTransaction({
       setTransactionHash(outcome.hash);
       setStatus('idle');
       setError(null);
-      setSuccess(null);
       setWarning(null);
-      // Lock CTA until allowance snapshot refreshes — avoids stale Approve/Create.
-      runPostConfirmAccountSync({ lockCta: true });
+      setSuccess(copy.approvalConfirmed);
+      setApprovalJustConfirmed(true);
+      // Background refresh for balances / Active Bonds — does not lock Create.
+      runPostConfirmAccountSync();
     } catch (err) {
       clearPendingRecord();
       setStatus('error');
@@ -499,6 +500,7 @@ export function useBondTransaction({
     amountRaw,
     clearPendingRecord,
     config,
+    copy.approvalConfirmed,
     copy.confirmationUnavailable,
     discardLocalPending,
     ensurePolygonWalletClient,
@@ -558,6 +560,8 @@ export function useBondTransaction({
 
     // Capture identity before wallet prompts — may change mid-flight.
     const submittingAccount = wallet.address as Address;
+    // Snapshot before UI clears messages — approve just confirmed skips allowance.
+    const skipAllowanceCheck = approvalJustConfirmed;
 
     setStatus('submitting');
     setError(null);
@@ -569,6 +573,7 @@ export function useBondTransaction({
       mode,
       amountRaw: amountRaw.toString(),
       termId,
+      skipAllowanceCheck,
     });
 
     try {
@@ -607,26 +612,30 @@ export function useBondTransaction({
       // Calldata input from form snapshot — never the quote response leg.
       const createAmountRaw = resolveCreateAmountRaw(amountRaw);
 
-      const accountSnap = accountFromSuccessfulRefetch<BondingAccount>(
-        await refetchAccount(),
-        submittingAccount,
-      );
-      if (!accountSnap) {
-        logBondingFailure('create: fresh_account_failed');
-        setStatus('error');
-        setError(getBondingErrorMessage('account_refetch_failed', locale));
-        return;
-      }
+      // Fresh account still required for submitBondWriteFlow; allowance optional
+      // when this click follows an in-session approve confirmation.
+      if (!skipAllowanceCheck) {
+        const accountSnap = accountFromSuccessfulRefetch<BondingAccount>(
+          await refetchAccount(),
+          submittingAccount,
+        );
+        if (!accountSnap) {
+          logBondingFailure('create: fresh_account_failed');
+          setStatus('error');
+          setError(getBondingErrorMessage('account_refetch_failed', locale));
+          return;
+        }
 
-      const nextAllowance = currentAllowanceRaw(accountSnap, side);
-      if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
-        logBondingFailure('create: insufficient_allowance', {
-          nextAllowance: nextAllowance.toString(),
-          amountRaw: amountRaw.toString(),
-        });
-        setStatus('idle');
-        setError(getBondingErrorMessage('insufficient_allowance', locale));
-        return;
+        const nextAllowance = currentAllowanceRaw(accountSnap, side);
+        if (!isAllowanceSufficientForCreate(nextAllowance, amountRaw)) {
+          logBondingFailure('create: insufficient_allowance', {
+            nextAllowance: nextAllowance.toString(),
+            amountRaw: amountRaw.toString(),
+          });
+          setStatus('idle');
+          setError(getBondingErrorMessage('insufficient_allowance', locale));
+          return;
+        }
       }
 
       const bondAddress =
@@ -642,6 +651,7 @@ export function useBondTransaction({
         functionName,
         createAmountRaw: createAmountRaw.toString(),
         termId,
+        skipAllowanceCheck,
       });
 
       const action: BondingTransactionActionSnapshot = {
@@ -659,6 +669,7 @@ export function useBondTransaction({
       const outcome = await submitBondWriteFlow({
         refetchAccount,
         validateFreshAccount: (freshAccount) => {
+          if (skipAllowanceCheck) return true;
           const allow = currentAllowanceRaw(freshAccount, side);
           return isAllowanceSufficientForCreate(allow, amountRaw);
         },
@@ -762,6 +773,7 @@ export function useBondTransaction({
   }, [
     amountRaw,
     applyConfirmed,
+    approvalJustConfirmed,
     clearPendingRecord,
     config,
     copy.confirmationUnavailable,
@@ -783,8 +795,6 @@ export function useBondTransaction({
 
   /** Primary CTA: resume / approve / create — never auto-chain approve+create. */
   const onPrimaryCta = useCallback(async () => {
-    clearMessages();
-
     const pendingHash =
       pending != null && status !== 'success' ? pending : null;
 
@@ -792,6 +802,14 @@ export function useBondTransaction({
       hasPendingHash: pendingHash != null,
       needsApproval,
     });
+
+    // Create keeps approvalJustConfirmed — clearMessages would wipe the skip flag.
+    if (action === 'create') {
+      setError(null);
+      setWarning(null);
+    } else {
+      clearMessages();
+    }
 
     if (action !== 'resume_confirmation' && status === 'success') {
       setSuccess(null);
@@ -824,8 +842,7 @@ export function useBondTransaction({
     status === 'approving' ||
     status === 'submitting' ||
     status === 'confirming' ||
-    hasPendingHash ||
-    accountSyncing;
+    hasPendingHash;
 
   return {
     status,
