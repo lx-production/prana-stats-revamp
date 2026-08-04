@@ -4,7 +4,6 @@ This document describes the Staking UI end to end: the `/stake/` route, Permit &
 
 Related docs:
 
-- [`add-staking-ui.md`](./add-staking-ui.md) — step-by-step implementation plan + test checklist
 - [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI shared with Swap and Bonding
 - [`CACHE_ARCHITECTURE.md`](./CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
 - [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — app-wide security inventory

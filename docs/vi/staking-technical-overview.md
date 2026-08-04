@@ -4,7 +4,6 @@ Tài liệu này mô tả Staking UI end-to-end: route `/stake/`, luồng Permit
 
 Related docs:
 
-- [`add-staking-ui.md`](../add-staking-ui.md) — kế hoạch triển khai từng bước + checklist test
 - [`SHARED_CODE_ARCHITECTURE.md`](./SHARED_CODE_ARCHITECTURE.md) — Web3/UI dùng chung với Swap và Bonding
 - [`CACHE_ARCHITECTURE.md`](../CACHE_ARCHITECTURE.md) — config cache vs account/quote `no-store`
 - [`SECURITY_OVERVIEW.md`](./SECURITY_OVERVIEW.md) — inventory bảo mật toàn app

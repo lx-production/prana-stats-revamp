@@ -21,36 +21,6 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # Redirect bare path to trailing slash
-    location = /bond {
-        return 301 /bond/;
-    }
-
-    # React Bonding app (legacy static SPA)
-    # Prefer on-disk `*.gz` via gzip_static (precompress at bond build time).
-    # Without a sibling .gz, nginx falls back to the uncompressed file.
-    location ^~ /bond/ {
-        alias /var/www/html/prana/bond/;
-        try_files $uri $uri/ /bond/index.html;
-        gzip_static on;
-
-        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
-        add_header Pragma "no-cache" always;
-        add_header Expires "0" always;
-    }
-
-    # React Bonding assets — hashed files should ship with `*.gz` siblings.
-    location ^~ /bond/assets/ {
-        alias /var/www/html/prana/bond/assets/;
-        gzip_static on;
-        gzip_types application/javascript text/css text/javascript;
-
-        expires max;
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        etag on;
-        add_header Access-Control-Allow-Origin "*" always;
-    }
-
     access_log /var/log/nginx/prana.access.log;
     error_log /var/log/nginx/prana.error.log;
 }
