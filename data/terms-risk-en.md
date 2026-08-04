@@ -8,13 +8,13 @@ By using the website or a PRANA Interface, you acknowledge that you understand a
 
 In this document:
 
-* **“PRANA Protocol”** means the collective name for the blockchain ecosystem initiated and developed by Triết Học Đường Phố on Polygon, including the PRANA token, the smart contracts deployed for the PRANA ecosystem, related technical and economic mechanisms, and official products published by Triết Học Đường Phố.
+- **“PRANA Protocol”** means the collective name for the blockchain ecosystem initiated and developed by Triết Học Đường Phố on Polygon, including the PRANA token, the smart contracts deployed for the PRANA ecosystem, related technical and economic mechanisms, and official products published by Triết Học Đường Phố.
 
-* **“Triết Học Đường Phố” or “THĐP”** means the entity that founded, designed, and develops PRANA Protocol, and that builds, publishes, and maintains the official website, documentation, and user interfaces of the ecosystem.
+- **“Triết Học Đường Phố” or “THĐP”** means the entity that founded, designed, and develops PRANA Protocol, and that builds, publishes, and maintains the official website, documentation, and user interfaces of the ecosystem.
 
-* **“PRANA Interface”** means the collective name for the transaction interfaces provided on the official website, currently including **PRANA Swap**, **PRANA Staking**, and **PRANA Bonding**.
+- **“PRANA Interface”** means the collective name for the transaction interfaces provided on the official website, currently including **PRANA Swap**, **PRANA Staking**, and **PRANA Bonding**.
 
-* **“PRANA smart contracts”** means the smart contracts deployed for PRANA Protocol, including contracts that serve the PRANA token, staking, interest, and bonding. Third-party protocols or infrastructure that are integrated, including Polygon and Uniswap, do not become assets or systems owned by THĐP merely because a PRANA Interface uses them.
+- **“PRANA smart contracts”** means the smart contracts deployed for PRANA Protocol, including contracts that serve the PRANA token, staking, interest, and bonding. Third-party protocols or infrastructure that are integrated, including Polygon and Uniswap, do not become assets or systems owned by THĐP merely because a PRANA Interface uses them.
 
 PRANA Protocol is the name of a technical and product ecosystem, not a separate legal entity distinct from THĐP.
 

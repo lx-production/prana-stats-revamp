@@ -8,13 +8,13 @@ Khi sử dụng website hoặc một Giao diện PRANA, bạn xác nhận rằng
 
 Trong tài liệu này:
 
-* **“PRANA Protocol”** là tên gọi chung của hệ sinh thái blockchain do Triết Học Đường Phố khởi xướng và phát triển trên Polygon, bao gồm token PRANA, các smart contract được triển khai cho hệ sinh thái PRANA, những cơ chế kỹ thuật và kinh tế liên quan, cùng các sản phẩm chính thức do Triết Học Đường Phố công bố.
+- **“PRANA Protocol”** là tên gọi chung của hệ sinh thái blockchain do Triết Học Đường Phố khởi xướng và phát triển trên Polygon, bao gồm token PRANA, các smart contract được triển khai cho hệ sinh thái PRANA, những cơ chế kỹ thuật và kinh tế liên quan, cùng các sản phẩm chính thức do Triết Học Đường Phố công bố.
 
-* **“Triết Học Đường Phố” hoặc “THĐP”** là đơn vị sáng lập, thiết kế và phát triển PRANA Protocol, đồng thời xây dựng, xuất bản, duy trì website chính thức, tài liệu và các giao diện người dùng của hệ sinh thái.
+- **“Triết Học Đường Phố” hoặc “THĐP”** là đơn vị sáng lập, thiết kế và phát triển PRANA Protocol, đồng thời xây dựng, xuất bản, duy trì website chính thức, tài liệu và các giao diện người dùng của hệ sinh thái.
 
-* **“Giao diện PRANA”** là tên gọi chung của các giao diện giao dịch được cung cấp trên website chính thức, hiện bao gồm **PRANA Swap**, **PRANA Staking** và **PRANA Bonding**.
+- **“Giao diện PRANA”** là tên gọi chung của các giao diện giao dịch được cung cấp trên website chính thức, hiện bao gồm **PRANA Swap**, **PRANA Staking** và **PRANA Bonding**.
 
-* **“Smart contract PRANA”** là các smart contract được triển khai cho PRANA Protocol, bao gồm các contract phục vụ token PRANA, staking, interest và bonding. Những giao thức hoặc hạ tầng bên thứ ba được tích hợp, bao gồm Polygon và Uniswap, không trở thành tài sản hoặc hệ thống do THĐP sở hữu chỉ vì được Giao diện PRANA sử dụng.
+- **“Smart contract PRANA”** là các smart contract được triển khai cho PRANA Protocol, bao gồm các contract phục vụ token PRANA, staking, interest và bonding. Những giao thức hoặc hạ tầng bên thứ ba được tích hợp, bao gồm Polygon và Uniswap, không trở thành tài sản hoặc hệ thống do THĐP sở hữu chỉ vì được Giao diện PRANA sử dụng.
 
 PRANA Protocol là tên gọi của một hệ sinh thái kỹ thuật và sản phẩm, không phải một pháp nhân độc lập tách biệt với THĐP.
 
