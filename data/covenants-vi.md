@@ -16,7 +16,7 @@ PRANA không phục vụ sự nóng vội. Ai đến để tìm cú pump nhanh s
 
 **5. Giao Ước "Buy the Dips"**
 
-Khi thị trường sợ hãi, protocol hành động. "Buy the Dips" là phản xạ tự động của hệ thống, không phải thứ đám đông hô hào nhưng không hành động.
+Khi thị trường sợ hãi, PRANA Protocol hành động. "Buy the Dips" là phản xạ tự động của hệ thống, không phải thứ đám đông hô hào nhưng không hành động.
 
 **6. Giao Ước Thanh Khoản**
 

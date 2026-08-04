@@ -46,7 +46,7 @@ flowchart TD
 
 - `main.tsx` sở hữu routing, site-language provider, các trang legal/guide, và
   lazy boundary cho `StatsPage`, `StakingEntry`, và `BondingEntry`.
-- `StatsPage` sở hữu dashboard protocol công khai và hero.
+- `StatsPage` sở hữu dashboard PRANA Protocol công khai và hero.
 - Hero import `SwapLazyShell` một cách eager để vẫn hiện được modal accessible
   khi loading hoặc khi chunk lỗi. `SwapEntry` đầy đủ chỉ được import sau khi
   user yêu cầu Swap.
@@ -242,7 +242,7 @@ giá trị này thay vì lặp lại address literals.
 | --- | --- |
 | `constants/swapContracts.ts` | Timing, slippage, router/quoter deployments, token allowlist, và ABI của Swap; capital loader hiện cũng tái dùng địa chỉ Polygon USDT |
 | `constants/stakingContracts.ts` | Staking/interest deployments, ABI đọc PRANA account, permit constants, và ABI Staking; cũng cung cấp địa chỉ dùng bởi top-holder/staking statistics trên homepage |
-| `constants/topHoldingAddresses.ts` | Registry presentation của Stats, lắp từ địa chỉ protocol, pool, bond, và Staking chuẩn |
+| `constants/topHoldingAddresses.ts` | Registry presentation của Stats, lắp từ địa chỉ PRANA Protocol, pool, bond, và Staking chuẩn |
 | `constants/arbitrumWbtcUsdtLp.ts` | Cấu hình Stats/server và ABI cho vị thế Arbitrum WBTC/USDT LP |
 | `constants/bonds.ts` và file liên quan | Bond deployments, ABI, và input tính toán Stats/bond |
 | `constants/pranaStats.ts`, `bondStats.ts`, `stakingStats.ts` | Initial UI state cho các card API độc lập trên homepage |

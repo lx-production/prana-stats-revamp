@@ -16,7 +16,7 @@ PRANA does not serve the impatient. Those who come for a quick pump will leave q
 
 **5. Covenant of “Buy the Dips”**
 
-When the market is afraid, the protocol acts. “Buy the dips” is the system’s automatic reflex, not something the crowd says but never does.
+When the market is afraid, PRANA Protocol acts. “Buy the dips” is the system’s automatic reflex, not something the crowd says but never does.
 
 **6. Covenant of Liquidity**
 

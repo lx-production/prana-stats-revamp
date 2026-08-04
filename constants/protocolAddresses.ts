@@ -5,7 +5,7 @@ import type { HexAddress } from '../types/blockchain.types.ts';
  * and related loaders. One address → one canonical name.
  */
 
-/** Founders / protocol treasury (Polygon + Arbitrum USDT capital rows). */
+/** Founders / PRANA Protocol treasury (Polygon + Arbitrum USDT capital rows). */
 export const PRANA_PROTOCOL_ADDRESS: HexAddress =
   '0x696b00596F553FcF6F98EeBfD58F48d2645D7E1b';
 

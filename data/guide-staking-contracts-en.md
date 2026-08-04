@@ -48,7 +48,7 @@ Other important rules:
 
 The Interest Contract is a funding vault for staking rewards:
 
-- It holds PRANA that the protocol deposits to cover interest
+- It holds PRANA that the PRANA Protocol deposits to cover interest
 - Only the configured **Staking Contract** can call `payInterest` to send PRANA to a user
 - The Staking Contract address can be set by the owner **only once** (`stakingContractSet` becomes true and cannot be changed in the current code)
 

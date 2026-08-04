@@ -48,7 +48,7 @@ Các quy tắc quan trọng khác:
 
 Hợp đồng Interest là kho quỹ trả thưởng staking:
 
-- Giữ PRANA mà protocol nạp vào để chi trả lãi
+- Giữ PRANA mà PRANA Protocol nạp vào để chi trả lãi
 - Chỉ **Hợp đồng Staking** đã cấu hình mới gọi được `payInterest` để gửi PRANA cho người dùng
 - Địa chỉ Hợp đồng Staking chỉ được owner set **một lần** (`stakingContractSet` thành true và không đổi được trong mã hiện tại)
 

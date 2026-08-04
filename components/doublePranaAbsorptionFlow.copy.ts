@@ -6,7 +6,7 @@ export const copyByLocale = {
     badge: 'Dual PRANA Bonding Effect',
     title: 'Two bonding routes absorb PRANA supply',
     intro:
-      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and the protocol uses the received WBTC to buy back PRANA from the DEX pool, permanently removing that PRANA from circulation.\n\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
+      '1. Buy side: WBTC enters BuyPranaBondV2, PRANA unlocks slowly, and the Protocol uses the received WBTC to buy back PRANA from the DEX pool, permanently removing that PRANA from circulation.\n\n2. Sell side: holders sell PRANA into SellPranaBondV2 and receive WBTC through vesting, while the accepted PRANA leaves circulation forever.',
     buySide: {
       laneTitle: 'Buy side',
       user: { label: 'Buyer', title: 'WBTC enters' },
@@ -15,7 +15,7 @@ export const copyByLocale = {
       bridgeTitle: 'Protocol buyback buys PRANA from the DEX pool',
       sinkCaption: 'Bought-back PRANA enters the HODL absorption core and never returns to the market.',
       metricLabel: 'Buyback PRANA removed',
-      metricTooltip: 'PRANA bought back by the protocol through Buy the Dips.',
+      metricTooltip: 'PRANA bought back by the Protocol via Buy the Dips.',
     },
     sellSide: {
       laneTitle: 'Sell side',
@@ -25,7 +25,7 @@ export const copyByLocale = {
       bridgeTitle: 'Accepted PRANA leaves circulation',
       sinkCaption: 'PRANA accepted by the sell bond enters a second permanent sink and never returns to the market.',
       metricLabel: 'Sell-bond PRANA absorbed',
-      metricTooltip: 'PRANA absorbed by SellPranaBondV2 from holders selling into the bond.',
+      metricTooltip: 'PRANA absorbed by SellPranaBondV2 from holders selling into the Bond.',
     },
     combinedMetric: {
       label: 'Combined PRANA withdrawn from market',
@@ -41,7 +41,7 @@ export const copyByLocale = {
     badge: 'Tác động kép PRANA Bonding',
     title: 'Hai nhánh bonding hấp thụ nguồn cung PRANA',
     intro:
-      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và protocol dùng WBTC nhận được để mua lại PRANA từ DEX pool, đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
+      '1. Nhánh mua: WBTC đi vào BuyPranaBondV2, PRANA mở khóa chậm, và Protocol dùng WBTC nhận được để mua lại PRANA từ DEX pool, đưa số PRANA đó ra khỏi lưu thông vĩnh viễn.\n\n2. Nhánh bán: người nắm giữ bán PRANA vào SellPranaBondV2 và nhận WBTC qua vesting, trong khi số PRANA được nhận rời khỏi lưu thông vĩnh viễn.',
     buySide: {
       laneTitle: 'Nhánh mua',
       user: { label: 'Người mua', title: 'WBTC đi vào' },
@@ -50,7 +50,7 @@ export const copyByLocale = {
       bridgeTitle: 'Protocol mua lại PRANA từ DEX pool',
       sinkCaption: 'PRANA mua lại thông qua "Buy the Dips" đi vào tâm hấp thụ HODL và không bao giờ quay lại thị trường.',
       metricLabel: 'Tổng PRANA Buy-the-Dips',
-      metricTooltip: 'PRANA được protocol mua lại qua Buy the Dips.',
+      metricTooltip: 'PRANA được Protocol mua lại qua Buy the Dips.',
     },
     sellSide: {
       laneTitle: 'Nhánh bán',
@@ -60,7 +60,7 @@ export const copyByLocale = {
       bridgeTitle: 'PRANA được nhận rời khỏi lưu thông',
       sinkCaption: 'PRANA được SellPranaBondV2 nhận đi vào hố hấp thụ thứ hai và không bao giờ quay lại thị trường.',
       metricLabel: 'Tổng PRANA từ Sell Bonds',
-      metricTooltip: 'PRANA được SellPranaBondV2 hấp thụ từ người bán vào bond.',
+      metricTooltip: 'PRANA được SellPranaBondV2 hấp thụ từ người bán vào Bond.',
     },
     combinedMetric: {
       label: 'Tổng PRANA đã rút khỏi thị trường',

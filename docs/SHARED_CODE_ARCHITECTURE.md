@@ -47,7 +47,7 @@ flowchart TD
 
 - `main.tsx` owns routing, the site-language provider, the legal/guide pages, and
   the lazy boundary for `StatsPage`, `StakingEntry`, and `BondingEntry`.
-- `StatsPage` owns the public protocol dashboard and hero.
+- `StatsPage` owns the public PRANA Protocol dashboard and hero.
 - The hero imports `SwapLazyShell` eagerly so loading and chunk errors can still
   be shown as an accessible modal. The full `SwapEntry` is imported only after
   the user requests Swap.
@@ -245,7 +245,7 @@ these values rather than repeat address literals.
 | --- | --- |
 | `constants/swapContracts.ts` | Swap timing, slippage, router/quoter deployments, token allowlist, and Swap ABIs; the capital loader currently also reuses the Polygon USDT address |
 | `constants/stakingContracts.ts` | Staking/interest deployments, PRANA account-read ABI, permit constants, and Staking ABI; also supplies addresses used by homepage top-holder/staking statistics |
-| `constants/topHoldingAddresses.ts` | Stats presentation registry assembled from canonical protocol, pool, bond, and Staking addresses |
+| `constants/topHoldingAddresses.ts` | Stats presentation registry assembled from canonical PRANA Protocol, pool, bond, and Staking addresses |
 | `constants/arbitrumWbtcUsdtLp.ts` | Stats/server configuration and ABIs for the Arbitrum WBTC/USDT LP position |
 | `constants/bonds.ts` and related files | Bond deployments, ABIs, and Stats/bond calculation inputs |
 | `constants/pranaStats.ts`, `bondStats.ts`, `stakingStats.ts` | Initial UI state for independent homepage API cards |

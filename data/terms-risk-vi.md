@@ -1,14 +1,30 @@
 # Điều Khoản & Công Bố Rủi Ro
 
-Tài liệu này áp dụng cho website chính thức của PRANA Protocol và các giao diện giao dịch của website, bao gồm **PRANA Swap**, **PRANA Staking**, và **PRANA Bonding** (gọi chung là **Giao diện PRANA**). Vui lòng đọc kỹ trước khi kết nối ví, ký thông điệp, hoặc xác nhận giao dịch.
+Tài liệu này áp dụng cho website chính thức của PRANA Protocol và các giao diện được định nghĩa dưới đây. Vui lòng đọc kỹ trước khi kết nối ví, ký thông điệp, hoặc xác nhận bất kỳ giao dịch nào.
 
-Khi sử dụng một Giao diện PRANA, bạn xác nhận rằng bạn đã hiểu và chấp nhận các điều khoản này cùng các rủi ro được mô tả dưới đây. Nếu bạn không đồng ý, vui lòng không sử dụng Giao diện PRANA.
+Khi sử dụng website hoặc một Giao diện PRANA, bạn xác nhận rằng bạn đã hiểu và chấp nhận các điều khoản này cùng những rủi ro được mô tả dưới đây. Nếu bạn không đồng ý, vui lòng không tiếp tục sử dụng.
+
+## Các định nghĩa chính
+
+Trong tài liệu này:
+
+* **“PRANA Protocol”** là tên gọi chung của hệ sinh thái blockchain do Triết Học Đường Phố khởi xướng và phát triển trên Polygon, bao gồm token PRANA, các smart contract được triển khai cho hệ sinh thái PRANA, những cơ chế kỹ thuật và kinh tế liên quan, cùng các sản phẩm chính thức do Triết Học Đường Phố công bố.
+
+* **“Triết Học Đường Phố” hoặc “THĐP”** là đơn vị sáng lập, thiết kế và phát triển PRANA Protocol, đồng thời xây dựng, xuất bản, duy trì website chính thức, tài liệu và các giao diện người dùng của hệ sinh thái.
+
+* **“Giao diện PRANA”** là tên gọi chung của các giao diện giao dịch được cung cấp trên website chính thức, hiện bao gồm **PRANA Swap**, **PRANA Staking** và **PRANA Bonding**.
+
+* **“Smart contract PRANA”** là các smart contract được triển khai cho PRANA Protocol, bao gồm các contract phục vụ token PRANA, staking, interest và bonding. Những giao thức hoặc hạ tầng bên thứ ba được tích hợp, bao gồm Polygon và Uniswap, không trở thành tài sản hoặc hệ thống do THĐP sở hữu chỉ vì được Giao diện PRANA sử dụng.
+
+PRANA Protocol là tên gọi của một hệ sinh thái kỹ thuật và sản phẩm, không phải một pháp nhân độc lập tách biệt với THĐP.
+
+Việc THĐP sáng lập, phát triển và duy trì PRANA Protocol không đồng nghĩa THĐP lưu ký tài sản của người dùng, kiểm soát ví của người dùng, hoặc có thể ký hay đảo ngược giao dịch thay người dùng. Tuy nhiên, một số smart contract PRANA có thể chứa các quyền **owner**, **admin** hoặc **manager** như được công bố tại các phần tương ứng của tài liệu này và thể hiện trong trạng thái on-chain.
 
 ## 1. Bản chất của Giao diện PRANA
 
 Giao diện PRANA là các giao diện kỹ thuật, **non-custodial** (không lưu ký), giúp người dùng tương tác với các smart contract công khai trên blockchain Polygon.
 
-Triết Học Đường Phố (**THĐP**):
+THĐP:
 
 - không tạo tài khoản giao dịch, staking, hoặc bonding nội bộ cho bạn
 - không kiểm soát ví, private key, hoặc seed phrase của bạn
@@ -29,7 +45,7 @@ Bạn có trách nhiệm tự xác định xem việc sử dụng PRANA, swap, s
 
 ## 3. Không phải tư vấn đầu tư, pháp lý, hoặc thuế
 
-Thông tin trên website, trong thông báo sản phẩm, và trên Giao diện PRANA chỉ nhằm mô tả PRANA Protocol, dữ liệu công khai của protocol, và các tương tác kỹ thuật sẵn có.
+Thông tin trên website, trong thông báo sản phẩm, và trên Giao diện PRANA chỉ nhằm mô tả PRANA Protocol, dữ liệu on-chain công khai liên quan đến PRANA Protocol, và các tương tác kỹ thuật sẵn có.
 
 Thông tin này **không phải**:
 
@@ -89,7 +105,7 @@ PRANA Staking tạo và quản lý vị thế stake PRANA qua Staking Contract t
 - APR và lãi hiển thị là ước tính denominated bằng PRANA, không bảo đảm giá trị fiat, sức mua, hoặc lợi nhuận. Số on-chain cuối cùng có thể lệch vì timestamp, làm tròn, hoặc dữ liệu giao diện cũ.
 - Claim lãi phụ thuộc Interest Contract còn đủ quỹ và không bị pause; có thể thất bại vì mạng/RPC hoặc revert. THĐP không bảo đảm mọi khoản lãi dự kiến sẽ sẵn có hoặc được thanh toán thành công vì những lý do bất khả kháng.
 - Sau đáo hạn, lãi chỉ claim được trong thời gian ân hạn. Unstake trước khi claim có thể mất lãi chưa claim, mặc dù UI đã có cơ chế ngăn chặn chuyện này. Hết ân hạn thì lãi chưa claim không còn claim được; bạn có trách nhiệm theo dõi và claim đúng hạn.
-- Owner có thể pause và đổi cấu hình toàn cục (APR sẵn có, minimum, ân hạn, phạt). APR của vị thế hiện hữu được cố định lúc tạo; pause, khóa quản trị, và quỹ Interest Contract vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
+- PRANA Protocol có thể pause và đổi cấu hình toàn cục (APR sẵn có, minimum, ân hạn, phạt). APR của vị thế hiện hữu được cố định lúc tạo; pause, khóa quản trị, và quỹ Interest Contract vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
 
 
@@ -102,7 +118,7 @@ PRANA Bonding tạo và quản lý bond Buy/Sell qua các Bond contract trên Po
 - Tạo bond có thể cần Approve ERC-20 rồi Create riêng; một lần bấm không mở liên tiếp cả hai trên ví. Payout vest theo thời gian và phải claim theo quy tắc contract.
 - Buy dùng nhập exact WBTC; Buy và Sell không có khóa slip on-chain (`minOut`). Quote là ước tính — số cuối có thể lệch nếu reserves, rate, treasury, hoặc state đổi giữa quote và thực thi. Fresh-quote trước write không đồng nghĩa khóa slip on-chain. Tuy nhiên với quy mô và traffic hiện tại của PRANA thì số quote và số thực thi khác nhau hầu như không bao giờ xảy ra.
 - Claim có thể thất bại nếu deployment đang pause, treasury/reserves không đủ, mạng/RPC không sẵn có, hoặc lời gọi bị revert. THĐP không bảo đảm mọi payout dự kiến sẽ sẵn có hoặc được claim thành công vì những lý do bất khả kháng.
-- Admin/manager có thể pause, cập nhật rate/minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bond hiện hữu giữ điều khoản payout lúc tạo; pause, mức quỹ, và khóa role vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
+- PRANA Protocol có thể pause, cập nhật rate/minimum, sync hoặc set impacted reserves, và rút phần dư theo quy tắc contract. Bond hiện hữu giữ điều khoản payout lúc tạo; pause, mức quỹ, và khóa role vẫn là rủi ro. Hãy đối chiếu trạng thái on-chain trước khi hành động.
 
 
 
