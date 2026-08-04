@@ -2,11 +2,23 @@
 
 Chính sách quyền riêng tư này giải thích cách dữ liệu kỹ thuật có thể được xử lý khi bạn truy cập website chính thức của PRANA Protocol hoặc dùng **PRANA Swap**, **PRANA Staking**, hoặc **PRANA Bonding** (gọi chung là **Giao diện PRANA**). Đọc cùng với [Điều khoản & Công bố rủi ro](/terms).
 
-## 1. Phạm vi và bên vận hành
+## 1. Phạm vi, định nghĩa và bên kiểm soát dữ liệu
 
-Chính sách này áp dụng cho website và Giao diện PRANA do Triết Học Đường Phố (**THĐP**) vận hành trên tên miền chính thức.
+Chính sách này áp dụng cho website chính thức và các Giao diện PRANA do Triết Học Đường Phố vận hành trên tên miền chính thức.
 
-Nó bao gồm dữ liệu được xử lý bởi website và máy chủ ứng dụng do THĐP vận hành. Nó không thay thế chính sách quyền riêng tư hoặc điều khoản của ví, Polygon, Uniswap, nhà cung cấp RPC, nhà cung cấp hosting, block explorer, hoặc các bên thứ ba độc lập khác.
+Trong chính sách này:
+
+- **“PRANA Protocol”** là hệ sinh thái blockchain do Triết Học Đường Phố khởi xướng và phát triển trên Polygon, bao gồm token PRANA, các smart contract, cơ chế kỹ thuật và kinh tế, cùng những sản phẩm chính thức liên quan.
+
+- **“Triết Học Đường Phố” hoặc “THĐP”** là đơn vị sáng lập và phát triển PRANA Protocol, đồng thời xây dựng, xuất bản và duy trì website chính thức cùng các giao diện người dùng của hệ sinh thái.
+
+- **“Giao diện PRANA”** là tên gọi chung của **PRANA Swap**, **PRANA Staking** và **PRANA Bonding**.
+
+PRANA Protocol là một hệ thống kỹ thuật và tên gọi sản phẩm, không phải một pháp nhân độc lập hoặc một bên kiểm soát dữ liệu tách biệt với THĐP.
+
+Đối với dữ liệu mà THĐP quyết định mục đích, phương tiện xử lý và trực tiếp xử lý thông qua website hoặc máy chủ ứng dụng, THĐP đóng vai trò là bên kiểm soát và xử lý dữ liệu. Các nhà cung cấp hạ tầng hoặc dịch vụ bên thứ ba có thể đóng vai trò là bên xử lý dữ liệu hoặc bên kiểm soát dữ liệu độc lập, tùy theo dịch vụ và quan hệ thực tế.
+
+Chính sách này không thay thế chính sách quyền riêng tư hoặc điều khoản của ví, Polygon, Uniswap, nhà cung cấp RPC, nhà cung cấp hosting, block explorer, hoặc các bên thứ ba độc lập khác.
 
 Câu hỏi hoặc yêu cầu về quyền riêng tư có thể gửi tới [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).
 
@@ -20,7 +32,7 @@ Việc dùng địa chỉ ví mới không bảo đảm tính ẩn danh.
 
 ## 3. Dữ liệu được xử lý khi bạn truy cập website
 
-Website **không** tuyên bố rằng không có dữ liệu nào được thu thập. Tùy theo request và cấu hình hạ tầng, các dữ liệu kỹ thuật sau có thể được xử lý:
+Khi bạn truy cập website, một số dữ liệu kỹ thuật có thể được xử lý tự động tùy theo request và cấu hình hạ tầng.
 
 - địa chỉ IP của client
 - ngày và giờ của request
@@ -32,7 +44,7 @@ Website **không** tuyên bố rằng không có dữ liệu nào được thu t
 
 Máy chủ ứng dụng, reverse proxy, nhà cung cấp hosting, hoặc CDN có thể tạo access log hoặc error log chứa một phần thông tin này.
 
-Ngôn ngữ giao diện đã chọn (`vi` hoặc `en`) được lưu trong `localStorage` trên thiết bị của bạn.
+Ngôn ngữ giao diện đã chọn (`vi` hoặc `en`) được lưu trong `localStorage` trên thiết bị của bạn. Lựa chọn ngôn ngữ được giữ trên thiết bị cho đến khi bạn xóa dữ liệu website, thay đổi trình duyệt hoặc thiết bị, hoặc website thay đổi cơ chế lưu trữ.
 
 ## 4. Dữ liệu được xử lý bởi PRANA Swap
 
@@ -91,7 +103,7 @@ Các nhà cung cấp ví và blockchain đó có thể độc lập nhận hoặ
 
 Dữ liệu này có thể tồn tại trong bộ nhớ trình duyệt khi bạn dùng giao diện. Tiện ích mở rộng hoặc ứng dụng ví của bạn có thể lưu dữ liệu kết nối hoặc hoạt động riêng một cách độc lập.
 
-THĐP không yêu cầu, nhận, hoặc lưu trữ seed phrase hay private key của bạn qua Giao diện PRANA. Không bao giờ nhập cả hai vào website hoặc gửi cho bất kỳ ai tự nhận hỗ trợ PRANA.
+Không bao giờ nhập hoặc gửi **seed phrase hay private key** vào website hoặc cung cấp bất kỳ thông tin nào trong số này cho người tự nhận hỗ trợ PRANA. THĐP không cần, không yêu cầu và sẽ không đề nghị bạn cung cấp seed phrase hoặc private key.
 
 ## 8. Những gì không được dùng trong phiên bản hiện tại
 
@@ -120,7 +132,14 @@ THĐP có thể xử lý dữ liệu mô tả ở trên để:
 
 THĐP không dùng dữ liệu này để lưu ký tài sản của bạn hoặc đưa ra quyết định đầu tư tự động thay bạn.
 
-Khi pháp luật áp dụng yêu cầu cơ sở pháp lý, việc xử lý có thể dựa trên việc cung cấp dịch vụ bạn yêu cầu, lợi ích hợp pháp của THĐP trong việc vận hành và bảo mật dịch vụ, tuân thủ nghĩa vụ pháp lý, hoặc sự đồng ý khi cần sự đồng ý.
+Khi pháp luật áp dụng yêu cầu xác định căn cứ xử lý, THĐP có thể xử lý dữ liệu:
+
+- để cung cấp chức năng hoặc thực hiện tương tác mà bạn chủ động yêu cầu theo các điều khoản đã thỏa thuận
+- để tuân thủ nghĩa vụ pháp lý hoặc yêu cầu hợp pháp của cơ quan có thẩm quyền
+- trong những trường hợp pháp luật cho phép xử lý mà không cần sự đồng ý
+- dựa trên sự đồng ý cụ thể của bạn khi pháp luật yêu cầu sự đồng ý
+
+Việc bạn chỉ đọc chính sách này, im lặng, hoặc không phản hồi không được xem là sự đồng ý. Khi sự đồng ý là cần thiết, THĐP sẽ yêu cầu bằng một hình thức rõ ràng, cụ thể và có thể kiểm chứng.
 
 ## 10. Chia sẻ và nhà cung cấp dịch vụ
 
@@ -162,6 +181,10 @@ Bạn có thể:
 - dùng công cụ tương thích khác để đọc hoặc tương tác với các contract công khai
 
 Tùy pháp luật áp dụng, bạn có thể có quyền yêu cầu thông tin về, truy cập, sửa, xóa, hạn chế, hoặc phản đối một số việc xử lý dữ liệu cá nhân của mình, và rút lại sự đồng ý khi việc xử lý dựa trên sự đồng ý.
+
+Tùy theo pháp luật áp dụng, bạn cũng có thể có quyền khiếu nại, tố cáo, khởi kiện hoặc yêu cầu bồi thường thiệt hại liên quan đến việc xử lý dữ liệu cá nhân.
+
+THĐP sẽ xem xét và phản hồi yêu cầu trong thời hạn mà pháp luật áp dụng quy định. Nếu không thể thực hiện toàn bộ hoặc một phần yêu cầu vì lý do hợp pháp, THĐP sẽ thông báo trong phạm vi pháp luật yêu cầu.
 
 Để gửi yêu cầu, hãy email [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net). THĐP có thể cần đủ thông tin để xác minh yêu cầu và xác định các bản ghi liên quan. Một số yêu cầu có thể bị hạn chế bởi pháp luật áp dụng, nhu cầu bảo mật, quyền của người khác, hoặc ràng buộc kỹ thuật.
 

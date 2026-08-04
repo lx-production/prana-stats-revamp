@@ -1,14 +1,30 @@
 # Terms & Risk Disclosure
 
-This document applies to the official PRANA Protocol website and its transaction interfaces, including **PRANA Swap**, **PRANA Staking**, and **PRANA Bonding** (together, the **PRANA Interfaces**). Please read it carefully before connecting a wallet, signing a message, or confirming a transaction.
+This document applies to the official PRANA Protocol website and the interfaces defined below. Please read it carefully before connecting a wallet, signing a message, or confirming any transaction.
 
-By using a PRANA Interface, you acknowledge that you understand and accept these terms and the risks described below. If you do not agree, do not use the PRANA Interfaces.
+By using the website or a PRANA Interface, you acknowledge that you understand and accept these terms and the risks described below. If you do not agree, please do not continue to use them.
+
+## Key definitions
+
+In this document:
+
+* **“PRANA Protocol”** means the collective name for the blockchain ecosystem initiated and developed by Triết Học Đường Phố on Polygon, including the PRANA token, the smart contracts deployed for the PRANA ecosystem, related technical and economic mechanisms, and official products published by Triết Học Đường Phố.
+
+* **“Triết Học Đường Phố” or “THĐP”** means the entity that founded, designed, and develops PRANA Protocol, and that builds, publishes, and maintains the official website, documentation, and user interfaces of the ecosystem.
+
+* **“PRANA Interface”** means the collective name for the transaction interfaces provided on the official website, currently including **PRANA Swap**, **PRANA Staking**, and **PRANA Bonding**.
+
+* **“PRANA smart contracts”** means the smart contracts deployed for PRANA Protocol, including contracts that serve the PRANA token, staking, interest, and bonding. Third-party protocols or infrastructure that are integrated, including Polygon and Uniswap, do not become assets or systems owned by THĐP merely because a PRANA Interface uses them.
+
+PRANA Protocol is the name of a technical and product ecosystem, not a separate legal entity distinct from THĐP.
+
+That THĐP founded, develops, and maintains PRANA Protocol does not mean THĐP custodies user assets, controls user wallets, or can sign or reverse transactions on a user’s behalf. However, some PRANA smart contracts may contain **owner**, **admin**, or **manager** rights as disclosed in the corresponding sections of this document and as reflected in on-chain state.
 
 ## 1. Nature of the PRANA Interfaces
 
-The PRANA Interfaces are technical, non-custodial interfaces that help users interact with public smart contracts on the Polygon blockchain.
+The PRANA Interfaces are technical, **non-custodial** interfaces that help users interact with public smart contracts on the Polygon blockchain.
 
-Triết Học Đường Phố (**THĐP**):
+THĐP:
 
 - does not create an internal trading, staking, or bonding account for you
 - does not control your wallet, private keys, or seed phrase
@@ -29,7 +45,7 @@ You are responsible for determining whether your use of PRANA, swaps, staking, b
 
 ## 3. No investment, legal, or tax advice
 
-Information on the website, in product announcements, and in the PRANA Interfaces is provided only to describe PRANA Protocol, its public data, and the available technical interactions.
+Information on the website, in product announcements, and in the PRANA Interfaces is provided only to describe PRANA Protocol, public on-chain data related to PRANA Protocol, and the available technical interactions.
 
 This information is **not**:
 
@@ -89,7 +105,9 @@ PRANA Staking creates and manages PRANA stake positions through the Staking Cont
 - Displayed APR and interest are PRANA-denominated estimates and do not guarantee fiat value, purchasing power, or profit. Final on-chain amounts may differ because of timestamps, rounding, or stale interface data.
 - Claiming interest depends on the Interest Contract being sufficiently funded and not paused; claims may fail due to network/RPC issues or reverts. THĐP does not guarantee that every expected interest amount will be available or successfully paid for reasons beyond its control.
 - After maturity, interest can be claimed only during the grace period. Unstaking before claiming may forfeit unclaimed interest, even though the UI has safeguards against this. After the grace period ends, unclaimed interest can no longer be claimed; you are responsible for monitoring and claiming on time.
-- The owner can pause and change global configuration (available APRs, minimums, grace period, penalty). The APR of an existing position is fixed at creation; pause, administrative keys, and Interest Contract funding remain risks. Cross-check on-chain state before acting.
+- PRANA Protocol may pause and change global configuration (available APRs, minimums, grace period, penalty). The APR of an existing position is fixed at creation; pause, administrative keys, and Interest Contract funding remain risks. Cross-check on-chain state before acting.
+
+
 
 ## 7. PRANA Bonding summary and specific risks
 
@@ -98,9 +116,11 @@ PRANA Bonding creates and manages Buy/Sell bonds through Bond contracts on Polyg
 **Key risks**
 
 - Creating a bond may require a separate ERC-20 Approve then Create; one click does not open both wallet prompts back-to-back. Payout vests over time and must be claimed under the contract rules.
-- Buy uses exact WBTC input; Buy and Sell have no on-chain slip locks (`minOut`). Quotes are estimates — final amounts may differ if reserves, rates, treasury, or related state change between quote and execution. Fresh-quoting before write is not an on-chain slip lock. However with the current scale and traffic of PRANA, the difference between quote and execution is rare.
-- Claims may fail if the deployment is paused, treasury/reserves are insufficient, the network/RPC is unavailable, or a call reverts. THĐP does not guarantee that every expected payout will be available or successfully claimed because of reasons beyond our control.
-- Admins/managers may pause, update rates/minimums, sync or set impacted reserves, and withdraw surplus under the contract rules. Existing bonds keep payout terms at creation; pause status, funding, and role keys remain risks. Review current on-chain state before acting.
+- Buy uses exact WBTC input; Buy and Sell have no on-chain slip locks (`minOut`). Quotes are estimates — final amounts may differ if reserves, rates, treasury, or related state change between quote and execution. Fresh-quoting before write is not an on-chain slip lock. However with the current scale and traffic of PRANA, the difference between quote and execution is almost never observed.
+- Claims may fail if the deployment is paused, treasury/reserves are insufficient, the network/RPC is unavailable, or a call reverts. THĐP does not guarantee that every expected payout will be available or successfully claimed for reasons beyond its control.
+- PRANA Protocol may pause, update rates/minimums, sync or set impacted reserves, and withdraw surplus under the contract rules. Existing bonds keep payout terms at creation; pause status, funding levels, and role keys remain risks. Cross-check on-chain state before acting.
+
+
 
 ## 8. Contract addresses to verify
 

@@ -2,11 +2,23 @@
 
 This Privacy Policy explains how technical data may be processed when you visit the official PRANA Protocol website or use **PRANA Swap**, **PRANA Staking**, or **PRANA Bonding** (together, the **PRANA Interfaces**). Read it together with the [Terms & Risk Disclosure](/terms).
 
-## 1. Scope and operator
+## 1. Scope, definitions, and data controller
 
-This policy covers the website and PRANA Interfaces operated by Triết Học Đường Phố (**THĐP**) on the official domain.
+This policy applies to the official website and the PRANA Interfaces operated by Triết Học Đường Phố on the official domain.
 
-It covers data processed by the website and THĐP-operated application server. It does not replace the privacy policies or terms of your wallet, Polygon, Uniswap, RPC providers, hosting providers, block explorers, or other independent third parties.
+In this policy:
+
+- **“PRANA Protocol”** means the blockchain ecosystem initiated and developed by Triết Học Đường Phố on Polygon, including the PRANA token, smart contracts, technical and economic mechanisms, and related official products.
+
+- **“Triết Học Đường Phố” or “THĐP”** means the entity that founded and develops PRANA Protocol, and that builds, publishes, and maintains the official website and user interfaces of the ecosystem.
+
+- **“PRANA Interface”** means the collective name for **PRANA Swap**, **PRANA Staking**, and **PRANA Bonding**.
+
+PRANA Protocol is a technical system and product name, not a separate legal entity or a data controller distinct from THĐP.
+
+For data where THĐP decides the purposes and means of processing and directly processes that data through the website or application server, THĐP acts as the data controller and processor. Infrastructure or third-party service providers may act as data processors or as independent data controllers, depending on the service and the actual relationship.
+
+This policy does not replace the privacy policies or terms of wallets, Polygon, Uniswap, RPC providers, hosting providers, block explorers, or other independent third parties.
 
 Privacy questions or requests may be sent to [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net).
 
@@ -20,7 +32,7 @@ Using a new wallet address does not guarantee anonymity.
 
 ## 3. Data processed when you visit the website
 
-The website does **not** claim that no data is collected. Depending on the request and infrastructure configuration, the following technical data may be processed:
+When you visit the website, some technical data may be processed automatically depending on the request and infrastructure configuration.
 
 - client IP address
 - request date and time
@@ -32,7 +44,7 @@ The website does **not** claim that no data is collected. Depending on the reque
 
 The application server, reverse proxy, hosting provider, or CDN may create access or error logs containing some of this information.
 
-The selected interface language (`vi` or `en`) is stored in `localStorage` on your device.
+The selected interface language (`vi` or `en`) is stored in `localStorage` on your device. The language preference remains on the device until you clear website data, change browsers or devices, or the website changes its storage mechanism.
 
 ## 4. Data processed by PRANA Swap
 
@@ -91,7 +103,7 @@ To display and perform requested actions, the browser interface may temporarily 
 
 This data may exist in browser memory while you use the interface. Your wallet extension or application may store its own connection or activity data independently.
 
-THĐP does not ask for, receive, or store your seed phrase or private key through the PRANA Interfaces. Never enter either one into the website or send it to anyone claiming to provide PRANA support.
+Never enter or send a **seed phrase or private key** into the website, or provide either one to anyone claiming to provide PRANA support. THĐP does not need, does not request, and will not ask you to provide a seed phrase or private key.
 
 ## 8. What is not used in the current version
 
@@ -120,7 +132,14 @@ THĐP may process the data described above to:
 
 THĐP does not use this data to take custody of your assets or make automated investment decisions for you.
 
-Where applicable law requires a legal basis, processing may be based on providing the service you request, THĐP’s legitimate interests in operating and securing the service, compliance with legal obligations, or consent where consent is required.
+Where applicable law requires a legal basis for processing, THĐP may process data:
+
+- to provide the functionality or perform the interaction you actively request under the agreed terms
+- to comply with legal obligations or lawful requests from competent authorities
+- in cases where applicable law permits processing without consent
+- based on your specific consent where applicable law requires consent
+
+Simply reading this policy, remaining silent, or not responding is not treated as consent. Where consent is required, THĐP will request it in a clear, specific, and verifiable form.
 
 ## 10. Sharing and service providers
 
@@ -162,6 +181,10 @@ You can:
 - use another compatible tool to read or interact with public contracts
 
 Depending on applicable law, you may have rights to request information about, access to, correction of, deletion of, restriction of, or objection to certain processing of your personal data, and to withdraw consent where processing relies on consent.
+
+Depending on applicable law, you may also have rights to lodge a complaint, file a report, bring a claim, or seek damages in connection with the processing of personal data.
+
+THĐP will review and respond to requests within the timeframes required by applicable law. If THĐP cannot fulfill a request in whole or in part for lawful reasons, it will notify you to the extent required by law.
 
 To make a request, email [thdp@triethocduongpho.net](mailto:thdp@triethocduongpho.net). THĐP may need enough information to verify the request and identify the relevant records. Some requests may be limited by applicable law, security needs, the rights of others, or technical constraints.
 
