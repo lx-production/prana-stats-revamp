@@ -62,8 +62,8 @@ const Timeline: React.FC = () => {
             variants={listVariants}
             initial="hidden"
             whileInView="visible"
-            // Expand the observe area so the fade starts just before the section hits the viewport
-            viewport={{ once: true, amount: 0.1, margin: "0px 0px 80px 0px" }}
+            // Avoid a percentage threshold because this horizontal row is wider than mobile viewports.
+            viewport={{ once: true, margin: "0px 0px 80px 0px" }}
           >
             {events.map((event, index) => {
               const isLatest = index === events.length - 1;
