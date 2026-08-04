@@ -19,6 +19,82 @@ const STAKE_ACTION_KINDS: readonly StakeActionKind[] = [
   'unstakeEarly',
 ];
 
+/** Validate permit fields and build a stake action snapshot (untrusted input). */
+function parseStoredStakePermitAction(
+  action: Record<string, unknown>,
+): Extract<StakingTransactionActionSnapshot, { kind: 'stake' }> | null {
+  if (typeof action.amountRaw !== 'string' || !isUnsignedDecimal(action.amountRaw)) {
+    return null;
+  }
+  if (
+    typeof action.durationSeconds !== 'number' ||
+    !Number.isInteger(action.durationSeconds) ||
+    action.durationSeconds <= 0
+  ) {
+    return null;
+  }
+  if (
+    typeof action.deadline !== 'number' ||
+    !Number.isInteger(action.deadline) ||
+    action.deadline <= 0
+  ) {
+    return null;
+  }
+  if (
+    typeof action.v !== 'number' ||
+    !Number.isInteger(action.v) ||
+    action.v < 0 ||
+    action.v > 255
+  ) {
+    return null;
+  }
+  if (typeof action.r !== 'string' || !BYTES32_RE.test(action.r)) {
+    return null;
+  }
+  if (typeof action.s !== 'string' || !BYTES32_RE.test(action.s)) {
+    return null;
+  }
+
+  return {
+    kind: 'stake',
+    amountRaw: action.amountRaw,
+    durationSeconds: action.durationSeconds,
+    deadline: action.deadline,
+    v: action.v,
+    r: action.r as Hex,
+    s: action.s as Hex,
+  };
+}
+
+function isUnsignedDecimal(value: string): boolean {
+  return /^[0-9]+$/.test(value);
+}
+
+/** Validate stakeId action fields and build a snapshot (untrusted input). */
+function parseStoredStakeIdAction(
+  action: Record<string, unknown>,
+): Extract<StakingTransactionActionSnapshot, { stakeId: number }> | null {
+  if (
+    typeof action.kind !== 'string' ||
+    !STAKE_ACTION_KINDS.includes(action.kind as StakeActionKind)
+  ) {
+    return null;
+  }
+  if (
+    typeof action.stakeId !== 'number' ||
+    !Number.isInteger(action.stakeId) ||
+    action.stakeId < 0 ||
+    action.stakeId > MAX_UINT32
+  ) {
+    return null;
+  }
+
+  return {
+    kind: action.kind as StakeActionKind,
+    stakeId: action.stakeId,
+  };
+}
+
 /** Feature-local action parser — permit fields + stakeId actions. */
 function parseStoredStakeAction(
   value: unknown,
@@ -27,71 +103,10 @@ function parseStoredStakeAction(
   const action = value as Record<string, unknown>;
 
   if (action.kind === 'stake') {
-    if (typeof action.amountRaw !== 'string' || !isUnsignedDecimal(action.amountRaw)) {
-      return null;
-    }
-    if (
-      typeof action.durationSeconds !== 'number' ||
-      !Number.isInteger(action.durationSeconds) ||
-      action.durationSeconds <= 0
-    ) {
-      return null;
-    }
-    if (
-      typeof action.deadline !== 'number' ||
-      !Number.isInteger(action.deadline) ||
-      action.deadline <= 0
-    ) {
-      return null;
-    }
-    if (
-      typeof action.v !== 'number' ||
-      !Number.isInteger(action.v) ||
-      action.v < 0 ||
-      action.v > 255
-    ) {
-      return null;
-    }
-    if (typeof action.r !== 'string' || !BYTES32_RE.test(action.r)) {
-      return null;
-    }
-    if (typeof action.s !== 'string' || !BYTES32_RE.test(action.s)) {
-      return null;
-    }
-    return {
-      kind: 'stake',
-      amountRaw: action.amountRaw,
-      durationSeconds: action.durationSeconds,
-      deadline: action.deadline,
-      v: action.v,
-      r: action.r as Hex,
-      s: action.s as Hex,
-    };
+    return parseStoredStakePermitAction(action);
   }
 
-  if (
-    typeof action.kind === 'string' &&
-    STAKE_ACTION_KINDS.includes(action.kind as StakeActionKind)
-  ) {
-    if (
-      typeof action.stakeId !== 'number' ||
-      !Number.isInteger(action.stakeId) ||
-      action.stakeId < 0 ||
-      action.stakeId > MAX_UINT32
-    ) {
-      return null;
-    }
-    return {
-      kind: action.kind as StakeActionKind,
-      stakeId: action.stakeId,
-    };
-  }
-
-  return null;
-}
-
-function isUnsignedDecimal(value: string): boolean {
-  return /^[0-9]+$/.test(value);
+  return parseStoredStakeIdAction(action);
 }
 
 const stakePendingStorage = createPendingTransactionStorage<StakingTransactionActionSnapshot>({

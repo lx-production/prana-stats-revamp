@@ -1,9 +1,5 @@
 import { PRANA_ADDRESS } from '../../../constants/sharedContracts.ts';
-import {
-  PRANA_PERMIT_DOMAIN_NAME,
-  PRANA_PERMIT_DOMAIN_VERSION,
-  STAKING_CONTRACT_ADDRESS,
-} from '../../../constants/stakingContracts.ts';
+import { PRANA_PERMIT_DOMAIN_NAME, PRANA_PERMIT_DOMAIN_VERSION, STAKING_CONTRACT_ADDRESS } from '../../../constants/stakingContracts.ts';
 
 import type { PermitConfigPinCheck } from './permitConfigGuard.types.ts';
 
