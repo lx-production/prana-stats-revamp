@@ -235,7 +235,7 @@ Trước ký và trước broadcast:
 Orchestration: `server/loaders/stakingQuote.ts` + mapping chung trong `server/utils/stakingReadUtils.ts` / `stakingQuoteUtils.ts`.
 
 - Mọi reads trong một response dùng cùng `blockTag`.
-- Fund gate: `available = max(0, balanceOf(Interest) − totalInterestNeeded)`; lãi stake mới qua `calculateTotalInterestRaw` phải vừa quỹ.
+- Fund gate (chỉ client/API): `available = max(0, balanceOf(Interest) − totalInterestNeeded)`; lãi stake mới qua `calculateTotalInterestRaw` phải vừa quỹ. `stakeWithPermit` không enforce on-chain; claim/`payInterest` mới kiểm khi trả lãi.
 - Quote không executable vẫn **200** kèm `issues[]` để form hiển thị lý do.
 
 **Không** dùng `/api/staking-stats` cho gate này (cache 24h + float + shape khác).
@@ -351,7 +351,7 @@ Giống Bonding: pending hash + action snapshot persist vào `localStorage` (`pr
 Contributors cần biết khi thay đổi flow:
 
 1. **Permit deadline theo wall-clock (1 giờ)** — đồng hồ thiết bị có thể lệch nhẹ; hết hạn invalidate Continue Stake.
-2. **Fully-funded gate là soft UX** — on-chain vẫn có thể revert nếu Interest balance đổi giữa quote và execution; `freshQuote` giảm nhưng không triệt tiêu race.
+2. **Fully-funded gate là soft UX** — `stakeWithPermit` **không** kiểm tra quỹ Interest on-chain, nên stake underfunded vẫn có thể được tạo nếu bypass gate phía client hoặc reserves đổi sau quote. Gate giảm stake mới thiếu quỹ để `claimInterest` / `payInterest` sau này dễ thành công hơn (thiếu Interest balance revert ở **claim**, không phải lúc stake). `freshQuote` thu hẹp cửa sổ đó nhưng không reserve quỹ.
 3. **Homepage `/api/staking-stats` là aggregate riêng** — thân thiện float, cache dài; không dùng để quyết định eligibility Permit & Stake.
 4. **Hết grace thì lãi chưa claim mất vĩnh viễn** — UI cảnh báo; semantics contract không đổi bởi app.
 5. **Confirmation body chứa permit signature components** (v/r/s) chỉ để rebuild calldata match — cùng threat model với việc broadcast chúng lên chain.

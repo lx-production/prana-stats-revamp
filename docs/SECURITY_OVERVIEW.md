@@ -201,7 +201,7 @@ The quote reads pause state, minimum, APRs, Interest-contract PRANA balance, and
 availableInterest = max(interestBalance - totalInterestNeeded, 0)
 ```
 
-The CTA is blocked when the calculated interest for the new stake does not fit. This is a **soft preflight**, not an on-chain reservation: another transaction or state change can invalidate it before execution, and the contract may still revert.
+The CTA is blocked when the calculated interest for the new stake does not fit. This is a **soft preflight**, not an on-chain reservation: `stakeWithPermit` does not enforce Interest funding, so an underfunded stake can still land if the gate is bypassed or reserves move after the quote. Insufficient Interest balance reverts at **claim** (`payInterest`), not at stake creation.
 
 If permit signing succeeds but broadcast does not produce a transaction hash, the client may keep that permit in memory for **Continue Stake** until its amount, duration, wallet, chain, nonce context, or deadline becomes invalid. Permit signature components sent to the confirmation endpoint are used only to reconstruct and compare the already-broadcast calldata; they are not treated as credentials.
 

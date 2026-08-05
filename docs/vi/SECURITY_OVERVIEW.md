@@ -202,7 +202,7 @@ Quote đọc pause, minimum, APR, số dư PRANA của Interest contract, và `t
 availableInterest = max(interestBalance - totalInterestNeeded, 0)
 ```
 
-CTA bị chặn khi lãi tính cho stake mới không vừa. Đây là **soft preflight**, không phải reservation on-chain: transaction hoặc state khác có thể làm mất hiệu lực trước khi thực thi, và contract vẫn có thể revert.
+CTA bị chặn khi lãi tính cho stake mới không vừa. Đây là **soft preflight**, không phải reservation on-chain: `stakeWithPermit` không enforce quỹ Interest, nên stake underfunded vẫn có thể lên chain nếu bypass gate hoặc reserves đổi sau quote. Thiếu Interest balance revert ở **claim** (`payInterest`), không phải lúc tạo stake.
 
 Nếu ký permit thành công nhưng broadcast không ra được transaction hash, client có thể giữ permit trong memory cho **Continue Stake** cho đến khi amount, duration, ví, chain, ngữ cảnh nonce hoặc deadline trở nên không hợp lệ. Thành phần chữ ký permit gửi lên confirmation endpoint chỉ dùng để dựng lại và so sánh calldata đã broadcast; không được coi là credential.
 

@@ -235,7 +235,7 @@ Before sign and before broadcast:
 Orchestration: `server/loaders/stakingQuote.ts` + shared mapping in `server/utils/stakingReadUtils.ts` / `stakingQuoteUtils.ts`.
 
 - All reads in one response share the same `blockTag`.
-- Fund gate: `available = max(0, balanceOf(Interest) − totalInterestNeeded)`; new stake interest via `calculateTotalInterestRaw` must fit.
+- Fund gate (client/API only): `available = max(0, balanceOf(Interest) − totalInterestNeeded)`; new stake interest via `calculateTotalInterestRaw` must fit. `stakeWithPermit` does not enforce this on-chain; claim/`payInterest` does when paying out.
 - Non-executable quotes still return **200** with `issues[]` so the form can show why.
 
 Do **not** use `/api/staking-stats` for this gate (24h float cache + different shape).
@@ -351,7 +351,7 @@ Like Bonding: pending hash + action snapshot persist to `localStorage` (`prana:s
 Contributors should know these when changing the flow:
 
 1. **Permit deadline is wall-clock based (1 hour)** — signed off-device time can skew slightly; expiry invalidates Continue Stake.
-2. **Fully-funded gate is soft UX** — on-chain can still revert if Interest balance moves between quote and execution; `freshQuote` reduces but does not eliminate that race.
+2. **Fully-funded gate is soft UX** — `stakeWithPermit` does **not** check Interest reserves on-chain, so an underfunded stake can still be created if the client gate is bypassed or reserves move after the quote. The gate reduces underfunded new stakes so later `claimInterest` / `payInterest` is more likely to succeed (insufficient Interest balance reverts at **claim**, not at stake). `freshQuote` narrows that window but does not reserve funds.
 3. **Homepage `/api/staking-stats` is a separate aggregate** — float-friendly, long cache; never drive Permit & Stake eligibility from it.
 4. **Grace expiry permanently drops unclaimed interest** — UI warns; contract semantics are unchanged by the app.
 5. **Confirmation body includes permit signature components** (v/r/s) only to rebuild calldata for matching — same threat model as broadcasting them on-chain.
