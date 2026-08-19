@@ -47,7 +47,7 @@ Details: [docs/NETWORK_ARCHITECTURE.md](docs/NETWORK_ARCHITECTURE.md) (§7).
 | `/bond/`                                                                       | Personal bonding (approve, create, claim)  |
 
 
-Machine-readable summary: `[/api/summary](https://prana.triethocduongpho.net/api/summary)`.
+Machine-readable summary: [`/api/summary`](https://prana.triethocduongpho.net/api/summary). Sitemap: [`/sitemap.xml`](https://prana.triethocduongpho.net/sitemap.xml).
 
 ## Staking and Bonding contracts license
 

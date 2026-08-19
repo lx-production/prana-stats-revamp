@@ -3,3 +3,5 @@ Allow: /
 
 # Machine-readable summary for AI agents and scrapers
 # https://prana.triethocduongpho.net/api/summary
+
+Sitemap: https://prana.triethocduongpho.net/sitemap.xml
