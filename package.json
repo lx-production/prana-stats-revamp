@@ -6,6 +6,8 @@
     "dev:all": "concurrently -k -s first \"npm run serve:dev\" \"tsx scripts/wait-for-api.ts 4174 && npm run dev\"",
     "build": "vite build --config config/vite.config.js",
     "redeploy": "sudo systemctl stop prana-stats-revamp.service && npm run build && sudo systemctl restart prana-stats-revamp.service",
+    "redeploy:safe": "sudo systemctl stop prana-stats-revamp.service && npm run build && npm run fix-permissions && sudo systemctl restart prana-stats-revamp.service",
+    "fix-permissions": "bash scripts/fix-permissions.sh",
     "preview": "vite preview --config config/vite.config.js",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:server && npm run test:client && npm run test:staking && npm run test:bonding && npm run test:rate-limit",
