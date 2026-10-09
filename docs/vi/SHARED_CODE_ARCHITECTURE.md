@@ -231,6 +231,8 @@ Bonding giữ semantic Buy/Sell, deployment version, và quote riêng:
 - `PRANA_PROTOCOL_ADDRESS`
 - `PROTOCOL_RESERVE_ADDRESS`
 - `BUY_DIPS_WALLET_ADDRESS`
+- `BUY_DIPS_WALLET_ADDRESS_2`
+- `BUY_DIPS_WALLET_ADDRESSES`
 - `DEX_POOL_BONDS_RESERVE_ADDRESS`
 
 UI links, capital reads, LP ownership, và top-holder registry nên import các

@@ -6,7 +6,7 @@ import { ARBITRUM_USDT } from '../../constants/arbitrumWbtcUsdtLp.ts';
 import { USDT_POLYGON_ADDRESS } from '../../constants/swapContracts.ts';
 import { getServerArbitrumProvider, getServerPolygonProvider } from '../utils/providers.ts';
 import { SELL_BOND_ADDRESS_V2, SELL_BOND_COMMITTED_WBTC_ABI } from '../../constants/bonds.ts';
-import { BUY_DIPS_WALLET_ADDRESS, PRANA_PROTOCOL_ADDRESS } from '../../constants/protocolAddresses.ts';
+import { BUY_DIPS_WALLET_ADDRESS_2, PRANA_PROTOCOL_ADDRESS } from '../../constants/protocolAddresses.ts';
 import { MULTICALL3_ABI, MULTICALL3_ADDRESS, USDT_DECIMALS, WBTC_ADDRESS, WBTC_DECIMALS, WBTC_PRANA_V3_POOL } from '../../constants/sharedContracts.ts';
 
 import type { CapitalApiResponse } from '../../types/api.types.ts';
@@ -57,7 +57,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
     {
       target: USDT_POLYGON_ADDRESS,
       allowFailure: false,
-      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [BUY_DIPS_WALLET_ADDRESS]),
+      callData: ERC20_IFACE.encodeFunctionData('balanceOf', [BUY_DIPS_WALLET_ADDRESS_2]),
     },
     {
       target: WBTC_ADDRESS,
@@ -118,7 +118,7 @@ export async function loadCapital(): Promise<CapitalApiResponse> {
         label: 'Capital Wallet',
         tokenSymbol: 'USDT',
         network: 'Polygon',
-        address: BUY_DIPS_WALLET_ADDRESS,
+        address: BUY_DIPS_WALLET_ADDRESS_2,
         amount: Number.isFinite(usdtPolygonAmountBuyDips)
           ? usdtPolygonAmountBuyDips.toLocaleString('en-US', { maximumFractionDigits: 2 })
           : '0',
