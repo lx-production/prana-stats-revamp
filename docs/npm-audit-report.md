@@ -1,8 +1,8 @@
 # npm Audit Report — prana-stats-revamp
 
-**Date:** 2026-10-09  
-**Previous baseline:** 2026-10-09 earlier the same day, before the Axios override bump (54 total: 21 low, 15 moderate, 18 high, 0 critical). Older baseline 2026-08-02 was 45 total (21 low, 13 moderate, 11 high, 0 critical).  
-**Commands:** `npm install` after setting the Axios override to `1.20.0`, then `npm ls axios --all`, `npm audit`, `npm audit --omit=dev`  
+**Date:** 2026-10-23  
+**Previous baseline:** 2026-10-09 after the Axios override bump (53 total: 21 low, 15 moderate, 17 high, 0 critical; `--omit=dev` 48: 21 low, 13 moderate, 14 high, 0 critical). The same-day check on 2026-10-23, before the `follow-redirects` and Vite bumps, was 55 total (21 low, 15 moderate, 19 high, 0 critical) and `--omit=dev` 49 (21 low, 13 moderate, 15 high, 0 critical). Older baselines: 2026-10-09 before Axios `1.20.0` was 54 (21 low, 15 moderate, 18 high, 0 critical); 2026-08-02 was 45 (21 low, 13 moderate, 11 high, 0 critical).  
+**Commands:** `npm update follow-redirects`, `npm update vite` (lockfile `vite@8.3.5`; `package.json` stays `"vite": "^8.1.0"`), production build succeeded, then `npm audit`, `npm audit --omit=dev`, and `npm audit fix --dry-run`  
 **Current result (full tree):** 53 vulnerabilities (21 low, 15 moderate, 17 high, 0 critical)  
 **Current result (`--omit=dev`):** 48 vulnerabilities (21 low, 13 moderate, 14 high, 0 critical)
 
@@ -12,11 +12,20 @@ The number is an inventory of vulnerable packages **and every package that depen
 
 On 2026-10-09 the Axios override moved from `1.18.1` to `1.20.0`, then `npm install` was run. Installed copy is `axios@1.20.0` (`npm ls`: `@uniswap/smart-order-router@4.31.10` → `axios@1.20.0 overridden`). `npm audit` no longer lists `axios`. That dropped the full-tree count **54 → 53** and high **18 → 17**. `ws` and `postcss` stay off the list.
 
+On 2026-10-23 a fresh audit, before any bump, was **55** (19 high) full-tree and **49** (15 high) with `--omit=dev`. The two new highs were:
+
+- `follow-redirects@1.16.0`. Advisories cover only `>=1.16.0 <1.16.1` (credential headers can leak across redirects). `axios@1.20.0` already depends on `follow-redirects@^1.16.0`, and Hardhat's `solc` depends on `^1.12.1`, so both already allowed `1.16.1`. `npm update follow-redirects` installed `1.16.1`. No override. This copy is on the runtime path because Axios uses it when a request redirects. The pool-list calls do not send credential headers.
+- `vite@8.1.0`. Advisories cover `8.0.0`–`8.1.5` (dev server and `launch-editor`, mostly Windows). `package.json` already says `"vite": "^8.1.0"`, which means `>=8.1.0 <9.0.0`. `npm update vite` therefore installed the newest 8.x, `8.3.5`, not the minimum patched release `8.1.6`. `@vitejs/plugin-react@6.0.3` peers `vite@^8.0.0`, so `8.3.5` stays inside that peer range. Vite is dev and build only. Production runs `tsx server/index.ts`.
+
+Both dropped off the audit. Counts returned to the 2026-10-09 baseline. `axios`, `ws`, `postcss`, `follow-redirects`, and `vite` are absent. The lockfile `postcss` copy moved `8.5.25` → `8.5.31` along with the Vite update and is still not a finding.
+
+`npm audit fix --dry-run` on this date still finishes at 53. It would only move a few Uniswap SDK patch versions and `postcss-selector-parser` `6.1.4` → `6.1.5`. `6.1.5` stays inside the `<7.1.6` advisory, so that bump does not clear the finding.
+
 The three high entries that disappear with `--omit=dev` are build-only: `tailwindcss`, `micromatch`, `fast-glob`. The two extra moderate entries in the full tree are the same Tailwind chain (`postcss-selector-parser`, `postcss-nested`). `--omit=dev` still reports Hardhat and OpenZeppelin because Uniswap publishes contract-tooling dependencies inside its normal dependency tree. That does **not** mean Hardhat runs in production. Runtime usage is the relevant distinction.
 
 npm may still print “fix available via `npm audit fix`” for Hardhat-tree packages (`adm-zip`, `@fastify/busboy`, `serialize-javascript`, `tmp`, `undici`, …). After a fresh non-force fix those stay pinned by parent ranges. Clearing them needs upstream updates or `--force` (do not use `--force`). `--force` for the `braces` chain proposes `tailwindcss@4.3.3`, a breaking major.
 
-## 17 high entries (2026-10-09, after Axios 1.20.0)
+## 17 high entries (2026-10-23; same set as 2026-10-09 after Axios 1.20.0)
 
 These are the 17 packages npm marks high. Several are parents flagged only because they depend on a vulnerable child. `axios` is no longer one of them.
 
@@ -84,9 +93,11 @@ Overrides still installed:
 
 | Status | Area | Why it matters |
 |---|---|---|
-| **Fixed (2026-10-09)** | `axios@1.20.0` | Override moved off `1.18.1`, which sat inside advisories covering `1.0.0`–`1.19.0`. `npm audit` no longer lists `axios`. Do not replace this pin with the router's declared `^0.21.1` (that installs `0.21.4`). |
+| **Fixed (2026-10-23)** | `follow-redirects@1.16.1` | Lockfile moved off `1.16.0`. Used by Axios at runtime and by `solc` under Hardhat. No override. `npm audit` no longer lists it. |
+| **Fixed (2026-10-23)** | `vite@8.3.5` | Lockfile moved off `8.1.0`, which sat inside advisories covering `8.0.0`–`8.1.5`. Dev/build only. `package.json` range stays `^8.1.0`. |
+| **Fixed (2026-10-09)** | `axios@1.20.0` | Override moved off `1.18.1`, which sat inside advisories covering `1.0.0`–`1.19.0`. `npm audit` no longer lists `axios`. Do not replace this pin with the router's declared `^0.21.1` (that installs `0.21.4`). Latest Axios on npm as of 2026-10-23 is still `1.20.0`. |
 | **Fixed** | `ws` | `viem`, `ethers`, and `@ethersproject/providers` use `8.21.1` via nested overrides. `npm audit` does not list `ws`. Remaining `ws@7.x` belongs only to Hardhat. |
-| **Fixed (2026-08-02)** | `postcss` | Root `devDependencies` declare `"postcss": "^8.5.16"` (lockfile `8.5.25`). Not listed. Build/dev CSS only. |
+| **Fixed (2026-08-02)** | `postcss` | Root `devDependencies` declare `"postcss": "^8.5.16"` (lockfile `8.5.31` on 2026-10-23). Not listed. Build/dev CSS only. |
 | **Fixed (2026-08-02)** | `brace-expansion` / `minimatch` / `glob` / `rimraf` | Cleared by the earlier non-force fix. A different package, `braces`, is a new high via Tailwind/Hardhat. |
 | **Known noise** | `npm ls` `ELSPROBLEMS` | Override installs `ws@8.21.1` while packages still declare exact `ws@8.21.0` (`ethers`/`viem`) or `ws@8.18.0` (`@ethersproject/providers`). Tree is intentional; `npm ls` exit 1 is expected until upstream widens those pins. |
 | **Track** | legacy ethers v5 / `elliptic` | Required by the current Uniswap SDK stack. Low practical risk here; no safe standalone update. The server does not hold or use wallet signing keys. |
@@ -108,7 +119,7 @@ A package bump does not remove the override while those packages pin an exact `w
 
 ### postcss — frontend CSS build (2026-08-02)
 
-Root `devDependencies` declare `"postcss": "^8.5.16"`. Vite, Tailwind, and Autoprefixer consume this at build/dev time only. Still not an audit finding on 2026-10-09.
+Root `devDependencies` declare `"postcss": "^8.5.16"`. Vite, Tailwind, and Autoprefixer consume this at build/dev time only. Still not an audit finding on 2026-10-23. Lockfile copy is `8.5.31`.
 
 ## What not to do
 
@@ -132,4 +143,4 @@ After changing dependencies or overrides:
 4. Smoke-test a real quote through the normal configured Polygon RPC endpoint.
 5. When upgrading `@uniswap/smart-order-router`, `ethers`, or `viem`, check whether declared Axios/`ws` ranges already include the patched versions. Remove an override only after retesting. The router's `axios@^0.21.1` does **not** include `1.20.0`; keep the exact `1.20.0` override until that declaration moves onto 1.x at `1.20.0` or newer.
 
-The 2026-10-09 audit, after the Axios bump, is acceptable for the deployed runtime. `axios`, `ws`, and `postcss` are off the list. The remaining 17 high entries are inherited Hardhat, OpenZeppelin, and Tailwind noise.
+The 2026-10-23 audit, after the `follow-redirects` and Vite bumps, matches the acceptable 2026-10-09 baseline. `axios`, `ws`, `postcss`, `follow-redirects`, and `vite` are off the list. The remaining 17 high entries are inherited Hardhat, OpenZeppelin, and Tailwind noise.
