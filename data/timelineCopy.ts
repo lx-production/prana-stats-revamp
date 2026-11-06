@@ -77,6 +77,11 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
     description:
       "Migrate bonding app/UI cũ sang giao diện mới, Bond ngay trên app hiện tại.",
   },
+  event_17: {
+    title: "Kích hoạt Buy-The-Dips Tự Động",
+    description:
+      "Buy-The-Dips không còn chờ thao tác tay. Khi giá giảm, hệ thống tự mua PRANA theo thuật toán đã lập trình.",
+  },
 };
 
 export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
@@ -153,5 +158,10 @@ export const TIMELINE_COPY_EN: Record<TimelineEventId, TimelineEventCopy> = {
   event_16: {
     title: "Bonding UI Integration",
     description: "Migrated the legacy bonding app/UI into the new interface. Bond directly on the current app.",
+  },
+  event_17: {
+    title: "Automatic Buy-The-Dips Activated",
+    description:
+      "Buy-The-Dips no longer waits on a manual action. When the price drops, the system buys PRANA on its own as programmed.",
   },
 };
