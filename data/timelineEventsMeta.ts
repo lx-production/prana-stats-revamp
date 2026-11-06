@@ -103,7 +103,7 @@ export const TIMELINE_EVENTS_META = [
   },
   {
     id: "event_17",
-    timestamp: 1793923200,
+    timestamp: 1791504000,
     color: "#06b6d4",
     icon: "17",
   },
