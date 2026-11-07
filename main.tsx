@@ -11,7 +11,7 @@ import BondingGuidePage from "./components/BondingGuidePage";
 import ContractsGuidePage from "./components/ContractsGuidePage";
 import BondingContractsGuidePage from "./components/BondingContractsGuidePage";
 import { useAppPathname } from "./hooks/useAppPathname";
-import FlutterShaderBackground from "./flutterShader.tsx";
+import GhostsShaderBackground from "./ghostsShader.tsx";
 import { useSpinningFavicon } from "./hooks/useSpinningFavicon.ts";
 import { SiteLanguageProvider } from "./hooks/useSiteLanguage";
 import {
@@ -54,7 +54,7 @@ function App() {
   ) : (
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       <LanguageToggle />
-      <FlutterShaderBackground />
+      <GhostsShaderBackground />
 
       {isTermsRiskPath(pathname) ? (
         <>

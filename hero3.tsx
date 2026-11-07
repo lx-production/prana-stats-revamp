@@ -2,11 +2,8 @@ import React, { Suspense, lazy, useRef, useState } from "react";
 import { useSiteLanguage } from "./hooks/useSiteLanguage";
 import { useHeroHeadlines } from "./hooks/useHeroHeadlines";
 import { useHeroCoinModel } from "./hooks/useHeroCoinModel";
-import {
-  SwapLazyFallback,
-  SwapLazyErrorBoundary,
-} from "./features/swap/SwapLazyShell";
 import { BOND_CANONICAL_PATH, STAKE_CANONICAL_PATH } from "./constants/appRoutes";
+import { SwapLazyFallback, SwapLazyErrorBoundary } from "./features/swap/SwapLazyShell";
 
 import type { PranaHeroProps } from "./types/hero.types";
 

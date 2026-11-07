@@ -4,7 +4,7 @@ import GlassPanel from '../components/ui/GlassPanel';
 import LanguageToggle from '../components/LanguageToggle';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { useSiteLanguage } from '../hooks/useSiteLanguage';
-import FlutterShaderBackground from '../flutterShader.tsx';
+import GhostsShaderBackground from '../ghostsShader.tsx';
 import { getStakingCopy } from '../features/staking/staking.copy';
 import StakingForm from '../features/staking/components/StakingForm';
 import ActiveStakes from '../features/staking/components/ActiveStakes';
@@ -46,8 +46,7 @@ export default function StakingPage() {
     <div className="relative min-h-screen overflow-hidden bg-[#050116] text-white">
       {/* Same fixed corner placement as homepage / legal shell */}
       <LanguageToggle />
-      {/* Dimmer than homepage default (0.5) so form content stays readable */}
-      <FlutterShaderBackground brightness={0.32} />
+      <GhostsShaderBackground />
 
       <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-16 sm:max-w-6xl sm:px-6 sm:py-20">
         <header className="space-y-4">
