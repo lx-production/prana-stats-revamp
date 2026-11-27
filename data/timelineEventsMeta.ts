@@ -106,6 +106,7 @@ export const TIMELINE_EVENTS_META = [
     timestamp: 1791504000,
     color: "#06b6d4",
     icon: "17",
+    link: "https://github.com/lx-production/buy_dips",
   },
 ] as const satisfies readonly TimelineEventMeta[];
 
