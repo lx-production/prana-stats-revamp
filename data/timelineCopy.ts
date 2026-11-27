@@ -78,7 +78,7 @@ export const TIMELINE_COPY_VI: Record<TimelineEventId, TimelineEventCopy> = {
       "Migrate bonding app/UI cũ sang giao diện mới, Bond ngay trên app hiện tại.",
   },
   event_17: {
-    title: "Kích hoạt Buy-The-Dips Tự Động",
+    title: "Kích hoạt auto Buy-The-Dips",
     description:
       "Buy-The-Dips không còn chờ thao tác tay. Khi giá giảm, hệ thống tự mua PRANA theo thuật toán đã lập trình.",
   },
